@@ -44,6 +44,8 @@ class MissionFeedback {
     required this.missionId,
     required this.status,
     required this.createdAtIso,
+    this.domainTargets = const <String>[],
+    this.recommendationType,
     this.notes,
     this.trace = const <String, Object?>{},
   });
@@ -52,6 +54,8 @@ class MissionFeedback {
   final String missionId;
   final MissionFeedbackStatus status;
   final String createdAtIso;
+  final List<String> domainTargets;
+  final String? recommendationType;
   final String? notes;
   final Map<String, Object?> trace;
 
@@ -61,6 +65,8 @@ class MissionFeedback {
       'mission_id': missionId,
       'status': status.storageKey,
       'created_at': createdAtIso,
+      'domain_targets': domainTargets,
+      'recommendation_type': recommendationType,
       'notes': notes,
       'trace': trace,
     };
@@ -73,6 +79,13 @@ class MissionFeedback {
       status: _statusFromKey((json['status'] ?? 'useful').toString()),
       createdAtIso:
           (json['created_at'] ?? json['createdAtIso'] ?? '').toString(),
+      domainTargets: ((json['domain_targets'] ?? json['domainTargets']) as List?)
+              ?.map((item) => item.toString())
+              .toList(growable: false) ??
+          const <String>[],
+      recommendationType:
+          (json['recommendation_type'] ?? json['recommendationType'])
+              ?.toString(),
       notes: json['notes']?.toString(),
       trace: Map<String, Object?>.from(
         (json['trace'] as Map?)?.cast<String, Object?>() ?? const {},

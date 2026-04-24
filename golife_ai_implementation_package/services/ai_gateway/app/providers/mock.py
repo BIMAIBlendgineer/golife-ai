@@ -36,17 +36,41 @@ class MockLLMProvider(LLMProvider):
             suggestions = [
                 self._suggestion(
                     suggestion_id="mock-daily-task-habit",
-                    title="Cerrar una tarea corta y registrar un habito base",
+                    title="Cerrar una tarea corta y proteger un habito base",
                     domain_targets=["task", "habit"],
                     recommendation_type="mission",
-                    body="Haz una tarea de menos de 10 minutos y registra un habito de recuperacion para recuperar traccion.",
+                    body="Haz primero la tarea mas corta con impacto visible y registra un habito minimo para cerrar el dia con traccion.",
                     evidence=[
                         self._evidence("task", "Hay actividad reciente de tareas."),
                         self._evidence("habit", "Tambien hay actividad reciente de habitos."),
                     ],
-                    confidence=0.78,
+                    confidence=0.82,
                     uncertainty="Respuesta mock basada en patrones locales, no en un modelo remoto.",
-                )
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-task-focus",
+                    title="Reducir friccion en una sola tarea",
+                    domain_targets=["task"],
+                    recommendation_type="mission",
+                    body="Define el siguiente paso fisico de una tarea importante y completa ese bloque antes de abrir otra pendiente.",
+                    evidence=[
+                        self._evidence("task", "Hay suficiente contexto para priorizar una tarea visible."),
+                    ],
+                    confidence=0.75,
+                    uncertainty="Respuesta mock; la prioridad final depende del contexto real del dia.",
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-habit-recovery",
+                    title="Asegurar un habito de recuperacion",
+                    domain_targets=["habit"],
+                    recommendation_type="mission",
+                    body="Protege un habito pequeno de 5 a 10 minutos para evitar que el dia quede solo en modo reaccion.",
+                    evidence=[
+                        self._evidence("habit", "La continuidad del habito sigue siendo una senal util."),
+                    ],
+                    confidence=0.71,
+                    uncertainty="Respuesta mock; conviene ajustar el esfuerzo a la energia disponible.",
+                ),
             ]
         elif {"finance", "pantry"}.issubset(domains):
             suggestions = [
@@ -60,9 +84,33 @@ class MockLLMProvider(LLMProvider):
                         self._evidence("finance", "Hay eventos financieros permitidos."),
                         self._evidence("pantry", "Tambien hay senales de pantry o grocery list."),
                     ],
-                    confidence=0.76,
+                    confidence=0.81,
                     uncertainty="Respuesta mock; conviene revisar disponibilidad real antes de actuar.",
-                )
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-finance-pause",
+                    title="Pausar un gasto pequeno evitable",
+                    domain_targets=["finance"],
+                    recommendation_type="reflection",
+                    body="Retrasa una compra pequena no urgente hasta revisar si realmente resuelve una necesidad de hoy.",
+                    evidence=[
+                        self._evidence("finance", "El contexto financiero permite una pausa de reflexion."),
+                    ],
+                    confidence=0.73,
+                    uncertainty="Respuesta mock; no es consejo financiero ni una regla universal.",
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-pantry-rescue",
+                    title="Rescatar un ingrediente antes de que pierda valor",
+                    domain_targets=["pantry"],
+                    recommendation_type="mission",
+                    body="Elige un ingrediente que ya este disponible y conviertelo hoy en una comida simple de poco esfuerzo.",
+                    evidence=[
+                        self._evidence("pantry", "Hay contexto suficiente para sugerir un rescate de despensa."),
+                    ],
+                    confidence=0.72,
+                    uncertainty="Respuesta mock; confirma existencias reales antes de cocinar.",
+                ),
             ]
         elif "wardrobe" in domains:
             suggestions = [
@@ -75,9 +123,33 @@ class MockLLMProvider(LLMProvider):
                     evidence=[
                         self._evidence("wardrobe", "El dominio wardrobe contiene actividad relevante."),
                     ],
-                    confidence=0.74,
+                    confidence=0.79,
                     uncertainty="Respuesta mock; requiere confirmacion humana y revision visual.",
-                )
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-wardrobe-delay",
+                    title="Esperar 24 horas antes de comprar",
+                    domain_targets=["wardrobe"],
+                    recommendation_type="warning",
+                    body="Si la compra no resuelve una necesidad inmediata, espera 24 horas y vuelve a compararla con lo que ya tienes.",
+                    evidence=[
+                        self._evidence("wardrobe", "Hay una senal de compra que puede beneficiarse de una pausa."),
+                    ],
+                    confidence=0.73,
+                    uncertainty="Respuesta mock; la decision final sigue siendo de la persona usuaria.",
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-wardrobe-outfit",
+                    title="Probar una combinacion existente",
+                    domain_targets=["wardrobe"],
+                    recommendation_type="mission",
+                    body="Arma un outfit con una prenda que ya tengas antes de abrir una nueva decision de compra.",
+                    evidence=[
+                        self._evidence("wardrobe", "El armario ya ofrece una alternativa interna verificable."),
+                    ],
+                    confidence=0.7,
+                    uncertainty="Respuesta mock; requiere una comprobacion visual local.",
+                ),
             ]
         else:
             suggestions = [
@@ -90,9 +162,33 @@ class MockLLMProvider(LLMProvider):
                     evidence=[
                         self._evidence("mission", "Hay suficiente contexto para sugerir una accion pequena."),
                     ],
-                    confidence=0.63,
+                    confidence=0.68,
                     uncertainty="Respuesta mock con contexto limitado.",
-                )
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-generic-review",
+                    title="Revisar un riesgo pequeno antes de que escale",
+                    domain_targets=["mission"],
+                    recommendation_type="warning",
+                    body="Identifica una friccion pequena de hoy y haz una accion minima que evite arrastrarla a manana.",
+                    evidence=[
+                        self._evidence("mission", "El contexto minimo permite una revision corta del dia."),
+                    ],
+                    confidence=0.62,
+                    uncertainty="Respuesta mock; puede faltar contexto para detectar el mayor riesgo real.",
+                ),
+                self._suggestion(
+                    suggestion_id="mock-daily-generic-reset",
+                    title="Cerrar el dia con una senal de continuidad",
+                    domain_targets=["mission"],
+                    recommendation_type="mission",
+                    body="Completa un pequeno cierre visible para que manana no empiece con el mismo desorden.",
+                    evidence=[
+                        self._evidence("mission", "Una senal pequena de cierre puede reducir friccion futura."),
+                    ],
+                    confidence=0.6,
+                    uncertainty="Respuesta mock; la accion exacta depende del contexto local.",
+                ),
             ]
 
         return self._result(suggestions=suggestions)

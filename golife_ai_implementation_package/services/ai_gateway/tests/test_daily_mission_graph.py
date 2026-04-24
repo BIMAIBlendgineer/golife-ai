@@ -34,9 +34,11 @@ def test_daily_mission_graph_tasks_and_habits(client):
     )
     assert response.status_code == 200
     data = response.json()
+    assert len(data['suggestions']) == 3
     assert data['suggestions'][0]['domain_targets'] == ['task', 'habit']
     assert data['suggestions'][0]['requires_confirmation'] is True
     assert 'validate_consent' in data['trace']['nodes']
+    assert 'feedback_learning' in data['trace']['nodes']
     assert 'build_response' in data['trace']['nodes']
 
 
@@ -63,6 +65,7 @@ def test_daily_mission_graph_finance_and_pantry(client):
     )
     assert response.status_code == 200
     data = response.json()
+    assert len(data['suggestions']) == 3
     body = data['suggestions'][0]['body'].lower()
     assert 'buy' not in body
     assert 'revisa' in body or 'despensa' in body or 'comida' in body
@@ -94,6 +97,7 @@ def test_daily_mission_graph_wardrobe_purchase_intention(client):
     )
     assert response.status_code == 200
     data = response.json()
+    assert len(data['suggestions']) == 3
     suggestion = data['suggestions'][0]
     assert suggestion['domain_targets'] == ['wardrobe']
     assert 'compara' in suggestion['body'].lower() or 'revis' in suggestion['body'].lower()

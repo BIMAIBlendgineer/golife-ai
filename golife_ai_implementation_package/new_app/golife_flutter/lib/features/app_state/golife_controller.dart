@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/ai_client/ai_gateway_client.dart';
+import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
@@ -31,7 +32,7 @@ class GoLifeController extends ChangeNotifier {
 
   bool _isReady = false;
   PrivacySettings _privacySettings = PrivacySettings.defaults();
-  DailyMission? _dailyMission;
+  List<DailyMission> _dailyMissions = <DailyMission>[];
   List<MissionFeedback> _missionFeedback = <MissionFeedback>[];
 
   final GoTask criticalTask = const GoTask(
@@ -89,13 +90,19 @@ class GoLifeController extends ChangeNotifier {
 
   bool get isReady => _isReady;
   PrivacySettings get privacySettings => _privacySettings;
-  DailyMission? get dailyMission => _dailyMission;
+  DailyMission? get dailyMission =>
+      _dailyMissions.isEmpty ? null : _dailyMissions.first;
+  List<DailyMission> get dailyMissions =>
+      List<DailyMission>.unmodifiable(_dailyMissions);
   List<LifeEvent> get lifeEvents => _lifeGraphRepository.allEvents();
   List<MissionFeedback> get missionFeedbackHistory =>
       List<MissionFeedback>.unmodifiable(_missionFeedback);
+  int get totalEventCount => lifeEvents.length;
+  int get aiEligibleEventCount =>
+      lifeEvents.where(_eventEligibleForAi).length;
 
   MissionFeedback? get latestMissionFeedback {
-    final mission = _dailyMission;
+    final mission = dailyMission;
     if (mission == null) {
       return null;
     }
@@ -114,11 +121,17 @@ class GoLifeController extends ChangeNotifier {
     return _lifeGraphRepository.eventsForDomain(domain).length;
   }
 
+  int aiEligibleEventCountFor(DomainKey domain) {
+    return lifeEvents.where((event) {
+      return event.domain == domain.wireName && _eventEligibleForAi(event);
+    }).length;
+  }
+
   Future<void> bootstrap() async {
     _privacySettings = await _localStore.loadPrivacySettings();
     await _lifeGraphRepository.bootstrap();
     _missionFeedback = await _localStore.loadMissionFeedback();
-    await _refreshMission();
+    await _refreshMissionPlan();
     _isReady = true;
     notifyListeners();
   }
@@ -129,7 +142,7 @@ class GoLifeController extends ChangeNotifier {
   ) async {
     _privacySettings = _privacySettings.copyWithPermission(domain, permission);
     await _localStore.savePrivacySettings(_privacySettings);
-    await _refreshMission();
+    await _refreshMissionPlan();
     notifyListeners();
   }
 
@@ -172,9 +185,21 @@ class GoLifeController extends ChangeNotifier {
         ),
       );
 
+  Future<CaptureClassificationDto?> classifyCaptureText(String text) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    return _aiGatewayClient.classifyCapture(
+      privacySettings: _privacySettings,
+      text: trimmed,
+    );
+  }
+
   Future<void> captureEvent({
     required DomainKey domain,
     required String text,
+    String? eventType,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) {
@@ -182,21 +207,12 @@ class GoLifeController extends ChangeNotifier {
     }
 
     final wireDomain = domain.wireName;
-    final eventType = switch (wireDomain) {
-      'task' => 'task_captured',
-      'habit' => 'habit_logged',
-      'week' => 'week_note_captured',
-      'finance' => 'expense_logged',
-      'pantry' => 'ingredient_flagged',
-      'wardrobe' => 'purchase_intention',
-      'mission' => 'mission_note',
-      _ => 'note_captured',
-    };
+    final resolvedEventType = eventType ?? _defaultEventTypeForDomain(wireDomain);
 
     await _recordEvent(
       event: LifeEventFactory.create(
         domain: wireDomain,
-        type: eventType,
+        type: resolvedEventType,
         summary: trimmed,
         privacyLevel: _privacyLevelForDomain(wireDomain),
         payload: {
@@ -207,12 +223,28 @@ class GoLifeController extends ChangeNotifier {
     );
   }
 
-  Future<void> markMissionUseful() => _submitMissionFeedback(
+  Future<void> markMissionUseful([DailyMission? mission]) =>
+      _submitMissionFeedback(
         MissionFeedbackStatus.useful,
+        mission: mission,
       );
 
-  Future<void> rejectMission() => _submitMissionFeedback(
+  Future<void> acceptMission([DailyMission? mission]) =>
+      _submitMissionFeedback(
+        MissionFeedbackStatus.accepted,
+        mission: mission,
+      );
+
+  Future<void> completeMission([DailyMission? mission]) =>
+      _submitMissionFeedback(
+        MissionFeedbackStatus.completed,
+        mission: mission,
+      );
+
+  Future<void> rejectMission([DailyMission? mission]) =>
+      _submitMissionFeedback(
         MissionFeedbackStatus.rejected,
+        mission: mission,
       );
 
   Future<void> _recordEvent({
@@ -235,30 +267,35 @@ class GoLifeController extends ChangeNotifier {
           privacyLevel: _privacyLevelForDomain(domain ?? 'system'),
         );
     await _lifeGraphRepository.addEvent(nextEvent);
-    await _refreshMission();
+    await _refreshMissionPlan();
     notifyListeners();
   }
 
-  Future<void> _refreshMission() async {
-    final dto = await _aiGatewayClient.fetchDailyMission(
+  Future<void> _refreshMissionPlan() async {
+    final dto = await _aiGatewayClient.fetchDailyPlan(
       privacySettings: _privacySettings,
       lifeEvents: lifeEvents,
     );
-    _dailyMission = mapMissionSuggestion(dto);
+    _dailyMissions = mapMissionPlan(dto);
   }
 
-  Future<void> _submitMissionFeedback(MissionFeedbackStatus status) async {
-    final mission = _dailyMission;
-    if (mission == null) {
+  Future<void> _submitMissionFeedback(
+    MissionFeedbackStatus status, {
+    DailyMission? mission,
+  }) async {
+    final targetMission = mission ?? dailyMission;
+    if (targetMission == null) {
       return;
     }
 
     final feedback = MissionFeedback(
       id: 'feedback-${DateTime.now().microsecondsSinceEpoch}',
-      missionId: mission.id,
+      missionId: targetMission.id,
       status: status,
       createdAtIso: DateTime.now().toUtc().toIso8601String(),
-      trace: mission.trace,
+      domainTargets: targetMission.domainTargets,
+      recommendationType: targetMission.recommendationType,
+      trace: targetMission.trace,
     );
 
     _missionFeedback = <MissionFeedback>[
@@ -278,5 +315,32 @@ class GoLifeController extends ChangeNotifier {
 
   String _privacyLevelForDomain(String domain) {
     return _privacySettings.permissionForWireDomain(domain).storageKey;
+  }
+
+  bool _eventEligibleForAi(LifeEvent event) {
+    final permission = _privacySettings.permissionForWireDomain(event.domain);
+    return permission == DataPermission.aiAllowed &&
+        event.privacyLevel == DataPermission.aiAllowed.storageKey;
+  }
+
+  String _defaultEventTypeForDomain(String domain) {
+    switch (domain) {
+      case 'task':
+        return 'task_captured';
+      case 'habit':
+        return 'habit_logged';
+      case 'week':
+        return 'week_note_captured';
+      case 'finance':
+        return 'expense_logged';
+      case 'pantry':
+        return 'ingredient_flagged';
+      case 'wardrobe':
+        return 'purchase_intention';
+      case 'mission':
+        return 'mission_note';
+      default:
+        return 'note_captured';
+    }
   }
 }

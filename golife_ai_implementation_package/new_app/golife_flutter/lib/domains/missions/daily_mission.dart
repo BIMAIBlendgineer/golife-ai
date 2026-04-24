@@ -6,6 +6,9 @@ class DailyMission {
     required this.evidence,
     required this.uncertainty,
     required this.requiresConfirmation,
+    required this.domainTargets,
+    required this.recommendationType,
+    required this.confidence,
     required this.trace,
   });
 
@@ -15,5 +18,8 @@ class DailyMission {
   final List<String> evidence;
   final String uncertainty;
   final bool requiresConfirmation;
+  final List<String> domainTargets;
+  final String recommendationType;
+  final double confidence;
   final Map<String, Object?> trace;
 }

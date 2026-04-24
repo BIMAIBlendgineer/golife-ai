@@ -25,6 +25,7 @@ class MissionGraphState(TypedDict, total=False):
     request: SuggestionRequest
     settings: Settings
     provider: LLMProvider
+    feedback_summary: dict[str, Any]
     consent_granted: bool
     allowed_events: list[Any]
     filtered_events: list[dict[str, str]]
@@ -126,6 +127,46 @@ def _detect_patterns_from_state(state: MissionGraphState) -> list[dict[str, Any]
     return patterns
 
 
+def _feedback_delta(
+    suggestion: AISuggestion,
+    feedback_summary: dict[str, Any],
+) -> tuple[float, list[str]]:
+    by_suggestion = feedback_summary.get("by_suggestion", {})
+    by_domain = feedback_summary.get("by_domain", {})
+    reasons: list[str] = []
+    delta = 0.0
+
+    suggestion_stats = by_suggestion.get(suggestion.suggestion_id, {})
+    if suggestion_stats:
+        useful = int(suggestion_stats.get("useful", 0))
+        completed = int(suggestion_stats.get("completed", 0))
+        accepted = int(suggestion_stats.get("accepted", 0))
+        rejected = int(suggestion_stats.get("rejected", 0))
+        delta += useful * 0.05
+        delta += completed * 0.06
+        delta += accepted * 0.03
+        delta -= rejected * 0.08
+        reasons.append(
+            f"suggestion useful={useful} completed={completed} rejected={rejected}"
+        )
+
+    for domain in suggestion.domain_targets:
+        domain_stats = by_domain.get(domain, {})
+        if not domain_stats:
+            continue
+        useful = int(domain_stats.get("useful", 0))
+        completed = int(domain_stats.get("completed", 0))
+        rejected = int(domain_stats.get("rejected", 0))
+        delta += useful * 0.02
+        delta += completed * 0.03
+        delta -= rejected * 0.04
+        reasons.append(
+            f"domain {domain} useful={useful} completed={completed} rejected={rejected}"
+        )
+
+    return delta, reasons
+
+
 def validate_consent(state: MissionGraphState) -> MissionGraphState:
     allowed_events, filtered_events = filter_ai_events(state["request"])
     consent_granted = bool(state["request"].privacy_settings.ai_enabled)
@@ -196,6 +237,7 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
             "domain_summaries": state.get("domain_summaries", []),
             "day_state": state.get("day_state", "unknown"),
             "patterns": state.get("patterns", []),
+            "feedback_summary": state.get("feedback_summary", {}),
             "constraints": state["request"].constraints,
         },
     )
@@ -218,6 +260,28 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
         "provider_meta": provider_result.get("_provider_meta", {}),
         "trace": trace,
     }
+
+
+def apply_feedback_learning(state: MissionGraphState) -> MissionGraphState:
+    feedback_summary = state.get("feedback_summary", {})
+    adjusted_candidates: list[AISuggestion] = []
+
+    for suggestion in state.get("candidates", []):
+        delta, _reasons = _feedback_delta(suggestion, feedback_summary)
+        adjusted_confidence = min(max(suggestion.confidence + delta, 0.0), 1.0)
+        adjusted_candidates.append(
+            suggestion.model_copy(update={"confidence": adjusted_confidence})
+        )
+
+    trace = _append_trace(
+        state.get("trace", {}),
+        node_name="feedback_learning",
+        payload={
+            "adjusted_count": len(adjusted_candidates),
+            "totals": feedback_summary.get("totals", {}),
+        },
+    )
+    return {"candidates": adjusted_candidates, "trace": trace}
 
 
 def guardrail_review(state: MissionGraphState) -> MissionGraphState:
@@ -285,6 +349,7 @@ def _compiled_graph():
     graph.add_node("classify_day_state", classify_day_state)
     graph.add_node("detect_patterns", detect_patterns)
     graph.add_node("generate_candidates", generate_candidates)
+    graph.add_node("feedback_learning", apply_feedback_learning)
     graph.add_node("guardrail_review", guardrail_review)
     graph.add_node("rank", rank)
     graph.add_node("build_response", build_response)
@@ -293,7 +358,8 @@ def _compiled_graph():
     graph.add_edge("summarize_events", "classify_day_state")
     graph.add_edge("classify_day_state", "detect_patterns")
     graph.add_edge("detect_patterns", "generate_candidates")
-    graph.add_edge("generate_candidates", "guardrail_review")
+    graph.add_edge("generate_candidates", "feedback_learning")
+    graph.add_edge("feedback_learning", "guardrail_review")
     graph.add_edge("guardrail_review", "rank")
     graph.add_edge("rank", "build_response")
     graph.add_edge("build_response", END)
@@ -305,6 +371,7 @@ async def run_suggestion_graph(
     *,
     settings: Settings,
     provider: LLMProvider,
+    feedback_summary: dict[str, Any],
     intent: str,
 ) -> SuggestionResponse:
     result = await _compiled_graph().ainvoke(
@@ -313,6 +380,7 @@ async def run_suggestion_graph(
             "request": request,
             "settings": settings,
             "provider": provider,
+            "feedback_summary": feedback_summary,
             "trace": {},
         }
     )

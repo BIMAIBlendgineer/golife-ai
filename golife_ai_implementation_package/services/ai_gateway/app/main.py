@@ -4,6 +4,8 @@ from app.feedback_store import MissionFeedbackStore
 from app.providers.base import LLMProvider
 from app.providers.factory import build_provider
 from app.schemas import (
+    EventClassificationRequest,
+    EventClassificationResponse,
     MissionFeedbackRequest,
     MissionFeedbackResponse,
     SuggestionRequest,
@@ -12,7 +14,12 @@ from app.schemas import (
     TaskRewriteResponse,
 )
 from app.settings import Settings
-from app.use_cases import run_domain_suggestions, run_suggestions, run_task_rewrite
+from app.use_cases import (
+    run_domain_suggestions,
+    run_event_classification,
+    run_suggestions,
+    run_task_rewrite,
+)
 
 
 def create_app(
@@ -48,6 +55,7 @@ def create_app(
             payload,
             settings=request.app.state.settings,
             provider=request.app.state.provider,
+            feedback_store=request.app.state.feedback_store,
             intent="generic_suggestions",
         )
 
@@ -60,8 +68,15 @@ def create_app(
             payload,
             settings=request.app.state.settings,
             provider=request.app.state.provider,
+            feedback_store=request.app.state.feedback_store,
             intent="daily_mission",
         )
+
+    @app.post("/v1/events/classify", response_model=EventClassificationResponse)
+    async def classify_event(
+        payload: EventClassificationRequest,
+    ) -> EventClassificationResponse:
+        return run_event_classification(payload)
 
     @app.post("/v1/tasks/rewrite", response_model=TaskRewriteResponse)
     async def rewrite_task(
@@ -83,6 +98,7 @@ def create_app(
             payload,
             settings=request.app.state.settings,
             provider=request.app.state.provider,
+            feedback_store=request.app.state.feedback_store,
             required_domain="finance",
             intent="finance_reflect",
         )
@@ -96,6 +112,7 @@ def create_app(
             payload,
             settings=request.app.state.settings,
             provider=request.app.state.provider,
+            feedback_store=request.app.state.feedback_store,
             required_domain="pantry",
             intent="pantry_rescue",
         )
@@ -109,6 +126,7 @@ def create_app(
             payload,
             settings=request.app.state.settings,
             provider=request.app.state.provider,
+            feedback_store=request.app.state.feedback_store,
             required_domain="wardrobe",
             intent="closet_decision",
         )

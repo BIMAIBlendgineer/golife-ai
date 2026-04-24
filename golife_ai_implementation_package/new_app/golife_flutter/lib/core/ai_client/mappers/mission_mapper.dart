@@ -9,6 +9,15 @@ DailyMission mapMissionSuggestion(MissionSuggestionDto dto) {
     evidence: dto.evidence,
     uncertainty: dto.uncertainty,
     requiresConfirmation: dto.requiresConfirmation,
+    domainTargets: dto.domainTargets,
+    recommendationType: dto.recommendationType,
+    confidence: dto.confidence,
     trace: dto.trace,
   );
+}
+
+List<DailyMission> mapMissionPlan(MissionPlanDto dto) {
+  return dto.suggestions
+      .map(mapMissionSuggestion)
+      .toList(growable: false);
 }

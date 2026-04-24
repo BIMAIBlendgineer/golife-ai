@@ -79,6 +79,20 @@ class SuggestionResponse(BaseModel):
     trace: dict[str, Any] = Field(default_factory=dict)
 
 
+class EventClassificationRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+
+
+class EventClassificationResponse(BaseModel):
+    domain: Domain
+    event_type: str = Field(min_length=1)
+    confidence: float = Field(ge=0.0, le=1.0)
+    rationale: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
 class TaskRewriteRequest(BaseModel):
     user_id: str = Field(min_length=1)
     task_title: str = Field(min_length=1)
@@ -105,6 +119,8 @@ class MissionFeedbackRequest(BaseModel):
     suggestion_id: str = Field(min_length=1)
     status: FeedbackStatus
     notes: str | None = None
+    domain_targets: list[Domain] = Field(default_factory=list)
+    recommendation_type: RecommendationType | None = None
     trace: dict[str, Any] = Field(default_factory=dict)
 
 

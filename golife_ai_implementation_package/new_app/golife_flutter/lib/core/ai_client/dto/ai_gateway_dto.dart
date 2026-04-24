@@ -6,6 +6,9 @@ class MissionSuggestionDto {
     required this.evidence,
     required this.uncertainty,
     required this.requiresConfirmation,
+    required this.domainTargets,
+    required this.recommendationType,
+    required this.confidence,
     required this.trace,
   });
 
@@ -15,6 +18,9 @@ class MissionSuggestionDto {
   final List<String> evidence;
   final String uncertainty;
   final bool requiresConfirmation;
+  final List<String> domainTargets;
+  final String recommendationType;
+  final double confidence;
   final Map<String, Object?> trace;
 
   MissionSuggestionDto copyWith({
@@ -24,6 +30,9 @@ class MissionSuggestionDto {
     List<String>? evidence,
     String? uncertainty,
     bool? requiresConfirmation,
+    List<String>? domainTargets,
+    String? recommendationType,
+    double? confidence,
     Map<String, Object?>? trace,
   }) {
     return MissionSuggestionDto(
@@ -33,20 +42,18 @@ class MissionSuggestionDto {
       evidence: evidence ?? this.evidence,
       uncertainty: uncertainty ?? this.uncertainty,
       requiresConfirmation: requiresConfirmation ?? this.requiresConfirmation,
+      domainTargets: domainTargets ?? this.domainTargets,
+      recommendationType: recommendationType ?? this.recommendationType,
+      confidence: confidence ?? this.confidence,
       trace: trace ?? this.trace,
     );
   }
 
-  factory MissionSuggestionDto.fromGatewayJson(
-    Map<String, dynamic> responseJson,
-  ) {
-    final rawSuggestions = responseJson['suggestions'] as List<dynamic>? ?? const [];
-    if (rawSuggestions.isEmpty || rawSuggestions.first is! Map) {
-      throw const FormatException('Gateway returned no suggestions.');
-    }
-
-    final suggestion = Map<String, dynamic>.from(rawSuggestions.first as Map);
-    final rawEvidence = suggestion['evidence'] as List<dynamic>? ?? const [];
+  factory MissionSuggestionDto.fromJson(
+    Map<String, dynamic> suggestionJson, {
+    Map<String, Object?> trace = const <String, Object?>{},
+  }) {
+    final rawEvidence = suggestionJson['evidence'] as List<dynamic>? ?? const [];
     final evidence = rawEvidence.map((item) {
       if (item is Map && item['claim'] != null) {
         return item['claim'].toString();
@@ -54,16 +61,140 @@ class MissionSuggestionDto {
       return item.toString();
     }).toList(growable: false);
 
+    final rawDomainTargets =
+        suggestionJson['domain_targets'] as List<dynamic>? ?? const [];
+
     return MissionSuggestionDto(
-      id: (suggestion['suggestion_id'] ?? 'mission-unknown').toString(),
-      title: (suggestion['title'] ?? 'Mission unavailable').toString(),
-      body: (suggestion['body'] ?? 'The gateway did not return a mission body.')
-          .toString(),
+      id: (suggestionJson['suggestion_id'] ?? 'mission-unknown').toString(),
+      title: (suggestionJson['title'] ?? 'Mission unavailable').toString(),
+      body:
+          (suggestionJson['body'] ?? 'The gateway did not return a mission body.')
+              .toString(),
       evidence: evidence,
-      uncertainty: (suggestion['uncertainty'] ?? 'No uncertainty provided.')
+      uncertainty: (suggestionJson['uncertainty'] ?? 'No uncertainty provided.')
           .toString(),
       requiresConfirmation:
-          (suggestion['requires_confirmation'] as bool?) ?? true,
+          (suggestionJson['requires_confirmation'] as bool?) ?? true,
+      domainTargets: rawDomainTargets
+          .map((item) => item.toString())
+          .toList(growable: false),
+      recommendationType:
+          (suggestionJson['recommendation_type'] ?? 'mission').toString(),
+      confidence: _asDouble(suggestionJson['confidence']) ?? 0.5,
+      trace: trace,
+    );
+  }
+}
+
+class MissionPlanDto {
+  const MissionPlanDto({
+    required this.suggestions,
+    required this.trace,
+  });
+
+  final List<MissionSuggestionDto> suggestions;
+  final Map<String, Object?> trace;
+
+  MissionSuggestionDto get primarySuggestion {
+    if (suggestions.isEmpty) {
+      throw const FormatException('Gateway returned no suggestions.');
+    }
+    return suggestions.first;
+  }
+
+  MissionPlanDto mergeTrace(Map<String, Object?> extraTrace) {
+    final mergedTrace = <String, Object?>{
+      ...trace,
+      ...extraTrace,
+    };
+
+    return MissionPlanDto(
+      suggestions: suggestions
+          .map(
+            (suggestion) => suggestion.copyWith(
+              trace: <String, Object?>{
+                ...suggestion.trace,
+                ...extraTrace,
+              },
+            ),
+          )
+          .toList(growable: false),
+      trace: mergedTrace,
+    );
+  }
+
+  factory MissionPlanDto.fromGatewayJson(Map<String, dynamic> responseJson) {
+    final rawSuggestions = responseJson['suggestions'] as List<dynamic>? ?? const [];
+    final trace = _normalizeTrace(
+      Map<String, dynamic>.from(
+        (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+      ),
+    );
+
+    final suggestions = <MissionSuggestionDto>[];
+    for (final item in rawSuggestions) {
+      if (item is! Map) {
+        continue;
+      }
+      suggestions.add(
+        MissionSuggestionDto.fromJson(
+          Map<String, dynamic>.from(item),
+          trace: trace,
+        ),
+      );
+    }
+
+    if (suggestions.isEmpty) {
+      throw const FormatException('Gateway returned no suggestions.');
+    }
+
+    return MissionPlanDto(
+      suggestions: suggestions,
+      trace: trace,
+    );
+  }
+}
+
+class CaptureClassificationDto {
+  const CaptureClassificationDto({
+    required this.domain,
+    required this.eventType,
+    required this.confidence,
+    required this.rationale,
+    required this.trace,
+  });
+
+  final String domain;
+  final String eventType;
+  final double confidence;
+  final String rationale;
+  final Map<String, Object?> trace;
+
+  CaptureClassificationDto copyWith({
+    String? domain,
+    String? eventType,
+    double? confidence,
+    String? rationale,
+    Map<String, Object?>? trace,
+  }) {
+    return CaptureClassificationDto(
+      domain: domain ?? this.domain,
+      eventType: eventType ?? this.eventType,
+      confidence: confidence ?? this.confidence,
+      rationale: rationale ?? this.rationale,
+      trace: trace ?? this.trace,
+    );
+  }
+
+  factory CaptureClassificationDto.fromGatewayJson(
+    Map<String, dynamic> responseJson,
+  ) {
+    return CaptureClassificationDto(
+      domain: (responseJson['domain'] ?? 'task').toString(),
+      eventType: (responseJson['event_type'] ?? 'task_captured').toString(),
+      confidence: _asDouble(responseJson['confidence']) ?? 0.5,
+      rationale:
+          (responseJson['rationale'] ?? 'No rationale was returned.').toString(),
       trace: _normalizeTrace(
         Map<String, dynamic>.from(
           (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
@@ -89,4 +220,11 @@ Object? _normalizeJsonValue(Object? value) {
     return value.map(_normalizeJsonValue).toList(growable: false);
   }
   return value;
+}
+
+double? _asDouble(Object? value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value?.toString() ?? '');
 }

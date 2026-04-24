@@ -23,6 +23,8 @@ class MissionFeedbackStore:
             "suggestion_id": payload.suggestion_id,
             "status": payload.status,
             "notes": payload.notes,
+            "domain_targets": payload.domain_targets,
+            "recommendation_type": payload.recommendation_type,
             "trace": payload.trace,
         }
         with self._lock:
@@ -33,6 +35,31 @@ class MissionFeedbackStore:
     def all(self) -> list[dict[str, object]]:
         with self._lock:
             return list(self._items)
+
+    def summarize(self) -> dict[str, object]:
+        with self._lock:
+            by_suggestion: dict[str, dict[str, int]] = {}
+            by_domain: dict[str, dict[str, int]] = {}
+            totals: dict[str, int] = {}
+
+            for item in self._items:
+                status = str(item.get("status", "unknown"))
+                suggestion_id = str(item.get("suggestion_id", ""))
+                totals[status] = totals.get(status, 0) + 1
+
+                suggestion_stats = by_suggestion.setdefault(suggestion_id, {})
+                suggestion_stats[status] = suggestion_stats.get(status, 0) + 1
+
+                for domain in item.get("domain_targets", []) or []:
+                    domain_name = str(domain)
+                    domain_stats = by_domain.setdefault(domain_name, {})
+                    domain_stats[status] = domain_stats.get(status, 0) + 1
+
+            return {
+                "totals": totals,
+                "by_suggestion": by_suggestion,
+                "by_domain": by_domain,
+            }
 
     def _load(self) -> list[dict[str, object]]:
         if not self._storage_path.exists():

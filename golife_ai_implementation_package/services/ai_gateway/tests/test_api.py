@@ -43,9 +43,10 @@ def test_suggestions_filter_non_ai_events_and_include_trace(client):
     )
     assert response.status_code == 200
     data = response.json()
-    assert 1 <= len(data["suggestions"]) <= 3
+    assert len(data["suggestions"]) == 3
     assert data["trace"]["validate_consent"]["filtered_events_count"] == 1
     assert data["trace"]["generate_candidates"]["mock"] is True
+    assert "feedback_learning" in data["trace"]["nodes"]
     assert data["suggestions"][0]["requires_confirmation"] is True
 
 
@@ -122,6 +123,22 @@ def test_feedback_endpoint_stores_structured_feedback(client):
     assert data["trace"]["status"] == "useful"
 
 
+def test_event_classification_endpoint_routes_capture_text(client):
+    response = client.post(
+        "/v1/events/classify",
+        json={
+            "user_id": "user-1",
+            "text": "Compre cafe y pague 4.50 antes de entrar a trabajar.",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["finance"]},
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["domain"] == "finance"
+    assert data["event_type"] == "expense_logged"
+    assert data["trace"]["classifier"] == "deterministic_capture_router"
+
+
 def test_feedback_store_persists_items(tmp_path):
     store_path = tmp_path / "feedback.json"
     store = MissionFeedbackStore(store_path)
@@ -139,3 +156,35 @@ def test_feedback_store_persists_items(tmp_path):
     items = reloaded_store.all()
     assert len(items) == 1
     assert items[0]["status"] == "useful"
+
+
+def test_feedback_summary_is_visible_in_followup_daily_plan(client):
+    feedback_response = client.post(
+        "/v1/feedback",
+        json={
+            "user_id": "user-1",
+            "suggestion_id": "mock-daily-task-habit",
+            "status": "useful",
+            "domain_targets": ["task", "habit"],
+            "recommendation_type": "mission",
+            "trace": {"screen": "dashboard"},
+        },
+    )
+    assert feedback_response.status_code == 200
+
+    response = client.post(
+        "/v1/missions/daily",
+        json={
+            "user_id": "user-1",
+            "allowed_domains": ["task", "habit"],
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["task", "habit"]},
+            "life_events": [
+                _event("evt-1", "task", "ai_allowed"),
+                _event("evt-2", "habit", "ai_allowed"),
+            ],
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "feedback_learning" in data["trace"]["nodes"]
+    assert data["trace"]["feedback_learning"]["totals"]["useful"] == 1

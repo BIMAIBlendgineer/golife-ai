@@ -9,9 +9,25 @@ import '../privacy/privacy_models.dart';
 import 'dto/ai_gateway_dto.dart';
 
 abstract class AiGatewayClient {
+  Future<MissionPlanDto> fetchDailyPlan({
+    required PrivacySettings privacySettings,
+    required List<LifeEvent> lifeEvents,
+  });
+
   Future<MissionSuggestionDto> fetchDailyMission({
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
+  }) async {
+    final plan = await fetchDailyPlan(
+      privacySettings: privacySettings,
+      lifeEvents: lifeEvents,
+    );
+    return plan.primarySuggestion;
+  }
+
+  Future<CaptureClassificationDto> classifyCapture({
+    required PrivacySettings privacySettings,
+    required String text,
   });
 
   Future<void> submitMissionFeedback({
@@ -19,109 +35,242 @@ abstract class AiGatewayClient {
   });
 }
 
-class MockAiGatewayClient implements AiGatewayClient {
+class MockAiGatewayClient extends AiGatewayClient {
   const MockAiGatewayClient();
 
   @override
-  Future<MissionSuggestionDto> fetchDailyMission({
+  Future<MissionPlanDto> fetchDailyPlan({
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
   }) async {
     final allowedDomains = privacySettings.aiAllowedWireDomains.toSet();
+    final sortedDomains = allowedDomains.toList()..sort();
 
     if (allowedDomains.isEmpty) {
-      return MissionSuggestionDto(
-        id: 'mission-paused',
-        title: 'Copilot paused',
-        body: 'Enable AI on at least one domain to generate a daily mission.',
-        evidence: const ['No domain is currently marked as AI-allowed.'],
-        uncertainty: 'No cross-domain inference was attempted.',
-        requiresConfirmation: true,
-        trace: {
+      return MissionPlanDto(
+        suggestions: [
+          MissionSuggestionDto(
+            id: 'mission-paused',
+            title: 'Copilot paused',
+            body: 'Enable AI on at least one domain to generate daily missions.',
+            evidence: const ['No domain is currently marked as AI-allowed.'],
+            uncertainty: 'No cross-domain inference was attempted.',
+            requiresConfirmation: true,
+            domainTargets: const ['mission'],
+            recommendationType: 'warning',
+            confidence: 0.95,
+            trace: const {
+              'mock': true,
+              'allowedDomains': <String>[],
+            },
+          ),
+        ],
+        trace: const {
           'mock': true,
-          'allowedDomains': const <String>[],
+          'allowedDomains': <String>[],
         },
       );
     }
 
     if (allowedDomains.contains('task') && allowedDomains.contains('habit')) {
-      return MissionSuggestionDto(
-        id: 'mission-task-habit',
-        title: 'Close one task, protect one ritual',
-        body:
-            'Finish the shortest critical task first, then log one low-friction habit so the day ends with traction instead of spillover.',
-        evidence: const [
-          'Tasks and habits are both AI-allowed.',
-          'The life graph already has events in both domains.',
+      return _plan(
+        allowedDomains: sortedDomains,
+        lifeEvents: lifeEvents,
+        suggestions: [
+          _mission(
+            id: 'mission-task-habit',
+            title: 'Close one task, protect one ritual',
+            body:
+                'Finish the shortest critical task first, then log one low-friction habit so the day ends with traction instead of spillover.',
+            evidence: const [
+              'Tasks and habits are both AI-allowed.',
+              'The life graph already has events in both domains.',
+            ],
+            uncertainty:
+                'Mock mission based on consented domains, not a real remote call.',
+            domainTargets: const ['task', 'habit'],
+            confidence: 0.82,
+          ),
+          _mission(
+            id: 'mission-task-focus',
+            title: 'Reduce friction in one important task',
+            body:
+                'Define the next visible step for one task and finish that block before opening another thread.',
+            evidence: const [
+              'Task activity is available for AI.',
+            ],
+            uncertainty: 'Mock mission with local prioritization only.',
+            domainTargets: const ['task'],
+            confidence: 0.74,
+          ),
+          _mission(
+            id: 'mission-habit-recovery',
+            title: 'Keep one recovery habit alive',
+            body:
+                'Protect a 5 to 10 minute habit so the day does not become pure reaction mode.',
+            evidence: const [
+              'Habit continuity is visible in the local graph.',
+            ],
+            uncertainty: 'Mock mission; the final effort still depends on energy.',
+            domainTargets: const ['habit'],
+            confidence: 0.71,
+          ),
         ],
-        uncertainty:
-            'Mock mission based on consented domains, not a real remote call.',
-        requiresConfirmation: true,
-        trace: {
-          'mock': true,
-          'allowedDomains': allowedDomains.toList()..sort(),
-          'eventCount': lifeEvents.length,
-        },
       );
     }
 
     if (allowedDomains.contains('finance') &&
         allowedDomains.contains('pantry')) {
-      return MissionSuggestionDto(
-        id: 'mission-finance-pantry',
-        title: 'Use what is already paid for',
-        body:
-            'Before adding anything to a shopping list, build one meal around an ingredient you already have at home.',
-        evidence: const [
-          'Finance and pantry are both AI-allowed.',
-          'The mission avoids purchase advice and focuses on using existing items.',
+      return _plan(
+        allowedDomains: sortedDomains,
+        lifeEvents: lifeEvents,
+        suggestions: [
+          _mission(
+            id: 'mission-finance-pantry',
+            title: 'Use what is already paid for',
+            body:
+                'Before adding anything to a shopping list, build one meal around an ingredient you already have at home.',
+            evidence: const [
+              'Finance and pantry are both AI-allowed.',
+              'The mission avoids purchase advice and focuses on using existing items.',
+            ],
+            uncertainty:
+                'Mock mission; pantry availability still needs human confirmation.',
+            domainTargets: const ['finance', 'pantry'],
+            confidence: 0.81,
+          ),
+          _mission(
+            id: 'mission-finance-pause',
+            title: 'Pause one avoidable spend',
+            body:
+                'Delay one small non-urgent purchase until you review whether it solves a real need today.',
+            evidence: const [
+              'Finance is AI-allowed.',
+            ],
+            uncertainty:
+                'Mock reflection; this is not financial advice or a universal rule.',
+            domainTargets: const ['finance'],
+            recommendationType: 'reflection',
+            confidence: 0.72,
+          ),
+          _mission(
+            id: 'mission-pantry-rescue',
+            title: 'Rescue one ingredient first',
+            body:
+                'Turn one existing ingredient into a low-effort meal before opening a new buying decision.',
+            evidence: const [
+              'Pantry activity is visible to AI.',
+            ],
+            uncertainty: 'Mock mission; confirm real stock locally first.',
+            domainTargets: const ['pantry'],
+            confidence: 0.7,
+          ),
         ],
-        uncertainty:
-            'Mock mission; pantry availability still needs human confirmation.',
-        requiresConfirmation: true,
-        trace: {
-          'mock': true,
-          'allowedDomains': allowedDomains.toList()..sort(),
-          'eventCount': lifeEvents.length,
-        },
       );
     }
 
     if (allowedDomains.contains('wardrobe')) {
-      return MissionSuggestionDto(
-        id: 'mission-wardrobe',
-        title: 'Compare before buying',
-        body:
-            'Review one outfit you already own before acting on any clothing purchase intention today.',
-        evidence: const [
-          'Wardrobe is AI-allowed.',
-          'The mission keeps the final decision with the user.',
+      return _plan(
+        allowedDomains: sortedDomains,
+        lifeEvents: lifeEvents,
+        suggestions: [
+          _mission(
+            id: 'mission-wardrobe',
+            title: 'Compare before buying',
+            body:
+                'Review one outfit you already own before acting on any clothing purchase intention today.',
+            evidence: const [
+              'Wardrobe is AI-allowed.',
+              'The mission keeps the final decision with the user.',
+            ],
+            uncertainty: 'Mock mission; visual comparison still needs the person.',
+            domainTargets: const ['wardrobe'],
+            recommendationType: 'reflection',
+            confidence: 0.79,
+          ),
+          _mission(
+            id: 'mission-wardrobe-delay',
+            title: 'Delay the decision 24 hours',
+            body:
+                'If the purchase is not solving an immediate gap, wait one day and compare it again with what you already own.',
+            evidence: const [
+              'Wardrobe intent can benefit from a pause.',
+            ],
+            uncertainty: 'Mock mission; the decision remains fully manual.',
+            domainTargets: const ['wardrobe'],
+            recommendationType: 'warning',
+            confidence: 0.72,
+          ),
+          _mission(
+            id: 'mission-wardrobe-outfit',
+            title: 'Try one existing combination first',
+            body:
+                'Build one outfit with a piece you already have before creating a new shopping loop.',
+            evidence: const [
+              'Closet context is available without needing a new purchase.',
+            ],
+            uncertainty: 'Mock mission; still requires a visual check.',
+            domainTargets: const ['wardrobe'],
+            confidence: 0.69,
+          ),
         ],
-        uncertainty: 'Mock mission; visual comparison still needs the person.',
-        requiresConfirmation: true,
-        trace: {
-          'mock': true,
-          'allowedDomains': allowedDomains.toList()..sort(),
-          'eventCount': lifeEvents.length,
-        },
       );
     }
 
-    return MissionSuggestionDto(
-      id: 'mission-generic',
-      title: 'Pick one visible win',
-      body:
-          'Choose the smallest action that clearly reduces friction in one AI-allowed area and review it once it is done.',
-      evidence: const [
-        'At least one domain allows AI.',
+    return _plan(
+      allowedDomains: sortedDomains,
+      lifeEvents: lifeEvents,
+      suggestions: [
+        _mission(
+          id: 'mission-generic',
+          title: 'Pick one visible win',
+          body:
+              'Choose the smallest action that clearly reduces friction in one AI-allowed area and review it once it is done.',
+          evidence: const [
+            'At least one domain allows AI.',
+          ],
+          uncertainty: 'Mock mission with limited cross-domain context.',
+          domainTargets: const ['mission'],
+          confidence: 0.68,
+        ),
+        _mission(
+          id: 'mission-generic-risk',
+          title: 'Prevent one small risk from rolling into tomorrow',
+          body:
+              'Identify one small friction point and take the minimum action that stops it from carrying over.',
+          evidence: const [
+            'The graph has enough local context for a small preventive action.',
+          ],
+          uncertainty: 'Mock mission with partial local context.',
+          domainTargets: const ['mission'],
+          recommendationType: 'warning',
+          confidence: 0.62,
+        ),
+        _mission(
+          id: 'mission-generic-close',
+          title: 'Leave one clear closing signal',
+          body:
+              'Finish one small closing action so tomorrow does not start with the same open loop.',
+          evidence: const [
+            'A small closure often reduces next-day friction.',
+          ],
+          uncertainty: 'Mock mission; the exact action still depends on the day.',
+          domainTargets: const ['mission'],
+          confidence: 0.6,
+        ),
       ],
-      uncertainty: 'Mock mission with limited cross-domain context.',
-      requiresConfirmation: true,
-      trace: {
-        'mock': true,
-        'allowedDomains': allowedDomains.toList()..sort(),
-        'eventCount': lifeEvents.length,
-      },
+    );
+  }
+
+  @override
+  Future<CaptureClassificationDto> classifyCapture({
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    return _classifyCaptureLocally(
+      privacySettings: privacySettings,
+      text: text,
+      trace: const {'mock': true},
     );
   }
 
@@ -131,7 +280,7 @@ class MockAiGatewayClient implements AiGatewayClient {
   }) async {}
 }
 
-class HttpAiGatewayClient implements AiGatewayClient {
+class HttpAiGatewayClient extends AiGatewayClient {
   HttpAiGatewayClient({
     required this.baseUri,
     http.Client? httpClient,
@@ -148,7 +297,7 @@ class HttpAiGatewayClient implements AiGatewayClient {
   final Duration timeout;
 
   @override
-  Future<MissionSuggestionDto> fetchDailyMission({
+  Future<MissionPlanDto> fetchDailyPlan({
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
   }) async {
@@ -196,27 +345,28 @@ class HttpAiGatewayClient implements AiGatewayClient {
           .timeout(timeout);
 
       if (response.statusCode != 200) {
-        return _fallbackMission(
+        return _fallbackPlan(
           privacySettings: privacySettings,
           lifeEvents: lifeEvents,
           reason: 'http_${response.statusCode}',
+          endpoint: '/v1/missions/daily',
           statusCode: response.statusCode,
         );
       }
 
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic>) {
-        return _fallbackMission(
+        return _fallbackPlan(
           privacySettings: privacySettings,
           lifeEvents: lifeEvents,
           reason: 'invalid_json_shape',
+          endpoint: '/v1/missions/daily',
         );
       }
 
-      final mission = MissionSuggestionDto.fromGatewayJson(decoded);
-      return mission.copyWith(
-        trace: {
-          ...mission.trace,
+      final plan = MissionPlanDto.fromGatewayJson(decoded);
+      return plan.mergeTrace(
+        <String, Object?>{
           'remote': true,
           'baseUrl': baseUri.toString(),
           'endpoint': '/v1/missions/daily',
@@ -226,21 +376,98 @@ class HttpAiGatewayClient implements AiGatewayClient {
         },
       );
     } on TimeoutException {
-      return _fallbackMission(
+      return _fallbackPlan(
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
         reason: 'timeout',
+        endpoint: '/v1/missions/daily',
       );
     } on FormatException {
-      return _fallbackMission(
+      return _fallbackPlan(
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
         reason: 'invalid_json',
+        endpoint: '/v1/missions/daily',
       );
     } catch (error) {
-      return _fallbackMission(
+      return _fallbackPlan(
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
+        reason: error.runtimeType.toString(),
+        endpoint: '/v1/missions/daily',
+      );
+    }
+  }
+
+  @override
+  Future<CaptureClassificationDto> classifyCapture({
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    final payload = {
+      'user_id': userId,
+      'text': text,
+      'privacy_settings': {
+        'ai_enabled': privacySettings.aiEnabled,
+        'allowed_domains': privacySettings.aiAllowedWireDomains,
+        'allow_cross_domain_patterns':
+            privacySettings.aiAllowedWireDomains.length > 1,
+      },
+    };
+
+    try {
+      final response = await _httpClient
+          .post(
+            _endpoint('/v1/events/classify'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        return _fallbackClassification(
+          privacySettings: privacySettings,
+          text: text,
+          reason: 'http_${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return _fallbackClassification(
+          privacySettings: privacySettings,
+          text: text,
+          reason: 'invalid_json_shape',
+        );
+      }
+
+      final classification = CaptureClassificationDto.fromGatewayJson(decoded);
+      return classification.copyWith(
+        trace: <String, Object?>{
+          ...classification.trace,
+          'remote': true,
+          'baseUrl': baseUri.toString(),
+          'endpoint': '/v1/events/classify',
+          'statusCode': response.statusCode,
+        },
+      );
+    } on TimeoutException {
+      return _fallbackClassification(
+        privacySettings: privacySettings,
+        text: text,
+        reason: 'timeout',
+      );
+    } on FormatException {
+      return _fallbackClassification(
+        privacySettings: privacySettings,
+        text: text,
+        reason: 'invalid_json',
+      );
+    } catch (error) {
+      return _fallbackClassification(
+        privacySettings: privacySettings,
+        text: text,
         reason: error.runtimeType.toString(),
       );
     }
@@ -255,6 +482,8 @@ class HttpAiGatewayClient implements AiGatewayClient {
       'suggestion_id': feedback.missionId,
       'status': feedback.status.storageKey,
       'notes': feedback.notes,
+      'domain_targets': feedback.domainTargets,
+      'recommendation_type': feedback.recommendationType,
       'trace': feedback.trace,
     };
 
@@ -273,24 +502,46 @@ class HttpAiGatewayClient implements AiGatewayClient {
     }
   }
 
-  Future<MissionSuggestionDto> _fallbackMission({
+  Future<MissionPlanDto> _fallbackPlan({
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
     required String reason,
+    required String endpoint,
     int? statusCode,
   }) async {
-    final fallback = await _fallbackClient.fetchDailyMission(
+    final fallback = await _fallbackClient.fetchDailyPlan(
       privacySettings: privacySettings,
       lifeEvents: lifeEvents,
     );
+    return fallback.mergeTrace(
+      <String, Object?>{
+        'clientFallback': true,
+        'fallbackReason': reason,
+        'statusCode': statusCode,
+        'baseUrl': baseUri.toString(),
+        'endpoint': endpoint,
+      },
+    );
+  }
+
+  Future<CaptureClassificationDto> _fallbackClassification({
+    required PrivacySettings privacySettings,
+    required String text,
+    required String reason,
+    int? statusCode,
+  }) async {
+    final fallback = await _fallbackClient.classifyCapture(
+      privacySettings: privacySettings,
+      text: text,
+    );
     return fallback.copyWith(
-      trace: {
+      trace: <String, Object?>{
         ...fallback.trace,
         'clientFallback': true,
         'fallbackReason': reason,
         'statusCode': statusCode,
         'baseUrl': baseUri.toString(),
-        'endpoint': '/v1/missions/daily',
+        'endpoint': '/v1/events/classify',
       },
     );
   }
@@ -301,6 +552,184 @@ class HttpAiGatewayClient implements AiGatewayClient {
         : baseUri.toString();
     return Uri.parse('$normalizedBase$path');
   }
+}
+
+MissionPlanDto _plan({
+  required List<String> allowedDomains,
+  required List<LifeEvent> lifeEvents,
+  required List<MissionSuggestionDto> suggestions,
+}) {
+  final trace = <String, Object?>{
+    'mock': true,
+    'allowedDomains': allowedDomains,
+    'eventCount': lifeEvents.length,
+    'planSize': suggestions.length,
+  };
+  return MissionPlanDto(
+    suggestions: suggestions
+        .map((suggestion) => suggestion.copyWith(trace: trace))
+        .toList(growable: false),
+    trace: trace,
+  );
+}
+
+MissionSuggestionDto _mission({
+  required String id,
+  required String title,
+  required String body,
+  required List<String> evidence,
+  required String uncertainty,
+  required List<String> domainTargets,
+  required double confidence,
+  String recommendationType = 'mission',
+}) {
+  return MissionSuggestionDto(
+    id: id,
+    title: title,
+    body: body,
+    evidence: evidence,
+    uncertainty: uncertainty,
+    requiresConfirmation: true,
+    domainTargets: domainTargets,
+    recommendationType: recommendationType,
+    confidence: confidence,
+    trace: const <String, Object?>{},
+  );
+}
+
+CaptureClassificationDto _classifyCaptureLocally({
+  required PrivacySettings privacySettings,
+  required String text,
+  Map<String, Object?> trace = const <String, Object?>{},
+}) {
+  final lowered = text.toLowerCase();
+
+  CaptureClassificationDto response({
+    required String domain,
+    required String eventType,
+    required double confidence,
+    required String rationale,
+    List<String> matchedKeywords = const <String>[],
+  }) {
+    return CaptureClassificationDto(
+      domain: domain,
+      eventType: eventType,
+      confidence: confidence,
+      rationale: rationale,
+      trace: <String, Object?>{
+        ...trace,
+        'classifier': 'deterministic_capture_router',
+        'aiEnabled': privacySettings.aiEnabled,
+        'matchedKeywords': matchedKeywords,
+      },
+    );
+  }
+
+  final rules = <({
+    String domain,
+    String eventType,
+    double confidence,
+    List<String> keywords,
+    String rationale,
+  })>[
+    (
+      domain: 'finance',
+      eventType: 'expense_logged',
+      confidence: 0.84,
+      keywords: const <String>[
+        r'$',
+        'eur',
+        'gaste',
+        'compre',
+        'coffee',
+        'pague',
+        'paid',
+        'bought',
+      ],
+      rationale: 'Detected money and purchase language.',
+    ),
+    (
+      domain: 'pantry',
+      eventType: 'ingredient_flagged',
+      confidence: 0.82,
+      keywords: const <String>[
+        'vence',
+        'expires',
+        'fridge',
+        'pantry',
+        'spinach',
+        'lechuga',
+        'espinaca',
+      ],
+      rationale: 'Detected pantry or expiry language.',
+    ),
+    (
+      domain: 'wardrobe',
+      eventType: 'purchase_intention',
+      confidence: 0.8,
+      keywords: const <String>[
+        'jacket',
+        'shirt',
+        'ropa',
+        'chaqueta',
+        'closet',
+        'armario',
+        'outfit',
+      ],
+      rationale: 'Detected wardrobe or clothing intent.',
+    ),
+    (
+      domain: 'habit',
+      eventType: 'habit_logged',
+      confidence: 0.77,
+      keywords: const <String>[
+        'habit',
+        'streak',
+        'meditate',
+        'walked',
+        'camine',
+        'sleep',
+        'water',
+      ],
+      rationale: 'Detected habit continuity language.',
+    ),
+    (
+      domain: 'week',
+      eventType: 'week_note_captured',
+      confidence: 0.74,
+      keywords: const <String>[
+        'week',
+        'semana',
+        'monday',
+        'martes',
+        'viernes',
+        'calendar',
+      ],
+      rationale: 'Detected planning or weekly framing.',
+    ),
+  ];
+
+  for (final rule in rules) {
+    final matchedKeywords = rule.keywords
+        .where((keyword) => lowered.contains(keyword))
+        .toList(growable: false);
+    if (matchedKeywords.isNotEmpty) {
+      return response(
+        domain: rule.domain,
+        eventType: rule.eventType,
+        confidence: rule.confidence,
+        rationale: rule.rationale,
+        matchedKeywords: matchedKeywords,
+      );
+    }
+  }
+
+  return response(
+    domain: 'task',
+    eventType: 'task_captured',
+    confidence: 0.62,
+    rationale: 'Defaulted to task because no stronger domain signal was found.',
+  );
 }
 
 List<Map<String, Object?>> _buildDomainSummaries({
