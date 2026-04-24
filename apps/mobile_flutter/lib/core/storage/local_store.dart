@@ -9,6 +9,7 @@ import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
+import '../runtime/app_runtime_config.dart';
 
 abstract class LocalStore {
   Future<PrivacySettings> loadPrivacySettings();
@@ -16,6 +17,9 @@ abstract class LocalStore {
 
   Future<List<LifeEvent>> loadLifeEvents();
   Future<void> saveLifeEvents(List<LifeEvent> events);
+
+  Future<AppRuntimeConfig?> loadRuntimeConfig() async => null;
+  Future<void> saveRuntimeConfig(AppRuntimeConfig config) async {}
 
   Future<List<MissionFeedback>> loadMissionFeedback();
   Future<void> saveMissionFeedback(List<MissionFeedback> feedbackItems);

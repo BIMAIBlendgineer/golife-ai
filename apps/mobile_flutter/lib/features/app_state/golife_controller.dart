@@ -7,6 +7,8 @@ import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
 import '../../core/lifegraph/lifegraph_repository.dart';
 import '../../core/privacy/privacy_models.dart';
+import '../../core/runtime/app_runtime_config.dart';
+import '../../core/runtime/runtime_config_client.dart';
 import '../../core/storage/local_store.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
@@ -23,19 +25,23 @@ class GoLifeController extends ChangeNotifier {
     required LocalStore localStore,
     required AiGatewayClient aiGatewayClient,
     required LifeGraphRepository lifeGraphRepository,
+    RuntimeConfigClient? runtimeConfigClient,
   })  : _localStore = localStore,
         _aiGatewayClient = aiGatewayClient,
-        _lifeGraphRepository = lifeGraphRepository;
+        _lifeGraphRepository = lifeGraphRepository,
+        _runtimeConfigClient = runtimeConfigClient;
 
   final LocalStore _localStore;
   final AiGatewayClient _aiGatewayClient;
   final LifeGraphRepository _lifeGraphRepository;
+  final RuntimeConfigClient? _runtimeConfigClient;
 
   bool _isReady = false;
   PrivacySettings _privacySettings = PrivacySettings.defaults();
   List<DailyMission> _dailyMissions = <DailyMission>[];
   List<DailyRisk> _cachedDailyRisks = <DailyRisk>[];
   List<MissionFeedback> _missionFeedback = <MissionFeedback>[];
+  AppRuntimeConfig? _runtimeConfig;
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -101,6 +107,7 @@ class GoLifeController extends ChangeNotifier {
       List<MissionFeedback>.unmodifiable(_missionFeedback);
   List<DailyRisk> get dailyRisks =>
       List<DailyRisk>.unmodifiable(_cachedDailyRisks);
+  AppRuntimeConfig? get runtimeConfig => _runtimeConfig;
   int get totalEventCount => lifeEvents.length;
   int get aiEligibleEventCount =>
       lifeEvents.where(_eventEligibleForAi).length;
@@ -121,6 +128,47 @@ class GoLifeController extends ChangeNotifier {
   String get latestFeedbackLabel =>
       latestMissionFeedback?.status.label ?? 'No feedback yet';
 
+  String get gatewayStatusLabel {
+    final trace = dailyMission?.trace ?? const <String, Object?>{};
+    if (trace['remote'] == true) {
+      return 'Gateway live';
+    }
+    final reason = (trace['fallbackReason'] ?? '').toString();
+    if (reason == 'no_connection') {
+      return 'No connection';
+    }
+    if (reason == 'ai_temporarily_unavailable') {
+      return 'AI temporarily unavailable';
+    }
+    if (trace['clientFallback'] == true) {
+      return 'Using local fallback';
+    }
+    if (trace['mock'] == true) {
+      return 'Using local fallback';
+    }
+    return 'Gateway live';
+  }
+
+  String? get gatewayStatusMessage {
+    final trace = dailyMission?.trace ?? const <String, Object?>{};
+    final reason = (trace['fallbackReason'] ?? '').toString();
+    final config = _runtimeConfig ??
+        AppRuntimeConfig.defaults(
+          gatewayBaseUrl: _defaultGatewayBaseUrl,
+        );
+
+    if (reason == 'no_connection') {
+      return config.messageFor('offline');
+    }
+    if (reason == 'ai_temporarily_unavailable') {
+      return config.messageFor('ai_temporarily_unavailable');
+    }
+    if (trace['clientFallback'] == true || trace['mock'] == true) {
+      return config.messageFor('gateway_degraded');
+    }
+    return null;
+  }
+
   int eventCountFor(String domain) {
     return _lifeGraphRepository.eventsForDomain(domain).length;
   }
@@ -133,13 +181,41 @@ class GoLifeController extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     _privacySettings = await _localStore.loadPrivacySettings();
+    _runtimeConfig = await _localStore.loadRuntimeConfig();
+    _applyRuntimeConfig();
     await _lifeGraphRepository.bootstrap();
     _dailyMissions = await _localStore.loadDailyMissions();
     _cachedDailyRisks = await _localStore.loadDailyRisks();
     _missionFeedback = await _localStore.loadMissionFeedback();
     await _refreshMissionPlan();
+    await refreshRuntimeConfig(refreshMissionPlan: true, notify: false);
     _isReady = true;
     notifyListeners();
+  }
+
+  Future<void> refreshRuntimeConfig({
+    bool refreshMissionPlan = false,
+    bool notify = true,
+  }) async {
+    final client = _runtimeConfigClient;
+    if (client == null) {
+      return;
+    }
+
+    final config = await client.fetchRuntimeConfig();
+    if (config == null) {
+      return;
+    }
+
+    _runtimeConfig = config;
+    await _localStore.saveRuntimeConfig(config);
+    _applyRuntimeConfig();
+    if (refreshMissionPlan) {
+      await _refreshMissionPlan();
+    }
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   Future<void> updatePermission(
@@ -293,6 +369,25 @@ class GoLifeController extends ChangeNotifier {
     );
     await _localStore.saveDailyMissions(_dailyMissions);
     await _localStore.saveDailyRisks(_cachedDailyRisks);
+  }
+
+  void _applyRuntimeConfig() {
+    final config = _runtimeConfig;
+    if (config == null) {
+      return;
+    }
+    if (_aiGatewayClient is HttpAiGatewayClient) {
+      (_aiGatewayClient).updateBaseUri(
+        Uri.parse(config.gatewayBaseUrl),
+      );
+    }
+  }
+
+  String get _defaultGatewayBaseUrl {
+    if (_aiGatewayClient is HttpAiGatewayClient) {
+      return (_aiGatewayClient).baseUri.toString();
+    }
+    return 'http://127.0.0.1:8000';
   }
 
   Future<void> _submitMissionFeedback(

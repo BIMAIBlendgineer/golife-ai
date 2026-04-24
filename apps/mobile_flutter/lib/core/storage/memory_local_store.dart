@@ -9,6 +9,7 @@ import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
+import '../runtime/app_runtime_config.dart';
 import 'local_store.dart';
 
 class MemoryLocalStore implements LocalStore {
@@ -23,6 +24,7 @@ class MemoryLocalStore implements LocalStore {
   final List<PantryItem> _pantryItems = <PantryItem>[];
   final List<PurchaseIntention> _purchaseIntentions = <PurchaseIntention>[];
   final List<WeekPlan> _weekPlans = <WeekPlan>[];
+  AppRuntimeConfig? _runtimeConfig;
 
   @override
   Future<PrivacySettings> loadPrivacySettings() async {
@@ -44,6 +46,16 @@ class MemoryLocalStore implements LocalStore {
     _events
       ..clear()
       ..addAll(events);
+  }
+
+  @override
+  Future<AppRuntimeConfig?> loadRuntimeConfig() async {
+    return _runtimeConfig;
+  }
+
+  @override
+  Future<void> saveRuntimeConfig(AppRuntimeConfig config) async {
+    _runtimeConfig = config;
   }
 
   @override

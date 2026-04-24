@@ -1,7 +1,21 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from uuid import uuid4
+
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.crypto import SecretBox
+from app.openrouter_client import fetch_openrouter_model_catalog
 from app.repository import OperationalRepository
+from app.routing import (
+    build_mobile_runtime_config,
+    build_model_history,
+    capability_for_endpoint,
+    rank_models_for_capability,
+    utcnow,
+)
 from app.schemas import (
     AIInvocationRecord,
     AdminHealth,
@@ -9,9 +23,21 @@ from app.schemas import (
     FeatureFlag,
     FeatureFlagPatch,
     FeedbackAuditUpsert,
+    InternalRoutingConfig,
     MissionAuditUpsert,
+    MobileRuntimeConfig,
+    ModelCatalogEntry,
+    ModelSelectionSnapshot,
     ModelSettingsSnapshot,
     ModelSettingsUpsert,
+    OpenRouterApiKeyCreate,
+    OpenRouterApiKeyPatch,
+    OpenRouterApiKeyRecord,
+    OpenRouterKeyEventRecord,
+    OpenRouterKeyEventUpsert,
+    RoutingCapability,
+    RoutingProfile,
+    RoutingProfilePatch,
     SafetyAuditUpsert,
     UsageEventRecord,
 )
@@ -28,10 +54,12 @@ def create_app(
         resolved_settings.resolved_operational_database,
         seed_demo_data=resolved_settings.seed_demo_data,
     )
+    secret_box = SecretBox(resolved_settings.openrouter_keys_master_key)
 
-    app = FastAPI(title="GoLife Web Backend", version="0.1.0")
+    app = FastAPI(title="GoLife Web Backend", version="0.2.0")
     app.state.settings = resolved_settings
     app.state.repository = resolved_repository
+    app.state.secret_box = secret_box
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved_settings.cors_origins,
@@ -51,9 +79,94 @@ def create_app(
         if x_ingestion_token != resolved_settings.ingestion_token:
             raise HTTPException(status_code=401, detail="Invalid ingestion token.")
 
+    def require_internal_service(
+        x_internal_service_token: str | None = Header(default=None),
+    ) -> None:
+        if x_internal_service_token != resolved_settings.internal_service_token:
+            raise HTTPException(status_code=401, detail="Invalid internal service token.")
+
+    def feature_flags_map() -> dict[str, bool]:
+        return {
+            flag.key: flag.enabled
+            for flag in resolved_repository.list_feature_flags()
+        }
+
+    def refresh_selection_snapshots() -> list[ModelSelectionSnapshot]:
+        profiles = [profile for profile in resolved_repository.list_routing_profiles() if profile.enabled]
+        catalog = resolved_repository.list_model_catalog()
+        generated: list[ModelSelectionSnapshot] = []
+        for profile in profiles:
+            history = build_model_history(
+                resolved_repository.list_ai_invocations_for_capability(profile.capability)
+            )
+            generated.extend(
+                rank_models_for_capability(
+                    capability=profile.capability,
+                    profile=profile,
+                    models=catalog,
+                    invocation_history=history,
+                )
+            )
+        resolved_repository.replace_selection_snapshots(generated)
+        return generated
+
+    def ensure_selection_snapshots() -> list[ModelSelectionSnapshot]:
+        snapshots = resolved_repository.list_selection_snapshots()
+        now = utcnow()
+        if not snapshots:
+            return refresh_selection_snapshots()
+        if any(snapshot.expires_at <= now for snapshot in snapshots):
+            return refresh_selection_snapshots()
+        return snapshots
+
+    def build_internal_config(*, source: str = "live") -> InternalRoutingConfig:
+        snapshots = ensure_selection_snapshots()
+        active_keys = []
+        for item in resolved_repository.get_active_key_materials():
+            active_keys.append(
+                {
+                    "key_id": item["key_id"],
+                    "label": item["label"],
+                    "secret": secret_box.decrypt(str(item["secret_ciphertext"])),
+                    "priority": item["priority"],
+                    "status": item["status"],
+                }
+            )
+        return InternalRoutingConfig(
+            config_source=source,
+            generated_at=utcnow(),
+            openrouter_keys=active_keys,
+            routing_profiles=resolved_repository.list_routing_profiles(),
+            selection_snapshots=snapshots,
+            feature_flags=feature_flags_map(),
+        )
+
+    def build_runtime_config() -> MobileRuntimeConfig:
+        dashboard = resolved_repository.dashboard()
+        snapshots = ensure_selection_snapshots()
+        ai_status = {
+            "active_provider": resolved_repository.model_settings().active_provider,
+            "active_key_count": dashboard.active_key_count,
+            "disabled_key_count": dashboard.disabled_key_count,
+            "routing_snapshot_age_seconds": dashboard.routing_snapshot_age_seconds,
+            "selected_capabilities": sorted(
+                {snapshot.capability for snapshot in snapshots}
+            ),
+        }
+        return build_mobile_runtime_config(
+            gateway_base_url=resolved_settings.mobile_gateway_base_url,
+            ttl_seconds=resolved_settings.mobile_runtime_config_ttl_seconds,
+            feature_flags=feature_flags_map(),
+            ai_status=ai_status,
+        )
+
     @app.get("/health", response_model=AdminHealth)
     async def health() -> AdminHealth:
         return resolved_repository.health()
+
+    @app.get("/public/mobile/runtime-config", response_model=MobileRuntimeConfig)
+    async def public_mobile_runtime_config() -> MobileRuntimeConfig:
+        return build_runtime_config()
 
     @app.get("/admin/dashboard", response_model=DashboardMetrics)
     async def dashboard(_: None = Depends(require_admin)) -> DashboardMetrics:
@@ -116,6 +229,136 @@ def create_app(
             for item in resolved_repository.list_support_requests()
         ]
 
+    @app.get("/admin/openrouter/keys", response_model=list[OpenRouterApiKeyRecord])
+    async def list_openrouter_keys(_: None = Depends(require_admin)) -> list[OpenRouterApiKeyRecord]:
+        return resolved_repository.list_openrouter_keys()
+
+    @app.post("/admin/openrouter/keys", response_model=OpenRouterApiKeyRecord)
+    async def create_openrouter_key(
+        payload: OpenRouterApiKeyCreate,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterApiKeyRecord:
+        created = resolved_repository.create_openrouter_key(
+            payload,
+            secret_ciphertext=secret_box.encrypt(payload.secret),
+            secret_last4=SecretBox.secret_last4(payload.secret),
+            key_id=f"or-key-{uuid4()}",
+        )
+        refresh_selection_snapshots()
+        resolved_repository.record_openrouter_key_event(
+            OpenRouterKeyEventUpsert(
+                event_id=f"key-event-{uuid4()}",
+                key_id=created.key_id,
+                key_label=created.label,
+                event_type="created",
+                notes="Key created from admin.",
+                created_at=utcnow(),
+            )
+        )
+        return created
+
+    @app.patch("/admin/openrouter/keys/{key_id}", response_model=OpenRouterApiKeyRecord)
+    async def patch_openrouter_key(
+        key_id: str,
+        payload: OpenRouterApiKeyPatch,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterApiKeyRecord:
+        updated = resolved_repository.patch_openrouter_key(
+            key_id,
+            payload,
+            secret_ciphertext=(
+                secret_box.encrypt(payload.secret) if payload.secret is not None else None
+            ),
+            secret_last4=(
+                SecretBox.secret_last4(payload.secret) if payload.secret is not None else None
+            ),
+        )
+        if updated is None:
+            raise HTTPException(status_code=404, detail="OpenRouter key not found.")
+        refresh_selection_snapshots()
+        return updated
+
+    @app.post("/admin/openrouter/keys/{key_id}/disable", response_model=OpenRouterApiKeyRecord)
+    async def disable_openrouter_key(
+        key_id: str,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterApiKeyRecord:
+        updated = resolved_repository.disable_openrouter_key(key_id)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="OpenRouter key not found.")
+        resolved_repository.record_openrouter_key_event(
+            OpenRouterKeyEventUpsert(
+                event_id=f"key-event-{uuid4()}",
+                key_id=updated.key_id,
+                key_label=updated.label,
+                event_type="disabled",
+                notes="Key disabled from admin.",
+                created_at=utcnow(),
+            )
+        )
+        refresh_selection_snapshots()
+        return updated
+
+    @app.get("/admin/openrouter/key-events", response_model=list[OpenRouterKeyEventRecord])
+    async def list_openrouter_key_events(
+        _: None = Depends(require_admin),
+    ) -> list[OpenRouterKeyEventRecord]:
+        return resolved_repository.list_openrouter_key_events()
+
+    @app.get("/admin/routing-profiles", response_model=list[RoutingProfile])
+    async def list_routing_profiles(_: None = Depends(require_admin)) -> list[RoutingProfile]:
+        return resolved_repository.list_routing_profiles()
+
+    @app.patch("/admin/routing-profiles/{capability}", response_model=RoutingProfile)
+    async def patch_routing_profile(
+        capability: RoutingCapability,
+        payload: RoutingProfilePatch,
+        _: None = Depends(require_admin),
+    ) -> RoutingProfile:
+        updated = resolved_repository.update_routing_profile(capability, payload)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="Routing profile not found.")
+        refresh_selection_snapshots()
+        return updated
+
+    @app.get("/admin/model-catalog", response_model=list[ModelCatalogEntry])
+    async def list_model_catalog(_: None = Depends(require_admin)) -> list[ModelCatalogEntry]:
+        return resolved_repository.list_model_catalog()
+
+    @app.post("/admin/model-catalog/refresh", response_model=list[ModelCatalogEntry])
+    async def refresh_model_catalog(_: None = Depends(require_admin)) -> list[ModelCatalogEntry]:
+        entries = await fetch_openrouter_model_catalog(resolved_settings.openrouter_base_url)
+        resolved_repository.replace_model_catalog(entries)
+        refresh_selection_snapshots()
+        return resolved_repository.list_model_catalog()
+
+    @app.get("/admin/model-selections", response_model=list[ModelSelectionSnapshot])
+    async def list_model_selections(
+        _: None = Depends(require_admin),
+    ) -> list[ModelSelectionSnapshot]:
+        return ensure_selection_snapshots()
+
+    @app.get("/internal/ai-routing/config", response_model=InternalRoutingConfig)
+    async def internal_ai_routing_config(
+        _: None = Depends(require_internal_service),
+    ) -> InternalRoutingConfig:
+        return build_internal_config(source="live")
+
+    @app.post("/internal/ai-routing/selection-refresh", response_model=list[ModelSelectionSnapshot])
+    async def internal_selection_refresh(
+        _: None = Depends(require_internal_service),
+    ) -> list[ModelSelectionSnapshot]:
+        return refresh_selection_snapshots()
+
+    @app.post("/internal/openrouter-key-events", status_code=202)
+    async def record_openrouter_key_event(
+        payload: OpenRouterKeyEventUpsert,
+        _: None = Depends(require_internal_service),
+    ) -> dict[str, bool]:
+        resolved_repository.record_openrouter_key_event(payload)
+        refresh_selection_snapshots()
+        return {"accepted": True}
+
     @app.post("/internal/usage-events", status_code=202)
     async def record_usage_event(
         payload: UsageEventRecord,
@@ -130,6 +373,9 @@ def create_app(
         _: None = Depends(require_ingestion),
     ) -> dict[str, bool]:
         resolved_repository.record_ai_invocation(payload)
+        capability = capability_for_endpoint(payload.endpoint)
+        if capability is not None:
+            refresh_selection_snapshots()
         return {"accepted": True}
 
     @app.post("/internal/mission-audits", status_code=202)
@@ -170,3 +416,4 @@ def create_app(
 
 
 app = create_app()
+

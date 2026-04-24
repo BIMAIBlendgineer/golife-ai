@@ -13,6 +13,7 @@ import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
+import '../runtime/app_runtime_config.dart';
 import 'local_store.dart';
 
 class SharedPrefsLocalStore implements LocalStore {
@@ -29,6 +30,7 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _pantryItemsKey = 'golife.pantry_items';
   static const _purchaseIntentionsKey = 'golife.purchase_intentions';
   static const _weekPlansKey = 'golife.week_plans';
+  static const _runtimeConfigKey = 'golife.runtime_config';
 
   @override
   Future<PrivacySettings> loadPrivacySettings() async {
@@ -62,6 +64,24 @@ class SharedPrefsLocalStore implements LocalStore {
       _lifeEventsKey,
       events.map((event) => event.toJson()).toList(growable: false),
     );
+  }
+
+  @override
+  Future<AppRuntimeConfig?> loadRuntimeConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawJson = prefs.getString(_runtimeConfigKey);
+    if (rawJson == null || rawJson.isEmpty) {
+      return null;
+    }
+    return AppRuntimeConfig.fromJson(
+      Map<String, dynamic>.from(jsonDecode(rawJson) as Map),
+    );
+  }
+
+  @override
+  Future<void> saveRuntimeConfig(AppRuntimeConfig config) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_runtimeConfigKey, jsonEncode(config.toJson()));
   }
 
   @override

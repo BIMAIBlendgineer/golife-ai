@@ -102,6 +102,7 @@ def _real_provider_settings(tmp_path) -> Settings:
         ai_gateway_enable_mock=False,
         llm_provider="openrouter",
         openrouter_api_key="test-key",
+        routing_control_enabled=False,
         feedback_store_path=str(tmp_path / "mission_feedback.json"),
     )
 
@@ -144,7 +145,11 @@ def test_openrouter_wraps_json_array_payloads(monkeypatch):
     monkeypatch.setattr("app.providers.openrouter.httpx.AsyncClient", FakeAsyncClient)
 
     provider = OpenRouterProvider(
-        Settings(ai_gateway_enable_mock=False, openrouter_api_key="test-key")
+        Settings(
+            ai_gateway_enable_mock=False,
+            openrouter_api_key="test-key",
+            routing_control_enabled=False,
+        )
     )
     payload = asyncio.run(
         provider.complete_json(
@@ -190,7 +195,11 @@ def test_openrouter_retries_after_invalid_json(monkeypatch):
     monkeypatch.setattr("app.providers.openrouter.httpx.AsyncClient", FakeAsyncClient)
 
     provider = OpenRouterProvider(
-        Settings(ai_gateway_enable_mock=False, openrouter_api_key="test-key")
+        Settings(
+            ai_gateway_enable_mock=False,
+            openrouter_api_key="test-key",
+            routing_control_enabled=False,
+        )
     )
     payload = asyncio.run(
         provider.complete_json(

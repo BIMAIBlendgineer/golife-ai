@@ -75,3 +75,21 @@ class NoopOperationalEventsClient(OperationalEventsClient):
             timeout_seconds=0.0,
             max_retries=0,
         )
+
+    async def record_usage_event(self, payload: dict[str, Any]) -> bool:
+        return False
+
+    async def record_ai_invocation(self, payload: dict[str, Any]) -> bool:
+        return False
+
+    async def record_mission_audits(self, payload: list[dict[str, Any]]) -> bool:
+        return False
+
+    async def record_feedback_audit(self, payload: dict[str, Any]) -> bool:
+        return False
+
+    async def record_safety_events(self, payload: list[dict[str, Any]]) -> bool:
+        return False
+
+    async def record_model_settings(self, payload: dict[str, Any]) -> bool:
+        return False

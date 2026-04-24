@@ -4,6 +4,7 @@ from app.main import create_app
 from app.providers.factory import build_provider
 from app.feedback_store import MissionFeedbackStore
 from app.providers.mock import MockLLMProvider
+from app.providers.base import LLMProvider
 from app.schemas import MissionFeedbackRequest
 from app.settings import Settings
 
@@ -53,6 +54,33 @@ class FakeOperationalClient:
     async def record_model_settings(self, payload: dict) -> bool:
         self.model_settings.append(payload)
         return True
+
+
+class SemanticClassificationProvider(LLMProvider):
+    provider_name = "semantic-openrouter"
+
+    async def complete_json(
+        self,
+        *,
+        system_prompt: str,
+        user_payload: dict,
+        response_schema: dict | None = None,
+        model: str | None = None,
+        temperature: float = 0.0,
+    ):
+        return {
+            "domain": "pantry",
+            "event_type": "ingredient_flagged",
+            "confidence": 0.91,
+            "rationale": "Detected pantry expiry language.",
+            "_provider_meta": {
+                "provider": self.provider_name,
+                "model": "openai/gpt-4.1-mini",
+            },
+        }
+
+    async def runtime_flags(self) -> dict[str, bool]:
+        return {"semantic_classifier": True}
 
 
 def test_health_reports_mock_mode(client):
@@ -137,6 +165,7 @@ def test_provider_factory_falls_back_to_mock_without_api_key():
             ai_gateway_enable_mock=False,
             llm_provider="openrouter",
             openrouter_api_key=None,
+            routing_control_enabled=False,
         )
     )
     assert isinstance(provider, MockLLMProvider)
@@ -174,6 +203,35 @@ def test_event_classification_endpoint_routes_capture_text(client):
     assert data["domain"] == "finance"
     assert data["event_type"] == "expense_logged"
     assert data["trace"]["classifier"] == "deterministic_capture_router"
+
+
+def test_event_classification_uses_semantic_provider_when_flag_enabled(tmp_path):
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            routing_control_enabled=False,
+            openrouter_api_key="test-key",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=SemanticClassificationProvider(),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/classify",
+        json={
+            "user_id": "user-1",
+            "text": "The spinach expires tomorrow.",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["pantry"]},
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["domain"] == "pantry"
+    assert data["event_type"] == "ingredient_flagged"
+    assert data["trace"]["classifier"] == "semantic_openrouter"
 
 
 def test_feedback_store_persists_items(tmp_path):

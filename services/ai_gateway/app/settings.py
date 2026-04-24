@@ -17,12 +17,25 @@ class Settings(BaseSettings):
     operational_backend_ingestion_token: str = "golife-ingest-dev"
     operational_backend_timeout_seconds: float = 2.0
     operational_backend_max_retries: int = 2
+    routing_control_enabled: bool = True
+    routing_backend_base_url: str = "http://127.0.0.1:8010"
+    routing_backend_internal_token: str = "golife-internal-dev"
+    routing_config_timeout_seconds: float = 3.0
+    routing_config_cache_path: str = ".runtime/ai_routing_config.json"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
     def resolved_mock_mode(self) -> bool:
-        return bool(self.ai_gateway_enable_mock or not self.openrouter_api_key)
+        has_local_or_remote_openrouter = bool(
+            self.openrouter_api_key
+            or (
+                self.routing_control_enabled
+                and self.routing_backend_base_url
+                and self.routing_backend_internal_token
+            )
+        )
+        return bool(self.ai_gateway_enable_mock or not has_local_or_remote_openrouter)
 
 
 @lru_cache(maxsize=1)

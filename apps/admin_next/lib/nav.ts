@@ -31,6 +31,11 @@ export const navSections: NavSection[] = [
         title: "AI Costs",
         note: "Endpoint-level provider spend.",
       },
+      {
+        href: "/openrouter-keys",
+        title: "OpenRouter Keys",
+        note: "Key health, failover, rotation history.",
+      },
     ],
   },
   {
@@ -51,6 +56,11 @@ export const navSections: NavSection[] = [
         title: "Safety",
         note: "Blocked outputs and trust incidents.",
       },
+      {
+        href: "/routing-snapshots",
+        title: "Routing Snapshots",
+        note: "Current top-3 models per capability.",
+      },
     ],
   },
   {
@@ -65,6 +75,16 @@ export const navSections: NavSection[] = [
         href: "/settings/models",
         title: "Models",
         note: "Provider and fallback routing.",
+      },
+      {
+        href: "/routing-profiles",
+        title: "Routing Profiles",
+        note: "Latency, context, and parameter policy.",
+      },
+      {
+        href: "/model-catalog",
+        title: "Model Catalog",
+        note: "OpenRouter catalog cache and eligibility.",
       },
       {
         href: "/support/export-delete",

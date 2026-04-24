@@ -16,3 +16,9 @@ class LLMProvider(ABC):
         temperature: float = 0.0,
     ) -> Any:
         raise NotImplementedError
+
+    async def health_snapshot(self) -> dict[str, Any]:
+        return {}
+
+    async def runtime_flags(self) -> dict[str, bool]:
+        return {}

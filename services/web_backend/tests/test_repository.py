@@ -45,11 +45,14 @@ def test_production_accepts_strong_tokens():
         environment="production",
         admin_token="a" * 24,
         ingestion_token="b" * 24,
+        internal_service_token="c" * 24,
+        openrouter_keys_master_key="d" * 32,
     )
 
     assert settings.environment == "production"
     assert settings.admin_token == "a" * 24
     assert settings.ingestion_token == "b" * 24
+    assert settings.internal_service_token == "c" * 24
 
 
 def test_scalar_supports_postgres_dict_rows(monkeypatch):

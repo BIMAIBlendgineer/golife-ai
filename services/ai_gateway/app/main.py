@@ -2,9 +2,11 @@ from time import perf_counter
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 
+from app.errors import AITemporarilyUnavailableError
 from app.feedback_store import MissionFeedbackStore
 from app.operational_client import NoopOperationalEventsClient, OperationalEventsClient
 from app.operational_payloads import (
+    build_ai_unavailable_operation_payload,
     build_classification_operation_payloads,
     build_feedback_operation_payloads,
     build_model_settings_payload,
@@ -27,6 +29,7 @@ from app.settings import Settings
 from app.use_cases import (
     run_domain_suggestions,
     run_event_classification,
+    run_event_classification_semantic,
     run_suggestions,
     run_task_rewrite,
 )
@@ -62,11 +65,13 @@ def create_app(
 
     @app.get("/health")
     async def health() -> dict[str, object]:
+        provider_health = await resolved_provider.health_snapshot()
         return {
             "status": "ok",
             "configured_provider": resolved_settings.llm_provider,
             "active_provider": resolved_provider.provider_name,
             "mock_mode": resolved_settings.resolved_mock_mode,
+            **provider_health,
         }
 
     @app.post("/v1/suggestions/generate", response_model=SuggestionResponse)
@@ -76,13 +81,29 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> SuggestionResponse:
         started_at = perf_counter()
-        response = await run_suggestions(
-            payload,
-            settings=request.app.state.settings,
-            provider=request.app.state.provider,
-            feedback_store=request.app.state.feedback_store,
-            intent="generic_suggestions",
-        )
+        try:
+            response = await run_suggestions(
+                payload,
+                settings=request.app.state.settings,
+                provider=request.app.state.provider,
+                feedback_store=request.app.state.feedback_store,
+                intent="generic_suggestions",
+            )
+        except AITemporarilyUnavailableError as exc:
+            _schedule_ai_unavailable_reporting(
+                background_tasks,
+                request=request,
+                user_id=payload.user_id,
+                endpoint="/v1/suggestions/generate",
+                latency_ms=(perf_counter() - started_at) * 1000,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": exc.code,
+                    "message": "GoLife AI is temporarily unavailable. Local fallback is still available.",
+                },
+            ) from exc
         _schedule_suggestion_reporting(
             background_tasks,
             request=request,
@@ -100,13 +121,29 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> SuggestionResponse:
         started_at = perf_counter()
-        response = await run_suggestions(
-            payload,
-            settings=request.app.state.settings,
-            provider=request.app.state.provider,
-            feedback_store=request.app.state.feedback_store,
-            intent="daily_mission",
-        )
+        try:
+            response = await run_suggestions(
+                payload,
+                settings=request.app.state.settings,
+                provider=request.app.state.provider,
+                feedback_store=request.app.state.feedback_store,
+                intent="daily_mission",
+            )
+        except AITemporarilyUnavailableError as exc:
+            _schedule_ai_unavailable_reporting(
+                background_tasks,
+                request=request,
+                user_id=payload.user_id,
+                endpoint="/v1/missions/daily",
+                latency_ms=(perf_counter() - started_at) * 1000,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": exc.code,
+                    "message": "GoLife AI is temporarily unavailable. Local fallback is still available.",
+                },
+            ) from exc
         _schedule_suggestion_reporting(
             background_tasks,
             request=request,
@@ -124,7 +161,18 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> EventClassificationResponse:
         started_at = perf_counter()
-        response = run_event_classification(payload)
+        runtime_flags = await request.app.state.provider.runtime_flags()
+        if runtime_flags.get("semantic_classifier") and payload.privacy_settings.ai_enabled:
+            try:
+                response = await run_event_classification_semantic(
+                    payload,
+                    settings=request.app.state.settings,
+                    provider=request.app.state.provider,
+                )
+            except Exception:
+                response = run_event_classification(payload)
+        else:
+            response = run_event_classification(payload)
         telemetry = build_classification_operation_payloads(
             request=payload,
             response=response,
@@ -179,6 +227,26 @@ def create_app(
                     telemetry["safety_events"]
                 )
             raise
+        except AITemporarilyUnavailableError as exc:
+            telemetry = build_ai_unavailable_operation_payload(
+                endpoint="/v1/tasks/rewrite",
+                user_id=payload.user_id,
+                latency_ms=(perf_counter() - started_at) * 1000,
+                provider_name=request.app.state.provider.provider_name,
+            )
+            await request.app.state.operational_client.record_usage_event(
+                telemetry["usage_event"]
+            )
+            await request.app.state.operational_client.record_ai_invocation(
+                telemetry["ai_invocation"]
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": exc.code,
+                    "message": "GoLife AI is temporarily unavailable. Try again later.",
+                },
+            ) from exc
 
         telemetry = build_task_rewrite_operation_payloads(
             request=payload,
@@ -210,14 +278,30 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> SuggestionResponse:
         started_at = perf_counter()
-        response = await run_domain_suggestions(
-            payload,
-            settings=request.app.state.settings,
-            provider=request.app.state.provider,
-            feedback_store=request.app.state.feedback_store,
-            required_domain="finance",
-            intent="finance_reflect",
-        )
+        try:
+            response = await run_domain_suggestions(
+                payload,
+                settings=request.app.state.settings,
+                provider=request.app.state.provider,
+                feedback_store=request.app.state.feedback_store,
+                required_domain="finance",
+                intent="finance_reflect",
+            )
+        except AITemporarilyUnavailableError as exc:
+            _schedule_ai_unavailable_reporting(
+                background_tasks,
+                request=request,
+                user_id=payload.user_id,
+                endpoint="/v1/finance/reflect",
+                latency_ms=(perf_counter() - started_at) * 1000,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": exc.code,
+                    "message": "GoLife AI is temporarily unavailable. Local fallback is still available.",
+                },
+            ) from exc
         _schedule_suggestion_reporting(
             background_tasks,
             request=request,
@@ -235,14 +319,30 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> SuggestionResponse:
         started_at = perf_counter()
-        response = await run_domain_suggestions(
-            payload,
-            settings=request.app.state.settings,
-            provider=request.app.state.provider,
-            feedback_store=request.app.state.feedback_store,
-            required_domain="pantry",
-            intent="pantry_rescue",
-        )
+        try:
+            response = await run_domain_suggestions(
+                payload,
+                settings=request.app.state.settings,
+                provider=request.app.state.provider,
+                feedback_store=request.app.state.feedback_store,
+                required_domain="pantry",
+                intent="pantry_rescue",
+            )
+        except AITemporarilyUnavailableError as exc:
+            _schedule_ai_unavailable_reporting(
+                background_tasks,
+                request=request,
+                user_id=payload.user_id,
+                endpoint="/v1/pantry/rescue",
+                latency_ms=(perf_counter() - started_at) * 1000,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": exc.code,
+                    "message": "GoLife AI is temporarily unavailable. Local fallback is still available.",
+                },
+            ) from exc
         _schedule_suggestion_reporting(
             background_tasks,
             request=request,
@@ -260,14 +360,30 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> SuggestionResponse:
         started_at = perf_counter()
-        response = await run_domain_suggestions(
-            payload,
-            settings=request.app.state.settings,
-            provider=request.app.state.provider,
-            feedback_store=request.app.state.feedback_store,
-            required_domain="wardrobe",
-            intent="closet_decision",
-        )
+        try:
+            response = await run_domain_suggestions(
+                payload,
+                settings=request.app.state.settings,
+                provider=request.app.state.provider,
+                feedback_store=request.app.state.feedback_store,
+                required_domain="wardrobe",
+                intent="closet_decision",
+            )
+        except AITemporarilyUnavailableError as exc:
+            _schedule_ai_unavailable_reporting(
+                background_tasks,
+                request=request,
+                user_id=payload.user_id,
+                endpoint="/v1/closet/decision",
+                latency_ms=(perf_counter() - started_at) * 1000,
+            )
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "code": exc.code,
+                    "message": "GoLife AI is temporarily unavailable. Local fallback is still available.",
+                },
+            ) from exc
         _schedule_suggestion_reporting(
             background_tasks,
             request=request,
@@ -348,6 +464,30 @@ def _schedule_suggestion_reporting(
             request.app.state.settings,
             request.app.state.provider.provider_name,
         ),
+    )
+
+
+def _schedule_ai_unavailable_reporting(
+    background_tasks: BackgroundTasks,
+    *,
+    request: Request,
+    user_id: str,
+    endpoint: str,
+    latency_ms: float,
+) -> None:
+    telemetry = build_ai_unavailable_operation_payload(
+        endpoint=endpoint,
+        user_id=user_id,
+        latency_ms=latency_ms,
+        provider_name=request.app.state.provider.provider_name,
+    )
+    background_tasks.add_task(
+        request.app.state.operational_client.record_usage_event,
+        telemetry["usage_event"],
+    )
+    background_tasks.add_task(
+        request.app.state.operational_client.record_ai_invocation,
+        telemetry["ai_invocation"],
     )
 
 

@@ -76,6 +76,31 @@ export default async function DashboardPage() {
         />
       </div>
 
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricCard
+          label="Active routing keys"
+          value={formatNumber(dashboard.active_key_count)}
+          note="Healthy keys currently available to the OpenRouter executor."
+          tone="sage"
+        />
+        <MetricCard
+          label="Disabled routing keys"
+          value={formatNumber(dashboard.disabled_key_count)}
+          note="Paused or invalid keys excluded from live routing."
+          tone="clay"
+        />
+        <MetricCard
+          label="Routing snapshot age"
+          value={
+            dashboard.routing_snapshot_age_seconds == null
+              ? "N/A"
+              : `${dashboard.routing_snapshot_age_seconds}s`
+          }
+          note="Older snapshots increase the chance of using stale model rankings."
+          tone="bronze"
+        />
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
         <Panel
           eyebrow="Briefing"

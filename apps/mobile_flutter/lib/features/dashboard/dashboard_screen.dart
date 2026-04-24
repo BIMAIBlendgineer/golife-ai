@@ -18,6 +18,7 @@ class DashboardScreen extends StatelessWidget {
         ? missions.skip(1).toList(growable: false)
         : const <DailyMission>[];
     final risks = controller.dailyRisks;
+    final gatewayStatusMessage = controller.gatewayStatusMessage;
     final width = MediaQuery.sizeOf(context).width;
     final crossAxisCount = width >= 1080 ? 2 : 1;
     final theme = Theme.of(context);
@@ -33,6 +34,24 @@ class DashboardScreen extends StatelessWidget {
             'Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.',
             style: theme.textTheme.bodyMedium,
           ),
+          if (gatewayStatusMessage != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6EEE7),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFD6C0A7),
+                ),
+              ),
+              child: Text(
+                gatewayStatusMessage,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Container(
             width: double.infinity,
@@ -68,7 +87,7 @@ class DashboardScreen extends StatelessWidget {
                       color: const Color(0xFFD06447),
                     ),
                     _MetaPill(
-                      label: _missionSourceLabel(primaryMission),
+                      label: controller.gatewayStatusLabel,
                       color: const Color(0xFF5D7A68),
                     ),
                     _MetaPill(
@@ -274,22 +293,6 @@ class DashboardScreen extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _missionSourceLabel(DailyMission? mission) {
-    if (mission == null) {
-      return 'Waiting';
-    }
-    if (mission.trace['clientFallback'] == true) {
-      return 'Fallback';
-    }
-    if (mission.trace['remote'] == true) {
-      return 'Gateway live';
-    }
-    if (mission.trace['mock'] == true) {
-      return 'Mock';
-    }
-    return 'Local';
   }
 }
 

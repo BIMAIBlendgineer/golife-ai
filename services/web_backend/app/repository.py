@@ -26,12 +26,23 @@ from app.schemas import (
     MissionAuditUpsert,
     ModelSettingsSnapshot,
     ModelSettingsUpsert,
+    ModelCatalogEntry,
+    ModelSelectionSnapshot,
+    OpenRouterApiKeyCreate,
+    OpenRouterApiKeyPatch,
+    OpenRouterApiKeyRecord,
+    OpenRouterKeyEventRecord,
+    OpenRouterKeyEventUpsert,
+    RoutingCapability,
+    RoutingProfile,
+    RoutingProfilePatch,
     SafetyAuditRecord,
     SafetyAuditUpsert,
     SupportRequest,
     UsageEventRecord,
     UsageSnapshot,
 )
+from app.routing import build_default_routing_profiles
 
 
 def _utcnow() -> datetime:
@@ -222,6 +233,81 @@ class OperationalRepository:
                     weekly_summary_model TEXT NOT NULL,
                     updated_at TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS openrouter_api_keys (
+                    key_id TEXT PRIMARY KEY,
+                    label TEXT NOT NULL,
+                    secret_ciphertext TEXT NOT NULL,
+                    secret_last4 TEXT NOT NULL,
+                    enabled INTEGER NOT NULL,
+                    priority INTEGER NOT NULL,
+                    status TEXT NOT NULL,
+                    last_ok_at TEXT,
+                    last_error_at TEXT,
+                    consecutive_failures INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_openrouter_keys_priority
+                    ON openrouter_api_keys(enabled, priority, created_at);
+
+                CREATE TABLE IF NOT EXISTS routing_profiles (
+                    capability TEXT PRIMARY KEY,
+                    strategy TEXT NOT NULL,
+                    min_context_length INTEGER NOT NULL,
+                    required_parameters_json TEXT NOT NULL,
+                    preferred_max_latency_seconds REAL NOT NULL,
+                    preferred_min_throughput_tokens_per_second REAL NOT NULL,
+                    max_prompt_price_usd_per_million REAL,
+                    max_completion_price_usd_per_million REAL,
+                    retry_policy_json TEXT NOT NULL,
+                    enabled INTEGER NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS model_catalog_cache (
+                    model_id TEXT PRIMARY KEY,
+                    canonical_slug TEXT,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    context_length INTEGER NOT NULL,
+                    output_modalities_json TEXT NOT NULL,
+                    supported_parameters_json TEXT NOT NULL,
+                    prompt_price_usd_per_million REAL NOT NULL,
+                    completion_price_usd_per_million REAL NOT NULL,
+                    request_price_usd REAL NOT NULL,
+                    top_provider_json TEXT NOT NULL,
+                    architecture_json TEXT NOT NULL,
+                    expiration_date TEXT,
+                    refreshed_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_model_catalog_refreshed
+                    ON model_catalog_cache(refreshed_at);
+
+                CREATE TABLE IF NOT EXISTS model_selection_snapshots (
+                    capability TEXT NOT NULL,
+                    rank_index INTEGER NOT NULL,
+                    model_id TEXT NOT NULL,
+                    score REAL NOT NULL,
+                    selection_reason_json TEXT NOT NULL,
+                    generated_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    PRIMARY KEY (capability, rank_index)
+                );
+
+                CREATE TABLE IF NOT EXISTS openrouter_key_events (
+                    event_id TEXT PRIMARY KEY,
+                    key_id TEXT NOT NULL,
+                    key_label TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    endpoint TEXT,
+                    model TEXT,
+                    error_code TEXT,
+                    notes TEXT,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_openrouter_key_events_time
+                    ON openrouter_key_events(key_id, created_at);
                 """
         if self._dialect == "sqlite":
             with self._connection:
@@ -318,6 +404,40 @@ class OperationalRepository:
                 _to_iso(now),
             ),
         )
+
+        for profile in build_default_routing_profiles(now):
+            self._execute(
+                """
+                INSERT INTO routing_profiles(
+                    capability,
+                    strategy,
+                    min_context_length,
+                    required_parameters_json,
+                    preferred_max_latency_seconds,
+                    preferred_min_throughput_tokens_per_second,
+                    max_prompt_price_usd_per_million,
+                    max_completion_price_usd_per_million,
+                    retry_policy_json,
+                    enabled,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(capability) DO NOTHING
+                """,
+                (
+                    profile.capability,
+                    profile.strategy,
+                    profile.min_context_length,
+                    _json_dumps(profile.required_parameters),
+                    profile.preferred_max_latency_seconds,
+                    profile.preferred_min_throughput_tokens_per_second,
+                    profile.max_prompt_price_usd_per_million,
+                    profile.max_completion_price_usd_per_million,
+                    _json_dumps(profile.retry_policy),
+                    int(profile.enabled),
+                    _to_iso(profile.updated_at),
+                ),
+            )
         self._commit()
 
     def _seed_demo_data_if_empty(self) -> None:
@@ -954,8 +1074,31 @@ class OperationalRepository:
             )
         )
         safety_count = int(self._scalar("SELECT COUNT(*) FROM safety_events"))
+        active_key_count = int(
+            self._scalar(
+                "SELECT COUNT(*) FROM openrouter_api_keys WHERE enabled = 1"
+            )
+        )
+        disabled_key_count = int(
+            self._scalar(
+                "SELECT COUNT(*) FROM openrouter_api_keys WHERE enabled = 0"
+            )
+        )
         privacy_requests = int(
             self._scalar("SELECT COUNT(*) FROM support_requests WHERE status = 'open'")
+        )
+        latest_snapshot = self._fetchone(
+            "SELECT MAX(generated_at) AS generated_at FROM model_selection_snapshots"
+        )
+        snapshot_generated_at = (
+            _from_iso(latest_snapshot["generated_at"])
+            if latest_snapshot and latest_snapshot["generated_at"]
+            else None
+        )
+        snapshot_age_seconds = (
+            int((now - snapshot_generated_at).total_seconds())
+            if snapshot_generated_at
+            else None
         )
 
         return DashboardMetrics(
@@ -983,15 +1126,18 @@ class OperationalRepository:
             ai_latency_ms_avg=round(avg_latency, 2),
             ai_cost_total_usd=round(total_cost, 2),
             ai_cost_per_active_user_usd=round(total_cost / active_user_count, 2),
-            safety_intervention_rate=round(
-                safety_count / max(1, total_missions),
-                4,
-            ),
-            privacy_concern_rate=round(
-                privacy_requests / active_user_count,
-                4,
-            ),
-        )
+              safety_intervention_rate=round(
+                  safety_count / max(1, total_missions),
+                  4,
+              ),
+              privacy_concern_rate=round(
+                  privacy_requests / active_user_count,
+                  4,
+              ),
+              active_key_count=active_key_count,
+              disabled_key_count=disabled_key_count,
+              routing_snapshot_age_seconds=snapshot_age_seconds,
+          )
 
     def list_users(self) -> list[AdminUser]:
         rows = self._fetchall(
@@ -1260,6 +1406,566 @@ class OperationalRepository:
             classification_model=row["classification_model"],
             weekly_summary_model=row["weekly_summary_model"],
         )
+
+    def list_openrouter_keys(self) -> list[OpenRouterApiKeyRecord]:
+        rows = self._fetchall(
+            """
+            SELECT key_id, label, secret_last4, enabled, priority, status,
+                   last_ok_at, last_error_at, consecutive_failures, created_at, updated_at
+            FROM openrouter_api_keys
+            ORDER BY enabled DESC, priority ASC, created_at ASC
+            """
+        )
+        return [
+            OpenRouterApiKeyRecord(
+                key_id=row["key_id"],
+                label=row["label"],
+                secret_last4=row["secret_last4"],
+                enabled=bool(row["enabled"]),
+                priority=int(row["priority"]),
+                status=row["status"],
+                last_ok_at=_from_iso(row["last_ok_at"]),
+                last_error_at=_from_iso(row["last_error_at"]),
+                consecutive_failures=int(row["consecutive_failures"]),
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+                updated_at=_from_iso(row["updated_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def create_openrouter_key(
+        self,
+        payload: OpenRouterApiKeyCreate,
+        *,
+        secret_ciphertext: str,
+        secret_last4: str,
+        key_id: str,
+    ) -> OpenRouterApiKeyRecord:
+        now = _utcnow()
+        self._execute(
+            """
+            INSERT INTO openrouter_api_keys(
+                key_id, label, secret_ciphertext, secret_last4, enabled, priority, status,
+                last_ok_at, last_error_at, consecutive_failures, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                key_id,
+                payload.label,
+                secret_ciphertext,
+                secret_last4,
+                int(payload.enabled),
+                payload.priority,
+                "unknown" if payload.enabled else "disabled",
+                None,
+                None,
+                0,
+                _to_iso(now),
+                _to_iso(now),
+            ),
+        )
+        self._commit()
+        return OpenRouterApiKeyRecord(
+            key_id=key_id,
+            label=payload.label,
+            secret_last4=secret_last4,
+            enabled=payload.enabled,
+            priority=payload.priority,
+            status="unknown" if payload.enabled else "disabled",
+            last_ok_at=None,
+            last_error_at=None,
+            consecutive_failures=0,
+            created_at=now,
+            updated_at=now,
+        )
+
+    def patch_openrouter_key(
+        self,
+        key_id: str,
+        payload: OpenRouterApiKeyPatch,
+        *,
+        secret_ciphertext: str | None = None,
+        secret_last4: str | None = None,
+    ) -> OpenRouterApiKeyRecord | None:
+        existing = self._fetchone(
+            """
+            SELECT key_id, label, secret_last4, enabled, priority, status,
+                   last_ok_at, last_error_at, consecutive_failures, created_at, updated_at
+            FROM openrouter_api_keys
+            WHERE key_id = ?
+            """,
+            (key_id,),
+        )
+        if existing is None:
+            return None
+        now = _utcnow()
+        next_label = payload.label or existing["label"]
+        next_enabled = bool(existing["enabled"]) if payload.enabled is None else payload.enabled
+        next_priority = int(existing["priority"]) if payload.priority is None else payload.priority
+        next_secret_ciphertext = secret_ciphertext
+        next_secret_last4 = secret_last4 or existing["secret_last4"]
+
+        if next_secret_ciphertext is None:
+            self._execute(
+                """
+                UPDATE openrouter_api_keys
+                SET label = ?, enabled = ?, priority = ?, status = ?, secret_last4 = ?, updated_at = ?
+                WHERE key_id = ?
+                """,
+                (
+                    next_label,
+                    int(next_enabled),
+                    next_priority,
+                    "disabled" if not next_enabled else existing["status"],
+                    next_secret_last4,
+                    _to_iso(now),
+                    key_id,
+                ),
+            )
+        else:
+            self._execute(
+                """
+                UPDATE openrouter_api_keys
+                SET label = ?, enabled = ?, priority = ?, status = ?, secret_ciphertext = ?, secret_last4 = ?, updated_at = ?
+                WHERE key_id = ?
+                """,
+                (
+                    next_label,
+                    int(next_enabled),
+                    next_priority,
+                    "disabled" if not next_enabled else existing["status"],
+                    next_secret_ciphertext,
+                    next_secret_last4,
+                    _to_iso(now),
+                    key_id,
+                ),
+            )
+        self._commit()
+        return OpenRouterApiKeyRecord(
+            key_id=key_id,
+            label=next_label,
+            secret_last4=next_secret_last4,
+            enabled=next_enabled,
+            priority=next_priority,
+            status="disabled" if not next_enabled else existing["status"],
+            last_ok_at=_from_iso(existing["last_ok_at"]),
+            last_error_at=_from_iso(existing["last_error_at"]),
+            consecutive_failures=int(existing["consecutive_failures"]),
+            created_at=_from_iso(existing["created_at"]) or now,
+            updated_at=now,
+        )
+
+    def disable_openrouter_key(self, key_id: str) -> OpenRouterApiKeyRecord | None:
+        return self.patch_openrouter_key(key_id, OpenRouterApiKeyPatch(enabled=False))
+
+    def get_active_key_materials(self) -> list[dict[str, object]]:
+        rows = self._fetchall(
+            """
+            SELECT key_id, label, secret_ciphertext, secret_last4, enabled, priority, status
+            FROM openrouter_api_keys
+            WHERE enabled = 1
+            ORDER BY priority ASC, created_at ASC
+            """
+        )
+        return [
+            {
+                "key_id": row["key_id"],
+                "label": row["label"],
+                "secret_ciphertext": row["secret_ciphertext"],
+                "secret_last4": row["secret_last4"],
+                "enabled": bool(row["enabled"]),
+                "priority": int(row["priority"]),
+                "status": row["status"],
+            }
+            for row in rows
+        ]
+
+    def list_routing_profiles(self) -> list[RoutingProfile]:
+        rows = self._fetchall(
+            """
+            SELECT capability, strategy, min_context_length, required_parameters_json,
+                   preferred_max_latency_seconds, preferred_min_throughput_tokens_per_second,
+                   max_prompt_price_usd_per_million, max_completion_price_usd_per_million,
+                   retry_policy_json, enabled, updated_at
+            FROM routing_profiles
+            ORDER BY capability ASC
+            """
+        )
+        return [
+            RoutingProfile(
+                capability=row["capability"],
+                strategy=row["strategy"],
+                min_context_length=int(row["min_context_length"]),
+                required_parameters=list(
+                    _json_loads(row["required_parameters_json"], default=[])
+                ),
+                preferred_max_latency_seconds=float(row["preferred_max_latency_seconds"]),
+                preferred_min_throughput_tokens_per_second=float(
+                    row["preferred_min_throughput_tokens_per_second"]
+                ),
+                max_prompt_price_usd_per_million=(
+                    float(row["max_prompt_price_usd_per_million"])
+                    if row["max_prompt_price_usd_per_million"] is not None
+                    else None
+                ),
+                max_completion_price_usd_per_million=(
+                    float(row["max_completion_price_usd_per_million"])
+                    if row["max_completion_price_usd_per_million"] is not None
+                    else None
+                ),
+                retry_policy=dict(_json_loads(row["retry_policy_json"], default={})),
+                enabled=bool(row["enabled"]),
+                updated_at=_from_iso(row["updated_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def update_routing_profile(
+        self,
+        capability: RoutingCapability,
+        payload: RoutingProfilePatch,
+    ) -> RoutingProfile | None:
+        existing = self._fetchone(
+            """
+            SELECT capability, strategy, min_context_length, required_parameters_json,
+                   preferred_max_latency_seconds, preferred_min_throughput_tokens_per_second,
+                   max_prompt_price_usd_per_million, max_completion_price_usd_per_million,
+                   retry_policy_json, enabled, updated_at
+            FROM routing_profiles
+            WHERE capability = ?
+            """,
+            (capability,),
+        )
+        if existing is None:
+            return None
+        current = RoutingProfile(
+            capability=existing["capability"],
+            strategy=existing["strategy"],
+            min_context_length=int(existing["min_context_length"]),
+            required_parameters=list(_json_loads(existing["required_parameters_json"], default=[])),
+            preferred_max_latency_seconds=float(existing["preferred_max_latency_seconds"]),
+            preferred_min_throughput_tokens_per_second=float(existing["preferred_min_throughput_tokens_per_second"]),
+            max_prompt_price_usd_per_million=(
+                float(existing["max_prompt_price_usd_per_million"])
+                if existing["max_prompt_price_usd_per_million"] is not None
+                else None
+            ),
+            max_completion_price_usd_per_million=(
+                float(existing["max_completion_price_usd_per_million"])
+                if existing["max_completion_price_usd_per_million"] is not None
+                else None
+            ),
+            retry_policy=dict(_json_loads(existing["retry_policy_json"], default={})),
+            enabled=bool(existing["enabled"]),
+            updated_at=_from_iso(existing["updated_at"]) or _utcnow(),
+        )
+        updated = current.model_copy(
+            update={
+                "strategy": payload.strategy or current.strategy,
+                "min_context_length": payload.min_context_length or current.min_context_length,
+                "required_parameters": payload.required_parameters or current.required_parameters,
+                "preferred_max_latency_seconds": (
+                    payload.preferred_max_latency_seconds
+                    if payload.preferred_max_latency_seconds is not None
+                    else current.preferred_max_latency_seconds
+                ),
+                "preferred_min_throughput_tokens_per_second": (
+                    payload.preferred_min_throughput_tokens_per_second
+                    if payload.preferred_min_throughput_tokens_per_second is not None
+                    else current.preferred_min_throughput_tokens_per_second
+                ),
+                "max_prompt_price_usd_per_million": (
+                    payload.max_prompt_price_usd_per_million
+                    if payload.max_prompt_price_usd_per_million is not None
+                    else current.max_prompt_price_usd_per_million
+                ),
+                "max_completion_price_usd_per_million": (
+                    payload.max_completion_price_usd_per_million
+                    if payload.max_completion_price_usd_per_million is not None
+                    else current.max_completion_price_usd_per_million
+                ),
+                "retry_policy": payload.retry_policy or current.retry_policy,
+                "enabled": current.enabled if payload.enabled is None else payload.enabled,
+                "updated_at": _utcnow(),
+            }
+        )
+        self._execute(
+            """
+            UPDATE routing_profiles
+            SET strategy = ?, min_context_length = ?, required_parameters_json = ?,
+                preferred_max_latency_seconds = ?, preferred_min_throughput_tokens_per_second = ?,
+                max_prompt_price_usd_per_million = ?, max_completion_price_usd_per_million = ?,
+                retry_policy_json = ?, enabled = ?, updated_at = ?
+            WHERE capability = ?
+            """,
+            (
+                updated.strategy,
+                updated.min_context_length,
+                _json_dumps(updated.required_parameters),
+                updated.preferred_max_latency_seconds,
+                updated.preferred_min_throughput_tokens_per_second,
+                updated.max_prompt_price_usd_per_million,
+                updated.max_completion_price_usd_per_million,
+                _json_dumps(updated.retry_policy),
+                int(updated.enabled),
+                _to_iso(updated.updated_at),
+                capability,
+            ),
+        )
+        self._commit()
+        return updated
+
+    def replace_model_catalog(self, entries: list[ModelCatalogEntry]) -> None:
+        self._execute("DELETE FROM model_catalog_cache")
+        for entry in entries:
+            self._execute(
+                """
+                INSERT INTO model_catalog_cache(
+                    model_id, canonical_slug, name, description, context_length,
+                    output_modalities_json, supported_parameters_json,
+                    prompt_price_usd_per_million, completion_price_usd_per_million,
+                    request_price_usd, top_provider_json, architecture_json,
+                    expiration_date, refreshed_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry.model_id,
+                    entry.canonical_slug,
+                    entry.name,
+                    entry.description,
+                    entry.context_length,
+                    _json_dumps(entry.output_modalities),
+                    _json_dumps(entry.supported_parameters),
+                    entry.prompt_price_usd_per_million,
+                    entry.completion_price_usd_per_million,
+                    entry.request_price_usd,
+                    _json_dumps(entry.top_provider_json),
+                    _json_dumps(entry.architecture_json),
+                    _to_iso(entry.expiration_date) if entry.expiration_date else None,
+                    _to_iso(entry.refreshed_at),
+                ),
+            )
+        self._commit()
+
+    def list_model_catalog(self) -> list[ModelCatalogEntry]:
+        rows = self._fetchall(
+            """
+            SELECT model_id, canonical_slug, name, description, context_length,
+                   output_modalities_json, supported_parameters_json,
+                   prompt_price_usd_per_million, completion_price_usd_per_million,
+                   request_price_usd, top_provider_json, architecture_json,
+                   expiration_date, refreshed_at
+            FROM model_catalog_cache
+            ORDER BY name ASC
+            """
+        )
+        return [
+            ModelCatalogEntry(
+                model_id=row["model_id"],
+                canonical_slug=row["canonical_slug"],
+                name=row["name"],
+                description=row["description"],
+                context_length=int(row["context_length"]),
+                output_modalities=list(_json_loads(row["output_modalities_json"], default=[])),
+                supported_parameters=list(_json_loads(row["supported_parameters_json"], default=[])),
+                prompt_price_usd_per_million=float(row["prompt_price_usd_per_million"]),
+                completion_price_usd_per_million=float(row["completion_price_usd_per_million"]),
+                request_price_usd=float(row["request_price_usd"]),
+                top_provider_json=dict(_json_loads(row["top_provider_json"], default={})),
+                architecture_json=dict(_json_loads(row["architecture_json"], default={})),
+                expiration_date=_from_iso(row["expiration_date"]),
+                refreshed_at=_from_iso(row["refreshed_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def replace_selection_snapshots(self, snapshots: list[ModelSelectionSnapshot]) -> None:
+        self._execute("DELETE FROM model_selection_snapshots")
+        for snapshot in snapshots:
+            self._execute(
+                """
+                INSERT INTO model_selection_snapshots(
+                    capability, rank_index, model_id, score, selection_reason_json,
+                    generated_at, expires_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    snapshot.capability,
+                    snapshot.rank_index,
+                    snapshot.model_id,
+                    snapshot.score,
+                    _json_dumps(snapshot.selection_reason),
+                    _to_iso(snapshot.generated_at),
+                    _to_iso(snapshot.expires_at),
+                ),
+            )
+        self._commit()
+
+    def list_selection_snapshots(self) -> list[ModelSelectionSnapshot]:
+        rows = self._fetchall(
+            """
+            SELECT capability, rank_index, model_id, score, selection_reason_json,
+                   generated_at, expires_at
+            FROM model_selection_snapshots
+            ORDER BY capability ASC, rank_index ASC
+            """
+        )
+        return [
+            ModelSelectionSnapshot(
+                capability=row["capability"],
+                rank_index=int(row["rank_index"]),
+                model_id=row["model_id"],
+                score=float(row["score"]),
+                selection_reason=dict(_json_loads(row["selection_reason_json"], default={})),
+                generated_at=_from_iso(row["generated_at"]) or _utcnow(),
+                expires_at=_from_iso(row["expires_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def list_openrouter_key_events(self) -> list[OpenRouterKeyEventRecord]:
+        rows = self._fetchall(
+            """
+            SELECT event_id, key_id, key_label, event_type, endpoint, model, error_code, notes, created_at
+            FROM openrouter_key_events
+            ORDER BY created_at DESC
+            """
+        )
+        return [
+            OpenRouterKeyEventRecord(
+                event_id=row["event_id"],
+                key_id=row["key_id"],
+                key_label=row["key_label"],
+                event_type=row["event_type"],
+                endpoint=row["endpoint"],
+                model=row["model"],
+                error_code=row["error_code"],
+                notes=row["notes"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def record_openrouter_key_event(self, payload: OpenRouterKeyEventUpsert) -> None:
+        self._execute(
+            """
+            INSERT INTO openrouter_key_events(
+                event_id, key_id, key_label, event_type, endpoint, model, error_code, notes, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(event_id) DO UPDATE SET
+                key_label = excluded.key_label,
+                event_type = excluded.event_type,
+                endpoint = excluded.endpoint,
+                model = excluded.model,
+                error_code = excluded.error_code,
+                notes = excluded.notes,
+                created_at = excluded.created_at
+            """,
+            (
+                payload.event_id,
+                payload.key_id,
+                payload.key_label,
+                payload.event_type,
+                payload.endpoint,
+                payload.model,
+                payload.error_code,
+                payload.notes,
+                _to_iso(payload.created_at),
+            ),
+        )
+        if payload.event_type == "success":
+            self._execute(
+                """
+                UPDATE openrouter_api_keys
+                SET status = 'healthy', last_ok_at = ?, consecutive_failures = 0, updated_at = ?
+                WHERE key_id = ?
+                """,
+                (_to_iso(payload.created_at), _to_iso(payload.created_at), payload.key_id),
+            )
+        elif payload.event_type == "failure":
+            self._execute(
+                """
+                UPDATE openrouter_api_keys
+                SET status = 'degraded', last_error_at = ?, consecutive_failures = consecutive_failures + 1, updated_at = ?
+                WHERE key_id = ?
+                """,
+                (_to_iso(payload.created_at), _to_iso(payload.created_at), payload.key_id),
+            )
+        elif payload.event_type == "disabled":
+            self._execute(
+                """
+                UPDATE openrouter_api_keys
+                SET enabled = 0, status = 'disabled', updated_at = ?
+                WHERE key_id = ?
+                """,
+                (_to_iso(payload.created_at), payload.key_id),
+            )
+        elif payload.event_type == "enabled":
+            self._execute(
+                """
+                UPDATE openrouter_api_keys
+                SET enabled = 1, status = 'unknown', updated_at = ?
+                WHERE key_id = ?
+                """,
+                (_to_iso(payload.created_at), payload.key_id),
+            )
+        self._commit()
+
+    def list_ai_invocations_for_capability(
+        self,
+        capability: RoutingCapability,
+        *,
+        limit: int = 200,
+    ) -> list[AIInvocationRecord]:
+        endpoint_filters = {
+            "daily_plan": (
+                "/v1/missions/daily",
+                "/v1/suggestions/generate",
+                "/v1/finance/reflect",
+                "/v1/pantry/rescue",
+                "/v1/closet/decision",
+            ),
+            "task_rewrite": ("/v1/tasks/rewrite",),
+            "semantic_classify": ("/v1/events/classify",),
+            "weekly_summary": (),
+        }
+        endpoints = endpoint_filters[capability]
+        if not endpoints:
+            return []
+        placeholders = ", ".join("?" for _ in endpoints)
+        rows = self._fetchall(
+            f"""
+            SELECT invocation_id, user_id, endpoint, provider, model, latency_ms, fallback,
+                   suggestions_count, estimated_cost_usd, schema_valid, status, created_at, metadata_json
+            FROM ai_invocations
+            WHERE endpoint IN ({placeholders})
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (*endpoints, limit),
+        )
+        return [
+            AIInvocationRecord(
+                invocation_id=row["invocation_id"],
+                user_id=row["user_id"],
+                endpoint=row["endpoint"],
+                provider=row["provider"],
+                model=row["model"],
+                latency_ms=float(row["latency_ms"]),
+                fallback=bool(row["fallback"]),
+                suggestions_count=int(row["suggestions_count"]),
+                estimated_cost_usd=float(row["estimated_cost_usd"]),
+                schema_valid=bool(row["schema_valid"]),
+                status=row["status"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+                metadata=dict(_json_loads(row["metadata_json"], default={})),
+            )
+            for row in rows
+        ]
 
     def list_support_requests(self) -> list[SupportRequest]:
         rows = self._fetchall(

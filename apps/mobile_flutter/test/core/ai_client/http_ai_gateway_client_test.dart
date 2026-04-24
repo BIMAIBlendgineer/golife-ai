@@ -113,7 +113,7 @@ void main() {
       );
 
       expect(result.trace['clientFallback'], true);
-      expect(result.trace['fallbackReason'], 'timeout');
+      expect(result.trace['fallbackReason'], 'no_connection');
     });
 
     test('falls back on invalid JSON', () async {
@@ -129,6 +129,31 @@ void main() {
 
       expect(result.trace['clientFallback'], true);
       expect(result.trace['fallbackReason'], 'invalid_json');
+    });
+
+    test('keeps ai_temporarily_unavailable machine code from gateway', () async {
+      final client = HttpAiGatewayClient(
+        baseUri: Uri.parse('http://localhost:8000'),
+        httpClient: MockClient(
+          (request) async => http.Response(
+            jsonEncode({
+              'detail': {
+                'code': 'ai_temporarily_unavailable',
+                'message': 'busy',
+              },
+            }),
+            503,
+          ),
+        ),
+      );
+
+      final result = await client.fetchDailyMission(
+        privacySettings: PrivacySettings.defaults(),
+        lifeEvents: const [],
+      );
+
+      expect(result.trace['clientFallback'], true);
+      expect(result.trace['fallbackReason'], 'ai_temporarily_unavailable');
     });
 
     test('falls back when response contains no suggestions', () async {

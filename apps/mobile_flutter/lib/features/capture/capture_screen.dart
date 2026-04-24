@@ -40,6 +40,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
         : widget.controller.privacySettings.permissionFor(selectedDomain);
     final recentEvents =
         widget.controller.lifeEvents.take(6).toList(growable: false);
+    final gatewayStatusMessage = widget.controller.gatewayStatusMessage;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -52,6 +53,22 @@ class _CaptureScreenState extends State<CaptureScreen> {
             'Write one quick note. You can route it manually or let the gateway classify it first and confirm before saving.',
             style: theme.textTheme.bodyLarge,
           ),
+          if (gatewayStatusMessage != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6EEE7),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFD6C0A7)),
+              ),
+              child: Text(
+                gatewayStatusMessage,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           Container(
             width: double.infinity,

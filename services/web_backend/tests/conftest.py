@@ -12,6 +12,7 @@ def client(tmp_path) -> TestClient:
         settings=Settings(
             admin_token="test-admin-token",
             ingestion_token="test-ingestion-token",
+            internal_service_token="test-internal-token",
             operational_database_path=str(tmp_path / "web_backend.db"),
             seed_demo_data=True,
         ),

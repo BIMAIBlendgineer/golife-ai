@@ -23,6 +23,14 @@ No external actions without confirmation.
 Return an object with a single key `rewrites`, containing an array of step objects.
 """
 
+SEMANTIC_CLASSIFICATION_SYSTEM_PROMPT = """
+Return JSON only.
+Classify the capture text into one GoLife domain and one event_type.
+Allowed domains: task, habit, week, finance, pantry, wardrobe.
+Return an object with keys: domain, event_type, confidence, rationale.
+Do not add extra keys outside the requested JSON object.
+"""
+
 
 def _coerce_confidence(value: object, default: float) -> float:
     if isinstance(value, (int, float)):
@@ -204,6 +212,7 @@ async def run_task_rewrite(
             "mock_mode": settings.resolved_mock_mode,
             "rewrite_count": len(rewrites),
             "mock": provider_trace.get("mock", False),
+            "provider_meta": provider_trace.get("_provider_meta", {}),
         },
     )
 
@@ -296,4 +305,54 @@ def run_event_classification(
         event_type="task_captured",
         confidence=0.62,
         rationale="Defaulted to task because no stronger domain signal was found.",
+    )
+
+
+async def run_event_classification_semantic(
+    request: EventClassificationRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> EventClassificationResponse:
+    provider_result = await provider.complete_json(
+        system_prompt=SEMANTIC_CLASSIFICATION_SYSTEM_PROMPT,
+        user_payload={
+            "intent": "semantic_classify",
+            "user_id": request.user_id,
+            "text": request.text,
+            "allowed_domains": request.privacy_settings.allowed_domains,
+            "ai_enabled": request.privacy_settings.ai_enabled,
+        },
+        response_schema=EventClassificationResponse.model_json_schema(),
+        temperature=0.0,
+    )
+
+    if not isinstance(provider_result, dict):
+        raise ValueError("Semantic classifier did not return an object.")
+
+    domain = provider_result.get("domain")
+    if not isinstance(domain, str):
+        raise ValueError("Semantic classifier did not return a valid domain.")
+
+    event_type = provider_result.get("event_type")
+    if not isinstance(event_type, str) or not event_type.strip():
+        raise ValueError("Semantic classifier did not return a valid event type.")
+
+    rationale = provider_result.get("rationale")
+    if not isinstance(rationale, str) or not rationale.strip():
+        rationale = "Semantic classifier returned a structured classification."
+
+    confidence = _coerce_confidence(provider_result.get("confidence"), 0.72)
+    provider_meta = provider_result.get("_provider_meta", {})
+
+    return EventClassificationResponse(
+        domain=domain,  # type: ignore[arg-type]
+        event_type=event_type,
+        confidence=confidence,
+        rationale=rationale,
+        trace={
+            "classifier": "semantic_openrouter",
+            "configured_provider": settings.llm_provider,
+            "provider_meta": provider_meta,
+        },
     )

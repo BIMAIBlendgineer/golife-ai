@@ -15,6 +15,7 @@ import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
+import '../runtime/app_runtime_config.dart';
 import 'local_store.dart';
 
 class SqliteLocalStore implements LocalStore {
@@ -23,6 +24,7 @@ class SqliteLocalStore implements LocalStore {
   static const _databaseName = 'golife_ai.db';
   static const _databaseVersion = 1;
   static const _privacyKey = 'privacy_settings';
+  static const _runtimeConfigKey = 'runtime_config';
 
   Database? _database;
 
@@ -79,6 +81,42 @@ class SqliteLocalStore implements LocalStore {
       {
         'key': _privacyKey,
         'value': jsonEncode(settings.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<AppRuntimeConfig?> loadRuntimeConfig() async {
+    final db = await _db;
+    final rows = await db.query(
+      'key_value',
+      columns: const ['value'],
+      where: 'key = ?',
+      whereArgs: const [_runtimeConfigKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+
+    final rawJson = rows.first['value']?.toString();
+    if (rawJson == null || rawJson.isEmpty) {
+      return null;
+    }
+    return AppRuntimeConfig.fromJson(
+      Map<String, dynamic>.from(jsonDecode(rawJson) as Map),
+    );
+  }
+
+  @override
+  Future<void> saveRuntimeConfig(AppRuntimeConfig config) async {
+    final db = await _db;
+    await db.insert(
+      'key_value',
+      {
+        'key': _runtimeConfigKey,
+        'value': jsonEncode(config.toJson()),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );

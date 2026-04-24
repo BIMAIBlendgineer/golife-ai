@@ -10,6 +10,15 @@ SafetySeverity = Literal["low", "medium", "high"]
 RequestType = Literal["export", "delete"]
 DataMode = Literal["live", "seeded"]
 InvocationStatus = Literal["success", "error"]
+RoutingCapability = Literal[
+    "daily_plan",
+    "task_rewrite",
+    "semantic_classify",
+    "weekly_summary",
+]
+RoutingConfigSource = Literal["live", "cached", "fallback"]
+OpenRouterKeyStatus = Literal["healthy", "degraded", "disabled", "unknown"]
+OpenRouterKeyEventType = Literal["success", "failure", "disabled", "enabled", "created"]
 
 
 class DashboardMetrics(BaseModel):
@@ -27,6 +36,9 @@ class DashboardMetrics(BaseModel):
     ai_cost_per_active_user_usd: float = Field(ge=0.0)
     safety_intervention_rate: float = Field(ge=0.0, le=1.0)
     privacy_concern_rate: float = Field(ge=0.0, le=1.0)
+    active_key_count: int = Field(default=0, ge=0)
+    disabled_key_count: int = Field(default=0, ge=0)
+    routing_snapshot_age_seconds: int | None = Field(default=None, ge=0)
 
 
 class AdminUser(BaseModel):
@@ -193,3 +205,136 @@ class ModelSettingsUpsert(BaseModel):
     fallback_model: str = Field(min_length=1)
     classification_model: str = Field(min_length=1)
     weekly_summary_model: str = Field(min_length=1)
+
+
+class OpenRouterApiKeyRecord(BaseModel):
+    key_id: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    secret_last4: str = Field(min_length=4, max_length=4)
+    enabled: bool = True
+    priority: int = Field(ge=0)
+    status: OpenRouterKeyStatus = "unknown"
+    last_ok_at: datetime | None = None
+    last_error_at: datetime | None = None
+    consecutive_failures: int = Field(default=0, ge=0)
+    created_at: datetime
+    updated_at: datetime
+
+
+class OpenRouterApiKeyCreate(BaseModel):
+    label: str = Field(min_length=1)
+    secret: str = Field(min_length=16)
+    enabled: bool = True
+    priority: int = Field(default=0, ge=0)
+
+
+class OpenRouterApiKeyPatch(BaseModel):
+    label: str | None = Field(default=None, min_length=1)
+    secret: str | None = Field(default=None, min_length=16)
+    enabled: bool | None = None
+    priority: int | None = Field(default=None, ge=0)
+
+
+class RoutingProfile(BaseModel):
+    capability: RoutingCapability
+    strategy: Literal["quality_first"]
+    min_context_length: int = Field(ge=1)
+    required_parameters: list[str] = Field(default_factory=list)
+    preferred_max_latency_seconds: float = Field(ge=0.0)
+    preferred_min_throughput_tokens_per_second: float = Field(ge=0.0)
+    max_prompt_price_usd_per_million: float | None = Field(default=None, ge=0.0)
+    max_completion_price_usd_per_million: float | None = Field(default=None, ge=0.0)
+    retry_policy: dict[str, int] = Field(default_factory=dict)
+    enabled: bool = True
+    updated_at: datetime
+
+
+class RoutingProfilePatch(BaseModel):
+    strategy: Literal["quality_first"] | None = None
+    min_context_length: int | None = Field(default=None, ge=1)
+    required_parameters: list[str] | None = None
+    preferred_max_latency_seconds: float | None = Field(default=None, ge=0.0)
+    preferred_min_throughput_tokens_per_second: float | None = Field(default=None, ge=0.0)
+    max_prompt_price_usd_per_million: float | None = Field(default=None, ge=0.0)
+    max_completion_price_usd_per_million: float | None = Field(default=None, ge=0.0)
+    retry_policy: dict[str, int] | None = None
+    enabled: bool | None = None
+
+
+class ModelCatalogEntry(BaseModel):
+    model_id: str = Field(min_length=1)
+    canonical_slug: str | None = None
+    name: str = Field(min_length=1)
+    description: str | None = None
+    context_length: int = Field(ge=1)
+    output_modalities: list[str] = Field(default_factory=list)
+    supported_parameters: list[str] = Field(default_factory=list)
+    prompt_price_usd_per_million: float = Field(ge=0.0)
+    completion_price_usd_per_million: float = Field(ge=0.0)
+    request_price_usd: float = Field(default=0.0, ge=0.0)
+    top_provider_json: dict[str, Any] = Field(default_factory=dict)
+    architecture_json: dict[str, Any] = Field(default_factory=dict)
+    expiration_date: datetime | None = None
+    refreshed_at: datetime
+
+
+class ModelSelectionSnapshot(BaseModel):
+    capability: RoutingCapability
+    rank_index: int = Field(ge=0, le=2)
+    model_id: str = Field(min_length=1)
+    score: float = Field(ge=0.0)
+    selection_reason: dict[str, Any] = Field(default_factory=dict)
+    generated_at: datetime
+    expires_at: datetime
+
+
+class OpenRouterKeyEventRecord(BaseModel):
+    event_id: str = Field(min_length=1)
+    key_id: str = Field(min_length=1)
+    key_label: str = Field(min_length=1)
+    event_type: OpenRouterKeyEventType
+    endpoint: str | None = None
+    model: str | None = None
+    error_code: str | None = None
+    notes: str | None = None
+    created_at: datetime
+
+
+class OpenRouterKeyEventUpsert(BaseModel):
+    event_id: str = Field(min_length=1)
+    key_id: str = Field(min_length=1)
+    key_label: str = Field(min_length=1)
+    event_type: OpenRouterKeyEventType
+    endpoint: str | None = None
+    model: str | None = None
+    error_code: str | None = None
+    notes: str | None = None
+    created_at: datetime
+
+
+class GatewayRoutingKey(BaseModel):
+    key_id: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    secret: str = Field(min_length=16)
+    priority: int = Field(ge=0)
+    status: OpenRouterKeyStatus
+
+
+class InternalRoutingConfig(BaseModel):
+    config_source: RoutingConfigSource = "live"
+    generated_at: datetime
+    openrouter_keys: list[GatewayRoutingKey] = Field(default_factory=list)
+    routing_profiles: list[RoutingProfile] = Field(default_factory=list)
+    selection_snapshots: list[ModelSelectionSnapshot] = Field(default_factory=list)
+    feature_flags: dict[str, bool] = Field(default_factory=dict)
+
+
+class MobileRuntimeConfig(BaseModel):
+    schema_version: int = Field(default=1, ge=1)
+    ttl_seconds: int = Field(default=21600, ge=300)
+    gateway_base_url: str = Field(min_length=1)
+    feature_flags: dict[str, bool] = Field(default_factory=dict)
+    friendly_copy: dict[str, str] = Field(default_factory=dict)
+    ai_status: dict[str, Any] = Field(default_factory=dict)
+    generated_at: datetime
+

@@ -15,6 +15,9 @@ export type DashboardMetrics = {
   ai_cost_per_active_user_usd: number;
   safety_intervention_rate: number;
   privacy_concern_rate: number;
+  active_key_count: number;
+  disabled_key_count: number;
+  routing_snapshot_age_seconds: number | null;
 };
 
 export type AdminUser = {
@@ -94,6 +97,81 @@ export type ModelSettingsSnapshot = {
   fallback_model: string;
   classification_model: string;
   weekly_summary_model: string;
+};
+
+export type OpenRouterApiKeyRecord = {
+  key_id: string;
+  label: string;
+  secret_last4: string;
+  enabled: boolean;
+  priority: number;
+  status: "healthy" | "degraded" | "disabled" | "unknown";
+  last_ok_at: string | null;
+  last_error_at: string | null;
+  consecutive_failures: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RoutingProfile = {
+  capability:
+    | "daily_plan"
+    | "task_rewrite"
+    | "semantic_classify"
+    | "weekly_summary";
+  strategy: "quality_first";
+  min_context_length: number;
+  required_parameters: string[];
+  preferred_max_latency_seconds: number;
+  preferred_min_throughput_tokens_per_second: number;
+  max_prompt_price_usd_per_million: number | null;
+  max_completion_price_usd_per_million: number | null;
+  retry_policy: Record<string, number>;
+  enabled: boolean;
+  updated_at: string;
+};
+
+export type ModelCatalogEntry = {
+  model_id: string;
+  canonical_slug: string | null;
+  name: string;
+  description: string | null;
+  context_length: number;
+  output_modalities: string[];
+  supported_parameters: string[];
+  prompt_price_usd_per_million: number;
+  completion_price_usd_per_million: number;
+  request_price_usd: number;
+  top_provider_json: Record<string, unknown>;
+  architecture_json: Record<string, unknown>;
+  expiration_date: string | null;
+  refreshed_at: string;
+};
+
+export type ModelSelectionSnapshot = {
+  capability:
+    | "daily_plan"
+    | "task_rewrite"
+    | "semantic_classify"
+    | "weekly_summary";
+  rank_index: number;
+  model_id: string;
+  score: number;
+  selection_reason: Record<string, unknown>;
+  generated_at: string;
+  expires_at: string;
+};
+
+export type OpenRouterKeyEventRecord = {
+  event_id: string;
+  key_id: string;
+  key_label: string;
+  event_type: "success" | "failure" | "disabled" | "enabled" | "created";
+  endpoint: string | null;
+  model: string | null;
+  error_code: string | null;
+  notes: string | null;
+  created_at: string;
 };
 
 export type SupportRequest = {

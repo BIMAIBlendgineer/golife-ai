@@ -44,12 +44,17 @@ def estimate_cost_usd(
 
 
 def build_model_settings_payload(settings: Settings, provider_name: str) -> dict[str, Any]:
+    primary_model = (
+        "routing_control_plane"
+        if provider_name == "openrouter" and settings.routing_control_enabled
+        else settings.openrouter_default_model
+    )
     return {
         "active_provider": provider_name,
-        "primary_model": settings.openrouter_default_model,
+        "primary_model": primary_model,
         "fallback_model": settings.openrouter_fallback_model or "mock",
         "classification_model": "deterministic_capture_router",
-        "weekly_summary_model": settings.openrouter_default_model,
+        "weekly_summary_model": primary_model,
     }
 
 
@@ -143,6 +148,10 @@ def build_suggestion_operation_payloads(
                     "filtered_events_count",
                     0,
                 ),
+                "routing_mode": provider_meta.get("routing_mode"),
+                "config_source": provider_meta.get("config_source"),
+                "key_label": provider_meta.get("key_label"),
+                "requested_models": provider_meta.get("requested_models", []),
             },
         },
         "mission_audits": mission_audits,
@@ -243,6 +252,7 @@ def build_task_rewrite_operation_payloads(
         if response
         else "guardrail"
     )
+    provider_meta = response.trace.get("provider_meta", {}) if response else {}
     return {
         "usage_event": {
             "event_id": f"usage-{uuid4()}",
@@ -262,9 +272,14 @@ def build_task_rewrite_operation_payloads(
             "user_id": request.user_id,
             "endpoint": "/v1/tasks/rewrite",
             "provider": provider_name,
-            "model": None,
+            "model": provider_meta.get("model") if response else None,
             "latency_ms": round(latency_ms, 2),
-            "fallback": bool(response.trace.get("mock_mode", False)) if response else False,
+            "fallback": (
+                bool(response.trace.get("mock_mode", False))
+                or bool(provider_meta.get("fallback_used", False))
+            )
+            if response
+            else False,
             "suggestions_count": rewrite_count,
             "estimated_cost_usd": estimate_cost_usd(
                 endpoint="/v1/tasks/rewrite",
@@ -276,6 +291,10 @@ def build_task_rewrite_operation_payloads(
             "created_at": created_at,
             "metadata": {
                 "error": error_detail,
+                "routing_mode": provider_meta.get("routing_mode"),
+                "config_source": provider_meta.get("config_source"),
+                "key_label": provider_meta.get("key_label"),
+                "requested_models": provider_meta.get("requested_models", []),
             },
         },
         "safety_events": (
@@ -293,4 +312,41 @@ def build_task_rewrite_operation_payloads(
             if error_detail
             else []
         ),
+    }
+
+
+def build_ai_unavailable_operation_payload(
+    *,
+    endpoint: str,
+    user_id: str,
+    latency_ms: float,
+    provider_name: str,
+) -> dict[str, Any]:
+    created_at = _utcnow_iso()
+    return {
+        "usage_event": {
+            "event_id": f"usage-{uuid4()}",
+            "user_id": user_id,
+            "event_type": "ai_temporarily_unavailable",
+            "endpoint": endpoint,
+            "domain": None,
+            "quantity": 1,
+            "created_at": created_at,
+            "metadata": {"provider": provider_name},
+        },
+        "ai_invocation": {
+            "invocation_id": f"invoke-{uuid4()}",
+            "user_id": user_id,
+            "endpoint": endpoint,
+            "provider": provider_name,
+            "model": None,
+            "latency_ms": round(latency_ms, 2),
+            "fallback": True,
+            "suggestions_count": 0,
+            "estimated_cost_usd": 0.0,
+            "schema_valid": False,
+            "status": "error",
+            "created_at": created_at,
+            "metadata": {"error_code": "ai_temporarily_unavailable"},
+        },
     }

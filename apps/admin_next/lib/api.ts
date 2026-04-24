@@ -3,8 +3,13 @@ import {
   fallbackDashboard,
   fallbackFeatureFlags,
   fallbackFeedback,
+  fallbackModelCatalog,
+  fallbackModelSelections,
   fallbackMissions,
   fallbackModelSettings,
+  fallbackOpenRouterKeyEvents,
+  fallbackOpenRouterKeys,
+  fallbackRoutingProfiles,
   fallbackSafety,
   fallbackSupportRequests,
   fallbackUsage,
@@ -19,8 +24,13 @@ import type {
   DashboardMetrics,
   FeatureFlag,
   FeedbackAuditRecord,
+  ModelCatalogEntry,
   MissionAuditRecord,
   ModelSettingsSnapshot,
+  ModelSelectionSnapshot,
+  OpenRouterApiKeyRecord,
+  OpenRouterKeyEventRecord,
+  RoutingProfile,
   SafetyAuditRecord,
   SupportRequest,
   UsageSnapshot,
@@ -232,5 +242,45 @@ export async function getSupportRequests(): Promise<
 > {
   return adminRequest("/admin/support/export-delete", {
     fallbackData: fallbackSupportRequests,
+  });
+}
+
+export async function getOpenRouterKeys(): Promise<
+  AdminFetchResult<OpenRouterApiKeyRecord[]>
+> {
+  return adminRequest("/admin/openrouter/keys", {
+    fallbackData: fallbackOpenRouterKeys,
+  });
+}
+
+export async function getOpenRouterKeyEvents(): Promise<
+  AdminFetchResult<OpenRouterKeyEventRecord[]>
+> {
+  return adminRequest("/admin/openrouter/key-events", {
+    fallbackData: fallbackOpenRouterKeyEvents,
+  });
+}
+
+export async function getRoutingProfiles(): Promise<
+  AdminFetchResult<RoutingProfile[]>
+> {
+  return adminRequest("/admin/routing-profiles", {
+    fallbackData: fallbackRoutingProfiles,
+  });
+}
+
+export async function getModelCatalog(): Promise<
+  AdminFetchResult<ModelCatalogEntry[]>
+> {
+  return adminRequest("/admin/model-catalog", {
+    fallbackData: fallbackModelCatalog,
+  });
+}
+
+export async function getModelSelections(): Promise<
+  AdminFetchResult<ModelSelectionSnapshot[]>
+> {
+  return adminRequest("/admin/model-selections", {
+    fallbackData: fallbackModelSelections,
   });
 }

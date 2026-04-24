@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -282,19 +283,26 @@ class MockAiGatewayClient extends AiGatewayClient {
 
 class HttpAiGatewayClient extends AiGatewayClient {
   HttpAiGatewayClient({
-    required this.baseUri,
+    required Uri baseUri,
     http.Client? httpClient,
     AiGatewayClient? fallbackClient,
     this.userId = 'local-user',
     this.timeout = const Duration(seconds: 4),
-  })  : _httpClient = httpClient ?? http.Client(),
+  })  : _baseUri = baseUri,
+        _httpClient = httpClient ?? http.Client(),
         _fallbackClient = fallbackClient ?? MockAiGatewayClient();
 
-  final Uri baseUri;
+  Uri _baseUri;
   final http.Client _httpClient;
   final AiGatewayClient _fallbackClient;
   final String userId;
   final Duration timeout;
+
+  Uri get baseUri => _baseUri;
+
+  void updateBaseUri(Uri baseUri) {
+    _baseUri = baseUri;
+  }
 
   @override
   Future<MissionPlanDto> fetchDailyPlan({
@@ -348,7 +356,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
         return _fallbackPlan(
           privacySettings: privacySettings,
           lifeEvents: lifeEvents,
-          reason: 'http_${response.statusCode}',
+          reason: _fallbackReasonFromResponse(response),
           endpoint: '/v1/missions/daily',
           statusCode: response.statusCode,
         );
@@ -379,7 +387,21 @@ class HttpAiGatewayClient extends AiGatewayClient {
       return _fallbackPlan(
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
-        reason: 'timeout',
+        reason: 'no_connection',
+        endpoint: '/v1/missions/daily',
+      );
+    } on SocketException {
+      return _fallbackPlan(
+        privacySettings: privacySettings,
+        lifeEvents: lifeEvents,
+        reason: 'no_connection',
+        endpoint: '/v1/missions/daily',
+      );
+    } on http.ClientException {
+      return _fallbackPlan(
+        privacySettings: privacySettings,
+        lifeEvents: lifeEvents,
+        reason: 'no_connection',
         endpoint: '/v1/missions/daily',
       );
     } on FormatException {
@@ -393,7 +415,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       return _fallbackPlan(
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
-        reason: error.runtimeType.toString(),
+        reason: 'gateway_degraded',
         endpoint: '/v1/missions/daily',
       );
     }
@@ -428,7 +450,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
         return _fallbackClassification(
           privacySettings: privacySettings,
           text: text,
-          reason: 'http_${response.statusCode}',
+          reason: _fallbackReasonFromResponse(response),
           statusCode: response.statusCode,
         );
       }
@@ -456,7 +478,19 @@ class HttpAiGatewayClient extends AiGatewayClient {
       return _fallbackClassification(
         privacySettings: privacySettings,
         text: text,
-        reason: 'timeout',
+        reason: 'no_connection',
+      );
+    } on SocketException {
+      return _fallbackClassification(
+        privacySettings: privacySettings,
+        text: text,
+        reason: 'no_connection',
+      );
+    } on http.ClientException {
+      return _fallbackClassification(
+        privacySettings: privacySettings,
+        text: text,
+        reason: 'no_connection',
       );
     } on FormatException {
       return _fallbackClassification(
@@ -468,7 +502,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       return _fallbackClassification(
         privacySettings: privacySettings,
         text: text,
-        reason: error.runtimeType.toString(),
+        reason: 'gateway_degraded',
       );
     }
   }
@@ -551,6 +585,21 @@ class HttpAiGatewayClient extends AiGatewayClient {
         ? baseUri.toString().substring(0, baseUri.toString().length - 1)
         : baseUri.toString();
     return Uri.parse('$normalizedBase$path');
+  }
+
+  String _fallbackReasonFromResponse(http.Response response) {
+    if (response.statusCode == 503) {
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          final detail = decoded['detail'];
+          if (detail is Map && detail['code'] != null) {
+            return detail['code'].toString();
+          }
+        }
+      } catch (_) {}
+    }
+    return 'http_${response.statusCode}';
   }
 }
 

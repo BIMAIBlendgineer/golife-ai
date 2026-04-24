@@ -1,7 +1,9 @@
-from fastapi.testclient import TestClient
+from datetime import UTC, datetime, timedelta
 
+import app.main as main_module
 from app.main import create_app
 from app.repository import OperationalRepository
+from app.schemas import ModelCatalogEntry
 from app.settings import Settings
 
 
@@ -11,6 +13,10 @@ def _admin_headers() -> dict[str, str]:
 
 def _ingestion_headers() -> dict[str, str]:
     return {"x-ingestion-token": "test-ingestion-token"}
+
+
+def _internal_headers() -> dict[str, str]:
+    return {"x-internal-service-token": "test-internal-token"}
 
 
 def test_health_is_public(client):
@@ -31,6 +37,7 @@ def test_dashboard_returns_operational_metrics(client):
     data = response.json()
     assert data["wau"] >= 1
     assert "ai_cost_total_usd" in data
+    assert "active_key_count" in data
 
 
 def test_users_and_detail_are_available(client):
@@ -59,13 +66,130 @@ def test_feature_flag_can_be_updated(client):
     assert body["enabled"] is True
 
 
-def test_models_and_support_routes_exist(client):
+def test_models_support_and_runtime_config_routes_exist(client):
     models = client.get("/admin/models", headers=_admin_headers())
     support = client.get("/admin/support/export-delete", headers=_admin_headers())
+    runtime_config = client.get("/public/mobile/runtime-config")
     assert models.status_code == 200
     assert support.status_code == 200
+    assert runtime_config.status_code == 200
     assert models.json()["active_provider"] == "openrouter"
     assert len(support.json()) >= 1
+    assert runtime_config.json()["gateway_base_url"] == "http://127.0.0.1:8000"
+    assert "openrouter_keys" not in runtime_config.json()
+
+
+def test_openrouter_keys_are_masked_for_admin_and_decrypted_for_internal(client):
+    created = client.post(
+        "/admin/openrouter/keys",
+        headers=_admin_headers(),
+        json={
+            "label": "Primary key",
+            "secret": "sk-or-v1-abcdefghijklmnopqrstuvwxyz",
+            "priority": 1,
+            "enabled": True,
+        },
+    )
+    assert created.status_code == 200
+    created_body = created.json()
+    assert created_body["label"] == "Primary key"
+    assert created_body["secret_last4"] == "wxyz"
+    assert "secret" not in created_body
+
+    listing = client.get("/admin/openrouter/keys", headers=_admin_headers())
+    assert listing.status_code == 200
+    assert listing.json()[0]["secret_last4"] == "wxyz"
+
+    internal = client.get("/internal/ai-routing/config", headers=_internal_headers())
+    assert internal.status_code == 200
+    internal_body = internal.json()
+    assert len(internal_body["openrouter_keys"]) == 1
+    assert internal_body["openrouter_keys"][0]["secret"] == "sk-or-v1-abcdefghijklmnopqrstuvwxyz"
+
+
+def test_model_catalog_refresh_and_selection_snapshots(client, monkeypatch):
+    now = datetime.now(UTC)
+
+    async def fake_fetch(_base_url: str):
+        return [
+            ModelCatalogEntry(
+                model_id="anthropic/claude-sonnet-4",
+                canonical_slug="anthropic/claude-sonnet-4",
+                name="Claude Sonnet 4",
+                description="Ranked high",
+                context_length=200000,
+                output_modalities=["text"],
+                supported_parameters=["response_format", "temperature", "max_tokens"],
+                prompt_price_usd_per_million=3.0,
+                completion_price_usd_per_million=15.0,
+                request_price_usd=0.0,
+                top_provider_json={"max_completion_tokens": 8192},
+                architecture_json={"output_modalities": ["text"]},
+                expiration_date=now + timedelta(days=7),
+                refreshed_at=now,
+            ),
+            ModelCatalogEntry(
+                model_id="openai/gpt-4.1-mini",
+                canonical_slug="openai/gpt-4.1-mini",
+                name="GPT-4.1 mini",
+                description="Reliable",
+                context_length=128000,
+                output_modalities=["text"],
+                supported_parameters=["response_format", "temperature", "max_tokens"],
+                prompt_price_usd_per_million=0.8,
+                completion_price_usd_per_million=3.2,
+                request_price_usd=0.0,
+                top_provider_json={"max_completion_tokens": 8192},
+                architecture_json={"output_modalities": ["text"]},
+                expiration_date=now + timedelta(days=7),
+                refreshed_at=now,
+            ),
+            ModelCatalogEntry(
+                model_id="google/gemini-2.5-flash",
+                canonical_slug="google/gemini-2.5-flash",
+                name="Gemini 2.5 Flash",
+                description="Fast",
+                context_length=100000,
+                output_modalities=["text"],
+                supported_parameters=["response_format", "temperature", "max_tokens"],
+                prompt_price_usd_per_million=0.4,
+                completion_price_usd_per_million=1.6,
+                request_price_usd=0.0,
+                top_provider_json={"max_completion_tokens": 8192},
+                architecture_json={"output_modalities": ["text"]},
+                expiration_date=now + timedelta(days=7),
+                refreshed_at=now,
+            ),
+        ]
+
+    monkeypatch.setattr(main_module, "fetch_openrouter_model_catalog", fake_fetch)
+
+    refresh = client.post("/admin/model-catalog/refresh", headers=_admin_headers())
+    assert refresh.status_code == 200
+    assert len(refresh.json()) == 3
+
+    selections = client.get("/admin/model-selections", headers=_admin_headers())
+    assert selections.status_code == 200
+    by_capability = [item for item in selections.json() if item["capability"] == "daily_plan"]
+    assert len(by_capability) == 3
+    assert by_capability[0]["rank_index"] == 0
+    assert by_capability[0]["selection_reason"]["model_name"]
+
+
+def test_routing_profile_can_be_patched(client):
+    response = client.patch(
+        "/admin/routing-profiles/daily_plan",
+        headers=_admin_headers(),
+        json={
+            "preferred_max_latency_seconds": 5.0,
+            "preferred_min_throughput_tokens_per_second": 25.0,
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["capability"] == "daily_plan"
+    assert body["preferred_max_latency_seconds"] == 5.0
+    assert body["preferred_min_throughput_tokens_per_second"] == 25.0
 
 
 def test_internal_ingestion_populates_live_metrics(tmp_path):
@@ -73,6 +197,7 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
         settings=Settings(
             admin_token="test-admin-token",
             ingestion_token="test-ingestion-token",
+            internal_service_token="test-internal-token",
             operational_database_path=str(tmp_path / "live.db"),
             seed_demo_data=False,
         ),
@@ -81,6 +206,8 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
             seed_demo_data=False,
         ),
     )
+    from fastapi.testclient import TestClient
+
     client = TestClient(app)
 
     usage_response = client.post(
@@ -191,3 +318,17 @@ def test_production_rejects_default_tokens():
         assert "dev default" in str(exc)
     else:  # pragma: no cover
         raise AssertionError("Production settings should reject default tokens.")
+
+
+def test_production_requires_master_key():
+    try:
+        Settings(
+            environment="production",
+            admin_token="a" * 24,
+            ingestion_token="b" * 24,
+            internal_service_token="c" * 24,
+        )
+    except ValueError as exc:
+        assert "OPENROUTER_KEYS_MASTER_KEY" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("Production settings should reject the default master key.")
