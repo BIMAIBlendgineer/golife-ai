@@ -4,4 +4,10 @@
 .runtime/
 .dart_tool/
 build/
+node_modules/
+.next/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
 **/.DS_Store

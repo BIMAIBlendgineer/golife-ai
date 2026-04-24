@@ -237,6 +237,18 @@ class SqliteLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<GoTask>> loadTasks() async {
+    final db = await _db;
+    final rows = await db.query(
+      'tasks',
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map((row) => GoTask.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
   Future<void> upsertHabit(Habit habit) async {
     final db = await _db;
     await db.insert(
@@ -248,6 +260,18 @@ class SqliteLocalStore implements LocalStore {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  @override
+  Future<List<Habit>> loadHabits() async {
+    final db = await _db;
+    final rows = await db.query(
+      'habits',
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map((row) => Habit.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
   }
 
   @override
@@ -266,6 +290,18 @@ class SqliteLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<ExpenseRecord>> loadExpenses() async {
+    final db = await _db;
+    final rows = await db.query(
+      'expenses',
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map((row) => ExpenseRecord.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
   Future<void> upsertPantryItem(PantryItem pantryItem) async {
     final db = await _db;
     await db.insert(
@@ -276,6 +312,18 @@ class SqliteLocalStore implements LocalStore {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  @override
+  Future<List<PantryItem>> loadPantryItems() async {
+    final db = await _db;
+    final rows = await db.query(
+      'pantry_items',
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map((row) => PantryItem.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
   }
 
   @override
@@ -294,6 +342,18 @@ class SqliteLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<PurchaseIntention>> loadPurchaseIntentions() async {
+    final db = await _db;
+    final rows = await db.query(
+      'purchase_intentions',
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map((row) => PurchaseIntention.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
   Future<void> upsertWeekPlan(WeekPlan weekPlan) async {
     final db = await _db;
     await db.insert(
@@ -304,6 +364,18 @@ class SqliteLocalStore implements LocalStore {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  @override
+  Future<List<WeekPlan>> loadWeekPlans() async {
+    final db = await _db;
+    final rows = await db.query(
+      'week_plans',
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map((row) => WeekPlan.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
   }
 
   Future<void> _createSchema(Database db) async {

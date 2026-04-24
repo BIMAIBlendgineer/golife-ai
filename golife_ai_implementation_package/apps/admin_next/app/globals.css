@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --paper: #f6eee7;
+  --paper-strong: #fff8f2;
+  --paper-soft: rgba(255, 248, 242, 0.82);
+  --ink: #171412;
+  --ink-soft: rgba(23, 20, 18, 0.68);
+  --ink-muted: rgba(23, 20, 18, 0.5);
+  --line: rgba(23, 20, 18, 0.12);
+  --line-strong: rgba(23, 20, 18, 0.22);
+  --sage: #5d7a68;
+  --clay: #d06447;
+  --bronze: #8a6c2f;
+  --sky: #4e708a;
+  --danger-soft: rgba(208, 100, 71, 0.14);
+  --sage-soft: rgba(93, 122, 104, 0.14);
+  --bronze-soft: rgba(138, 108, 47, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-sand text-ink antialiased;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at top left, rgba(208, 100, 71, 0.14), transparent 32%),
+    radial-gradient(circle at top right, rgba(93, 122, 104, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 30%);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", "Aptos", "Segoe UI", sans-serif;
+}
+
+a {
+  @apply text-moss;
+}
+
+::selection {
+  background: rgba(93, 122, 104, 0.24);
+}
+
+.font-mono {
+  font-family: "IBM Plex Mono", "Cascadia Mono", "Consolas", monospace;
+}

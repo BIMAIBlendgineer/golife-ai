@@ -134,3 +134,46 @@ Referencias practicas:
 - Android emulator: `http://10.0.2.2:8000`
 - iOS simulator: `http://127.0.0.1:8000`
 - dispositivo fisico: `http://<IP-DE-TU-MAQUINA>:8000`
+
+## Superficies actuales del producto
+
+Ahora el paquete ya no es solo mobile + AI gateway. La arquitectura activa queda en tres superficies:
+
+- `new_app/golife_flutter`
+  - app movil offline-first
+  - LifeGraph local
+  - captura, misiones, riesgos, feedback y privacidad
+- `services/ai_gateway`
+  - motor IA productivo
+  - API canonica `v1`
+  - clasificacion, daily plan, feedback y ranking
+- `services/web_backend`
+  - backend operacional/admin
+  - usuarios, usage, ai costs, missions, safety, feature flags y support queue
+- `apps/admin_next`
+  - panel operativo Next.js
+  - dashboard, users, usage, ai-costs, missions, feedback, safety, feature-flags, models y support/export-delete
+
+## Ejecutar backend operacional y panel admin
+
+Backend operacional:
+
+```bash
+cd services/web_backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8010 --reload
+```
+
+Panel admin:
+
+```bash
+cd apps/admin_next
+npm install
+npm run dev
+```
+
+Variables utiles para el panel:
+
+```bash
+GOLIFE_ADMIN_API_BASE_URL=http://127.0.0.1:8010
+GOLIFE_ADMIN_API_TOKEN=golife-admin-dev
+```

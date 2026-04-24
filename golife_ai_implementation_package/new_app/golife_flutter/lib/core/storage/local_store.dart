@@ -26,6 +26,14 @@ abstract class LocalStore {
   Future<List<DailyRisk>> loadDailyRisks() async => const <DailyRisk>[];
   Future<void> saveDailyRisks(List<DailyRisk> risks) async {}
 
+  Future<List<GoTask>> loadTasks() async => const <GoTask>[];
+  Future<List<Habit>> loadHabits() async => const <Habit>[];
+  Future<List<ExpenseRecord>> loadExpenses() async => const <ExpenseRecord>[];
+  Future<List<PantryItem>> loadPantryItems() async => const <PantryItem>[];
+  Future<List<PurchaseIntention>> loadPurchaseIntentions() async =>
+      const <PurchaseIntention>[];
+  Future<List<WeekPlan>> loadWeekPlans() async => const <WeekPlan>[];
+
   Future<void> upsertTask(GoTask task) async {}
   Future<void> upsertHabit(Habit habit) async {}
   Future<void> upsertExpense(ExpenseRecord expense) async {}

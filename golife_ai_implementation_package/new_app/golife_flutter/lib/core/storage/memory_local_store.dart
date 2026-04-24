@@ -1,4 +1,12 @@
 import '../../domains/missions/mission_feedback.dart';
+import '../../domains/finance/expense_record.dart';
+import '../../domains/habits/habit.dart';
+import '../../domains/missions/daily_mission.dart';
+import '../../domains/missions/daily_risk.dart';
+import '../../domains/pantry/pantry_item.dart';
+import '../../domains/tasks/go_task.dart';
+import '../../domains/wardrobe/purchase_intention.dart';
+import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import 'local_store.dart';
@@ -7,6 +15,14 @@ class MemoryLocalStore implements LocalStore {
   PrivacySettings _settings = PrivacySettings.defaults();
   final List<LifeEvent> _events = <LifeEvent>[];
   final List<MissionFeedback> _feedbackItems = <MissionFeedback>[];
+  final List<DailyMission> _missions = <DailyMission>[];
+  final List<DailyRisk> _risks = <DailyRisk>[];
+  final List<GoTask> _tasks = <GoTask>[];
+  final List<Habit> _habits = <Habit>[];
+  final List<ExpenseRecord> _expenses = <ExpenseRecord>[];
+  final List<PantryItem> _pantryItems = <PantryItem>[];
+  final List<PurchaseIntention> _purchaseIntentions = <PurchaseIntention>[];
+  final List<WeekPlan> _weekPlans = <WeekPlan>[];
 
   @override
   Future<PrivacySettings> loadPrivacySettings() async {
@@ -41,4 +57,107 @@ class MemoryLocalStore implements LocalStore {
       ..clear()
       ..addAll(feedbackItems);
   }
+
+  @override
+  Future<List<DailyMission>> loadDailyMissions() async {
+    return List<DailyMission>.unmodifiable(_missions);
+  }
+
+  @override
+  Future<void> saveDailyMissions(List<DailyMission> missions) async {
+    _missions
+      ..clear()
+      ..addAll(missions);
+  }
+
+  @override
+  Future<List<DailyRisk>> loadDailyRisks() async {
+    return List<DailyRisk>.unmodifiable(_risks);
+  }
+
+  @override
+  Future<void> saveDailyRisks(List<DailyRisk> risks) async {
+    _risks
+      ..clear()
+      ..addAll(risks);
+  }
+
+  @override
+  Future<List<GoTask>> loadTasks() async {
+    return List<GoTask>.unmodifiable(_tasks);
+  }
+
+  @override
+  Future<List<Habit>> loadHabits() async {
+    return List<Habit>.unmodifiable(_habits);
+  }
+
+  @override
+  Future<List<ExpenseRecord>> loadExpenses() async {
+    return List<ExpenseRecord>.unmodifiable(_expenses);
+  }
+
+  @override
+  Future<List<PantryItem>> loadPantryItems() async {
+    return List<PantryItem>.unmodifiable(_pantryItems);
+  }
+
+  @override
+  Future<List<PurchaseIntention>> loadPurchaseIntentions() async {
+    return List<PurchaseIntention>.unmodifiable(_purchaseIntentions);
+  }
+
+  @override
+  Future<List<WeekPlan>> loadWeekPlans() async {
+    return List<WeekPlan>.unmodifiable(_weekPlans);
+  }
+
+  @override
+  Future<void> upsertTask(GoTask task) async {
+    _replaceById(_tasks, task, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertHabit(Habit habit) async {
+    _replaceById(_habits, habit, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertExpense(ExpenseRecord expense) async {
+    _replaceById(_expenses, expense, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertPantryItem(PantryItem pantryItem) async {
+    _replaceById(_pantryItems, pantryItem, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertPurchaseIntention(
+    PurchaseIntention purchaseIntention,
+  ) async {
+    _replaceById(
+      _purchaseIntentions,
+      purchaseIntention,
+      (item) => item.id,
+    );
+  }
+
+  @override
+  Future<void> upsertWeekPlan(WeekPlan weekPlan) async {
+    _replaceById(_weekPlans, weekPlan, (item) => item.id);
+  }
+}
+
+void _replaceById<T>(
+  List<T> items,
+  T next,
+  String Function(T value) idOf,
+) {
+  final index = items.indexWhere((item) => idOf(item) == idOf(next));
+  if (index >= 0) {
+    items[index] = next;
+    return;
+  }
+  items.add(next);
 }
