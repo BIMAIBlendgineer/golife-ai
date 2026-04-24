@@ -570,6 +570,8 @@ class OperationalRepository:
         row = self._fetchone(query, args)
         if row is None:
             return 0
+        if isinstance(row, dict):
+            return next(iter(row.values()), 0)
         return row[0]
 
     def _ensure_user(self, user_id: str) -> None:

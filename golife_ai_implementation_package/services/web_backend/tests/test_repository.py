@@ -50,3 +50,15 @@ def test_production_accepts_strong_tokens():
     assert settings.environment == "production"
     assert settings.admin_token == "a" * 24
     assert settings.ingestion_token == "b" * 24
+
+
+def test_scalar_supports_postgres_dict_rows(monkeypatch):
+    repository = OperationalRepository(":memory:", seed_demo_data=False)
+
+    monkeypatch.setattr(
+        repository,
+        "_fetchone",
+        lambda _query, _args=(): {"count": 7},
+    )
+
+    assert repository._scalar("SELECT COUNT(*) FROM anything") == 7
