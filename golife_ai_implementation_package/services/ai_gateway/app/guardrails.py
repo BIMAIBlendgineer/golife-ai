@@ -1,0 +1,98 @@
+from collections.abc import Iterable
+
+from fastapi import HTTPException
+
+from app.schemas import AISuggestion, LifeEvent, SuggestionRequest, TaskRewriteRequest
+
+REGULATED_FINANCE_TERMS = (
+    "invest",
+    "stock",
+    "shares",
+    "crypto",
+    "etf",
+    "portfolio",
+    "mutual fund",
+)
+MEDICAL_TERMS = (
+    "diagnose",
+    "diagnosis",
+    "medication",
+    "therapy",
+    "treatment plan",
+    "disorder",
+)
+
+
+def filter_ai_events(request: SuggestionRequest) -> tuple[list[LifeEvent], list[dict[str, str]]]:
+    if not request.privacy_settings.ai_enabled:
+        return [], [
+            {"event_id": event.event_id, "reason": "ai_disabled"}
+            for event in request.life_events
+        ]
+
+    allowed_domains = set(request.privacy_settings.allowed_domains or request.allowed_domains)
+    allowed_events: list[LifeEvent] = []
+    filtered: list[dict[str, str]] = []
+
+    for event in request.life_events:
+        if event.privacy_level != "ai_allowed":
+            filtered.append({"event_id": event.event_id, "reason": "privacy_level"})
+            continue
+        if allowed_domains and event.domain not in allowed_domains:
+            filtered.append({"event_id": event.event_id, "reason": "domain_not_allowed"})
+            continue
+        allowed_events.append(event)
+
+    return allowed_events, filtered
+
+
+def enforce_task_rewrite_privacy(request: TaskRewriteRequest) -> None:
+    if request.privacy_level != "ai_allowed":
+        raise HTTPException(
+            status_code=403,
+            detail="Task rewrite requires privacy_level=ai_allowed.",
+        )
+
+
+def sanitize_suggestions(
+    suggestions: Iterable[AISuggestion],
+    *,
+    max_items: int,
+) -> tuple[list[AISuggestion], list[dict[str, str]]]:
+    accepted: list[AISuggestion] = []
+    rejected: list[dict[str, str]] = []
+
+    for suggestion in suggestions:
+        text = f"{suggestion.title} {suggestion.body}".lower()
+        if not suggestion.evidence:
+            rejected.append(
+                {"suggestion_id": suggestion.suggestion_id, "reason": "missing_evidence"}
+            )
+            continue
+        if any(term in text for term in REGULATED_FINANCE_TERMS):
+            rejected.append(
+                {"suggestion_id": suggestion.suggestion_id, "reason": "regulated_advice"}
+            )
+            continue
+        if any(term in text for term in MEDICAL_TERMS):
+            rejected.append(
+                {"suggestion_id": suggestion.suggestion_id, "reason": "medical_content"}
+            )
+            continue
+
+        merged_actions = list(dict.fromkeys(
+            [*suggestion.forbidden_actions, "external_action_without_confirmation"]
+        ))
+        accepted.append(
+            suggestion.model_copy(
+                update={
+                    "requires_confirmation": True,
+                    "forbidden_actions": merged_actions,
+                }
+            )
+        )
+
+        if len(accepted) >= max_items:
+            break
+
+    return accepted, rejected

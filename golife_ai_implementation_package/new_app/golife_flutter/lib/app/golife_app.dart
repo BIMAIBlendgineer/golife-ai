@@ -1,0 +1,67 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../core/ai_client/ai_gateway_client.dart';
+import '../core/lifegraph/lifegraph_repository.dart';
+import '../core/storage/local_store.dart';
+import '../core/storage/shared_prefs_local_store.dart';
+import '../features/app_state/golife_controller.dart';
+import 'router/app_router.dart';
+import 'theme/golife_theme.dart';
+
+class GoLifeApp extends StatefulWidget {
+  const GoLifeApp({
+    super.key,
+    this.localStore,
+    this.aiGatewayClient,
+    this.lifeGraphRepository,
+  });
+
+  final LocalStore? localStore;
+  final AiGatewayClient? aiGatewayClient;
+  final LifeGraphRepository? lifeGraphRepository;
+
+  @override
+  State<GoLifeApp> createState() => _GoLifeAppState();
+}
+
+class _GoLifeAppState extends State<GoLifeApp> {
+  late final GoLifeController _controller;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = GoLifeController(
+      localStore: widget.localStore ?? const SharedPrefsLocalStore(),
+      aiGatewayClient: widget.aiGatewayClient ?? const MockAiGatewayClient(),
+      lifeGraphRepository: widget.lifeGraphRepository ?? LifeGraphRepository.seeded(),
+    );
+    _router = buildAppRouter(_controller);
+    unawaited(_controller.bootstrap());
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'GoLife AI',
+          theme: buildGoLifeTheme(),
+          routerConfig: _router,
+        );
+      },
+    );
+  }
+}

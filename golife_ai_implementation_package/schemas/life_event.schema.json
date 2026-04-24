@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LifeEvent",
+  "type": "object",
+  "required": [
+    "event_id",
+    "user_id",
+    "domain",
+    "event_type",
+    "timestamp",
+    "payload",
+    "source",
+    "privacy_level"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "domain": {
+      "enum": [
+        "task",
+        "habit",
+        "week",
+        "finance",
+        "wardrobe",
+        "pantry",
+        "mission",
+        "ai"
+      ]
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "source": {
+      "enum": [
+        "manual",
+        "import",
+        "ai",
+        "system"
+      ]
+    },
+    "privacy_level": {
+      "enum": [
+        "local_only",
+        "sync_allowed",
+        "ai_allowed"
+      ]
+    },
+    "evidence_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

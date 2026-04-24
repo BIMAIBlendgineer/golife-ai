@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mission",
+  "type": "object",
+  "required": [
+    "mission_id",
+    "title",
+    "description",
+    "difficulty",
+    "estimated_minutes",
+    "xp_reward",
+    "linked_domains",
+    "steps",
+    "success_metric"
+  ],
+  "properties": {
+    "mission_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "difficulty": {
+      "enum": [
+        "tiny",
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "estimated_minutes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "xp_reward": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "linked_domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "success_metric": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
