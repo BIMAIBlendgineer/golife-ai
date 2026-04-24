@@ -178,6 +178,28 @@ GOLIFE_ADMIN_API_BASE_URL=http://127.0.0.1:8010
 GOLIFE_ADMIN_API_TOKEN=golife-admin-dev
 ```
 
+## Base operacional recomendada: PostgreSQL
+
+El `web_backend` ya acepta dos modos:
+
+- `OPERATIONAL_DATABASE_URL=postgresql://...`
+- `OPERATIONAL_DATABASE_PATH=.runtime/web_backend.db`
+
+La prioridad actual recomendada es PostgreSQL para operacion real y SQLite solo para dev/local o tests.
+
+Ejemplo:
+
+```bash
+cd services/web_backend
+set ENVIRONMENT=dev
+set ADMIN_TOKEN=golife-admin-dev
+set INGESTION_TOKEN=golife-ingest-dev
+set OPERATIONAL_DATABASE_URL=postgresql://postgres:<PASSWORD>@localhost:5432/golife_ops
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8010 --reload
+```
+
+Si `OPERATIONAL_DATABASE_URL` no esta definido, el backend cae a `OPERATIONAL_DATABASE_PATH`.
+
 ## Conectar AI Gateway con backend operacional
 
 Para que el admin deje de depender de datos fallback y empiece a mostrar ingestiones reales:

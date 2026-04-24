@@ -84,7 +84,7 @@ class LifeGraphRepository {
     _bootstrapped = true;
 
     if (storedEvents.isEmpty && _localStore != null && _events.isNotEmpty) {
-      await _localStore!.saveLifeEvents(_events);
+      await _localStore.saveLifeEvents(_events);
     }
   }
 

@@ -57,7 +57,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.74),
+              color: Colors.white.withValues(alpha: 0.74),
               borderRadius: BorderRadius.circular(28),
             ),
             child: Column(

@@ -39,7 +39,7 @@ class AppShellScaffold extends StatelessWidget {
               top: -60,
               right: -20,
               child: _BlurBlob(
-                color: const Color(0xFFD06447).withOpacity(0.14),
+                color: const Color(0xFFD06447).withValues(alpha: 0.14),
                 size: 220,
               ),
             ),
@@ -47,7 +47,7 @@ class AppShellScaffold extends StatelessWidget {
               left: -50,
               bottom: -40,
               child: _BlurBlob(
-                color: const Color(0xFF5D7A68).withOpacity(0.14),
+                color: const Color(0xFF5D7A68).withValues(alpha: 0.14),
                 size: 260,
               ),
             ),
@@ -139,7 +139,7 @@ class _SideRail extends StatelessWidget {
       width: 240,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.72),
+        color: Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: const Color(0x33FFFFFF)),
       ),
@@ -248,7 +248,7 @@ class _DestinationChip extends StatelessWidget {
         color: selected ? Colors.white : const Color(0xFF4F443D),
         fontWeight: FontWeight.w700,
       ),
-      backgroundColor: Colors.white.withOpacity(0.62),
+      backgroundColor: Colors.white.withValues(alpha: 0.62),
       selectedColor: const Color(0xFF1F1A17),
       side: BorderSide.none,
       onSelected: (_) => context.go(destination.path),
@@ -265,7 +265,7 @@ class _ContentFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.82),
+        color: Colors.white.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: const Color(0x33FFFFFF)),
       ),

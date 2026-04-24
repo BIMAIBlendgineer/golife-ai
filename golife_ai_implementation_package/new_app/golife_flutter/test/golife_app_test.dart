@@ -10,7 +10,7 @@ void main() {
     await tester.pumpWidget(
       GoLifeApp(
         localStore: MemoryLocalStore(),
-        aiGatewayClient: const MockAiGatewayClient(),
+        aiGatewayClient: MockAiGatewayClient(),
         lifeGraphRepository: LifeGraphRepository.seeded(),
       ),
     );
@@ -18,7 +18,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('GoLife AI'), findsOneWidget);
-    expect(find.text('Mission of the day'), findsOneWidget);
+    expect(find.text('3 Missions for today'), findsOneWidget);
+    expect(find.text('Risks today'), findsOneWidget);
     expect(find.text('Dashboard'), findsWidgets);
   });
 }

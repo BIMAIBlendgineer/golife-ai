@@ -182,3 +182,12 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
     assert costs.json()[0]["endpoint"] == "/v1/missions/daily"
     assert health.json()["mode"] == "live"
     assert health.json()["last_ingestion_at"] is not None
+
+
+def test_production_rejects_default_tokens():
+    try:
+        Settings(environment="production")
+    except ValueError as exc:
+        assert "dev default" in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError("Production settings should reject default tokens.")

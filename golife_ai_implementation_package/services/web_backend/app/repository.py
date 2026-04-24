@@ -4,6 +4,12 @@ import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
+
+try:
+    import psycopg
+except ImportError:  # pragma: no cover - dependency presence is environment-specific
+    psycopg = None
 
 from app.schemas import (
     AICostSnapshot,
@@ -59,19 +65,50 @@ class OperationalRepository:
     ) -> None:
         self.db_path = db_path
         self.seed_demo_data = seed_demo_data
-        if db_path != ":memory:":
+        self._dialect = (
+            "postgres"
+            if db_path.startswith("postgresql://") or db_path.startswith("postgres://")
+            else "sqlite"
+        )
+        if self._dialect == "sqlite" and db_path != ":memory:":
             Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-        self._connection = sqlite3.connect(db_path, check_same_thread=False)
-        self._connection.row_factory = sqlite3.Row
+        if self._dialect == "postgres":
+            if psycopg is None:  # pragma: no cover
+                raise RuntimeError("psycopg is required for PostgreSQL support.")
+            self._connection = psycopg.connect(db_path, autocommit=False)
+        else:
+            self._connection = sqlite3.connect(db_path, check_same_thread=False)
+            self._connection.row_factory = sqlite3.Row
         self._create_schema()
         self._ensure_defaults()
         if seed_demo_data:
             self._seed_demo_data_if_empty()
 
+    def _sql(self, query: str) -> str:
+        if self._dialect == "postgres":
+            return query.replace("?", "%s")
+        return query
+
+    def _execute(self, query: str, args: tuple[object, ...] = ()):
+        return self._connection.execute(self._sql(query), args)
+
+    def _fetchone(self, query: str, args: tuple[object, ...] = ()) -> object | None:
+        return self._execute(query, args).fetchone()
+
+    def _fetchall(self, query: str, args: tuple[object, ...] = ()) -> list[object]:
+        return self._execute(query, args).fetchall()
+
+    def _commit(self) -> None:
+        self._connection.commit()
+
+    def _display_storage_path(self) -> str:
+        if self._dialect != "postgres":
+            return self.db_path
+        parts = urlsplit(self.db_path)
+        return urlunsplit((parts.scheme, parts.hostname or "", parts.path, "", ""))
+
     def _create_schema(self) -> None:
-        with self._connection:
-            self._connection.executescript(
-                """
+        schema = """
                 CREATE TABLE IF NOT EXISTS admin_users (
                     user_id TEXT PRIMARY KEY,
                     email TEXT NOT NULL,
@@ -180,7 +217,15 @@ class OperationalRepository:
                     updated_at TEXT NOT NULL
                 );
                 """
-            )
+        if self._dialect == "sqlite":
+            with self._connection:
+                self._connection.executescript(schema)
+            return
+
+        statements = [item.strip() for item in schema.split(";") if item.strip()]
+        for statement in statements:
+            self._execute(statement)
+        self._commit()
 
     def _ensure_defaults(self) -> None:
         now = _utcnow()
@@ -223,10 +268,11 @@ class OperationalRepository:
             ),
         ]
         for flag in default_flags:
-            self._connection.execute(
+            self._execute(
                 """
-                INSERT OR IGNORE INTO feature_flags(key, enabled, description, updated_at)
+                INSERT INTO feature_flags(key, enabled, description, updated_at)
                 VALUES (?, ?, ?, ?)
+                ON CONFLICT(key) DO NOTHING
                 """,
                 (
                     flag.key,
@@ -243,9 +289,9 @@ class OperationalRepository:
             classification_model="deterministic_capture_router",
             weekly_summary_model="openai/gpt-4.1-mini",
         )
-        self._connection.execute(
+        self._execute(
             """
-            INSERT OR IGNORE INTO model_settings(
+            INSERT INTO model_settings(
                 id,
                 active_provider,
                 primary_model,
@@ -255,6 +301,7 @@ class OperationalRepository:
                 updated_at
             )
             VALUES (1, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO NOTHING
             """,
             (
                 model_settings.active_provider,
@@ -265,7 +312,7 @@ class OperationalRepository:
                 _to_iso(now),
             ),
         )
-        self._connection.commit()
+        self._commit()
 
     def _seed_demo_data_if_empty(self) -> None:
         user_count = self._scalar("SELECT COUNT(*) FROM admin_users")
@@ -514,16 +561,16 @@ class OperationalRepository:
             self.record_support_request(request)
 
     def _scalar(self, query: str, args: tuple[object, ...] = ()) -> object:
-        row = self._connection.execute(query, args).fetchone()
+        row = self._fetchone(query, args)
         if row is None:
             return 0
         return row[0]
 
     def _ensure_user(self, user_id: str) -> None:
-        existing = self._connection.execute(
+        existing = self._fetchone(
             "SELECT user_id FROM admin_users WHERE user_id = ?",
             (user_id,),
-        ).fetchone()
+        )
         if existing:
             return
         now = _utcnow()
@@ -545,7 +592,7 @@ class OperationalRepository:
         )
 
     def _update_last_seen(self, user_id: str, at: datetime) -> None:
-        self._connection.execute(
+        self._execute(
             """
             UPDATE admin_users
             SET last_seen_at = CASE
@@ -556,267 +603,316 @@ class OperationalRepository:
             """,
             (_to_iso(at), _to_iso(at), user_id),
         )
-        self._connection.commit()
+        self._commit()
 
     def upsert_user(self, user: AdminUser) -> None:
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT INTO admin_users(
-                    user_id,
-                    email,
-                    plan,
-                    status,
-                    created_at,
-                    last_seen_at,
-                    support_flags_json,
-                    export_requested,
-                    delete_requested
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(user_id) DO UPDATE SET
-                    email = excluded.email,
-                    plan = excluded.plan,
-                    status = excluded.status,
-                    created_at = excluded.created_at,
-                    last_seen_at = excluded.last_seen_at,
-                    support_flags_json = excluded.support_flags_json,
-                    export_requested = excluded.export_requested,
-                    delete_requested = excluded.delete_requested
-                """,
-                (
-                    user.user_id,
-                    user.email,
-                    user.plan,
-                    user.status,
-                    _to_iso(user.created_at),
-                    _to_iso(user.last_seen_at),
-                    _json_dumps(user.support_flags),
-                    int(user.export_requested),
-                    int(user.delete_requested),
-                ),
+        self._execute(
+            """
+            INSERT INTO admin_users(
+                user_id,
+                email,
+                plan,
+                status,
+                created_at,
+                last_seen_at,
+                support_flags_json,
+                export_requested,
+                delete_requested
             )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                email = excluded.email,
+                plan = excluded.plan,
+                status = excluded.status,
+                created_at = excluded.created_at,
+                last_seen_at = excluded.last_seen_at,
+                support_flags_json = excluded.support_flags_json,
+                export_requested = excluded.export_requested,
+                delete_requested = excluded.delete_requested
+            """,
+            (
+                user.user_id,
+                user.email,
+                user.plan,
+                user.status,
+                _to_iso(user.created_at),
+                _to_iso(user.last_seen_at),
+                _json_dumps(user.support_flags),
+                int(user.export_requested),
+                int(user.delete_requested),
+            ),
+        )
+        self._commit()
 
     def record_usage_event(self, event: UsageEventRecord) -> None:
         self._ensure_user(event.user_id)
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT OR REPLACE INTO usage_events(
-                    event_id,
-                    user_id,
-                    event_type,
-                    endpoint,
-                    domain,
-                    quantity,
-                    created_at,
-                    metadata_json
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    event.event_id,
-                    event.user_id,
-                    event.event_type,
-                    event.endpoint,
-                    event.domain,
-                    event.quantity,
-                    _to_iso(event.created_at),
-                    _json_dumps(event.metadata),
-                ),
+        self._execute(
+            """
+            INSERT INTO usage_events(
+                event_id,
+                user_id,
+                event_type,
+                endpoint,
+                domain,
+                quantity,
+                created_at,
+                metadata_json
             )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(event_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                event_type = excluded.event_type,
+                endpoint = excluded.endpoint,
+                domain = excluded.domain,
+                quantity = excluded.quantity,
+                created_at = excluded.created_at,
+                metadata_json = excluded.metadata_json
+            """,
+            (
+                event.event_id,
+                event.user_id,
+                event.event_type,
+                event.endpoint,
+                event.domain,
+                event.quantity,
+                _to_iso(event.created_at),
+                _json_dumps(event.metadata),
+            ),
+        )
+        self._commit()
         self._update_last_seen(event.user_id, event.created_at)
 
     def record_ai_invocation(self, invocation: AIInvocationRecord) -> None:
         self._ensure_user(invocation.user_id)
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT OR REPLACE INTO ai_invocations(
-                    invocation_id,
-                    user_id,
-                    endpoint,
-                    provider,
-                    model,
-                    latency_ms,
-                    fallback,
-                    suggestions_count,
-                    estimated_cost_usd,
-                    schema_valid,
-                    status,
-                    created_at,
-                    metadata_json
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    invocation.invocation_id,
-                    invocation.user_id,
-                    invocation.endpoint,
-                    invocation.provider,
-                    invocation.model,
-                    invocation.latency_ms,
-                    int(invocation.fallback),
-                    invocation.suggestions_count,
-                    invocation.estimated_cost_usd,
-                    int(invocation.schema_valid),
-                    invocation.status,
-                    _to_iso(invocation.created_at),
-                    _json_dumps(invocation.metadata),
-                ),
+        self._execute(
+            """
+            INSERT INTO ai_invocations(
+                invocation_id,
+                user_id,
+                endpoint,
+                provider,
+                model,
+                latency_ms,
+                fallback,
+                suggestions_count,
+                estimated_cost_usd,
+                schema_valid,
+                status,
+                created_at,
+                metadata_json
             )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(invocation_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                endpoint = excluded.endpoint,
+                provider = excluded.provider,
+                model = excluded.model,
+                latency_ms = excluded.latency_ms,
+                fallback = excluded.fallback,
+                suggestions_count = excluded.suggestions_count,
+                estimated_cost_usd = excluded.estimated_cost_usd,
+                schema_valid = excluded.schema_valid,
+                status = excluded.status,
+                created_at = excluded.created_at,
+                metadata_json = excluded.metadata_json
+            """,
+            (
+                invocation.invocation_id,
+                invocation.user_id,
+                invocation.endpoint,
+                invocation.provider,
+                invocation.model,
+                invocation.latency_ms,
+                int(invocation.fallback),
+                invocation.suggestions_count,
+                invocation.estimated_cost_usd,
+                int(invocation.schema_valid),
+                invocation.status,
+                _to_iso(invocation.created_at),
+                _json_dumps(invocation.metadata),
+            ),
+        )
+        self._commit()
         self._update_last_seen(invocation.user_id, invocation.created_at)
 
     def record_mission_audit(self, mission: MissionAuditUpsert) -> None:
         self._ensure_user(mission.user_id)
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT OR REPLACE INTO mission_audit_records(
-                    mission_id,
-                    user_id,
-                    title,
-                    status,
-                    usefulness,
-                    domains_json,
-                    matched_risks_json,
-                    final_score,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    mission.mission_id,
-                    mission.user_id,
-                    mission.title,
-                    mission.status,
-                    mission.usefulness,
-                    _json_dumps(mission.domains),
-                    _json_dumps(mission.matched_risks),
-                    mission.final_score,
-                    _to_iso(mission.created_at),
-                ),
+        self._execute(
+            """
+            INSERT INTO mission_audit_records(
+                mission_id,
+                user_id,
+                title,
+                status,
+                usefulness,
+                domains_json,
+                matched_risks_json,
+                final_score,
+                created_at
             )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(mission_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                title = excluded.title,
+                status = excluded.status,
+                usefulness = excluded.usefulness,
+                domains_json = excluded.domains_json,
+                matched_risks_json = excluded.matched_risks_json,
+                final_score = excluded.final_score,
+                created_at = excluded.created_at
+            """,
+            (
+                mission.mission_id,
+                mission.user_id,
+                mission.title,
+                mission.status,
+                mission.usefulness,
+                _json_dumps(mission.domains),
+                _json_dumps(mission.matched_risks),
+                mission.final_score,
+                _to_iso(mission.created_at),
+            ),
+        )
+        self._commit()
         self._update_last_seen(mission.user_id, mission.created_at)
 
     def record_feedback_audit(self, feedback: FeedbackAuditUpsert) -> None:
         self._ensure_user(feedback.user_id)
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT OR REPLACE INTO feedback_audit_records(
-                    feedback_id,
-                    user_id,
-                    suggestion_id,
-                    status,
-                    reason,
-                    domains_json,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    feedback.feedback_id,
-                    feedback.user_id,
-                    feedback.suggestion_id,
-                    feedback.status,
-                    feedback.reason,
-                    _json_dumps(feedback.domains),
-                    _to_iso(feedback.created_at),
-                ),
+        self._execute(
+            """
+            INSERT INTO feedback_audit_records(
+                feedback_id,
+                user_id,
+                suggestion_id,
+                status,
+                reason,
+                domains_json,
+                created_at
             )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(feedback_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                suggestion_id = excluded.suggestion_id,
+                status = excluded.status,
+                reason = excluded.reason,
+                domains_json = excluded.domains_json,
+                created_at = excluded.created_at
+            """,
+            (
+                feedback.feedback_id,
+                feedback.user_id,
+                feedback.suggestion_id,
+                feedback.status,
+                feedback.reason,
+                _json_dumps(feedback.domains),
+                _to_iso(feedback.created_at),
+            ),
+        )
+        self._commit()
         self._update_last_seen(feedback.user_id, feedback.created_at)
 
     def record_safety_event(self, safety_event: SafetyAuditUpsert) -> None:
         self._ensure_user(safety_event.user_id)
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT OR REPLACE INTO safety_events(
-                    event_id,
-                    user_id,
-                    category,
-                    rule,
-                    severity,
-                    endpoint,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    safety_event.event_id,
-                    safety_event.user_id,
-                    safety_event.category,
-                    safety_event.rule,
-                    safety_event.severity,
-                    safety_event.endpoint,
-                    _to_iso(safety_event.created_at),
-                ),
+        self._execute(
+            """
+            INSERT INTO safety_events(
+                event_id,
+                user_id,
+                category,
+                rule,
+                severity,
+                endpoint,
+                created_at
             )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(event_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                category = excluded.category,
+                rule = excluded.rule,
+                severity = excluded.severity,
+                endpoint = excluded.endpoint,
+                created_at = excluded.created_at
+            """,
+            (
+                safety_event.event_id,
+                safety_event.user_id,
+                safety_event.category,
+                safety_event.rule,
+                safety_event.severity,
+                safety_event.endpoint,
+                _to_iso(safety_event.created_at),
+            ),
+        )
+        self._commit()
         self._update_last_seen(safety_event.user_id, safety_event.created_at)
 
     def record_support_request(self, request: SupportRequest) -> None:
         self._ensure_user(request.user_id)
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT OR REPLACE INTO support_requests(
-                    request_id,
-                    user_id,
-                    request_type,
-                    status,
-                    requested_at
-                )
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    request.request_id,
-                    request.user_id,
-                    request.request_type,
-                    request.status,
-                    _to_iso(request.requested_at),
-                ),
+        self._execute(
+            """
+            INSERT INTO support_requests(
+                request_id,
+                user_id,
+                request_type,
+                status,
+                requested_at
             )
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(request_id) DO UPDATE SET
+                user_id = excluded.user_id,
+                request_type = excluded.request_type,
+                status = excluded.status,
+                requested_at = excluded.requested_at
+            """,
+            (
+                request.request_id,
+                request.user_id,
+                request.request_type,
+                request.status,
+                _to_iso(request.requested_at),
+            ),
+        )
+        self._commit()
 
     def set_model_settings(self, model_settings: ModelSettingsUpsert) -> None:
-        with self._connection:
-            self._connection.execute(
-                """
-                INSERT INTO model_settings(
-                    id,
-                    active_provider,
-                    primary_model,
-                    fallback_model,
-                    classification_model,
-                    weekly_summary_model,
-                    updated_at
-                )
-                VALUES (1, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    active_provider = excluded.active_provider,
-                    primary_model = excluded.primary_model,
-                    fallback_model = excluded.fallback_model,
-                    classification_model = excluded.classification_model,
-                    weekly_summary_model = excluded.weekly_summary_model,
-                    updated_at = excluded.updated_at
-                """,
-                (
-                    model_settings.active_provider,
-                    model_settings.primary_model,
-                    model_settings.fallback_model,
-                    model_settings.classification_model,
-                    model_settings.weekly_summary_model,
-                    _to_iso(_utcnow()),
-                ),
+        self._execute(
+            """
+            INSERT INTO model_settings(
+                id,
+                active_provider,
+                primary_model,
+                fallback_model,
+                classification_model,
+                weekly_summary_model,
+                updated_at
             )
+            VALUES (1, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                active_provider = excluded.active_provider,
+                primary_model = excluded.primary_model,
+                fallback_model = excluded.fallback_model,
+                classification_model = excluded.classification_model,
+                weekly_summary_model = excluded.weekly_summary_model,
+                updated_at = excluded.updated_at
+            """,
+            (
+                model_settings.active_provider,
+                model_settings.primary_model,
+                model_settings.fallback_model,
+                model_settings.classification_model,
+                model_settings.weekly_summary_model,
+                _to_iso(_utcnow()),
+            ),
+        )
+        self._commit()
 
     def health(self) -> AdminHealth:
         last_ingestion_at = self._latest_activity()
         return AdminHealth(
             status="ok",
-            data_source="sqlite_operational_repository",
+            data_source=f"{self._dialect}_operational_repository",
             mode="seeded" if self.seed_demo_data else "live",
-            storage_path=self.db_path,
+            storage_path=self._display_storage_path(),
             last_ingestion_at=last_ingestion_at,
         )
 
@@ -845,7 +941,9 @@ class OperationalRepository:
             self._scalar("SELECT COALESCE(AVG(latency_ms), 0) FROM ai_invocations")
         )
         avg_fallback = float(
-            self._scalar("SELECT COALESCE(AVG(fallback), 0) FROM ai_invocations")
+            self._scalar(
+                "SELECT COALESCE(AVG(CAST(fallback AS REAL)), 0) FROM ai_invocations"
+            )
         )
         safety_count = int(self._scalar("SELECT COUNT(*) FROM safety_events"))
         privacy_requests = int(
@@ -888,14 +986,14 @@ class OperationalRepository:
         )
 
     def list_users(self) -> list[AdminUser]:
-        rows = self._connection.execute(
+        rows = self._fetchall(
             """
             SELECT user_id, email, plan, status, created_at, last_seen_at,
                    support_flags_json, export_requested, delete_requested
             FROM admin_users
             ORDER BY last_seen_at DESC, created_at DESC
             """
-        ).fetchall()
+        )
         users: list[AdminUser] = []
         now = _utcnow()
         for row in rows:
@@ -947,7 +1045,11 @@ class OperationalRepository:
         for user in self.list_users():
             fallback_rate = float(
                 self._scalar(
-                    "SELECT COALESCE(AVG(fallback), 0) FROM ai_invocations WHERE user_id = ?",
+                    """
+                    SELECT COALESCE(AVG(CAST(fallback AS REAL)), 0)
+                    FROM ai_invocations
+                    WHERE user_id = ?
+                    """,
                     (user.user_id,),
                 )
             )
@@ -994,7 +1096,7 @@ class OperationalRepository:
         return usage_items
 
     def list_ai_costs(self) -> list[AICostSnapshot]:
-        rows = self._connection.execute(
+        rows = self._fetchall(
             """
             SELECT endpoint,
                    provider,
@@ -1006,7 +1108,7 @@ class OperationalRepository:
             GROUP BY endpoint, provider
             ORDER BY requests DESC, endpoint ASC
             """
-        ).fetchall()
+        )
         return [
             AICostSnapshot(
                 endpoint=row["endpoint"],
@@ -1020,14 +1122,14 @@ class OperationalRepository:
         ]
 
     def list_missions(self) -> list[MissionAuditRecord]:
-        rows = self._connection.execute(
+        rows = self._fetchall(
             """
             SELECT mission_id, user_id, title, status, usefulness,
                    domains_json, matched_risks_json, final_score
             FROM mission_audit_records
             ORDER BY created_at DESC
             """
-        ).fetchall()
+        )
         return [
             MissionAuditRecord(
                 mission_id=row["mission_id"],
@@ -1043,13 +1145,13 @@ class OperationalRepository:
         ]
 
     def list_feedback(self) -> list[FeedbackAuditRecord]:
-        rows = self._connection.execute(
+        rows = self._fetchall(
             """
             SELECT feedback_id, user_id, suggestion_id, status, reason, domains_json, created_at
             FROM feedback_audit_records
             ORDER BY created_at DESC
             """
-        ).fetchall()
+        )
         return [
             FeedbackAuditRecord(
                 feedback_id=row["feedback_id"],
@@ -1064,13 +1166,13 @@ class OperationalRepository:
         ]
 
     def list_safety(self) -> list[SafetyAuditRecord]:
-        rows = self._connection.execute(
+        rows = self._fetchall(
             """
             SELECT event_id, user_id, category, rule, severity, created_at
             FROM safety_events
             ORDER BY created_at DESC
             """
-        ).fetchall()
+        )
         return [
             SafetyAuditRecord(
                 event_id=row["event_id"],
@@ -1084,13 +1186,13 @@ class OperationalRepository:
         ]
 
     def list_feature_flags(self) -> list[FeatureFlag]:
-        rows = self._connection.execute(
+        rows = self._fetchall(
             """
             SELECT key, enabled, description, updated_at
             FROM feature_flags
             ORDER BY key ASC
             """
-        ).fetchall()
+        )
         return [
             FeatureFlag(
                 key=row["key"],
@@ -1102,15 +1204,15 @@ class OperationalRepository:
         ]
 
     def update_feature_flag(self, key: str, enabled: bool) -> FeatureFlag | None:
-        existing = self._connection.execute(
+        existing = self._fetchone(
             "SELECT description FROM feature_flags WHERE key = ?",
             (key,),
-        ).fetchone()
+        )
         if existing is None:
             return None
         updated_at = _utcnow()
         with self._connection:
-            self._connection.execute(
+            self._execute(
                 """
                 UPDATE feature_flags
                 SET enabled = ?, updated_at = ?
@@ -1118,6 +1220,7 @@ class OperationalRepository:
                 """,
                 (int(enabled), _to_iso(updated_at), key),
             )
+        self._commit()
         return FeatureFlag(
             key=key,
             enabled=enabled,
@@ -1126,14 +1229,14 @@ class OperationalRepository:
         )
 
     def model_settings(self) -> ModelSettingsSnapshot:
-        row = self._connection.execute(
+        row = self._fetchone(
             """
             SELECT active_provider, primary_model, fallback_model,
                    classification_model, weekly_summary_model
             FROM model_settings
             WHERE id = 1
             """
-        ).fetchone()
+        )
         if row is None:
             return ModelSettingsSnapshot(
                 active_provider="mock",
@@ -1151,13 +1254,13 @@ class OperationalRepository:
         )
 
     def list_support_requests(self) -> list[SupportRequest]:
-        rows = self._connection.execute(
+        rows = self._fetchall(
             """
             SELECT request_id, user_id, request_type, status, requested_at
             FROM support_requests
             ORDER BY requested_at DESC
             """
-        ).fetchall()
+        )
         return [
             SupportRequest(
                 request_id=row["request_id"],

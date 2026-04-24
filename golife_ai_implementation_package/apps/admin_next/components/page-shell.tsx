@@ -10,13 +10,17 @@ export async function PageShell({ children }: { children: React.ReactNode }) {
   const globalState =
     healthResult.source === "offline"
       ? "BACKEND OFFLINE"
+      : health?.mode !== "seeded" && !health?.last_ingestion_at
+        ? "LIVE — NO INGESTION YET"
       : health?.mode === "seeded"
         ? "FALLBACK SNAPSHOT"
         : "LIVE DATA";
   const globalTone =
     globalState === "LIVE DATA"
       ? "good"
-      : globalState === "FALLBACK SNAPSHOT"
+      : globalState === "LIVE — NO INGESTION YET"
+        ? "warn"
+        : globalState === "FALLBACK SNAPSHOT"
         ? "warn"
         : "danger";
 

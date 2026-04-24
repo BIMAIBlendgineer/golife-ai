@@ -3,6 +3,7 @@
 .pytest_cache/
 .runtime/
 .dart_tool/
+.flutter-plugins-dependencies
 build/
 node_modules/
 .next/

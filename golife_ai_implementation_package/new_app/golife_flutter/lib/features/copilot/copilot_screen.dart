@@ -35,8 +35,8 @@ class CopilotScreen extends StatelessWidget {
                 Chip(
                   label: Text(domain.label),
                   backgroundColor: allowed.contains(domain)
-                      ? const Color(0xFF5D7A68).withOpacity(0.18)
-                      : const Color(0xFF1F1A17).withOpacity(0.06),
+                      ? const Color(0xFF5D7A68).withValues(alpha: 0.18)
+                      : const Color(0xFF1F1A17).withValues(alpha: 0.06),
                 ),
             ],
           ),
@@ -45,7 +45,7 @@ class CopilotScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.74),
+              color: Colors.white.withValues(alpha: 0.74),
               borderRadius: BorderRadius.circular(28),
             ),
             child: Column(
@@ -82,7 +82,7 @@ class CopilotScreen extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.74),
+              color: Colors.white.withValues(alpha: 0.74),
               borderRadius: BorderRadius.circular(28),
             ),
             child: Column(

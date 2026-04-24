@@ -10,6 +10,8 @@ from app.schemas import (
     MissionFeedbackRequest,
     SuggestionRequest,
     SuggestionResponse,
+    TaskRewriteRequest,
+    TaskRewriteResponse,
 )
 from app.settings import Settings
 
@@ -223,4 +225,72 @@ def build_feedback_operation_payloads(
             "domains": request.domain_targets,
             "created_at": created_at,
         },
+    }
+
+
+def build_task_rewrite_operation_payloads(
+    *,
+    request: TaskRewriteRequest,
+    response: TaskRewriteResponse | None,
+    latency_ms: float,
+    status: str,
+    error_detail: str | None = None,
+) -> dict[str, Any]:
+    created_at = _utcnow_iso()
+    rewrite_count = len(response.rewrites) if response else 0
+    provider_name = (
+        str(response.trace.get("provider", "unknown"))
+        if response
+        else "guardrail"
+    )
+    return {
+        "usage_event": {
+            "event_id": f"usage-{uuid4()}",
+            "user_id": request.user_id,
+            "event_type": "task_rewrite_requested",
+            "endpoint": "/v1/tasks/rewrite",
+            "domain": "task",
+            "quantity": 1,
+            "created_at": created_at,
+            "metadata": {
+                "rewrite_count": rewrite_count,
+                "status": status,
+            },
+        },
+        "ai_invocation": {
+            "invocation_id": f"invoke-{uuid4()}",
+            "user_id": request.user_id,
+            "endpoint": "/v1/tasks/rewrite",
+            "provider": provider_name,
+            "model": None,
+            "latency_ms": round(latency_ms, 2),
+            "fallback": bool(response.trace.get("mock_mode", False)) if response else False,
+            "suggestions_count": rewrite_count,
+            "estimated_cost_usd": estimate_cost_usd(
+                endpoint="/v1/tasks/rewrite",
+                provider=provider_name,
+                suggestions_count=rewrite_count,
+            ),
+            "schema_valid": response is not None,
+            "status": status,
+            "created_at": created_at,
+            "metadata": {
+                "error": error_detail,
+            },
+        },
+        "safety_events": (
+            [
+                {
+                    "event_id": f"safety-{uuid4()}",
+                    "user_id": request.user_id,
+                    "category": "privacy",
+                    "rule": "task_rewrite_requires_ai_allowed",
+                    "severity": "medium",
+                    "endpoint": "/v1/tasks/rewrite",
+                    "created_at": created_at,
+                }
+            ]
+            if error_detail
+            else []
+        ),
     }

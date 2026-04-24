@@ -1,6 +1,6 @@
 from time import perf_counter
 
-from fastapi import BackgroundTasks, FastAPI, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 
 from app.feedback_store import MissionFeedbackStore
 from app.operational_client import NoopOperationalEventsClient, OperationalEventsClient
@@ -9,6 +9,7 @@ from app.operational_payloads import (
     build_feedback_operation_payloads,
     build_model_settings_payload,
     build_suggestion_operation_payloads,
+    build_task_rewrite_operation_payloads,
 )
 from app.providers.base import LLMProvider
 from app.providers.factory import build_provider
@@ -150,12 +151,57 @@ def create_app(
     async def rewrite_task(
         payload: TaskRewriteRequest,
         request: Request,
+        background_tasks: BackgroundTasks,
     ) -> TaskRewriteResponse:
-        return await run_task_rewrite(
-            payload,
-            settings=request.app.state.settings,
-            provider=request.app.state.provider,
+        started_at = perf_counter()
+        try:
+            response = await run_task_rewrite(
+                payload,
+                settings=request.app.state.settings,
+                provider=request.app.state.provider,
+            )
+        except HTTPException as exc:
+            telemetry = build_task_rewrite_operation_payloads(
+                request=payload,
+                response=None,
+                latency_ms=(perf_counter() - started_at) * 1000,
+                status="error",
+                error_detail=str(exc.detail),
+            )
+            await request.app.state.operational_client.record_usage_event(
+                telemetry["usage_event"]
+            )
+            await request.app.state.operational_client.record_ai_invocation(
+                telemetry["ai_invocation"]
+            )
+            if telemetry["safety_events"]:
+                await request.app.state.operational_client.record_safety_events(
+                    telemetry["safety_events"]
+                )
+            raise
+
+        telemetry = build_task_rewrite_operation_payloads(
+            request=payload,
+            response=response,
+            latency_ms=(perf_counter() - started_at) * 1000,
+            status="success",
         )
+        background_tasks.add_task(
+            request.app.state.operational_client.record_usage_event,
+            telemetry["usage_event"],
+        )
+        background_tasks.add_task(
+            request.app.state.operational_client.record_ai_invocation,
+            telemetry["ai_invocation"],
+        )
+        background_tasks.add_task(
+            request.app.state.operational_client.record_model_settings,
+            build_model_settings_payload(
+                request.app.state.settings,
+                request.app.state.provider.provider_name,
+            ),
+        )
+        return response
 
     @app.post("/v1/finance/reflect", response_model=SuggestionResponse)
     async def finance_reflect(

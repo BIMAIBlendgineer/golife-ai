@@ -36,7 +36,7 @@ abstract class AiGatewayClient {
 }
 
 class MockAiGatewayClient extends AiGatewayClient {
-  const MockAiGatewayClient();
+  MockAiGatewayClient();
 
   @override
   Future<MissionPlanDto> fetchDailyPlan({
@@ -288,7 +288,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
     this.userId = 'local-user',
     this.timeout = const Duration(seconds: 4),
   })  : _httpClient = httpClient ?? http.Client(),
-        _fallbackClient = fallbackClient ?? const MockAiGatewayClient();
+        _fallbackClient = fallbackClient ?? MockAiGatewayClient();
 
   final Uri baseUri;
   final http.Client _httpClient;

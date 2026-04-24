@@ -367,3 +367,65 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
     assert operational_client.invocations[0]["endpoint"] == "/v1/events/classify"
     assert len(operational_client.feedback_items) == 1
     assert operational_client.feedback_items[0]["status"] == "completed"
+
+
+def test_task_rewrite_reports_operational_events(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/tasks/rewrite",
+        json={
+            "user_id": "user-1",
+            "task_title": "Prepare weekly budget",
+            "privacy_level": "ai_allowed",
+        },
+    )
+
+    assert response.status_code == 200
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["event_type"] == "task_rewrite_requested"
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["endpoint"] == "/v1/tasks/rewrite"
+    assert operational_client.invocations[0]["status"] == "success"
+
+
+def test_task_rewrite_privacy_rejection_reports_safety(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/tasks/rewrite",
+        json={
+            "user_id": "user-1",
+            "task_title": "Prepare weekly budget",
+            "privacy_level": "local_only",
+        },
+    )
+
+    assert response.status_code == 403
+    assert len(operational_client.usage_events) == 1
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["status"] == "error"
+    assert len(operational_client.safety_batches) == 1
+    assert operational_client.safety_batches[0][0]["rule"] == "task_rewrite_requires_ai_allowed"

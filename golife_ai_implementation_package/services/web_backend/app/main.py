@@ -25,7 +25,7 @@ def create_app(
 ) -> FastAPI:
     resolved_settings = settings or Settings()
     resolved_repository = repository or OperationalRepository(
-        resolved_settings.operational_database_path,
+        resolved_settings.resolved_operational_database,
         seed_demo_data=resolved_settings.seed_demo_data,
     )
 

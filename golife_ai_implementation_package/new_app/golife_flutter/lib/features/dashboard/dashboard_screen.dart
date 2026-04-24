@@ -96,7 +96,7 @@ class DashboardScreen extends StatelessWidget {
                       for (final domain in primaryMission.domainTargets)
                         Chip(
                           label: Text(domain),
-                          backgroundColor: Colors.white.withOpacity(0.14),
+                          backgroundColor: Colors.white.withValues(alpha: 0.14),
                           labelStyle: theme.textTheme.labelLarge?.copyWith(
                             color: Colors.white,
                           ),
@@ -310,7 +310,7 @@ class _DailyRiskCard extends StatelessWidget {
         color: const Color(0xFFF6EEE7),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: _severityColor(risk.severity).withOpacity(0.22),
+          color: _severityColor(risk.severity).withValues(alpha: 0.22),
         ),
       ),
       child: Column(
@@ -373,7 +373,7 @@ class _MissionSupportCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.76),
+        color: Colors.white.withValues(alpha: 0.76),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -435,7 +435,7 @@ class _MetaPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.18),
+        color: color.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

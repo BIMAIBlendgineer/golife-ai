@@ -205,7 +205,7 @@ class SharedPrefsLocalStore implements LocalStore {
     final prefs = await SharedPreferences.getInstance();
     final rawJson = prefs.getString(key);
     if (rawJson == null || rawJson.isEmpty) {
-      return const <T>[];
+      return <T>[];
     }
 
     final decoded = jsonDecode(rawJson) as List<dynamic>;

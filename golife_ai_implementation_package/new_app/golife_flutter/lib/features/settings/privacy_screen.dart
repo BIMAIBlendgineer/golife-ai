@@ -88,7 +88,7 @@ class _PrivacyMetricCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: tone.withOpacity(0.12),
+        color: tone.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -127,7 +127,7 @@ class _DomainPermissionCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.76),
+        color: Colors.white.withValues(alpha: 0.76),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
