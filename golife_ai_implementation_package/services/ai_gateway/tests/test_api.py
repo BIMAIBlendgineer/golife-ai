@@ -158,6 +158,34 @@ def test_feedback_store_persists_items(tmp_path):
     assert items[0]["status"] == "useful"
 
 
+def test_feedback_summary_is_isolated_per_user(tmp_path):
+    store = MissionFeedbackStore(tmp_path / "feedback.json")
+    store.record(
+        MissionFeedbackRequest(
+            user_id="user-1",
+            suggestion_id="mission-1",
+            status="useful",
+            domain_targets=["task"],
+        )
+    )
+    store.record(
+        MissionFeedbackRequest(
+            user_id="user-2",
+            suggestion_id="mission-1",
+            status="rejected",
+            domain_targets=["task"],
+        )
+    )
+
+    user_one_summary = store.summarize("user-1")
+    user_two_summary = store.summarize("user-2")
+
+    assert user_one_summary["item_count"] == 1
+    assert user_one_summary["totals"]["useful"] == 1
+    assert "rejected" not in user_one_summary["totals"]
+    assert user_two_summary["totals"]["rejected"] == 1
+
+
 def test_feedback_summary_is_visible_in_followup_daily_plan(client):
     feedback_response = client.post(
         "/v1/feedback",
@@ -188,3 +216,33 @@ def test_feedback_summary_is_visible_in_followup_daily_plan(client):
     data = response.json()
     assert "feedback_learning" in data["trace"]["nodes"]
     assert data["trace"]["feedback_learning"]["totals"]["useful"] == 1
+
+
+def test_feedback_from_other_user_does_not_change_daily_plan_trace(client):
+    feedback_response = client.post(
+        "/v1/feedback",
+        json={
+            "user_id": "user-2",
+            "suggestion_id": "mock-daily-task-habit",
+            "status": "rejected",
+            "domain_targets": ["task", "habit"],
+            "recommendation_type": "mission",
+        },
+    )
+    assert feedback_response.status_code == 200
+
+    response = client.post(
+        "/v1/missions/daily",
+        json={
+            "user_id": "user-1",
+            "allowed_domains": ["task", "habit"],
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["task", "habit"]},
+            "life_events": [
+                _event("evt-1", "task", "ai_allowed"),
+                _event("evt-2", "habit", "ai_allowed"),
+            ],
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["trace"]["feedback_learning"]["totals"] == {}

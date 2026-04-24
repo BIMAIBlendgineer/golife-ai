@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domains/missions/daily_mission.dart';
+import '../../domains/missions/daily_risk.dart';
 import '../app_state/golife_controller.dart';
 import 'signal_card.dart';
 
@@ -16,6 +17,7 @@ class DashboardScreen extends StatelessWidget {
     final secondaryMissions = missions.length > 1
         ? missions.skip(1).toList(growable: false)
         : const <DailyMission>[];
+    final risks = controller.dailyRisks;
     final width = MediaQuery.sizeOf(context).width;
     final crossAxisCount = width >= 1080 ? 2 : 1;
     final theme = Theme.of(context);
@@ -72,6 +74,10 @@ class DashboardScreen extends StatelessWidget {
                     _MetaPill(
                       label: controller.latestFeedbackLabel,
                       color: const Color(0xFF8A6C2F),
+                    ),
+                    _MetaPill(
+                      label: '${risks.length} risks',
+                      color: const Color(0xFF7A5167),
                     ),
                     if (primaryMission != null)
                       _MetaPill(
@@ -138,6 +144,20 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 20),
+          Text('Risks today', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
+          if (risks.isEmpty)
+            Text(
+              'No explicit daily risks were detected from the current AI-eligible graph.',
+              style: theme.textTheme.bodyMedium,
+            )
+          else
+            for (final risk in risks)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _DailyRiskCard(risk: risk),
+              ),
           const SizedBox(height: 20),
           Text('Support missions', style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
@@ -270,6 +290,66 @@ class DashboardScreen extends StatelessWidget {
       return 'Mock';
     }
     return 'Local';
+  }
+}
+
+class _DailyRiskCard extends StatelessWidget {
+  const _DailyRiskCard({
+    required this.risk,
+  });
+
+  final DailyRisk risk;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6EEE7),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: _severityColor(risk.severity).withOpacity(0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${risk.severity.toUpperCase()} RISK',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: _severityColor(risk.severity),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(risk.title, style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(risk.summary, style: theme.textTheme.bodyMedium),
+          if (risk.domainTargets.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final domain in risk.domainTargets) Chip(label: Text(domain)),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _severityColor(String severity) {
+    switch (severity) {
+      case 'high':
+        return const Color(0xFFD06447);
+      case 'medium':
+        return const Color(0xFF8A6C2F);
+      default:
+        return const Color(0xFF5D7A68);
+    }
   }
 }
 

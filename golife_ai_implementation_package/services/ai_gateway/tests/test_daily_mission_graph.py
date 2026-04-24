@@ -38,8 +38,10 @@ def test_daily_mission_graph_tasks_and_habits(client):
     assert data['suggestions'][0]['domain_targets'] == ['task', 'habit']
     assert data['suggestions'][0]['requires_confirmation'] is True
     assert 'validate_consent' in data['trace']['nodes']
+    assert 'assess_risks' in data['trace']['nodes']
     assert 'feedback_learning' in data['trace']['nodes']
     assert 'build_response' in data['trace']['nodes']
+    assert data['trace']['assess_risks']['risk_count'] >= 1
 
 
 def test_daily_mission_graph_finance_and_pantry(client):
@@ -70,6 +72,8 @@ def test_daily_mission_graph_finance_and_pantry(client):
     assert 'buy' not in body
     assert 'revisa' in body or 'despensa' in body or 'comida' in body
     assert data['trace']['classify_day_state']['day_state'] == 'recovery'
+    assert data['trace']['assess_risks']['risks'][0]['risk_id'] == 'food_spend_overlap'
+    assert data['trace']['rank']['score_breakdown']
 
 
 def test_daily_mission_graph_wardrobe_purchase_intention(client):
@@ -103,3 +107,4 @@ def test_daily_mission_graph_wardrobe_purchase_intention(client):
     assert 'compara' in suggestion['body'].lower() or 'revis' in suggestion['body'].lower()
     assert suggestion['evidence']
     assert suggestion['uncertainty']
+    assert data['trace']['assess_risks']['risks'][0]['risk_id'] == 'purchase_intention_active'

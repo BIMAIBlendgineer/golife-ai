@@ -31,6 +31,7 @@ class MissionGraphState(TypedDict, total=False):
     filtered_events: list[dict[str, str]]
     domain_summaries: list[dict[str, Any]]
     day_state: str
+    risks: list[dict[str, Any]]
     patterns: list[dict[str, Any]]
     candidates: list[AISuggestion]
     reviewed_candidates: list[AISuggestion]
@@ -127,6 +128,58 @@ def _detect_patterns_from_state(state: MissionGraphState) -> list[dict[str, Any]
     return patterns
 
 
+def _assess_risks_from_state(state: MissionGraphState) -> list[dict[str, Any]]:
+    events = state.get("allowed_events", [])
+    domains = {event.domain for event in events}
+    risks: list[dict[str, Any]] = []
+
+    if {"finance", "pantry"}.issubset(domains):
+        risks.append(
+            {
+                "risk_id": "food_spend_overlap",
+                "title": "Food spend may rise before pantry is used",
+                "summary": "There is both finance and pantry context, so buying before using what exists can create waste and extra spend.",
+                "severity": "medium",
+                "domains": ["finance", "pantry"],
+            }
+        )
+
+    if {"task", "habit"}.issubset(domains):
+        risks.append(
+            {
+                "risk_id": "task_habit_tradeoff",
+                "title": "Task pressure may crowd out recovery habits",
+                "summary": "Tasks and habits are both active, so the day can drift into reaction mode unless a habit stays protected.",
+                "severity": "medium",
+                "domains": ["task", "habit"],
+            }
+        )
+
+    if any(event.event_type == "purchase_intention" for event in events):
+        risks.append(
+            {
+                "risk_id": "purchase_intention_active",
+                "title": "A purchase intention may trigger an avoidable buy",
+                "summary": "Wardrobe intent is active, so a pause or comparison may be needed before spending.",
+                "severity": "low",
+                "domains": ["wardrobe"],
+            }
+        )
+
+    if state.get("day_state") == "overloaded":
+        risks.append(
+            {
+                "risk_id": "overloaded_day",
+                "title": "The day looks overloaded",
+                "summary": "Several domains are active at once, so the plan should reduce scope instead of adding more moving parts.",
+                "severity": "high",
+                "domains": sorted(domains),
+            }
+        )
+
+    return risks[:3]
+
+
 def _feedback_delta(
     suggestion: AISuggestion,
     feedback_summary: dict[str, Any],
@@ -207,6 +260,19 @@ def classify_day_state(state: MissionGraphState) -> MissionGraphState:
     return {"day_state": day_state, "trace": trace}
 
 
+def assess_risks(state: MissionGraphState) -> MissionGraphState:
+    risks = _assess_risks_from_state(state)
+    trace = _append_trace(
+        state.get("trace", {}),
+        node_name="assess_risks",
+        payload={
+            "risk_count": len(risks),
+            "risks": risks,
+        },
+    )
+    return {"risks": risks, "trace": trace}
+
+
 def detect_patterns(state: MissionGraphState) -> MissionGraphState:
     patterns = _detect_patterns_from_state(state)
     trace = _append_trace(
@@ -236,6 +302,7 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
             "events": [event.model_dump(mode="json") for event in state.get("allowed_events", [])],
             "domain_summaries": state.get("domain_summaries", []),
             "day_state": state.get("day_state", "unknown"),
+            "risks": state.get("risks", []),
             "patterns": state.get("patterns", []),
             "feedback_summary": state.get("feedback_summary", {}),
             "constraints": state["request"].constraints,
@@ -301,19 +368,55 @@ def guardrail_review(state: MissionGraphState) -> MissionGraphState:
 
 
 def rank(state: MissionGraphState) -> MissionGraphState:
-    def score(suggestion: AISuggestion) -> float:
-        evidence_scores = [item.confidence for item in suggestion.evidence] or [0.0]
-        return (suggestion.confidence * 0.7) + (mean(evidence_scores) * 0.3)
+    risks = state.get("risks", [])
 
-    ranked_candidates = sorted(
-        state.get("reviewed_candidates", []),
-        key=score,
+    def score_breakdown(suggestion: AISuggestion) -> dict[str, Any]:
+        evidence_scores = [item.confidence for item in suggestion.evidence] or [0.0]
+        evidence_strength = mean(evidence_scores)
+        impact = min(
+            1.0,
+            suggestion.confidence + max(0, len(suggestion.domain_targets) - 1) * 0.05,
+        )
+        matched_risks = [
+            risk
+            for risk in risks
+            if set(risk.get("domains", [])) & set(suggestion.domain_targets)
+        ]
+        urgency = min(1.0, 0.45 + (len(matched_risks) * 0.18))
+        effort_fit = 0.72 if suggestion.recommendation_type in {"reflection", "warning"} else 0.64
+        final_score = (
+            (impact * 0.35)
+            + (urgency * 0.30)
+            + (effort_fit * 0.20)
+            + (evidence_strength * 0.15)
+        )
+        return {
+            "suggestion_id": suggestion.suggestion_id,
+            "impact": round(impact, 4),
+            "urgency": round(urgency, 4),
+            "effort_fit": round(effort_fit, 4),
+            "evidence_strength": round(evidence_strength, 4),
+            "matched_risks": [risk.get("risk_id") for risk in matched_risks],
+            "final_score": round(final_score, 4),
+        }
+
+    ranked_with_scores = sorted(
+        [
+            (suggestion, score_breakdown(suggestion))
+            for suggestion in state.get("reviewed_candidates", [])
+        ],
+        key=lambda item: item[1]["final_score"],
         reverse=True,
     )[: state["request"].max_suggestions]
+
+    ranked_candidates = [item[0] for item in ranked_with_scores]
     trace = _append_trace(
         state.get("trace", {}),
         node_name="rank",
-        payload={"ranked_count": len(ranked_candidates)},
+        payload={
+            "ranked_count": len(ranked_candidates),
+            "score_breakdown": [item[1] for item in ranked_with_scores],
+        },
     )
     return {"ranked_candidates": ranked_candidates, "trace": trace}
 
@@ -347,6 +450,7 @@ def _compiled_graph():
     graph.add_node("validate_consent", validate_consent)
     graph.add_node("summarize_events", summarize_events)
     graph.add_node("classify_day_state", classify_day_state)
+    graph.add_node("assess_risks", assess_risks)
     graph.add_node("detect_patterns", detect_patterns)
     graph.add_node("generate_candidates", generate_candidates)
     graph.add_node("feedback_learning", apply_feedback_learning)
@@ -356,7 +460,8 @@ def _compiled_graph():
     graph.set_entry_point("validate_consent")
     graph.add_edge("validate_consent", "summarize_events")
     graph.add_edge("summarize_events", "classify_day_state")
-    graph.add_edge("classify_day_state", "detect_patterns")
+    graph.add_edge("classify_day_state", "assess_risks")
+    graph.add_edge("assess_risks", "detect_patterns")
     graph.add_edge("detect_patterns", "generate_candidates")
     graph.add_edge("generate_candidates", "feedback_learning")
     graph.add_edge("feedback_learning", "guardrail_review")

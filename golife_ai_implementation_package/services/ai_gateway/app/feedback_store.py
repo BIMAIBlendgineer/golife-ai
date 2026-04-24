@@ -36,15 +36,20 @@ class MissionFeedbackStore:
         with self._lock:
             return list(self._items)
 
-    def summarize(self) -> dict[str, object]:
+    def summarize(self, user_id: str | None = None) -> dict[str, object]:
         with self._lock:
             by_suggestion: dict[str, dict[str, int]] = {}
             by_domain: dict[str, dict[str, int]] = {}
             totals: dict[str, int] = {}
+            matching_items = 0
 
             for item in self._items:
+                if user_id and str(item.get("user_id", "")) != user_id:
+                    continue
+
                 status = str(item.get("status", "unknown"))
                 suggestion_id = str(item.get("suggestion_id", ""))
+                matching_items += 1
                 totals[status] = totals.get(status, 0) + 1
 
                 suggestion_stats = by_suggestion.setdefault(suggestion_id, {})
@@ -56,6 +61,8 @@ class MissionFeedbackStore:
                     domain_stats[status] = domain_stats.get(status, 0) + 1
 
             return {
+                "user_id": user_id,
+                "item_count": matching_items,
                 "totals": totals,
                 "by_suggestion": by_suggestion,
                 "by_domain": by_domain,

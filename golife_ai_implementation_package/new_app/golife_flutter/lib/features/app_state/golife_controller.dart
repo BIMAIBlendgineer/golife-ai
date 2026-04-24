@@ -12,6 +12,7 @@ import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
+import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
@@ -97,6 +98,7 @@ class GoLifeController extends ChangeNotifier {
   List<LifeEvent> get lifeEvents => _lifeGraphRepository.allEvents();
   List<MissionFeedback> get missionFeedbackHistory =>
       List<MissionFeedback>.unmodifiable(_missionFeedback);
+  List<DailyRisk> get dailyRisks => _extractDailyRisks();
   int get totalEventCount => lifeEvents.length;
   int get aiEligibleEventCount =>
       lifeEvents.where(_eventEligibleForAi).length;
@@ -342,5 +344,36 @@ class GoLifeController extends ChangeNotifier {
       default:
         return 'note_captured';
     }
+  }
+
+  List<DailyRisk> _extractDailyRisks() {
+    final mission = dailyMission;
+    if (mission == null) {
+      return const <DailyRisk>[];
+    }
+
+    final assessRisks = mission.trace['assess_risks'];
+    if (assessRisks is! Map) {
+      return const <DailyRisk>[];
+    }
+
+    final rawRisks = assessRisks['risks'];
+    if (rawRisks is! List) {
+      return const <DailyRisk>[];
+    }
+
+    return rawRisks.whereType<Map>().map((risk) {
+      final domainTargets = (risk['domains'] as List?)
+              ?.map((item) => item.toString())
+              .toList(growable: false) ??
+          const <String>[];
+      return DailyRisk(
+        id: (risk['risk_id'] ?? 'risk-unknown').toString(),
+        title: (risk['title'] ?? 'Risk').toString(),
+        summary: (risk['summary'] ?? '').toString(),
+        severity: (risk['severity'] ?? 'low').toString(),
+        domainTargets: domainTargets,
+      );
+    }).toList(growable: false);
   }
 }

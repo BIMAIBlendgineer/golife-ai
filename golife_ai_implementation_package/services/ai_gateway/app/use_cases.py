@@ -34,7 +34,7 @@ async def run_suggestions(
         request,
         settings=settings,
         provider=provider,
-        feedback_summary=feedback_store.summarize(),
+        feedback_summary=feedback_store.summarize(request.user_id),
         intent=intent,
     )
 
