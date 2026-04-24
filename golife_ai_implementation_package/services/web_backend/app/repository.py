@@ -8,8 +8,10 @@ from urllib.parse import urlsplit, urlunsplit
 
 try:
     import psycopg
+    from psycopg.rows import dict_row
 except ImportError:  # pragma: no cover - dependency presence is environment-specific
     psycopg = None
+    dict_row = None
 
 from app.schemas import (
     AICostSnapshot,
@@ -75,7 +77,11 @@ class OperationalRepository:
         if self._dialect == "postgres":
             if psycopg is None:  # pragma: no cover
                 raise RuntimeError("psycopg is required for PostgreSQL support.")
-            self._connection = psycopg.connect(db_path, autocommit=False)
+            self._connection = psycopg.connect(
+                db_path,
+                autocommit=False,
+                row_factory=dict_row,
+            )
         else:
             self._connection = sqlite3.connect(db_path, check_same_thread=False)
             self._connection.row_factory = sqlite3.Row
