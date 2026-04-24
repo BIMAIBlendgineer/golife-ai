@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Operational surface for GoLife AI mission quality and system health.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

@@ -12,6 +12,8 @@ import {
 } from "@/lib/fallback-data";
 import type {
   AICostSnapshot,
+  AdminBackendHealth,
+  AdminDataState,
   AdminFetchResult,
   AdminUser,
   DashboardMetrics,
@@ -33,6 +35,7 @@ type RequestOptions = {
   method?: "GET" | "PATCH";
   body?: string;
   fallbackData: unknown;
+  fallbackSource?: Extract<AdminDataState, "fallback" | "offline">;
 };
 
 function fallbackMessage(path: string, cause: string): string {
@@ -41,8 +44,14 @@ function fallbackMessage(path: string, cause: string): string {
 
 async function adminRequest<T>(
   path: string,
-  { method = "GET", body, fallbackData }: RequestOptions,
+  {
+    method = "GET",
+    body,
+    fallbackData,
+    fallbackSource = "fallback",
+  }: RequestOptions,
 ): Promise<AdminFetchResult<T>> {
+  const fetchedAt = new Date().toISOString();
   try {
     const response = await fetch(`${ADMIN_API_BASE_URL}${path}`, {
       method,
@@ -59,11 +68,13 @@ async function adminRequest<T>(
       return {
         data: fallbackData as T,
         error: fallbackMessage(path, `${response.status} ${response.statusText}`),
+        source: fallbackSource,
+        fetchedAt,
       };
     }
 
     const data = (await response.json()) as T;
-    return { data, error: null };
+    return { data, error: null, source: "live", fetchedAt };
   } catch (error) {
     return {
       data: fallbackData as T,
@@ -71,6 +82,8 @@ async function adminRequest<T>(
         path,
         error instanceof Error ? error.message : "unknown error",
       ),
+      source: fallbackSource,
+      fetchedAt,
     };
   }
 }
@@ -79,6 +92,7 @@ async function adminWrite<T>(
   path: string,
   body: Record<string, unknown>,
 ): Promise<AdminFetchResult<T>> {
+  const fetchedAt = new Date().toISOString();
   try {
     const response = await fetch(`${ADMIN_API_BASE_URL}${path}`, {
       method: "PATCH",
@@ -95,17 +109,23 @@ async function adminWrite<T>(
       return {
         data: null,
         error: `${response.status} ${response.statusText}`,
+        source: "offline",
+        fetchedAt,
       };
     }
 
     return {
       data: (await response.json()) as T,
       error: null,
+      source: "live",
+      fetchedAt,
     };
   } catch (error) {
     return {
       data: null,
       error: error instanceof Error ? error.message : "unknown error",
+      source: "offline",
+      fetchedAt,
     };
   }
 }
@@ -118,6 +138,21 @@ export function getAdminRuntime(): {
     baseUrl: ADMIN_API_BASE_URL,
     tokenConfigured: ADMIN_API_TOKEN.length > 0,
   };
+}
+
+export async function getBackendHealth(): Promise<
+  AdminFetchResult<AdminBackendHealth>
+> {
+  return adminRequest("/health", {
+    fallbackData: {
+      status: "ok",
+      data_source: "unreachable_backend",
+      mode: "seeded",
+      storage_path: ADMIN_API_BASE_URL,
+      last_ingestion_at: null,
+    } satisfies AdminBackendHealth,
+    fallbackSource: "offline",
+  });
 }
 
 export async function getDashboard(): Promise<AdminFetchResult<DashboardMetrics>> {

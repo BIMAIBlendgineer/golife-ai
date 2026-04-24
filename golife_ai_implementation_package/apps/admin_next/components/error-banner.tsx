@@ -1,6 +1,12 @@
 import { StatusPill } from "@/components/status-pill";
 
-export function ErrorBanner({ error }: { error: string | null }) {
+export function ErrorBanner({
+  error,
+  fetchedAt,
+}: {
+  error: string | null;
+  fetchedAt?: string;
+}) {
   if (!error) {
     return null;
   }
@@ -15,6 +21,11 @@ export function ErrorBanner({ error }: { error: string | null }) {
           <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
             {error}
           </p>
+          {fetchedAt ? (
+            <p className="text-sm leading-6 text-[color:var(--ink-muted)]">
+              Snapshot fetched {fetchedAt}
+            </p>
+          ) : null}
         </div>
         <StatusPill tone="danger">Fallback snapshot</StatusPill>
       </div>

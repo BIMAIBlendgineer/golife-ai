@@ -1,3 +1,5 @@
+export type AdminDataState = "live" | "fallback" | "offline" | "seeded";
+
 export type DashboardMetrics = {
   dau: number;
   wau: number;
@@ -102,7 +104,17 @@ export type SupportRequest = {
   requested_at: string;
 };
 
+export type AdminBackendHealth = {
+  status: "ok";
+  data_source: string;
+  mode: "live" | "seeded";
+  storage_path: string;
+  last_ingestion_at: string | null;
+};
+
 export type AdminFetchResult<T> = {
   data: T | null;
   error: string | null;
+  source: AdminDataState;
+  fetchedAt: string;
 };

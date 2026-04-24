@@ -177,3 +177,33 @@ Variables utiles para el panel:
 GOLIFE_ADMIN_API_BASE_URL=http://127.0.0.1:8010
 GOLIFE_ADMIN_API_TOKEN=golife-admin-dev
 ```
+
+## Conectar AI Gateway con backend operacional
+
+Para que el admin deje de depender de datos fallback y empiece a mostrar ingestiones reales:
+
+```bash
+cd services/ai_gateway
+set OPERATIONAL_BACKEND_ENABLED=true
+set OPERATIONAL_BACKEND_BASE_URL=http://127.0.0.1:8010
+set OPERATIONAL_BACKEND_INGESTION_TOKEN=golife-ingest-dev
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Con eso, las rutas del gateway registran:
+
+- invocaciones IA
+- auditoria de misiones generadas
+- feedback
+- safety events por guardrails
+- modelos activos en el backend operacional
+
+## Estados del admin
+
+El panel admin ahora distingue:
+
+- `LIVE DATA`
+- `FALLBACK SNAPSHOT`
+- `BACKEND OFFLINE`
+
+Tambien muestra la ultima ingestion conocida para evitar confundir snapshots con datos operacionales en vivo.

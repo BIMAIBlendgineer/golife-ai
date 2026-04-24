@@ -7,9 +7,17 @@ from app.settings import Settings
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client(tmp_path) -> TestClient:
     app = create_app(
-        settings=Settings(admin_token="test-admin-token"),
-        repository=OperationalRepository(),
+        settings=Settings(
+            admin_token="test-admin-token",
+            ingestion_token="test-ingestion-token",
+            operational_database_path=str(tmp_path / "web_backend.db"),
+            seed_demo_data=True,
+        ),
+        repository=OperationalRepository(
+            str(tmp_path / "web_backend.db"),
+            seed_demo_data=True,
+        ),
     )
     return TestClient(app)

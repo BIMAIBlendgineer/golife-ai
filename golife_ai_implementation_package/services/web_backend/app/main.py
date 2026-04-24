@@ -3,10 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.repository import OperationalRepository
 from app.schemas import (
+    AIInvocationRecord,
+    AdminHealth,
     DashboardMetrics,
     FeatureFlag,
     FeatureFlagPatch,
+    FeedbackAuditUpsert,
+    MissionAuditUpsert,
     ModelSettingsSnapshot,
+    ModelSettingsUpsert,
+    SafetyAuditUpsert,
+    UsageEventRecord,
 )
 from app.settings import Settings
 
@@ -17,7 +24,10 @@ def create_app(
     repository: OperationalRepository | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings()
-    resolved_repository = repository or OperationalRepository()
+    resolved_repository = repository or OperationalRepository(
+        resolved_settings.operational_database_path,
+        seed_demo_data=resolved_settings.seed_demo_data,
+    )
 
     app = FastAPI(title="GoLife Web Backend", version="0.1.0")
     app.state.settings = resolved_settings
@@ -35,8 +45,14 @@ def create_app(
         if x_admin_token != resolved_settings.admin_token:
             raise HTTPException(status_code=401, detail="Invalid admin token.")
 
-    @app.get("/health")
-    async def health() -> dict[str, str]:
+    def require_ingestion(
+        x_ingestion_token: str | None = Header(default=None),
+    ) -> None:
+        if x_ingestion_token != resolved_settings.ingestion_token:
+            raise HTTPException(status_code=401, detail="Invalid ingestion token.")
+
+    @app.get("/health", response_model=AdminHealth)
+    async def health() -> AdminHealth:
         return resolved_repository.health()
 
     @app.get("/admin/dashboard", response_model=DashboardMetrics)
@@ -99,6 +115,56 @@ def create_app(
             item.model_dump(mode="json")
             for item in resolved_repository.list_support_requests()
         ]
+
+    @app.post("/internal/usage-events", status_code=202)
+    async def record_usage_event(
+        payload: UsageEventRecord,
+        _: None = Depends(require_ingestion),
+    ) -> dict[str, bool]:
+        resolved_repository.record_usage_event(payload)
+        return {"accepted": True}
+
+    @app.post("/internal/ai-invocations", status_code=202)
+    async def record_ai_invocation(
+        payload: AIInvocationRecord,
+        _: None = Depends(require_ingestion),
+    ) -> dict[str, bool]:
+        resolved_repository.record_ai_invocation(payload)
+        return {"accepted": True}
+
+    @app.post("/internal/mission-audits", status_code=202)
+    async def record_mission_audits(
+        payload: list[MissionAuditUpsert],
+        _: None = Depends(require_ingestion),
+    ) -> dict[str, int]:
+        for item in payload:
+            resolved_repository.record_mission_audit(item)
+        return {"accepted": len(payload)}
+
+    @app.post("/internal/feedback-audits", status_code=202)
+    async def record_feedback_audit(
+        payload: FeedbackAuditUpsert,
+        _: None = Depends(require_ingestion),
+    ) -> dict[str, bool]:
+        resolved_repository.record_feedback_audit(payload)
+        return {"accepted": True}
+
+    @app.post("/internal/safety-events", status_code=202)
+    async def record_safety_events(
+        payload: list[SafetyAuditUpsert],
+        _: None = Depends(require_ingestion),
+    ) -> dict[str, int]:
+        for item in payload:
+            resolved_repository.record_safety_event(item)
+        return {"accepted": len(payload)}
+
+    @app.post("/internal/model-settings", status_code=202)
+    async def record_model_settings(
+        payload: ModelSettingsUpsert,
+        _: None = Depends(require_ingestion),
+    ) -> dict[str, bool]:
+        resolved_repository.set_model_settings(payload)
+        return {"accepted": True}
 
     return app
 

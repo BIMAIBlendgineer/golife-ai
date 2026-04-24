@@ -1,9 +1,24 @@
 import { NavSidebar } from "@/components/nav-sidebar";
 import { StatusPill } from "@/components/status-pill";
-import { getAdminRuntime } from "@/lib/api";
+import { getAdminRuntime, getBackendHealth } from "@/lib/api";
+import { formatDateTime } from "@/lib/format";
 
-export function PageShell({ children }: { children: React.ReactNode }) {
+export async function PageShell({ children }: { children: React.ReactNode }) {
   const runtime = getAdminRuntime();
+  const healthResult = await getBackendHealth();
+  const health = healthResult.data;
+  const globalState =
+    healthResult.source === "offline"
+      ? "BACKEND OFFLINE"
+      : health?.mode === "seeded"
+        ? "FALLBACK SNAPSHOT"
+        : "LIVE DATA";
+  const globalTone =
+    globalState === "LIVE DATA"
+      ? "good"
+      : globalState === "FALLBACK SNAPSHOT"
+        ? "warn"
+        : "danger";
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-4 lg:grid lg:grid-cols-[290px_minmax(0,1fr)] lg:px-6">
@@ -21,8 +36,14 @@ export function PageShell({ children }: { children: React.ReactNode }) {
                 This panel watches the same product loop as mobile:
                 capture, risks, missions, feedback, trust.
               </p>
+              <p className="text-sm leading-6 text-[color:var(--ink-muted)]">
+                {health?.last_ingestion_at
+                  ? `Last ingestion ${formatDateTime(health.last_ingestion_at)}`
+                  : "No operational ingestion recorded yet."}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <StatusPill tone={globalTone}>{globalState}</StatusPill>
               <StatusPill tone="good">API {runtime.baseUrl}</StatusPill>
               <StatusPill tone={runtime.tokenConfigured ? "info" : "warn"}>
                 {runtime.tokenConfigured ? "Admin token set" : "Token missing"}

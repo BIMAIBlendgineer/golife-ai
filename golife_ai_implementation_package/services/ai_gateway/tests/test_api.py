@@ -1,3 +1,6 @@
+from fastapi.testclient import TestClient
+
+from app.main import create_app
 from app.providers.factory import build_provider
 from app.feedback_store import MissionFeedbackStore
 from app.providers.mock import MockLLMProvider
@@ -16,6 +19,40 @@ def _event(event_id: str, domain: str, privacy_level: str, event_type: str = "lo
         "source": "manual",
         "privacy_level": privacy_level,
     }
+
+
+class FakeOperationalClient:
+    def __init__(self) -> None:
+        self.usage_events: list[dict] = []
+        self.invocations: list[dict] = []
+        self.mission_batches: list[list[dict]] = []
+        self.feedback_items: list[dict] = []
+        self.safety_batches: list[list[dict]] = []
+        self.model_settings: list[dict] = []
+
+    async def record_usage_event(self, payload: dict) -> bool:
+        self.usage_events.append(payload)
+        return True
+
+    async def record_ai_invocation(self, payload: dict) -> bool:
+        self.invocations.append(payload)
+        return True
+
+    async def record_mission_audits(self, payload: list[dict]) -> bool:
+        self.mission_batches.append(payload)
+        return True
+
+    async def record_feedback_audit(self, payload: dict) -> bool:
+        self.feedback_items.append(payload)
+        return True
+
+    async def record_safety_events(self, payload: list[dict]) -> bool:
+        self.safety_batches.append(payload)
+        return True
+
+    async def record_model_settings(self, payload: dict) -> bool:
+        self.model_settings.append(payload)
+        return True
 
 
 def test_health_reports_mock_mode(client):
@@ -246,3 +283,87 @@ def test_feedback_from_other_user_does_not_change_daily_plan_trace(client):
     assert response.status_code == 200
     data = response.json()
     assert data["trace"]["feedback_learning"]["totals"] == {}
+
+
+def test_daily_mission_reports_operational_events(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/missions/daily",
+        json={
+            "user_id": "user-1",
+            "allowed_domains": ["finance", "pantry"],
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["finance", "pantry"],
+            },
+            "life_events": [
+                _event("evt-1", "finance", "ai_allowed"),
+                _event("evt-2", "pantry", "ai_allowed"),
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["event_type"] == "daily_plan_requested"
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["endpoint"] == "/v1/missions/daily"
+    assert len(operational_client.mission_batches) == 1
+    assert len(operational_client.mission_batches[0]) == 3
+    assert len(operational_client.model_settings) == 1
+
+
+def test_classification_and_feedback_report_operational_audits(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    classify_response = client.post(
+        "/v1/events/classify",
+        json={
+            "user_id": "user-1",
+            "text": "Compre cafe y pague 4.50 antes de entrar a trabajar.",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["finance"]},
+        },
+    )
+    feedback_response = client.post(
+        "/v1/feedback",
+        json={
+            "user_id": "user-1",
+            "suggestion_id": "mock-daily-task-habit",
+            "status": "completed",
+            "notes": "finished it",
+            "domain_targets": ["task"],
+            "recommendation_type": "mission",
+        },
+    )
+
+    assert classify_response.status_code == 200
+    assert feedback_response.status_code == 200
+    assert len(operational_client.usage_events) == 2
+    assert operational_client.usage_events[0]["event_type"] == "capture_classification_requested"
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["endpoint"] == "/v1/events/classify"
+    assert len(operational_client.feedback_items) == 1
+    assert operational_client.feedback_items[0]["status"] == "completed"

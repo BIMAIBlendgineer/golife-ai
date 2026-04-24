@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -8,6 +8,8 @@ UserStatus = Literal["active", "paused", "trial"]
 FeedbackStatus = Literal["useful", "accepted", "completed", "rejected", "edited"]
 SafetySeverity = Literal["low", "medium", "high"]
 RequestType = Literal["export", "delete"]
+DataMode = Literal["live", "seeded"]
+InvocationStatus = Literal["success", "error"]
 
 
 class DashboardMetrics(BaseModel):
@@ -117,3 +119,77 @@ class SupportRequest(BaseModel):
     status: Literal["open", "done"]
     requested_at: datetime
 
+
+class AdminHealth(BaseModel):
+    status: Literal["ok"]
+    data_source: str = Field(min_length=1)
+    mode: DataMode
+    storage_path: str = Field(min_length=1)
+    last_ingestion_at: datetime | None = None
+
+
+class UsageEventRecord(BaseModel):
+    event_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    event_type: str = Field(min_length=1)
+    endpoint: str | None = None
+    domain: str | None = None
+    quantity: int = Field(default=1, ge=1)
+    created_at: datetime
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class AIInvocationRecord(BaseModel):
+    invocation_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    endpoint: str = Field(min_length=1)
+    provider: str = Field(min_length=1)
+    model: str | None = None
+    latency_ms: float = Field(ge=0.0)
+    fallback: bool = False
+    suggestions_count: int = Field(default=0, ge=0)
+    estimated_cost_usd: float = Field(default=0.0, ge=0.0)
+    schema_valid: bool = True
+    status: InvocationStatus = "success"
+    created_at: datetime
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class MissionAuditUpsert(BaseModel):
+    mission_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    status: Literal["generated", "accepted", "completed", "rejected"]
+    usefulness: FeedbackStatus | None = None
+    domains: list[str] = Field(default_factory=list)
+    matched_risks: list[str] = Field(default_factory=list)
+    final_score: float = Field(ge=0.0)
+    created_at: datetime
+
+
+class FeedbackAuditUpsert(BaseModel):
+    feedback_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    suggestion_id: str = Field(min_length=1)
+    status: FeedbackStatus
+    reason: str | None = None
+    domains: list[str] = Field(default_factory=list)
+    created_at: datetime
+
+
+class SafetyAuditUpsert(BaseModel):
+    event_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    category: str = Field(min_length=1)
+    rule: str = Field(min_length=1)
+    severity: SafetySeverity
+    endpoint: str | None = None
+    created_at: datetime
+
+
+class ModelSettingsUpsert(BaseModel):
+    active_provider: str = Field(min_length=1)
+    primary_model: str = Field(min_length=1)
+    fallback_model: str = Field(min_length=1)
+    classification_model: str = Field(min_length=1)
+    weekly_summary_model: str = Field(min_length=1)
