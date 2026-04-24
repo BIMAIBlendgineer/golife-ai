@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "Domain": {
+      "enum": [
+        "task",
+        "habit",
+        "money",
+        "pantry",
+        "wardrobe",
+        "planning",
+        "system"
+      ],
+      "title": "Domain",
+      "type": "string"
+    },
+    "RecommendationType": {
+      "enum": [
+        "daily_mission",
+        "task_fix",
+        "spending_insight",
+        "pantry_plan",
+        "no_buy"
+      ],
+      "title": "RecommendationType",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "type": {
+      "$ref": "#/$defs/RecommendationType"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "evidence": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "uncertainty": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Uncertainty",
+      "type": "array"
+    },
+    "action_minimum": {
+      "title": "Action Minimum",
+      "type": "string"
+    },
+    "explanation": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Explanation"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/RiskLevel",
+      "default": "low"
+    },
+    "domain_links": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/Domain"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "title": "Domain Links",
+      "type": "array"
+    },
+    "requires_user_confirmation": {
+      "default": false,
+      "title": "Requires User Confirmation",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "title",
+    "summary",
+    "action_minimum"
+  ],
+  "title": "AIRecommendation",
+  "type": "object"
+}
