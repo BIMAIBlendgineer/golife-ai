@@ -42,11 +42,11 @@ Fecha: 2026-04-24
 
 Esta matriz es tecnica y operativa. No sustituye revision legal formal antes de distribuir comercialmente GoLife.
 
-## Estado de migracion en `new_app/golife_flutter`
+## Estado de migracion en `apps/mobile_flutter`
 
 Durante la implementacion inicial del prompt 04:
 
-- no se copio ningun archivo fuente completo dentro de `new_app/golife_flutter`;
+- no se copio ningun archivo fuente completo dentro de `apps/mobile_flutter`;
 - los modelos de `tasks`, `pantry` y `wardrobe` se reescribieron como archivos propios tomando conceptos de repos MIT auditados;
 - los modelos de `habits` y `week` se reescribieron en limpio y se marcaron en cabecera como `No GPL source copied`;
 - `finance` se implemento como placeholder propio porque `Flow` no esta disponible localmente.

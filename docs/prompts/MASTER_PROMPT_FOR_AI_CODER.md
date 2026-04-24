@@ -110,7 +110,7 @@ Decisión esperada:
 Crear:
 
 ```text
-new_app/golife_flutter/
+apps/mobile_flutter/
 ```
 
 Módulos:

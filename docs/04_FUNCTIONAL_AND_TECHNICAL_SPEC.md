@@ -30,7 +30,7 @@ Usar Flutter para el producto final por estos motivos:
 ## Estructura final recomendada
 
 ```text
-new_app/golife_flutter/
+apps/mobile_flutter/
   lib/
     app/
       app.dart

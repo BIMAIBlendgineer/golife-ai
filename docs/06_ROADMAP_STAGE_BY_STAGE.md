@@ -33,7 +33,7 @@ Objetivo: crear app nueva.
 
 Tareas:
 
-1. Crear `new_app/golife_flutter`.
+1. Crear `apps/mobile_flutter`.
 2. Implementar router.
 3. Implementar tema.
 4. Implementar navegación principal:

@@ -1,6 +1,6 @@
 # Prompt — Crear shell Flutter GoLife
 
-Crea `new_app/golife_flutter`.
+Crea `apps/mobile_flutter`.
 
 Implementa:
 

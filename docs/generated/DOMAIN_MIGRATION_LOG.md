@@ -4,7 +4,7 @@ Fecha: 2026-04-24
 
 ## Resumen
 
-La migracion inicial hacia `new_app/golife_flutter` se hizo con modelos propios y emision de `LifeEvent`.
+La migracion inicial hacia `apps/mobile_flutter` se hizo con modelos propios y emision de `LifeEvent`.
 
 No se copio ningun archivo fuente completo desde los repos auditados.
 

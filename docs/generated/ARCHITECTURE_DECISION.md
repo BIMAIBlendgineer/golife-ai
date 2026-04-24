@@ -6,7 +6,7 @@ Fecha: 2026-04-24
 
 GoLife AI se implementara como un producto nuevo con esta arquitectura:
 
-1. App movil principal en Flutter: `new_app/golife_flutter`
+1. App movil principal en Flutter: `apps/mobile_flutter`
 2. Gateway IA separado en FastAPI: `services/ai_gateway`
 3. Orquestacion IA con LangGraph
 4. Proveedor inicial LLM: OpenRouter

@@ -68,7 +68,7 @@ Habo, WeekToDo y Flow son GPL-3.0. Si copias código GPL dentro de GoLife, el re
 
 4. Entrega a una IA programadora el archivo:
    ```text
-   prompts/MASTER_PROMPT_FOR_AI_CODER.md
+   docs/prompts/MASTER_PROMPT_FOR_AI_CODER.md
    ```
 
 5. La IA debe empezar por auditoría local, no por escribir código.
@@ -85,12 +85,16 @@ golife-ai-lab/
     openwardrobe_db/
     wanna/
     taskly/
-  new_app/
-    golife_flutter/
+  apps/
+    mobile_flutter/
+    admin_next/
   services/
     ai_gateway/
+    web_backend/
+  packages/
+    contracts/
   docs/
-  prompts/
+    prompts/
 ```
 
 ## Resultado esperado
@@ -139,7 +143,7 @@ Referencias practicas:
 
 Ahora el paquete ya no es solo mobile + AI gateway. La arquitectura activa queda en tres superficies:
 
-- `new_app/golife_flutter`
+- `apps/mobile_flutter`
   - app movil offline-first
   - LifeGraph local
   - captura, misiones, riesgos, feedback y privacidad
@@ -153,6 +157,9 @@ Ahora el paquete ya no es solo mobile + AI gateway. La arquitectura activa queda
 - `apps/admin_next`
   - panel operativo Next.js
   - dashboard, users, usage, ai-costs, missions, feedback, safety, feature-flags, models y support/export-delete
+- `packages/contracts`
+  - snapshots JSON de contratos compartidos
+  - `life_event`, `mission` y `ai_suggestion`
 
 ## Ejecutar backend operacional y panel admin
 
