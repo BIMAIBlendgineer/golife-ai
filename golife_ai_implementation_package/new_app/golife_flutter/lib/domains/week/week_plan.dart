@@ -31,11 +31,12 @@ class WeekPlan {
 
   String get energyNote => days.isEmpty ? 'No focus blocks yet.' : days.first.focus;
 
-  LifeEvent toLifeEvent(String type) {
+  LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'week',
       type: type,
       summary: theme,
+      privacyLevel: privacyLevel,
       payload: {
         'weekPlanId': id,
         'dayCount': days.length,

@@ -1,5 +1,7 @@
 from app.providers.factory import build_provider
+from app.feedback_store import MissionFeedbackStore
 from app.providers.mock import MockLLMProvider
+from app.schemas import MissionFeedbackRequest
 from app.settings import Settings
 
 
@@ -118,3 +120,22 @@ def test_feedback_endpoint_stores_structured_feedback(client):
     assert data["stored"] is True
     assert data["feedback_id"].startswith("feedback-")
     assert data["trace"]["status"] == "useful"
+
+
+def test_feedback_store_persists_items(tmp_path):
+    store_path = tmp_path / "feedback.json"
+    store = MissionFeedbackStore(store_path)
+    feedback_id = store.record(
+        MissionFeedbackRequest(
+            user_id="user-1",
+            suggestion_id="mission-1",
+            status="useful",
+            notes="kept locally",
+            trace={"source": "test"},
+        )
+    )
+    assert feedback_id.startswith("feedback-")
+    reloaded_store = MissionFeedbackStore(store_path)
+    items = reloaded_store.all()
+    assert len(items) == 1
+    assert items[0]["status"] == "useful"

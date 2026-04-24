@@ -19,11 +19,12 @@ class ExpenseRecord {
 
   String get reflectionLabel => '$label (\$$amount)';
 
-  LifeEvent toLifeEvent() {
+  LifeEvent toLifeEvent({String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'finance',
       type: 'expense_logged',
       summary: label,
+      privacyLevel: privacyLevel,
       payload: {
         'expenseId': id,
         'amount': amount,

@@ -23,11 +23,12 @@ class Habit {
 
   String get streakLabel => '$streak-day streak';
 
-  LifeEvent toLifeEvent(String type) {
+  LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'habit',
       type: type,
       summary: title,
+      privacyLevel: privacyLevel,
       payload: {
         'habitId': id,
         'cue': cue,

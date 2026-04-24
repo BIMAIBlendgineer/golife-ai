@@ -313,7 +313,7 @@ class AppDestination {
 
 const appDestinations = [
   AppDestination(label: 'Dashboard', path: '/dashboard', icon: Icons.space_dashboard_rounded),
-  AppDestination(label: 'LifeQuest', path: '/lifequest', icon: Icons.auto_awesome_rounded),
+  AppDestination(label: 'Capture', path: '/capture', icon: Icons.add_circle_outline_rounded),
   AppDestination(label: 'Week', path: '/week', icon: Icons.view_week_rounded),
   AppDestination(label: 'Tasks', path: '/tasks', icon: Icons.checklist_rounded),
   AppDestination(label: 'Money', path: '/money', icon: Icons.stacked_line_chart_rounded),

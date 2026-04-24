@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/app_state/golife_controller.dart';
+import '../../features/capture/capture_screen.dart';
 import '../../features/copilot/copilot_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/settings/privacy_screen.dart';
@@ -26,21 +27,8 @@ GoRouter buildAppRouter(GoLifeController controller) {
             builder: (context, state) => DashboardScreen(controller: controller),
           ),
           GoRoute(
-            path: '/lifequest',
-            builder: (context, state) => SectionPlaceholderScreen(
-              title: 'LifeQuest',
-              eyebrow: 'Daily loop',
-              description:
-                  'A mission lane for tiny, justified actions that connect tasks, habits and recovery.',
-              accent: const Color(0xFFD06447),
-              highlights: const [
-                'Quest pacing built from LifeEvents',
-                'Tiny actions instead of guilt-heavy plans',
-                'Ready for daily mission integration',
-              ],
-              actionLabel: 'Emit mission-ready event',
-              onAction: controller.emitMissionEvent,
-            ),
+            path: '/capture',
+            builder: (context, state) => CaptureScreen(controller: controller),
           ),
           GoRoute(
             path: '/week',

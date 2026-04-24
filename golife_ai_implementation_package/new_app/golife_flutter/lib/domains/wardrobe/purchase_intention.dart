@@ -15,11 +15,12 @@ class PurchaseIntention {
   final String label;
   final String reason;
 
-  LifeEvent toLifeEvent() {
+  LifeEvent toLifeEvent({String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'wardrobe',
       type: 'purchase_intention',
       summary: label,
+      privacyLevel: privacyLevel,
       payload: {
         'purchaseIntentionId': id,
         'reason': reason,

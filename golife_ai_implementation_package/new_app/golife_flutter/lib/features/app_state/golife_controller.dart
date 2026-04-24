@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/ai_client/ai_gateway_client.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
 import '../../core/lifegraph/life_event.dart';
+import '../../core/lifegraph/life_event_factory.dart';
 import '../../core/lifegraph/lifegraph_repository.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/storage/local_store.dart';
@@ -139,24 +140,72 @@ class GoLifeController extends ChangeNotifier {
       );
 
   Future<void> emitWeekEvent() => _recordEvent(
-        event: weekSummary.toLifeEvent('week_plan_checked'),
+        event: weekSummary.toLifeEvent(
+          'week_plan_checked',
+          privacyLevel: _privacyLevelForDomain('week'),
+        ),
       );
 
   Future<void> emitTaskEvent() => _recordEvent(
-        event: criticalTask.toLifeEvent('task_progress_ping'),
+        event: criticalTask.toLifeEvent(
+          'task_progress_ping',
+          privacyLevel: _privacyLevelForDomain('task'),
+        ),
       );
 
   Future<void> emitFinanceEvent() => _recordEvent(
-        event: financeSummary.toLifeEvent(),
+        event: financeSummary.toLifeEvent(
+          privacyLevel: _privacyLevelForDomain('finance'),
+        ),
       );
 
   Future<void> emitPantryEvent() => _recordEvent(
-        event: pantrySummary.toLifeEvent('ingredient_flagged'),
+        event: pantrySummary.toLifeEvent(
+          'ingredient_flagged',
+          privacyLevel: _privacyLevelForDomain('pantry'),
+        ),
       );
 
   Future<void> emitWardrobeEvent() => _recordEvent(
-        event: closetSummary.toLifeEvent(),
+        event: closetSummary.toLifeEvent(
+          privacyLevel: _privacyLevelForDomain('wardrobe'),
+        ),
       );
+
+  Future<void> captureEvent({
+    required DomainKey domain,
+    required String text,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+
+    final wireDomain = domain.wireName;
+    final eventType = switch (wireDomain) {
+      'task' => 'task_captured',
+      'habit' => 'habit_logged',
+      'week' => 'week_note_captured',
+      'finance' => 'expense_logged',
+      'pantry' => 'ingredient_flagged',
+      'wardrobe' => 'purchase_intention',
+      'mission' => 'mission_note',
+      _ => 'note_captured',
+    };
+
+    await _recordEvent(
+      event: LifeEventFactory.create(
+        domain: wireDomain,
+        type: eventType,
+        summary: trimmed,
+        privacyLevel: _privacyLevelForDomain(wireDomain),
+        payload: {
+          'summary': trimmed,
+          'capturedFrom': 'capture_screen',
+        },
+      ),
+    );
+  }
 
   Future<void> markMissionUseful() => _submitMissionFeedback(
         MissionFeedbackStatus.useful,
@@ -183,9 +232,7 @@ class GoLifeController extends ChangeNotifier {
             'summary': summary ?? 'Sample shell event.',
           },
           source: 'manual',
-          privacyLevel: _privacySettings
-              .permissionForWireDomain(domain ?? 'system')
-              .storageKey,
+          privacyLevel: _privacyLevelForDomain(domain ?? 'system'),
         );
     await _lifeGraphRepository.addEvent(nextEvent);
     await _refreshMission();
@@ -227,5 +274,9 @@ class GoLifeController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  String _privacyLevelForDomain(String domain) {
+    return _privacySettings.permissionForWireDomain(domain).storageKey;
   }
 }

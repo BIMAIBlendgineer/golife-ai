@@ -52,11 +52,12 @@ class GoTask {
 
   String get timeboxLabel => '$estimatedMinutes min first block';
 
-  LifeEvent toLifeEvent(String type) {
+  LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'task',
       type: type,
       summary: title,
+      privacyLevel: privacyLevel,
       payload: {
         'taskId': id,
         'priority': priority.name,

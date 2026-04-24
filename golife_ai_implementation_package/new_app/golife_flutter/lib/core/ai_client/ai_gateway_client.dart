@@ -153,16 +153,18 @@ class HttpAiGatewayClient implements AiGatewayClient {
     required List<LifeEvent> lifeEvents,
   }) async {
     final allowedDomains = privacySettings.aiAllowedWireDomains;
+    final eligibleEvents = _eventsEligibleForAi(
+      lifeEvents: lifeEvents,
+      privacySettings: privacySettings,
+    );
     final requestPayload = {
       'user_id': userId,
       'scope': 'daily',
       'allowed_domains': allowedDomains,
-      'life_events': lifeEvents
+      'life_events': eligibleEvents
           .map(
             (event) => event.toGatewayJson(
               userIdOverride: userId,
-              privacyLevelOverride:
-                  privacySettings.permissionForWireDomain(event.domain).storageKey,
             ),
           )
           .toList(growable: false),
@@ -172,13 +174,14 @@ class HttpAiGatewayClient implements AiGatewayClient {
         'allow_cross_domain_patterns': allowedDomains.length > 1,
       },
       'domain_summaries': _buildDomainSummaries(
-        lifeEvents: lifeEvents,
+        lifeEvents: eligibleEvents,
         privacySettings: privacySettings,
       ),
       'constraints': {
         'client': 'golife_flutter',
         'trace_visible': true,
         'fallback_enabled': true,
+        'filtered_event_count': lifeEvents.length - eligibleEvents.length,
       },
       'max_suggestions': 3,
     };
@@ -218,6 +221,8 @@ class HttpAiGatewayClient implements AiGatewayClient {
           'baseUrl': baseUri.toString(),
           'endpoint': '/v1/missions/daily',
           'statusCode': response.statusCode,
+          'sentEventCount': eligibleEvents.length,
+          'filteredEventCount': lifeEvents.length - eligibleEvents.length,
         },
       );
     } on TimeoutException {
@@ -325,4 +330,15 @@ List<Map<String, Object?>> _buildDomainSummaries({
         },
       )
       .toList(growable: false);
+}
+
+List<LifeEvent> _eventsEligibleForAi({
+  required List<LifeEvent> lifeEvents,
+  required PrivacySettings privacySettings,
+}) {
+  return lifeEvents.where((event) {
+    final permission = privacySettings.permissionForWireDomain(event.domain);
+    return permission == DataPermission.aiAllowed &&
+        event.privacyLevel == DataPermission.aiAllowed.storageKey;
+  }).toList(growable: false);
 }

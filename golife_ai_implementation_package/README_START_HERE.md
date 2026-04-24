@@ -120,3 +120,17 @@ Reglas activas:
 - Flutter debe integrarse contra `services/ai_gateway`
 - `golife_ai_business_roadmap_package/ai-gateway-skeleton` queda como referencia de roadmap, no como segundo backend productivo
 - el contrato canonico de evento usa `event_id`, `user_id`, `domain`, `event_type`, `timestamp`, `payload`, `source`, `privacy_level`
+
+## Ejecutar Flutter contra el gateway local
+
+La app usa `http://127.0.0.1:8000` por defecto, pero en emuladores o dispositivos conviene pasar la URL explicita:
+
+```bash
+flutter run --dart-define=GOLIFE_AI_GATEWAY_BASE_URL=http://127.0.0.1:8000
+```
+
+Referencias practicas:
+
+- Android emulator: `http://10.0.2.2:8000`
+- iOS simulator: `http://127.0.0.1:8000`
+- dispositivo fisico: `http://<IP-DE-TU-MAQUINA>:8000`

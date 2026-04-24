@@ -17,11 +17,12 @@ class PantryItem {
   final String quantityLabel;
   final String rescueHint;
 
-  LifeEvent toLifeEvent(String type) {
+  LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'pantry',
       type: type,
       summary: name,
+      privacyLevel: privacyLevel,
       payload: {
         'itemId': id,
         'quantityLabel': quantityLabel,

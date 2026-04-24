@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     openrouter_default_model: str = "google/gemini-2.0-flash-001"
     openrouter_fallback_model: str | None = None
     request_timeout_seconds: float = 45.0
+    feedback_store_path: str = ".runtime/mission_feedback.json"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

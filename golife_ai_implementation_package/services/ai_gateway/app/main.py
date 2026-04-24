@@ -26,7 +26,9 @@ def create_app(
     app = FastAPI(title="GoLife AI Gateway", version="0.2.0")
     app.state.settings = resolved_settings
     app.state.provider = resolved_provider
-    app.state.feedback_store = MissionFeedbackStore()
+    app.state.feedback_store = MissionFeedbackStore(
+        resolved_settings.feedback_store_path
+    )
 
     @app.get("/health")
     async def health() -> dict[str, object]:

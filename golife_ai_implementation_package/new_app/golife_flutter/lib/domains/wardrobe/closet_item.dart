@@ -17,11 +17,12 @@ class ClosetItem {
   final String category;
   final int wearCount;
 
-  LifeEvent toLifeEvent(String type) {
+  LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'wardrobe',
       type: type,
       summary: name,
+      privacyLevel: privacyLevel,
       payload: {
         'itemId': id,
         'category': category,
