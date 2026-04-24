@@ -34,6 +34,7 @@ class GoLifeController extends ChangeNotifier {
   bool _isReady = false;
   PrivacySettings _privacySettings = PrivacySettings.defaults();
   List<DailyMission> _dailyMissions = <DailyMission>[];
+  List<DailyRisk> _cachedDailyRisks = <DailyRisk>[];
   List<MissionFeedback> _missionFeedback = <MissionFeedback>[];
 
   final GoTask criticalTask = const GoTask(
@@ -98,7 +99,8 @@ class GoLifeController extends ChangeNotifier {
   List<LifeEvent> get lifeEvents => _lifeGraphRepository.allEvents();
   List<MissionFeedback> get missionFeedbackHistory =>
       List<MissionFeedback>.unmodifiable(_missionFeedback);
-  List<DailyRisk> get dailyRisks => _extractDailyRisks();
+  List<DailyRisk> get dailyRisks =>
+      List<DailyRisk>.unmodifiable(_cachedDailyRisks);
   int get totalEventCount => lifeEvents.length;
   int get aiEligibleEventCount =>
       lifeEvents.where(_eventEligibleForAi).length;
@@ -132,6 +134,8 @@ class GoLifeController extends ChangeNotifier {
   Future<void> bootstrap() async {
     _privacySettings = await _localStore.loadPrivacySettings();
     await _lifeGraphRepository.bootstrap();
+    _dailyMissions = await _localStore.loadDailyMissions();
+    _cachedDailyRisks = await _localStore.loadDailyRisks();
     _missionFeedback = await _localStore.loadMissionFeedback();
     await _refreshMissionPlan();
     _isReady = true;
@@ -211,6 +215,11 @@ class GoLifeController extends ChangeNotifier {
     final wireDomain = domain.wireName;
     final resolvedEventType = eventType ?? _defaultEventTypeForDomain(wireDomain);
 
+    await _persistDomainEntity(
+      domain: wireDomain,
+      text: trimmed,
+    );
+
     await _recordEvent(
       event: LifeEventFactory.create(
         domain: wireDomain,
@@ -279,6 +288,11 @@ class GoLifeController extends ChangeNotifier {
       lifeEvents: lifeEvents,
     );
     _dailyMissions = mapMissionPlan(dto);
+    _cachedDailyRisks = _extractDailyRisksFromMission(
+      _dailyMissions.isEmpty ? null : _dailyMissions.first,
+    );
+    await _localStore.saveDailyMissions(_dailyMissions);
+    await _localStore.saveDailyRisks(_cachedDailyRisks);
   }
 
   Future<void> _submitMissionFeedback(
@@ -346,8 +360,7 @@ class GoLifeController extends ChangeNotifier {
     }
   }
 
-  List<DailyRisk> _extractDailyRisks() {
-    final mission = dailyMission;
+  List<DailyRisk> _extractDailyRisksFromMission(DailyMission? mission) {
     if (mission == null) {
       return const <DailyRisk>[];
     }
@@ -375,5 +388,118 @@ class GoLifeController extends ChangeNotifier {
         domainTargets: domainTargets,
       );
     }).toList(growable: false);
+  }
+
+  Future<void> _persistDomainEntity({
+    required String domain,
+    required String text,
+  }) async {
+    switch (domain) {
+      case 'task':
+        await _localStore.upsertTask(_taskFromCapture(text));
+        return;
+      case 'habit':
+        await _localStore.upsertHabit(_habitFromCapture(text));
+        return;
+      case 'finance':
+        await _localStore.upsertExpense(_expenseFromCapture(text));
+        return;
+      case 'pantry':
+        await _localStore.upsertPantryItem(_pantryItemFromCapture(text));
+        return;
+      case 'wardrobe':
+        await _localStore.upsertPurchaseIntention(
+          _purchaseIntentionFromCapture(text),
+        );
+        return;
+      case 'week':
+        await _localStore.upsertWeekPlan(_weekPlanFromCapture(text));
+        return;
+    }
+  }
+
+  GoTask _taskFromCapture(String text) {
+    final lowered = text.toLowerCase();
+    final priority = lowered.contains('urgent') || lowered.contains('today')
+        ? TaskPriority.critical
+        : TaskPriority.standard;
+    return GoTask(
+      id: _entityId('task'),
+      title: text,
+      priority: priority,
+      status: TaskStatus.inbox,
+      estimatedMinutes: 15,
+      notes: 'Captured from quick capture.',
+    );
+  }
+
+  Habit _habitFromCapture(String text) {
+    return Habit(
+      id: _entityId('habit'),
+      title: text,
+      cue: 'Captured manually',
+      streak: 1,
+      cadence: HabitCadence.daily,
+    );
+  }
+
+  ExpenseRecord _expenseFromCapture(String text) {
+    final lowered = text.toLowerCase();
+    final amount = _extractFirstAmount(text) ?? 0;
+    final category = lowered.contains('coffee') ||
+            lowered.contains('food') ||
+            lowered.contains('lunch') ||
+            lowered.contains('cafe')
+        ? 'food'
+        : 'general';
+    return ExpenseRecord(
+      id: _entityId('expense'),
+      label: text,
+      amount: amount,
+      category: category,
+    );
+  }
+
+  PantryItem _pantryItemFromCapture(String text) {
+    return PantryItem(
+      id: _entityId('pantry'),
+      name: text,
+      quantityLabel: '1 captured item',
+      rescueHint: 'Review expiry and use this before buying more.',
+    );
+  }
+
+  PurchaseIntention _purchaseIntentionFromCapture(String text) {
+    return PurchaseIntention(
+      id: _entityId('purchase'),
+      label: text,
+      reason: 'Captured from quick capture.',
+    );
+  }
+
+  WeekPlan _weekPlanFromCapture(String text) {
+    return WeekPlan(
+      id: _entityId('week'),
+      theme: text,
+      colorToken: 'terra',
+      days: [
+        DayPlan(
+          label: 'Today',
+          focus: text,
+        ),
+      ],
+    );
+  }
+
+  double? _extractFirstAmount(String text) {
+    final match = RegExp(r'(\d+[.,]?\d{0,2})').firstMatch(text);
+    if (match == null) {
+      return null;
+    }
+    return double.tryParse(match.group(1)!.replaceAll(',', '.'));
+  }
+
+  String _entityId(String prefix) {
+    return '$prefix-${DateTime.now().microsecondsSinceEpoch}';
   }
 }

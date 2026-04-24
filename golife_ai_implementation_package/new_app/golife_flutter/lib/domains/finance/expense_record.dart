@@ -17,6 +17,24 @@ class ExpenseRecord {
   final double amount;
   final String category;
 
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'label': label,
+      'amount': amount,
+      'category': category,
+    };
+  }
+
+  factory ExpenseRecord.fromJson(Map<String, dynamic> json) {
+    return ExpenseRecord(
+      id: (json['id'] ?? '').toString(),
+      label: (json['label'] ?? '').toString(),
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      category: (json['category'] ?? 'general').toString(),
+    );
+  }
+
   String get reflectionLabel => '$label (\$$amount)';
 
   LifeEvent toLifeEvent({String privacyLevel = 'local_only'}) {

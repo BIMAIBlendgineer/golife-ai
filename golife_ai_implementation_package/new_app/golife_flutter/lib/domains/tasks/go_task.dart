@@ -18,6 +18,22 @@ class GoSubtask {
   final String id;
   final String title;
   final bool isDone;
+
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'is_done': isDone,
+    };
+  }
+
+  factory GoSubtask.fromJson(Map<String, dynamic> json) {
+    return GoSubtask(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      isDone: (json['is_done'] ?? json['isDone'] ?? false) == true,
+    );
+  }
 }
 
 class GoTask {
@@ -38,6 +54,36 @@ class GoTask {
   final int estimatedMinutes;
   final String notes;
   final List<GoSubtask> subtasks;
+
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'priority': priority.name,
+      'status': status.name,
+      'estimated_minutes': estimatedMinutes,
+      'notes': notes,
+      'subtasks': subtasks.map((item) => item.toJson()).toList(growable: false),
+    };
+  }
+
+  factory GoTask.fromJson(Map<String, dynamic> json) {
+    return GoTask(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      priority: _taskPriorityFromKey((json['priority'] ?? 'standard').toString()),
+      status: _taskStatusFromKey((json['status'] ?? 'inbox').toString()),
+      estimatedMinutes:
+          ((json['estimated_minutes'] ?? json['estimatedMinutes']) as num?)
+                  ?.toInt() ??
+              15,
+      notes: (json['notes'] ?? '').toString(),
+      subtasks: ((json['subtasks'] ?? const <Object?>[]) as List)
+          .whereType<Map>()
+          .map((item) => GoSubtask.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false),
+    );
+  }
 
   String get priorityLabel {
     switch (priority) {
@@ -67,4 +113,18 @@ class GoTask {
       },
     );
   }
+}
+
+TaskPriority _taskPriorityFromKey(String rawValue) {
+  return TaskPriority.values.firstWhere(
+    (value) => value.name == rawValue,
+    orElse: () => TaskPriority.standard,
+  );
+}
+
+TaskStatus _taskStatusFromKey(String rawValue) {
+  return TaskStatus.values.firstWhere(
+    (value) => value.name == rawValue,
+    orElse: () => TaskStatus.inbox,
+  );
 }

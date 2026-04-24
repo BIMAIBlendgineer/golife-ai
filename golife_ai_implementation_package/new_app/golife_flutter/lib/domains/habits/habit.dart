@@ -21,6 +21,29 @@ class Habit {
   final int streak;
   final HabitCadence cadence;
 
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'cue': cue,
+      'streak': streak,
+      'cadence': cadence.name,
+    };
+  }
+
+  factory Habit.fromJson(Map<String, dynamic> json) {
+    return Habit(
+      id: (json['id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      cue: (json['cue'] ?? '').toString(),
+      streak: ((json['streak']) as num?)?.toInt() ?? 0,
+      cadence: HabitCadence.values.firstWhere(
+        (value) => value.name == (json['cadence'] ?? 'daily').toString(),
+        orElse: () => HabitCadence.daily,
+      ),
+    );
+  }
+
   String get streakLabel => '$streak-day streak';
 
   LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {

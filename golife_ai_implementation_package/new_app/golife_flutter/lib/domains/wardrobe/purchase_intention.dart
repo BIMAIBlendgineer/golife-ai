@@ -15,6 +15,22 @@ class PurchaseIntention {
   final String label;
   final String reason;
 
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'label': label,
+      'reason': reason,
+    };
+  }
+
+  factory PurchaseIntention.fromJson(Map<String, dynamic> json) {
+    return PurchaseIntention(
+      id: (json['id'] ?? '').toString(),
+      label: (json['label'] ?? '').toString(),
+      reason: (json['reason'] ?? '').toString(),
+    );
+  }
+
   LifeEvent toLifeEvent({String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'wardrobe',

@@ -17,6 +17,24 @@ class PantryItem {
   final String quantityLabel;
   final String rescueHint;
 
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'quantity_label': quantityLabel,
+      'rescue_hint': rescueHint,
+    };
+  }
+
+  factory PantryItem.fromJson(Map<String, dynamic> json) {
+    return PantryItem(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      quantityLabel: (json['quantity_label'] ?? json['quantityLabel'] ?? '').toString(),
+      rescueHint: (json['rescue_hint'] ?? json['rescueHint'] ?? '').toString(),
+    );
+  }
+
   LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(
       domain: 'pantry',
