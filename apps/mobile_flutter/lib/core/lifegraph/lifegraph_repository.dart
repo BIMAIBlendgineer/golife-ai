@@ -77,9 +77,16 @@ class LifeGraphRepository {
     }
 
     final storedEvents = await _localStore?.loadLifeEvents() ?? const <LifeEvent>[];
+    final demoSeedEnabled = await _localStore?.loadDemoSeedEnabled() ?? true;
     _events
       ..clear()
-      ..addAll(storedEvents.isNotEmpty ? storedEvents : _seedEvents);
+      ..addAll(
+        storedEvents.isNotEmpty
+            ? storedEvents
+            : demoSeedEnabled
+                ? _seedEvents
+                : const <LifeEvent>[],
+      );
 
     _bootstrapped = true;
 
@@ -105,5 +112,17 @@ class LifeGraphRepository {
     }
     _events.add(event);
     await _localStore?.saveLifeEvents(_events);
+  }
+
+  Future<void> replaceAll(List<LifeEvent> events) async {
+    _events
+      ..clear()
+      ..addAll(events);
+    _bootstrapped = true;
+    await _localStore?.saveLifeEvents(_events);
+  }
+
+  Future<void> clear() async {
+    await replaceAll(const <LifeEvent>[]);
   }
 }

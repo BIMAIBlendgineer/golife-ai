@@ -358,6 +358,136 @@ def _normalize_provider_suggestions(provider_result: object) -> list[AISuggestio
     return normalized_items
 
 
+def _build_fallback_suggestion(
+    state: MissionGraphState,
+    *,
+    domain_targets: list[str],
+    index: int,
+) -> AISuggestion:
+    primary_domain = domain_targets[0] if domain_targets else "system"
+    summaries = {
+        summary.get("domain"): summary
+        for summary in state.get("domain_summaries", [])
+        if isinstance(summary, dict)
+    }
+    matching_risk = next(
+        (
+            risk
+            for risk in state.get("risks", [])
+            if set(risk.get("domains", [])) & set(domain_targets)
+        ),
+        None,
+    )
+
+    if primary_domain == "task":
+        title = "Close one task block"
+        body = "Finish or timebox one active task before opening another thread."
+        claim = "Task pressure is visible in the current graph."
+    elif primary_domain == "habit":
+        title = "Protect one small habit"
+        body = "Keep one low-friction habit alive today even if the day feels noisy."
+        claim = "Habit continuity is visible in the current graph."
+    elif primary_domain == "finance":
+        title = "Review one spend before the next purchase"
+        body = "Pause and review the most recent spend before opening another money decision."
+        claim = "Spending activity is visible in the current graph."
+    elif primary_domain == "pantry":
+        title = "Use one pantry item first"
+        body = "Use one pantry item before buying more food so waste stays lower."
+        claim = "A pantry usage opportunity is visible in the current graph."
+    elif primary_domain == "wardrobe":
+        title = "Pause one purchase for 24 hours"
+        body = "Hold one wardrobe purchase intention for a day and compare it against what already exists."
+        claim = "A purchase intention is active in the current graph."
+    elif primary_domain == "week":
+        title = "Reduce one load point this week"
+        body = "Remove or move one item so the week feels more survivable."
+        claim = "Weekly planning pressure is visible in the current graph."
+    else:
+        title = "Do one stabilizing action"
+        body = "Choose one small action that reduces the most friction right now."
+        claim = "The current graph still supports a small next step."
+
+    evidence_claim = (
+        matching_risk.get("summary")
+        if isinstance(matching_risk, dict)
+        else summaries.get(primary_domain, {}).get("summary")
+        if primary_domain in summaries
+        else claim
+    )
+
+    return AISuggestion(
+        suggestion_id=f"synth-{primary_domain}-{index}",
+        title=title,
+        domain_targets=domain_targets,
+        recommendation_type="mission",
+        body=body,
+        evidence=[
+            SuggestionEvidence(
+                source_domain=primary_domain,
+                claim=str(evidence_claim),
+                confidence=0.66,
+            )
+        ],
+        confidence=0.62,
+        uncertainty="This suggestion was synthesized locally because the model returned fewer items than requested.",
+        requires_confirmation=True,
+        forbidden_actions=[],
+        status="draft",
+    )
+
+
+def _ensure_suggestion_count(
+    state: MissionGraphState,
+    suggestions: list[AISuggestion],
+) -> tuple[list[AISuggestion], int]:
+    target_count = state["request"].max_suggestions
+    if len(suggestions) >= target_count:
+        return suggestions[:target_count], 0
+
+    expanded = list(suggestions)
+    synthesized_count = 0
+    existing_keys = {tuple(item.domain_targets) for item in expanded}
+    candidate_targets: list[list[str]] = []
+
+    for risk in state.get("risks", []):
+        domains = [
+            _coerce_domain(domain)
+            for domain in risk.get("domains", [])
+            if isinstance(domain, str)
+        ]
+        if domains:
+            candidate_targets.append(domains)
+
+    for summary in state.get("domain_summaries", []):
+        domain = summary.get("domain") if isinstance(summary, dict) else None
+        if isinstance(domain, str):
+            candidate_targets.append([_coerce_domain(domain)])
+
+    for domain in state["request"].privacy_settings.allowed_domains:
+        candidate_targets.append([_coerce_domain(domain)])
+
+    candidate_targets.append(["system"])
+
+    for targets in candidate_targets:
+        key = tuple(targets)
+        if key in existing_keys:
+            continue
+        expanded.append(
+            _build_fallback_suggestion(
+                state,
+                domain_targets=targets,
+                index=len(expanded) + 1,
+            )
+        )
+        existing_keys.add(key)
+        synthesized_count += 1
+        if len(expanded) >= target_count:
+            break
+
+    return expanded[:target_count], synthesized_count
+
+
 def validate_consent(state: MissionGraphState) -> MissionGraphState:
     allowed_events, filtered_events = filter_ai_events(state["request"])
     consent_granted = bool(state["request"].privacy_settings.ai_enabled)
@@ -560,10 +690,17 @@ def rank(state: MissionGraphState) -> MissionGraphState:
 
 
 def build_response(state: MissionGraphState) -> MissionGraphState:
+    ranked_candidates, synthesized_count = _ensure_suggestion_count(
+        state,
+        state.get("ranked_candidates", []),
+    )
     trace = _append_trace(
         state.get("trace", {}),
         node_name="build_response",
-        payload={"suggestions_count": len(state.get("ranked_candidates", []))},
+        payload={
+            "suggestions_count": len(ranked_candidates),
+            "synthesized_count": synthesized_count,
+        },
     )
     trace.update(
         {
@@ -576,7 +713,7 @@ def build_response(state: MissionGraphState) -> MissionGraphState:
     )
     return {
         "response": SuggestionResponse(
-            suggestions=state.get("ranked_candidates", []),
+            suggestions=ranked_candidates,
             trace=trace,
         )
     }

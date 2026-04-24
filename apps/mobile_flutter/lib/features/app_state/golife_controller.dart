@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/ai_client/ai_gateway_client.dart';
@@ -13,12 +15,13 @@ import '../../core/storage/local_store.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
 import '../../domains/missions/daily_mission.dart';
-import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../domains/missions/mission_feedback.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
+import '../capture/capture_parser.dart';
 
 class GoLifeController extends ChangeNotifier {
   GoLifeController({
@@ -35,6 +38,7 @@ class GoLifeController extends ChangeNotifier {
   final AiGatewayClient _aiGatewayClient;
   final LifeGraphRepository _lifeGraphRepository;
   final RuntimeConfigClient? _runtimeConfigClient;
+  final CaptureParser _captureParser = const CaptureParser();
 
   bool _isReady = false;
   PrivacySettings _privacySettings = PrivacySettings.defaults();
@@ -42,6 +46,12 @@ class GoLifeController extends ChangeNotifier {
   List<DailyRisk> _cachedDailyRisks = <DailyRisk>[];
   List<MissionFeedback> _missionFeedback = <MissionFeedback>[];
   AppRuntimeConfig? _runtimeConfig;
+  List<GoTask> _tasks = <GoTask>[];
+  List<Habit> _habits = <Habit>[];
+  List<ExpenseRecord> _expenses = <ExpenseRecord>[];
+  List<PantryItem> _pantryItems = <PantryItem>[];
+  List<PurchaseIntention> _purchaseIntentions = <PurchaseIntention>[];
+  List<WeekPlan> _weekPlans = <WeekPlan>[];
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -108,6 +118,15 @@ class GoLifeController extends ChangeNotifier {
   List<DailyRisk> get dailyRisks =>
       List<DailyRisk>.unmodifiable(_cachedDailyRisks);
   AppRuntimeConfig? get runtimeConfig => _runtimeConfig;
+  List<GoTask> get tasks => List<GoTask>.unmodifiable(_tasks);
+  List<Habit> get habits => List<Habit>.unmodifiable(_habits);
+  List<ExpenseRecord> get expenses =>
+      List<ExpenseRecord>.unmodifiable(_expenses);
+  List<PantryItem> get pantryItems =>
+      List<PantryItem>.unmodifiable(_pantryItems);
+  List<PurchaseIntention> get purchaseIntentions =>
+      List<PurchaseIntention>.unmodifiable(_purchaseIntentions);
+  List<WeekPlan> get weekPlans => List<WeekPlan>.unmodifiable(_weekPlans);
   int get totalEventCount => lifeEvents.length;
   int get aiEligibleEventCount =>
       lifeEvents.where(_eventEligibleForAi).length;
@@ -187,6 +206,13 @@ class GoLifeController extends ChangeNotifier {
     _dailyMissions = await _localStore.loadDailyMissions();
     _cachedDailyRisks = await _localStore.loadDailyRisks();
     _missionFeedback = await _localStore.loadMissionFeedback();
+    _tasks = await _localStore.loadTasks();
+    _habits = await _localStore.loadHabits();
+    _expenses = await _localStore.loadExpenses();
+    _pantryItems = await _localStore.loadPantryItems();
+    _purchaseIntentions = await _localStore.loadPurchaseIntentions();
+    _weekPlans = await _localStore.loadWeekPlans();
+    await _seedDomainEntitiesIfNeeded();
     await _refreshMissionPlan();
     await refreshRuntimeConfig(refreshMissionPlan: true, notify: false);
     _isReady = true;
@@ -278,36 +304,87 @@ class GoLifeController extends ChangeNotifier {
     );
   }
 
+  Future<List<CaptureDraftItem>> prepareCaptureDrafts({
+    required String text,
+    DomainKey? forcedDomain,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) {
+      return const <CaptureDraftItem>[];
+    }
+
+    final localDrafts = _captureParser.parse(
+      text: trimmed,
+      privacySettings: _privacySettings,
+      forcedDomain: forcedDomain,
+    );
+
+    if (forcedDomain != null || localDrafts.length != 1) {
+      return localDrafts;
+    }
+
+    try {
+      final classification = await classifyCaptureText(trimmed);
+      return _captureParser.parse(
+        text: trimmed,
+        privacySettings: _privacySettings,
+        gatewayClassification: classification,
+      );
+    } catch (_) {
+      return localDrafts;
+    }
+  }
+
   Future<void> captureEvent({
     required DomainKey domain,
     required String text,
     String? eventType,
   }) async {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) {
+    final drafts = await prepareCaptureDrafts(
+      text: text,
+      forcedDomain: domain,
+    );
+    if (drafts.isEmpty) {
+      return;
+    }
+    final normalizedDrafts = drafts
+        .map(
+          (draft) => draft.copyWith(
+            eventType: eventType ?? draft.eventType,
+          ),
+        )
+        .toList(growable: false);
+    await captureDrafts(normalizedDrafts);
+  }
+
+  Future<void> captureDrafts(List<CaptureDraftItem> drafts) async {
+    if (drafts.isEmpty) {
       return;
     }
 
-    final wireDomain = domain.wireName;
-    final resolvedEventType = eventType ?? _defaultEventTypeForDomain(wireDomain);
+    for (final draft in drafts) {
+      await _persistDomainEntityFromDraft(draft);
+      await _recordEvent(
+        event: LifeEventFactory.create(
+          domain: draft.domain.wireName,
+          type: draft.eventType,
+          summary: draft.text,
+          privacyLevel: draft.privacyLevel,
+          payload: {
+            'summary': draft.text,
+            'capturedFrom': 'capture_screen',
+            'rationale': draft.rationale,
+            'hints': draft.hints,
+            'multiCapture': drafts.length > 1,
+          },
+        ),
+        refreshPlan: false,
+        notifyAfter: false,
+      );
+    }
 
-    await _persistDomainEntity(
-      domain: wireDomain,
-      text: trimmed,
-    );
-
-    await _recordEvent(
-      event: LifeEventFactory.create(
-        domain: wireDomain,
-        type: resolvedEventType,
-        summary: trimmed,
-        privacyLevel: _privacyLevelForDomain(wireDomain),
-        payload: {
-          'summary': trimmed,
-          'capturedFrom': 'capture_screen',
-        },
-      ),
-    );
+    await _refreshMissionPlan();
+    notifyListeners();
   }
 
   Future<void> markMissionUseful([DailyMission? mission]) =>
@@ -334,11 +411,216 @@ class GoLifeController extends ChangeNotifier {
         mission: mission,
       );
 
+  Future<String?> completeMissionAction([DailyMission? mission]) async {
+    final targetMission = mission ?? dailyMission;
+    if (targetMission == null) {
+      return null;
+    }
+
+    String? summary;
+    final domains = targetMission.domainTargets.toSet();
+    if (domains.contains('task')) {
+      summary = await _completeTaskFromMission(targetMission);
+    } else if (domains.contains('habit')) {
+      summary = await _checkInHabitFromMission(targetMission);
+    } else if (domains.contains('pantry')) {
+      summary = await _markPantryUsedFromMission(targetMission);
+    } else if (domains.contains('wardrobe')) {
+      summary = await _pausePurchaseFromMission(targetMission);
+    } else if (domains.contains('finance')) {
+      summary = await _logFinanceReflectionFromMission(targetMission);
+    } else if (domains.contains('week')) {
+      summary = await _refreshWeekPlanFromMission(targetMission);
+    }
+
+    if (summary == null) {
+      await _submitMissionFeedback(
+        MissionFeedbackStatus.completed,
+        mission: targetMission,
+      );
+      return 'Mission marked as completed.';
+    }
+
+    await _submitMissionFeedback(
+      MissionFeedbackStatus.completed,
+      mission: targetMission,
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    await _refreshMissionPlan();
+    notifyListeners();
+    return summary;
+  }
+
+  Future<String?> completeTaskById(String id) async {
+    final target = _tasks.firstWhere(
+      (task) => task.id == id,
+      orElse: () => criticalTask,
+    );
+    final updated = GoTask(
+      id: target.id,
+      title: target.title,
+      priority: target.priority,
+      status: TaskStatus.done,
+      estimatedMinutes: target.estimatedMinutes,
+      notes: target.notes,
+      subtasks: target.subtasks,
+    );
+    await _upsertTask(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'task_completed',
+        privacyLevel: _privacyLevelForDomain('task'),
+      ),
+    );
+    return 'Task completed: ${updated.title}.';
+  }
+
+  Future<String?> checkInHabitById(String id) async {
+    final target = _habits.firstWhere(
+      (habit) => habit.id == id,
+      orElse: () => recoveryHabit,
+    );
+    final updated = Habit(
+      id: target.id,
+      title: target.title,
+      cue: target.cue,
+      streak: target.streak + 1,
+      cadence: target.cadence,
+    );
+    await _upsertHabit(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'habit_checked_in',
+        privacyLevel: _privacyLevelForDomain('habit'),
+      ),
+    );
+    return 'Habit checked in: ${updated.title}.';
+  }
+
+  Future<String?> logExpenseTouchById(String id) async {
+    final target = _expenses.firstWhere(
+      (expense) => expense.id == id,
+      orElse: () => financeSummary,
+    );
+    await _recordEvent(
+      event: target.toLifeEvent(
+        privacyLevel: _privacyLevelForDomain('finance'),
+      ),
+    );
+    return 'Expense revisited: ${target.label}.';
+  }
+
+  Future<String?> markPantryItemUsedById(String id) async {
+    final target = _pantryItems.firstWhere(
+      (item) => item.id == id,
+      orElse: () => pantrySummary,
+    );
+    final updated = PantryItem(
+      id: target.id,
+      name: target.name,
+      quantityLabel: 'used',
+      rescueHint: 'Used locally from the pantry board.',
+    );
+    await _upsertPantryItem(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'ingredient_used',
+        privacyLevel: _privacyLevelForDomain('pantry'),
+      ),
+    );
+    return 'Pantry item used: ${updated.name}.';
+  }
+
+  Future<String?> pausePurchaseIntentionById(String id) async {
+    final target = _purchaseIntentions.firstWhere(
+      (item) => item.id == id,
+      orElse: () => closetSummary,
+    );
+    final updated = PurchaseIntention(
+      id: target.id,
+      label: target.label,
+      reason: 'Paused for 24h from the closet board. ${target.reason}',
+    );
+    await _upsertPurchaseIntention(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        privacyLevel: _privacyLevelForDomain('wardrobe'),
+      ),
+    );
+    return 'Purchase intention paused: ${updated.label}.';
+  }
+
+  Future<String?> refreshWeekPlanById(String id) async {
+    final target = _weekPlans.firstWhere(
+      (plan) => plan.id == id,
+      orElse: () => weekSummary,
+    );
+    final updated = WeekPlan(
+      id: target.id,
+      theme: '${target.theme} · Adjusted',
+      colorToken: target.colorToken,
+      days: target.days,
+    );
+    await _upsertWeekPlan(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'week_replanned',
+        privacyLevel: _privacyLevelForDomain('week'),
+      ),
+    );
+    return 'Week plan updated.';
+  }
+
+  Future<String> exportLocalDataJson() async {
+    final snapshot = <String, Object?>{
+      'exported_at': DateTime.now().toUtc().toIso8601String(),
+      'privacy_settings': _privacySettings.toJson(),
+      'runtime_config': _runtimeConfig?.toJson(),
+      'life_events': lifeEvents.map((item) => item.toJson()).toList(growable: false),
+      'missions': _dailyMissions.map((item) => item.toJson()).toList(growable: false),
+      'daily_risks':
+          _cachedDailyRisks.map((item) => item.toJson()).toList(growable: false),
+      'mission_feedback':
+          _missionFeedback.map((item) => item.toJson()).toList(growable: false),
+      'tasks': _tasks.map((item) => item.toJson()).toList(growable: false),
+      'habits': _habits.map((item) => item.toJson()).toList(growable: false),
+      'expenses': _expenses.map((item) => item.toJson()).toList(growable: false),
+      'pantry_items':
+          _pantryItems.map((item) => item.toJson()).toList(growable: false),
+      'purchase_intentions':
+          _purchaseIntentions.map((item) => item.toJson()).toList(growable: false),
+      'week_plans':
+          _weekPlans.map((item) => item.toJson()).toList(growable: false),
+    };
+    return const JsonEncoder.withIndent('  ').convert(snapshot);
+  }
+
+  Future<void> deleteAllLocalData() async {
+    await _localStore.saveDemoSeedEnabled(false);
+    await _localStore.deleteAllData();
+    await _lifeGraphRepository.clear();
+    _privacySettings = PrivacySettings.defaults();
+    _runtimeConfig = null;
+    _dailyMissions = <DailyMission>[];
+    _cachedDailyRisks = <DailyRisk>[];
+    _missionFeedback = <MissionFeedback>[];
+    _tasks = <GoTask>[];
+    _habits = <Habit>[];
+    _expenses = <ExpenseRecord>[];
+    _pantryItems = <PantryItem>[];
+    _purchaseIntentions = <PurchaseIntention>[];
+    _weekPlans = <WeekPlan>[];
+    notifyListeners();
+  }
+
   Future<void> _recordEvent({
     LifeEvent? event,
     String? domain,
     String? type,
     String? summary,
+    bool refreshPlan = true,
+    bool notifyAfter = true,
   }) async {
     final nextEvent = event ??
         LifeEvent(
@@ -354,8 +636,12 @@ class GoLifeController extends ChangeNotifier {
           privacyLevel: _privacyLevelForDomain(domain ?? 'system'),
         );
     await _lifeGraphRepository.addEvent(nextEvent);
-    await _refreshMissionPlan();
-    notifyListeners();
+    if (refreshPlan) {
+      await _refreshMissionPlan();
+    }
+    if (notifyAfter) {
+      notifyListeners();
+    }
   }
 
   Future<void> _refreshMissionPlan() async {
@@ -393,6 +679,8 @@ class GoLifeController extends ChangeNotifier {
   Future<void> _submitMissionFeedback(
     MissionFeedbackStatus status, {
     DailyMission? mission,
+    bool refreshPlan = true,
+    bool notifyAfter = true,
   }) async {
     final targetMission = mission ?? dailyMission;
     if (targetMission == null) {
@@ -421,7 +709,12 @@ class GoLifeController extends ChangeNotifier {
       // Local persistence remains the source of truth until the gateway is available.
     }
 
-    notifyListeners();
+    if (refreshPlan) {
+      await _refreshMissionPlan();
+    }
+    if (notifyAfter) {
+      notifyListeners();
+    }
   }
 
   String _privacyLevelForDomain(String domain) {
@@ -432,27 +725,6 @@ class GoLifeController extends ChangeNotifier {
     final permission = _privacySettings.permissionForWireDomain(event.domain);
     return permission == DataPermission.aiAllowed &&
         event.privacyLevel == DataPermission.aiAllowed.storageKey;
-  }
-
-  String _defaultEventTypeForDomain(String domain) {
-    switch (domain) {
-      case 'task':
-        return 'task_captured';
-      case 'habit':
-        return 'habit_logged';
-      case 'week':
-        return 'week_note_captured';
-      case 'finance':
-        return 'expense_logged';
-      case 'pantry':
-        return 'ingredient_flagged';
-      case 'wardrobe':
-        return 'purchase_intention';
-      case 'mission':
-        return 'mission_note';
-      default:
-        return 'note_captured';
-    }
   }
 
   List<DailyRisk> _extractDailyRisksFromMission(DailyMission? mission) {
@@ -485,105 +757,295 @@ class GoLifeController extends ChangeNotifier {
     }).toList(growable: false);
   }
 
-  Future<void> _persistDomainEntity({
-    required String domain,
-    required String text,
-  }) async {
-    switch (domain) {
+  Future<void> _seedDomainEntitiesIfNeeded() async {
+    final demoSeedEnabled = await _localStore.loadDemoSeedEnabled();
+    if (!demoSeedEnabled) {
+      return;
+    }
+
+    if (_tasks.isEmpty) {
+      await _upsertTask(criticalTask);
+    }
+    if (_habits.isEmpty) {
+      await _upsertHabit(recoveryHabit);
+    }
+    if (_expenses.isEmpty) {
+      await _upsertExpense(financeSummary);
+    }
+    if (_pantryItems.isEmpty) {
+      await _upsertPantryItem(pantrySummary);
+    }
+    if (_purchaseIntentions.isEmpty) {
+      await _upsertPurchaseIntention(closetSummary);
+    }
+    if (_weekPlans.isEmpty) {
+      await _upsertWeekPlan(weekSummary);
+    }
+  }
+
+  Future<void> _persistDomainEntityFromDraft(CaptureDraftItem draft) async {
+    switch (draft.domain.wireName) {
       case 'task':
-        await _localStore.upsertTask(_taskFromCapture(text));
+        await _upsertTask(_taskFromCapture(draft));
         return;
       case 'habit':
-        await _localStore.upsertHabit(_habitFromCapture(text));
+        await _upsertHabit(_habitFromCapture(draft));
         return;
       case 'finance':
-        await _localStore.upsertExpense(_expenseFromCapture(text));
+        await _upsertExpense(_expenseFromCapture(draft));
         return;
       case 'pantry':
-        await _localStore.upsertPantryItem(_pantryItemFromCapture(text));
+        await _upsertPantryItem(_pantryItemFromCapture(draft));
         return;
       case 'wardrobe':
-        await _localStore.upsertPurchaseIntention(
-          _purchaseIntentionFromCapture(text),
-        );
+        await _upsertPurchaseIntention(_purchaseIntentionFromCapture(draft));
         return;
       case 'week':
-        await _localStore.upsertWeekPlan(_weekPlanFromCapture(text));
+        await _upsertWeekPlan(_weekPlanFromCapture(draft));
         return;
     }
   }
 
-  GoTask _taskFromCapture(String text) {
-    final lowered = text.toLowerCase();
-    final priority = lowered.contains('urgent') || lowered.contains('today')
+  GoTask _taskFromCapture(CaptureDraftItem draft) {
+    final lowered = draft.text.toLowerCase();
+    final priority = lowered.contains('urgent') ||
+            lowered.contains('today') ||
+            (draft.hints['time_hint']?.toString() == 'today')
         ? TaskPriority.critical
         : TaskPriority.standard;
     return GoTask(
       id: _entityId('task'),
-      title: text,
+      title: draft.text,
       priority: priority,
       status: TaskStatus.inbox,
       estimatedMinutes: 15,
-      notes: 'Captured from quick capture.',
+      notes: _taskNotesFromHints(draft.hints),
     );
   }
 
-  Habit _habitFromCapture(String text) {
+  Habit _habitFromCapture(CaptureDraftItem draft) {
     return Habit(
       id: _entityId('habit'),
-      title: text,
+      title: draft.text,
       cue: 'Captured manually',
       streak: 1,
       cadence: HabitCadence.daily,
     );
   }
 
-  ExpenseRecord _expenseFromCapture(String text) {
-    final lowered = text.toLowerCase();
-    final amount = _extractFirstAmount(text) ?? 0;
+  ExpenseRecord _expenseFromCapture(CaptureDraftItem draft) {
+    final lowered = draft.text.toLowerCase();
+    final amount = (draft.hints['amount'] as double?) ?? _extractFirstAmount(draft.text) ?? 0;
     final category = lowered.contains('coffee') ||
             lowered.contains('food') ||
             lowered.contains('lunch') ||
-            lowered.contains('cafe')
+            lowered.contains('cafe') ||
+            lowered.contains('sandwich')
         ? 'food'
         : 'general';
     return ExpenseRecord(
       id: _entityId('expense'),
-      label: text,
+      label: draft.text,
       amount: amount,
       category: category,
     );
   }
 
-  PantryItem _pantryItemFromCapture(String text) {
+  PantryItem _pantryItemFromCapture(CaptureDraftItem draft) {
+    final expiryHint = draft.hints['expiry_hint'];
+    final rescueHint = expiryHint == null
+        ? 'Review expiry and use this before buying more.'
+        : 'Use soon. Detected expiry hint: $expiryHint.';
     return PantryItem(
       id: _entityId('pantry'),
-      name: text,
+      name: draft.text,
       quantityLabel: '1 captured item',
-      rescueHint: 'Review expiry and use this before buying more.',
+      rescueHint: rescueHint,
     );
   }
 
-  PurchaseIntention _purchaseIntentionFromCapture(String text) {
+  PurchaseIntention _purchaseIntentionFromCapture(CaptureDraftItem draft) {
     return PurchaseIntention(
       id: _entityId('purchase'),
-      label: text,
-      reason: 'Captured from quick capture.',
+      label: draft.text,
+      reason: 'Captured from quick capture. Compare against existing items first.',
     );
   }
 
-  WeekPlan _weekPlanFromCapture(String text) {
+  WeekPlan _weekPlanFromCapture(CaptureDraftItem draft) {
     return WeekPlan(
       id: _entityId('week'),
-      theme: text,
+      theme: draft.text,
       colorToken: 'terra',
       days: [
         DayPlan(
           label: 'Today',
-          focus: text,
+          focus: draft.text,
         ),
       ],
     );
+  }
+
+  Future<String?> _completeTaskFromMission(DailyMission mission) async {
+    final target = _tasks.firstWhere(
+      (task) => task.status != TaskStatus.done,
+      orElse: () => criticalTask,
+    );
+    final updated = GoTask(
+      id: target.id,
+      title: target.title,
+      priority: target.priority,
+      status: TaskStatus.done,
+      estimatedMinutes: target.estimatedMinutes,
+      notes: target.notes,
+      subtasks: target.subtasks,
+    );
+    await _upsertTask(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'task_completed_from_mission',
+        privacyLevel: _privacyLevelForDomain('task'),
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    return 'Task marked done: ${updated.title}.';
+  }
+
+  Future<String?> _checkInHabitFromMission(DailyMission mission) async {
+    final target = _habits.isNotEmpty ? _habits.first : recoveryHabit;
+    final updated = Habit(
+      id: target.id,
+      title: target.title,
+      cue: target.cue,
+      streak: target.streak + 1,
+      cadence: target.cadence,
+    );
+    await _upsertHabit(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'habit_checked_in_from_mission',
+        privacyLevel: _privacyLevelForDomain('habit'),
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    return 'Habit checked in: ${updated.title}.';
+  }
+
+  Future<String?> _markPantryUsedFromMission(DailyMission mission) async {
+    final target = _pantryItems.isNotEmpty ? _pantryItems.first : pantrySummary;
+    final updated = PantryItem(
+      id: target.id,
+      name: target.name,
+      quantityLabel: 'used',
+      rescueHint: 'Used by a mission action. Refill only if still needed.',
+    );
+    await _upsertPantryItem(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'ingredient_used_from_mission',
+        privacyLevel: _privacyLevelForDomain('pantry'),
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    return 'Pantry item marked used: ${updated.name}.';
+  }
+
+  Future<String?> _pausePurchaseFromMission(DailyMission mission) async {
+    final target =
+        _purchaseIntentions.isNotEmpty ? _purchaseIntentions.first : closetSummary;
+    final updated = PurchaseIntention(
+      id: target.id,
+      label: target.label,
+      reason: 'Paused for 24h after mission action. ${target.reason}',
+    );
+    await _upsertPurchaseIntention(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        privacyLevel: _privacyLevelForDomain('wardrobe'),
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    return 'Purchase intention paused: ${updated.label}.';
+  }
+
+  Future<String?> _logFinanceReflectionFromMission(DailyMission mission) async {
+    final target = _expenses.isNotEmpty ? _expenses.first : financeSummary;
+    await _recordEvent(
+      event: target.toLifeEvent(
+        privacyLevel: _privacyLevelForDomain('finance'),
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    return 'Finance reflection logged for ${target.label}.';
+  }
+
+  Future<String?> _refreshWeekPlanFromMission(DailyMission mission) async {
+    final target = _weekPlans.isNotEmpty ? _weekPlans.first : weekSummary;
+    final updated = WeekPlan(
+      id: target.id,
+      theme: '${target.theme} · Replanned from mission',
+      colorToken: target.colorToken,
+      days: target.days,
+    );
+    await _upsertWeekPlan(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'week_replanned_from_mission',
+        privacyLevel: _privacyLevelForDomain('week'),
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    return 'Week plan refreshed from mission.';
+  }
+
+  Future<void> _upsertTask(GoTask task) async {
+    _tasks = _upsertById(_tasks, task, (item) => item.id);
+    await _localStore.upsertTask(task);
+  }
+
+  Future<void> _upsertHabit(Habit habit) async {
+    _habits = _upsertById(_habits, habit, (item) => item.id);
+    await _localStore.upsertHabit(habit);
+  }
+
+  Future<void> _upsertExpense(ExpenseRecord expense) async {
+    _expenses = _upsertById(_expenses, expense, (item) => item.id);
+    await _localStore.upsertExpense(expense);
+  }
+
+  Future<void> _upsertPantryItem(PantryItem pantryItem) async {
+    _pantryItems = _upsertById(_pantryItems, pantryItem, (item) => item.id);
+    await _localStore.upsertPantryItem(pantryItem);
+  }
+
+  Future<void> _upsertPurchaseIntention(
+    PurchaseIntention purchaseIntention,
+  ) async {
+    _purchaseIntentions = _upsertById(
+      _purchaseIntentions,
+      purchaseIntention,
+      (item) => item.id,
+    );
+    await _localStore.upsertPurchaseIntention(purchaseIntention);
+  }
+
+  Future<void> _upsertWeekPlan(WeekPlan weekPlan) async {
+    _weekPlans = _upsertById(_weekPlans, weekPlan, (item) => item.id);
+    await _localStore.upsertWeekPlan(weekPlan);
+  }
+
+  String _taskNotesFromHints(Map<String, Object?> hints) {
+    final dueHint = hints['time_hint']?.toString();
+    if (dueHint == null || dueHint.isEmpty) {
+      return 'Captured from quick capture.';
+    }
+    return 'Captured from quick capture. Due hint: $dueHint.';
   }
 
   double? _extractFirstAmount(String text) {
@@ -597,4 +1059,18 @@ class GoLifeController extends ChangeNotifier {
   String _entityId(String prefix) {
     return '$prefix-${DateTime.now().microsecondsSinceEpoch}';
   }
+}
+
+List<T> _upsertById<T>(
+  List<T> values,
+  T next,
+  String Function(T value) idOf,
+) {
+  final mutable = List<T>.from(values);
+  final index = mutable.indexWhere((item) => idOf(item) == idOf(next));
+  if (index >= 0) {
+    mutable[index] = next;
+    return List<T>.unmodifiable(mutable);
+  }
+  return List<T>.unmodifiable(<T>[next, ...mutable]);
 }

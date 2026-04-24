@@ -14,6 +14,8 @@ import '../runtime/app_runtime_config.dart';
 abstract class LocalStore {
   Future<PrivacySettings> loadPrivacySettings();
   Future<void> savePrivacySettings(PrivacySettings settings);
+  Future<bool> loadDemoSeedEnabled() async => true;
+  Future<void> saveDemoSeedEnabled(bool enabled) async {}
 
   Future<List<LifeEvent>> loadLifeEvents();
   Future<void> saveLifeEvents(List<LifeEvent> events);
@@ -44,4 +46,6 @@ abstract class LocalStore {
   Future<void> upsertPantryItem(PantryItem pantryItem) async {}
   Future<void> upsertPurchaseIntention(PurchaseIntention purchaseIntention) async {}
   Future<void> upsertWeekPlan(WeekPlan weekPlan) async {}
+
+  Future<void> deleteAllData() async {}
 }

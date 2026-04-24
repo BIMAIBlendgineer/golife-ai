@@ -31,6 +31,7 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _purchaseIntentionsKey = 'golife.purchase_intentions';
   static const _weekPlansKey = 'golife.week_plans';
   static const _runtimeConfigKey = 'golife.runtime_config';
+  static const _demoSeedEnabledKey = 'golife.demo_seed_enabled';
 
   @override
   Future<PrivacySettings> loadPrivacySettings() async {
@@ -48,6 +49,18 @@ class SharedPrefsLocalStore implements LocalStore {
   Future<void> savePrivacySettings(PrivacySettings settings) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_privacyKey, jsonEncode(settings.toJson()));
+  }
+
+  @override
+  Future<bool> loadDemoSeedEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_demoSeedEnabledKey) ?? true;
+  }
+
+  @override
+  Future<void> saveDemoSeedEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_demoSeedEnabledKey, enabled);
   }
 
   @override
@@ -216,6 +229,24 @@ class SharedPrefsLocalStore implements LocalStore {
   @override
   Future<void> upsertWeekPlan(WeekPlan weekPlan) async {
     await _upsertEntity(_weekPlansKey, weekPlan.id, weekPlan.toJson());
+  }
+
+  @override
+  Future<void> deleteAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_privacyKey);
+    await prefs.remove(_lifeEventsKey);
+    await prefs.remove(_missionFeedbackKey);
+    await prefs.remove(_missionsKey);
+    await prefs.remove(_risksKey);
+    await prefs.remove(_tasksKey);
+    await prefs.remove(_habitsKey);
+    await prefs.remove(_expensesKey);
+    await prefs.remove(_pantryItemsKey);
+    await prefs.remove(_purchaseIntentionsKey);
+    await prefs.remove(_weekPlansKey);
+    await prefs.remove(_runtimeConfigKey);
+    await prefs.setBool(_demoSeedEnabledKey, false);
   }
 
   Future<List<T>> _loadList<T>(

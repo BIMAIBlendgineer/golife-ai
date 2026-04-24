@@ -14,6 +14,7 @@ import 'local_store.dart';
 
 class MemoryLocalStore implements LocalStore {
   PrivacySettings _settings = PrivacySettings.defaults();
+  bool _demoSeedEnabled = true;
   final List<LifeEvent> _events = <LifeEvent>[];
   final List<MissionFeedback> _feedbackItems = <MissionFeedback>[];
   final List<DailyMission> _missions = <DailyMission>[];
@@ -34,6 +35,16 @@ class MemoryLocalStore implements LocalStore {
   @override
   Future<void> savePrivacySettings(PrivacySettings settings) async {
     _settings = settings;
+  }
+
+  @override
+  Future<bool> loadDemoSeedEnabled() async {
+    return _demoSeedEnabled;
+  }
+
+  @override
+  Future<void> saveDemoSeedEnabled(bool enabled) async {
+    _demoSeedEnabled = enabled;
   }
 
   @override
@@ -158,6 +169,23 @@ class MemoryLocalStore implements LocalStore {
   @override
   Future<void> upsertWeekPlan(WeekPlan weekPlan) async {
     _replaceById(_weekPlans, weekPlan, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteAllData() async {
+    _settings = PrivacySettings.defaults();
+    _demoSeedEnabled = false;
+    _events.clear();
+    _feedbackItems.clear();
+    _missions.clear();
+    _risks.clear();
+    _tasks.clear();
+    _habits.clear();
+    _expenses.clear();
+    _pantryItems.clear();
+    _purchaseIntentions.clear();
+    _weekPlans.clear();
+    _runtimeConfig = null;
   }
 }
 

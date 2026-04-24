@@ -19,13 +19,16 @@ import '../runtime/app_runtime_config.dart';
 import 'local_store.dart';
 
 class SqliteLocalStore implements LocalStore {
-  SqliteLocalStore();
+  SqliteLocalStore({String? databaseName})
+      : _databaseName = databaseName ?? _defaultDatabaseName;
 
-  static const _databaseName = 'golife_ai.db';
+  static const _defaultDatabaseName = 'golife_ai.db';
   static const _databaseVersion = 1;
   static const _privacyKey = 'privacy_settings';
   static const _runtimeConfigKey = 'runtime_config';
+  static const _demoSeedEnabledKey = 'demo_seed_enabled';
 
+  final String _databaseName;
   Database? _database;
 
   Future<Database> get _db async {
@@ -81,6 +84,35 @@ class SqliteLocalStore implements LocalStore {
       {
         'key': _privacyKey,
         'value': jsonEncode(settings.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<bool> loadDemoSeedEnabled() async {
+    final db = await _db;
+    final rows = await db.query(
+      'key_value',
+      columns: const ['value'],
+      where: 'key = ?',
+      whereArgs: const [_demoSeedEnabledKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return true;
+    }
+    return rows.first['value']?.toString() != 'false';
+  }
+
+  @override
+  Future<void> saveDemoSeedEnabled(bool enabled) async {
+    final db = await _db;
+    await db.insert(
+      'key_value',
+      {
+        'key': _demoSeedEnabledKey,
+        'value': enabled ? 'true' : 'false',
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -414,6 +446,32 @@ class SqliteLocalStore implements LocalStore {
     return rows
         .map((row) => WeekPlan.fromJson(_decodeJsonRow(row['json_blob'])))
         .toList(growable: false);
+  }
+
+  @override
+  Future<void> deleteAllData() async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('key_value');
+      await txn.delete('life_events');
+      await txn.delete('mission_feedback');
+      await txn.delete('missions');
+      await txn.delete('daily_risks');
+      await txn.delete('tasks');
+      await txn.delete('habits');
+      await txn.delete('expenses');
+      await txn.delete('pantry_items');
+      await txn.delete('purchase_intentions');
+      await txn.delete('week_plans');
+      await txn.insert(
+        'key_value',
+        {
+          'key': _demoSeedEnabledKey,
+          'value': 'false',
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    });
   }
 
   Future<void> _createSchema(Database db) async {

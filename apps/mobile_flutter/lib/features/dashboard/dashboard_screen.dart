@@ -147,9 +147,19 @@ class DashboardScreen extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: primaryMission == null
                           ? null
-                          : () => controller.completeMission(primaryMission),
+                          : () async {
+                              final message =
+                                  await controller.completeMissionAction(
+                                primaryMission,
+                              );
+                              if (context.mounted && message != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(message)),
+                                );
+                              }
+                            },
                       icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Done'),
+                      label: const Text('Do now'),
                     ),
                     OutlinedButton.icon(
                       onPressed: primaryMission == null
@@ -193,7 +203,16 @@ class DashboardScreen extends StatelessWidget {
                   mission: mission,
                   onExplain: () => _showExplanationSheet(context, mission),
                   onAccept: () => controller.acceptMission(mission),
-                  onComplete: () => controller.completeMission(mission),
+                  onComplete: () async {
+                    final message = await controller.completeMissionAction(
+                      mission,
+                    );
+                    if (context.mounted && message != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(message)),
+                      );
+                    }
+                  },
                 ),
               ),
           const SizedBox(height: 24),
@@ -366,8 +385,8 @@ class _MissionSupportCard extends StatelessWidget {
 
   final DailyMission mission;
   final VoidCallback onExplain;
-  final VoidCallback onAccept;
-  final VoidCallback onComplete;
+  final Future<void> Function() onAccept;
+  final Future<void> Function() onComplete;
 
   @override
   Widget build(BuildContext context) {
@@ -407,14 +426,18 @@ class _MissionSupportCard extends StatelessWidget {
                 label: const Text('Explain'),
               ),
               TextButton.icon(
-                onPressed: onAccept,
+                onPressed: () {
+                  onAccept();
+                },
                 icon: const Icon(Icons.playlist_add_check_circle_outlined),
                 label: const Text('Accept'),
               ),
               TextButton.icon(
-                onPressed: onComplete,
+                onPressed: () {
+                  onComplete();
+                },
                 icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Done'),
+                label: const Text('Do now'),
               ),
             ],
           ),

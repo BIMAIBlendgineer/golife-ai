@@ -1,3 +1,10 @@
+from fastapi.testclient import TestClient
+
+from app.main import create_app
+from app.providers.base import LLMProvider
+from app.settings import Settings
+
+
 def _event(event_id: str, domain: str, event_type: str = 'logged') -> dict:
     return {
         'event_id': event_id,
@@ -108,3 +115,85 @@ def test_daily_mission_graph_wardrobe_purchase_intention(client):
     assert suggestion['evidence']
     assert suggestion['uncertainty']
     assert data['trace']['assess_risks']['risks'][0]['risk_id'] == 'purchase_intention_active'
+
+
+class TwoSuggestionProvider(LLMProvider):
+    provider_name = 'two-suggestion-provider'
+
+    async def complete_json(
+        self,
+        *,
+        system_prompt: str,
+        user_payload: dict,
+        response_schema: dict | None = None,
+        model: str | None = None,
+        temperature: float = 0.0,
+    ) -> dict:
+        return {
+            'suggestions': [
+                {
+                    'suggestion_id': 's-1',
+                    'title': 'Complete the task',
+                    'domain_targets': ['task'],
+                    'recommendation_type': 'mission',
+                    'body': 'Finish the task block.',
+                    'evidence': [
+                        {
+                            'source_domain': 'task',
+                            'claim': 'Task evidence exists.',
+                            'confidence': 0.9,
+                        }
+                    ],
+                    'confidence': 0.8,
+                    'uncertainty': 'low',
+                    'requires_confirmation': True,
+                },
+                {
+                    'suggestion_id': 's-2',
+                    'title': 'Protect the habit',
+                    'domain_targets': ['habit'],
+                    'recommendation_type': 'mission',
+                    'body': 'Keep the habit alive.',
+                    'evidence': [
+                        {
+                            'source_domain': 'habit',
+                            'claim': 'Habit evidence exists.',
+                            'confidence': 0.8,
+                        }
+                    ],
+                    'confidence': 0.78,
+                    'uncertainty': 'medium',
+                    'requires_confirmation': True,
+                },
+            ]
+        }
+
+
+def test_daily_mission_graph_synthesizes_missing_third_suggestion():
+    app = create_app(
+        settings=Settings(ai_gateway_enable_mock=False, llm_provider='openrouter'),
+        provider=TwoSuggestionProvider(),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        '/v1/missions/daily',
+        json={
+            'user_id': 'user-1',
+            'allowed_domains': ['task', 'habit', 'pantry'],
+            'privacy_settings': {
+                'ai_enabled': True,
+                'allowed_domains': ['task', 'habit', 'pantry'],
+            },
+            'life_events': [
+                _event('evt-task-1', 'task'),
+                _event('evt-habit-1', 'habit', 'habit_checked'),
+                _event('evt-pantry-1', 'pantry', 'ingredient_flagged'),
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data['suggestions']) == 3
+    assert data['trace']['build_response']['synthesized_count'] == 1

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/privacy/privacy_models.dart';
 import '../app_state/golife_controller.dart';
@@ -19,7 +20,7 @@ class PrivacyScreen extends StatelessWidget {
           Text('Privacy', style: theme.textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Each event stays local unless both the domain permission and the event privacy level allow AI. This screen shows what the graph can actually send.',
+            'Each event stays local unless both the domain permission and the event privacy level allow AI. This screen also gives you direct local export and delete controls.',
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 24),
@@ -50,6 +51,43 @@ class PrivacyScreen extends StatelessWidget {
             tone: const Color(0xFFD06447),
           ),
           const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.76),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Data controls', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  'Export copies the full local graph snapshot as JSON. Delete all wipes local data and disables demo reseeding.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: () => _exportLocalJson(context),
+                      icon: const Icon(Icons.download_outlined),
+                      label: const Text('Export JSON'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _confirmDeleteAll(context),
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Delete all local data'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           Text('Domain controls', style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
           for (final domain in DomainKey.values)
@@ -66,6 +104,56 @@ class PrivacyScreen extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _exportLocalJson(BuildContext context) async {
+    final json = await controller.exportLocalDataJson();
+    await Clipboard.setData(ClipboardData(text: json));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Local JSON export copied to clipboard.'),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteAll(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Delete all local data?'),
+              content: const Text(
+                'This wipes local events, entities, missions, feedback, privacy settings, and cached runtime config on this device.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete all'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+    if (!confirmed) {
+      return;
+    }
+    await controller.deleteAllLocalData();
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('All local data deleted.'),
       ),
     );
   }

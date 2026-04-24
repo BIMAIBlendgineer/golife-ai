@@ -160,6 +160,8 @@ Ahora el paquete ya no es solo mobile + AI gateway. La arquitectura activa queda
 - `packages/contracts`
   - snapshots JSON de contratos compartidos
   - `life_event`, `mission` y `ai_suggestion`
+- `docs/product`, `docs/operations`, `docs/compliance`, `docs/archive`
+  - metadata de tienda, soporte, revisiones de privacy/safety/license y estado del execution pack
 
 ## Ejecutar backend operacional y panel admin
 
@@ -236,3 +238,14 @@ El panel admin ahora distingue:
 - `BACKEND OFFLINE`
 
 Tambien muestra la ultima ingestion conocida para evitar confundir snapshots con datos operacionales en vivo.
+
+## Estado movil actual
+
+La app movil ya cubre estas piezas del roadmap activo:
+
+- capture multi-evento con confirmacion
+- privacidad por item en captura
+- acciones reales desde mission `Do now`
+- boards locales para tasks, habits, money, pantry, week y closet
+- export JSON local
+- delete all local

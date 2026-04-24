@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../app_state/golife_controller.dart';
+import 'capture_parser.dart';
 
 class CaptureScreen extends StatefulWidget {
   const CaptureScreen({super.key, required this.controller});
@@ -16,7 +16,7 @@ class CaptureScreen extends StatefulWidget {
 class _CaptureScreenState extends State<CaptureScreen> {
   late final TextEditingController _textController;
   DomainKey? _selectedDomain;
-  CaptureClassificationDto? _classification;
+  List<CaptureDraftItem> _drafts = const <CaptureDraftItem>[];
   bool _isSubmitting = false;
 
   @override
@@ -50,7 +50,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
           Text('Capture', style: theme.textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Write one quick note. You can route it manually or let the gateway classify it first and confirm before saving.',
+            'Write one sentence. GoLife can split it into several drafts, let you edit domain and privacy per item, then save all of them together.',
             style: theme.textTheme.bodyLarge,
           ),
           if (gatewayStatusMessage != null) ...[
@@ -92,7 +92,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                       onSelected: (_) {
                         setState(() {
                           _selectedDomain = null;
-                          _classification = null;
+                          _drafts = const <CaptureDraftItem>[];
                         });
                       },
                     ),
@@ -110,7 +110,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                         onSelected: (_) {
                           setState(() {
                             _selectedDomain = domain;
-                            _classification = null;
+                            _drafts = const <CaptureDraftItem>[];
                           });
                         },
                       ),
@@ -119,8 +119,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 const SizedBox(height: 16),
                 Text(
                   selectedDomain == null
-                      ? 'Auto mode will classify the note first, then ask you to confirm.'
-                      : 'Current privacy for ${selectedDomain.label}: ${permission?.label ?? 'Local'}',
+                      ? 'Auto mode will try to split and classify each clause first.'
+                      : 'Current default privacy for ${selectedDomain.label}: ${permission?.label ?? 'Local'}',
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
@@ -129,9 +129,9 @@ class _CaptureScreenState extends State<CaptureScreen> {
                   minLines: 3,
                   maxLines: 5,
                   onChanged: (_) {
-                    if (_classification != null) {
+                    if (_drafts.isNotEmpty) {
                       setState(() {
-                        _classification = null;
+                        _drafts = const <CaptureDraftItem>[];
                       });
                     }
                   },
@@ -148,31 +148,57 @@ class _CaptureScreenState extends State<CaptureScreen> {
                   runSpacing: 12,
                   children: [
                     FilledButton.icon(
-                      onPressed: _isSubmitting ? null : _handlePrimaryAction,
+                      onPressed: _isSubmitting ? null : _prepareDrafts,
                       icon: Icon(
                         selectedDomain == null
                             ? Icons.auto_awesome_outlined
-                            : Icons.add_task_rounded,
+                            : Icons.rule_folder_outlined,
                       ),
                       label: Text(
-                        selectedDomain == null
-                            ? 'Classify capture'
-                            : 'Save event',
+                        _drafts.isEmpty ? 'Parse capture' : 'Re-parse capture',
                       ),
                     ),
-                    if (_classification != null)
+                    if (_drafts.isNotEmpty)
                       OutlinedButton.icon(
-                        onPressed: _isSubmitting ? null : _saveClassifiedEvent,
+                        onPressed: _isSubmitting ? null : _saveDrafts,
                         icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Confirm and save'),
+                        label: Text('Save ${_drafts.length} items'),
                       ),
                   ],
                 ),
-                if (_classification != null) ...[
-                  const SizedBox(height: 16),
-                  _ClassificationCard(
-                    classification: _classification!,
-                  ),
+                if (_drafts.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Text('Drafts to confirm', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  for (final draft in _drafts)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _CaptureDraftCard(
+                        draft: draft,
+                        onDomainChanged: (domain) {
+                          final permission = widget.controller.privacySettings
+                              .permissionFor(domain);
+                          _updateDraft(
+                            draft.id,
+                            draft.copyWith(
+                              domain: domain,
+                              eventType: _defaultEventType(domain),
+                              privacyLevel: permission.storageKey,
+                            ),
+                          );
+                        },
+                        onPrivacyChanged: (permission) {
+                          _updateDraft(
+                            draft.id,
+                            draft.copyWith(
+                              privacyLevel: permission.storageKey,
+                            ),
+                          );
+                        },
+                        onEditText: () => _editDraftText(draft),
+                        onRemove: () => _removeDraft(draft.id),
+                      ),
+                    ),
                 ],
               ],
             ),
@@ -210,15 +236,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     );
   }
 
-  Future<void> _handlePrimaryAction() async {
-    if (_selectedDomain == null) {
-      await _classifyCapture();
-      return;
-    }
-    await _saveManualEvent(_selectedDomain!);
-  }
-
-  Future<void> _classifyCapture() async {
+  Future<void> _prepareDrafts() async {
     final text = _textController.text.trim();
     if (text.isEmpty) {
       return;
@@ -229,12 +247,15 @@ class _CaptureScreenState extends State<CaptureScreen> {
     });
 
     try {
-      final classification = await widget.controller.classifyCaptureText(text);
+      final drafts = await widget.controller.prepareCaptureDrafts(
+        text: text,
+        forcedDomain: _selectedDomain,
+      );
       if (!mounted) {
         return;
       }
       setState(() {
-        _classification = classification;
+        _drafts = drafts;
       });
     } finally {
       if (mounted) {
@@ -245,36 +266,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
-  Future<void> _saveManualEvent(DomainKey domain) async {
-    await _saveEvent(
-      domain: domain,
-      eventType: null,
-    );
-  }
-
-  Future<void> _saveClassifiedEvent() async {
-    final classification = _classification;
-    if (classification == null) {
-      return;
-    }
-
-    final domain = domainKeyFromWireName(classification.domain);
-    if (domain == null) {
-      return;
-    }
-
-    await _saveEvent(
-      domain: domain,
-      eventType: classification.eventType,
-    );
-  }
-
-  Future<void> _saveEvent({
-    required DomainKey domain,
-    required String? eventType,
-  }) async {
-    final text = _textController.text.trim();
-    if (text.isEmpty) {
+  Future<void> _saveDrafts() async {
+    if (_drafts.isEmpty) {
       return;
     }
 
@@ -283,26 +276,18 @@ class _CaptureScreenState extends State<CaptureScreen> {
     });
 
     try {
-      await widget.controller.captureEvent(
-        domain: domain,
-        text: text,
-        eventType: eventType,
-      );
+      await widget.controller.captureDrafts(_drafts);
       _textController.clear();
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            _classification == null
-                ? 'LifeEvent captured.'
-                : 'Classified event confirmed and captured.',
-          ),
+          content: Text('${_drafts.length} item(s) captured.'),
         ),
       );
       setState(() {
-        _classification = null;
+        _drafts = const <CaptureDraftItem>[];
       });
     } finally {
       if (mounted) {
@@ -313,10 +298,62 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
+  Future<void> _editDraftText(CaptureDraftItem draft) async {
+    final controller = TextEditingController(text: draft.text);
+    final updatedText = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit item'),
+          content: TextField(
+            controller: controller,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    if (updatedText == null || updatedText.isEmpty) {
+      return;
+    }
+    _updateDraft(
+      draft.id,
+      draft.copyWith(text: updatedText),
+    );
+  }
+
+  void _updateDraft(String id, CaptureDraftItem next) {
+    setState(() {
+      _drafts = _drafts.map((draft) {
+        return draft.id == id ? next : draft;
+      }).toList(growable: false);
+    });
+  }
+
+  void _removeDraft(String id) {
+    setState(() {
+      _drafts =
+          _drafts.where((draft) => draft.id != id).toList(growable: false);
+    });
+  }
+
   String _hintFor(DomainKey? domain) {
     switch (domain) {
       case null:
-        return 'Example: Compre cafe 4.50 y la lechuga vence manana';
+        return 'Example: Compre cafe 4.50, la lechuga vence manana y debo pagar internet';
       case DomainKey.tasks:
         return 'Example: submit rent receipt before lunch';
       case DomainKey.habits:
@@ -333,18 +370,50 @@ class _CaptureScreenState extends State<CaptureScreen> {
         return 'Example: a mission note';
     }
   }
+
+  String _defaultEventType(DomainKey domain) {
+    switch (domain) {
+      case DomainKey.tasks:
+        return 'task_captured';
+      case DomainKey.habits:
+        return 'habit_logged';
+      case DomainKey.week:
+        return 'week_note_captured';
+      case DomainKey.finance:
+        return 'expense_logged';
+      case DomainKey.pantry:
+        return 'ingredient_flagged';
+      case DomainKey.wardrobe:
+        return 'purchase_intention';
+      case DomainKey.copilot:
+        return 'note_captured';
+    }
+  }
 }
 
-class _ClassificationCard extends StatelessWidget {
-  const _ClassificationCard({
-    required this.classification,
+class _CaptureDraftCard extends StatelessWidget {
+  const _CaptureDraftCard({
+    required this.draft,
+    required this.onDomainChanged,
+    required this.onPrivacyChanged,
+    required this.onEditText,
+    required this.onRemove,
   });
 
-  final CaptureClassificationDto classification;
+  final CaptureDraftItem draft;
+  final ValueChanged<DomainKey> onDomainChanged;
+  final ValueChanged<DataPermission> onPrivacyChanged;
+  final VoidCallback onEditText;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final currentPermission = DataPermission.values.firstWhere(
+      (permission) => permission.storageKey == draft.privacyLevel,
+      orElse: () => DataPermission.localOnly,
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -355,19 +424,93 @@ class _ClassificationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Classification preview', style: theme.textTheme.titleMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  draft.text,
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+              IconButton(
+                onPressed: onEditText,
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Edit',
+              ),
+              IconButton(
+                onPressed: onRemove,
+                icon: const Icon(Icons.close_rounded),
+                tooltip: 'Remove',
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Text(
-            '${classification.domain} - ${classification.eventType}',
-            style: theme.textTheme.labelLarge,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Confidence ${(classification.confidence * 100).round()}%',
+            draft.rationale,
             style: theme.textTheme.bodyMedium,
           ),
-          const SizedBox(height: 6),
-          Text(classification.rationale, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<DomainKey>(
+                  initialValue: draft.domain,
+                  decoration: const InputDecoration(
+                    labelText: 'Domain',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    DomainKey.tasks,
+                    DomainKey.habits,
+                    DomainKey.week,
+                    DomainKey.finance,
+                    DomainKey.pantry,
+                    DomainKey.wardrobe,
+                  ].map((domain) {
+                    return DropdownMenuItem(
+                      value: domain,
+                      child: Text(domain.label),
+                    );
+                  }).toList(growable: false),
+                  onChanged: (value) {
+                    if (value != null) {
+                      onDomainChanged(value);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<DataPermission>(
+                  initialValue: currentPermission,
+                  decoration: const InputDecoration(
+                    labelText: 'Privacy',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: DataPermission.values.map((permission) {
+                    return DropdownMenuItem(
+                      value: permission,
+                      child: Text(permission.label),
+                    );
+                  }).toList(growable: false),
+                  onChanged: (value) {
+                    if (value != null) {
+                      onPrivacyChanged(value);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Chip(label: Text(draft.eventType)),
+              Chip(label: Text('${(draft.confidence * 100).round()}%')),
+            ],
+          ),
         ],
       ),
     );

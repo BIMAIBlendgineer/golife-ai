@@ -316,6 +316,7 @@ const appDestinations = [
   AppDestination(label: 'Capture', path: '/capture', icon: Icons.add_circle_outline_rounded),
   AppDestination(label: 'Week', path: '/week', icon: Icons.view_week_rounded),
   AppDestination(label: 'Tasks', path: '/tasks', icon: Icons.checklist_rounded),
+  AppDestination(label: 'Habits', path: '/habits', icon: Icons.self_improvement_rounded),
   AppDestination(label: 'Money', path: '/money', icon: Icons.stacked_line_chart_rounded),
   AppDestination(label: 'Pantry', path: '/pantry', icon: Icons.kitchen_rounded),
   AppDestination(label: 'Closet', path: '/closet', icon: Icons.checkroom_rounded),
