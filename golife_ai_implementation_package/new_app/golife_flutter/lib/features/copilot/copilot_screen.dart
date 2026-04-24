@@ -22,7 +22,7 @@ class CopilotScreen extends StatelessWidget {
           Text('Copilot', style: theme.textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'The shell only uses a mock client right now, but it already respects per-domain consent and keeps a visible trace.',
+            'The app now prefers the real AI gateway and only falls back to the local mock path when the backend fails or times out.',
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 24),

@@ -9,6 +9,7 @@ import '../../core/storage/local_store.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
 import '../../domains/missions/daily_mission.dart';
+import '../../domains/missions/mission_feedback.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
@@ -30,6 +31,7 @@ class GoLifeController extends ChangeNotifier {
   bool _isReady = false;
   PrivacySettings _privacySettings = PrivacySettings.defaults();
   DailyMission? _dailyMission;
+  List<MissionFeedback> _missionFeedback = <MissionFeedback>[];
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -88,6 +90,24 @@ class GoLifeController extends ChangeNotifier {
   PrivacySettings get privacySettings => _privacySettings;
   DailyMission? get dailyMission => _dailyMission;
   List<LifeEvent> get lifeEvents => _lifeGraphRepository.allEvents();
+  List<MissionFeedback> get missionFeedbackHistory =>
+      List<MissionFeedback>.unmodifiable(_missionFeedback);
+
+  MissionFeedback? get latestMissionFeedback {
+    final mission = _dailyMission;
+    if (mission == null) {
+      return null;
+    }
+    for (final feedback in _missionFeedback.reversed) {
+      if (feedback.missionId == mission.id) {
+        return feedback;
+      }
+    }
+    return null;
+  }
+
+  String get latestFeedbackLabel =>
+      latestMissionFeedback?.status.label ?? 'No feedback yet';
 
   int eventCountFor(String domain) {
     return _lifeGraphRepository.eventsForDomain(domain).length;
@@ -95,6 +115,8 @@ class GoLifeController extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     _privacySettings = await _localStore.loadPrivacySettings();
+    await _lifeGraphRepository.bootstrap();
+    _missionFeedback = await _localStore.loadMissionFeedback();
     await _refreshMission();
     _isReady = true;
     notifyListeners();
@@ -136,6 +158,14 @@ class GoLifeController extends ChangeNotifier {
         event: closetSummary.toLifeEvent(),
       );
 
+  Future<void> markMissionUseful() => _submitMissionFeedback(
+        MissionFeedbackStatus.useful,
+      );
+
+  Future<void> rejectMission() => _submitMissionFeedback(
+        MissionFeedbackStatus.rejected,
+      );
+
   Future<void> _recordEvent({
     LifeEvent? event,
     String? domain,
@@ -144,11 +174,18 @@ class GoLifeController extends ChangeNotifier {
   }) async {
     final nextEvent = event ??
         LifeEvent(
-          id: 'evt-${DateTime.now().microsecondsSinceEpoch}',
+          eventId: 'evt-${DateTime.now().microsecondsSinceEpoch}',
+          userId: 'local-user',
           domain: domain ?? 'system',
-          type: type ?? 'ping',
-          occurredAtIso: DateTime.now().toUtc().toIso8601String(),
-          summary: summary ?? 'Sample shell event.',
+          eventType: type ?? 'ping',
+          timestampIso: DateTime.now().toUtc().toIso8601String(),
+          payload: {
+            'summary': summary ?? 'Sample shell event.',
+          },
+          source: 'manual',
+          privacyLevel: _privacySettings
+              .permissionForWireDomain(domain ?? 'system')
+              .storageKey,
         );
     await _lifeGraphRepository.addEvent(nextEvent);
     await _refreshMission();
@@ -161,5 +198,34 @@ class GoLifeController extends ChangeNotifier {
       lifeEvents: lifeEvents,
     );
     _dailyMission = mapMissionSuggestion(dto);
+  }
+
+  Future<void> _submitMissionFeedback(MissionFeedbackStatus status) async {
+    final mission = _dailyMission;
+    if (mission == null) {
+      return;
+    }
+
+    final feedback = MissionFeedback(
+      id: 'feedback-${DateTime.now().microsecondsSinceEpoch}',
+      missionId: mission.id,
+      status: status,
+      createdAtIso: DateTime.now().toUtc().toIso8601String(),
+      trace: mission.trace,
+    );
+
+    _missionFeedback = <MissionFeedback>[
+      ..._missionFeedback,
+      feedback,
+    ];
+    await _localStore.saveMissionFeedback(_missionFeedback);
+
+    try {
+      await _aiGatewayClient.submitMissionFeedback(feedback: feedback);
+    } catch (_) {
+      // Local persistence remains the source of truth until the gateway is available.
+    }
+
+    notifyListeners();
   }
 }

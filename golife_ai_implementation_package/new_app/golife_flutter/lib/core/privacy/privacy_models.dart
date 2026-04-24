@@ -117,12 +117,28 @@ class PrivacySettings {
     return permissions[domain] ?? DataPermission.localOnly;
   }
 
+  DataPermission permissionForWireDomain(String wireName) {
+    final domain = domainKeyFromWireName(wireName);
+    if (domain == null) {
+      return DataPermission.localOnly;
+    }
+    return permissionFor(domain);
+  }
+
   List<DomainKey> get aiAllowedDomains {
     return permissions.entries
         .where((entry) => entry.value == DataPermission.aiAllowed)
         .map((entry) => entry.key)
         .toList(growable: false);
   }
+
+  List<String> get aiAllowedWireDomains {
+    return aiAllowedDomains
+        .map((domain) => domain.wireName)
+        .toList(growable: false);
+  }
+
+  bool get aiEnabled => aiAllowedDomains.isNotEmpty;
 
   PrivacySettings copyWithPermission(
     DomainKey domain,
@@ -150,11 +166,21 @@ class PrivacySettings {
 
     for (final domain in DomainKey.values) {
       final rawValue = rawPermissions[domain.storageKey] as String?;
-      permissions[domain] = _permissionFromKey(rawValue) ?? defaults.permissionFor(domain);
+      permissions[domain] =
+          _permissionFromKey(rawValue) ?? defaults.permissionFor(domain);
     }
 
     return PrivacySettings(permissions: permissions);
   }
+}
+
+DomainKey? domainKeyFromWireName(String wireName) {
+  for (final domain in DomainKey.values) {
+    if (domain.wireName == wireName) {
+      return domain;
+    }
+  }
+  return null;
 }
 
 DataPermission? _permissionFromKey(String? rawValue) {

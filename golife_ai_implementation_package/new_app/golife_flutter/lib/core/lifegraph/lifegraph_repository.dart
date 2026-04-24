@@ -1,62 +1,109 @@
+import '../storage/local_store.dart';
 import 'life_event.dart';
 
 class LifeGraphRepository {
-  LifeGraphRepository({List<LifeEvent>? seedEvents})
-      : _events = List<LifeEvent>.from(seedEvents ?? const []);
+  LifeGraphRepository({
+    LocalStore? localStore,
+    List<LifeEvent>? seedEvents,
+  })  : _localStore = localStore,
+        _seedEvents = List<LifeEvent>.from(seedEvents ?? const <LifeEvent>[]);
 
-  factory LifeGraphRepository.seeded() {
+  factory LifeGraphRepository.seeded({LocalStore? localStore}) {
     return LifeGraphRepository(
+      localStore: localStore,
       seedEvents: const [
         LifeEvent(
-          id: 'evt-task-1',
+          eventId: 'evt-task-1',
+          userId: 'local-user',
           domain: 'task',
-          type: 'task_created',
-          occurredAtIso: '2026-04-24T08:00:00Z',
-          summary: 'Submit rent receipt',
+          eventType: 'task_created',
+          timestampIso: '2026-04-24T08:00:00Z',
+          payload: {'summary': 'Submit rent receipt'},
+          source: 'manual',
+          privacyLevel: 'local_only',
         ),
         LifeEvent(
-          id: 'evt-habit-1',
+          eventId: 'evt-habit-1',
+          userId: 'local-user',
           domain: 'habit',
-          type: 'habit_checked',
-          occurredAtIso: '2026-04-24T08:20:00Z',
-          summary: 'Night reset kept for 4 days',
+          eventType: 'habit_checked',
+          timestampIso: '2026-04-24T08:20:00Z',
+          payload: {'summary': 'Night reset kept for 4 days'},
+          source: 'manual',
+          privacyLevel: 'local_only',
         ),
         LifeEvent(
-          id: 'evt-finance-1',
+          eventId: 'evt-finance-1',
+          userId: 'local-user',
           domain: 'finance',
-          type: 'expense_logged',
-          occurredAtIso: '2026-04-24T09:00:00Z',
-          summary: 'Coffee and sandwich purchase recorded',
+          eventType: 'expense_logged',
+          timestampIso: '2026-04-24T09:00:00Z',
+          payload: {'summary': 'Coffee and sandwich purchase recorded'},
+          source: 'manual',
+          privacyLevel: 'local_only',
         ),
         LifeEvent(
-          id: 'evt-pantry-1',
+          eventId: 'evt-pantry-1',
+          userId: 'local-user',
           domain: 'pantry',
-          type: 'ingredient_flagged',
-          occurredAtIso: '2026-04-24T09:20:00Z',
-          summary: 'Spinach should be used tonight',
+          eventType: 'ingredient_flagged',
+          timestampIso: '2026-04-24T09:20:00Z',
+          payload: {'summary': 'Spinach should be used tonight'},
+          source: 'manual',
+          privacyLevel: 'local_only',
         ),
         LifeEvent(
-          id: 'evt-wardrobe-1',
+          eventId: 'evt-wardrobe-1',
+          userId: 'local-user',
           domain: 'wardrobe',
-          type: 'purchase_intention',
-          occurredAtIso: '2026-04-24T09:40:00Z',
-          summary: 'Thinking about another black jacket',
+          eventType: 'purchase_intention',
+          timestampIso: '2026-04-24T09:40:00Z',
+          payload: {'summary': 'Thinking about another black jacket'},
+          source: 'manual',
+          privacyLevel: 'local_only',
         ),
       ],
     );
   }
 
-  final List<LifeEvent> _events;
+  final LocalStore? _localStore;
+  final List<LifeEvent> _seedEvents;
+  final List<LifeEvent> _events = <LifeEvent>[];
+  bool _bootstrapped = false;
+
+  Future<void> bootstrap() async {
+    if (_bootstrapped) {
+      return;
+    }
+
+    final storedEvents = await _localStore?.loadLifeEvents() ?? const <LifeEvent>[];
+    _events
+      ..clear()
+      ..addAll(storedEvents.isNotEmpty ? storedEvents : _seedEvents);
+
+    _bootstrapped = true;
+
+    if (storedEvents.isEmpty && _localStore != null && _events.isNotEmpty) {
+      await _localStore!.saveLifeEvents(_events);
+    }
+  }
 
   List<LifeEvent> allEvents() {
-    return List<LifeEvent>.unmodifiable(_events.reversed);
+    final current = _events.isEmpty && !_bootstrapped ? _seedEvents : _events;
+    return List<LifeEvent>.unmodifiable(current.reversed.toList(growable: false));
   }
 
   List<LifeEvent> eventsForDomain(String domain) {
-    return allEvents().where((event) => event.domain == domain).toList(growable: false);
+    return allEvents()
+        .where((event) => event.domain == domain)
+        .toList(growable: false);
   }
 
   Future<void> addEvent(LifeEvent event) async {
+    if (!_bootstrapped) {
+      await bootstrap();
+    }
     _events.add(event);
+    await _localStore?.saveLifeEvents(_events);
   }
 }

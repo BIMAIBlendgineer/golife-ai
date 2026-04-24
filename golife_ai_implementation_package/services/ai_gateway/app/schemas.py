@@ -8,6 +8,7 @@ Domain = Literal["task", "habit", "week", "finance", "pantry", "wardrobe", "miss
 RecommendationType = Literal["mission", "plan_adjustment", "task_rewrite", "warning", "reflection"]
 SuggestionStatus = Literal["draft", "shown", "accepted", "rejected", "edited", "expired"]
 DayState = Literal["overloaded", "steady", "recovery", "unstructured", "unknown"]
+FeedbackStatus = Literal["useful", "rejected", "accepted", "completed", "edited"]
 
 
 class PrivacySettings(BaseModel):
@@ -96,4 +97,18 @@ class TaskRewriteStep(BaseModel):
 
 class TaskRewriteResponse(BaseModel):
     rewrites: list[TaskRewriteStep] = Field(default_factory=list)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class MissionFeedbackRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    suggestion_id: str = Field(min_length=1)
+    status: FeedbackStatus
+    notes: str | None = None
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class MissionFeedbackResponse(BaseModel):
+    stored: bool = True
+    feedback_id: str = Field(min_length=1)
     trace: dict[str, Any] = Field(default_factory=dict)

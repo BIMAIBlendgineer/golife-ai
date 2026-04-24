@@ -100,3 +100,21 @@ def test_provider_factory_falls_back_to_mock_without_api_key():
         )
     )
     assert isinstance(provider, MockLLMProvider)
+
+
+def test_feedback_endpoint_stores_structured_feedback(client):
+    response = client.post(
+        "/v1/feedback",
+        json={
+            "user_id": "user-1",
+            "suggestion_id": "mock-daily-task-habit",
+            "status": "useful",
+            "notes": "This mission matched the actual day.",
+            "trace": {"screen": "dashboard"},
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["stored"] is True
+    assert data["feedback_id"].startswith("feedback-")
+    assert data["trace"]["status"] == "useful"

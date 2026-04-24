@@ -5,17 +5,25 @@ class LifeEventFactory {
     required String domain,
     required String type,
     required String summary,
+    String userId = 'local-user',
+    String source = 'manual',
     String privacyLevel = 'local_only',
+    String? evidenceHash,
     Map<String, Object?> payload = const <String, Object?>{},
   }) {
     return LifeEvent(
-      id: '$domain-$type-${DateTime.now().microsecondsSinceEpoch}',
+      eventId: '$domain-$type-${DateTime.now().microsecondsSinceEpoch}',
+      userId: userId,
       domain: domain,
-      type: type,
-      occurredAtIso: DateTime.now().toUtc().toIso8601String(),
-      summary: summary,
+      eventType: type,
+      timestampIso: DateTime.now().toUtc().toIso8601String(),
+      payload: {
+        ...payload,
+        'summary': summary,
+      },
+      source: source,
       privacyLevel: privacyLevel,
-      payload: payload,
+      evidenceHash: evidenceHash,
     );
   }
 }

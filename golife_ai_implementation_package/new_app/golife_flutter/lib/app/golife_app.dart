@@ -34,10 +34,20 @@ class _GoLifeAppState extends State<GoLifeApp> {
   @override
   void initState() {
     super.initState();
+    final resolvedLocalStore = widget.localStore ?? const SharedPrefsLocalStore();
+    final baseUrl = const String.fromEnvironment(
+      'GOLIFE_AI_GATEWAY_BASE_URL',
+      defaultValue: 'http://127.0.0.1:8000',
+    );
+
     _controller = GoLifeController(
-      localStore: widget.localStore ?? const SharedPrefsLocalStore(),
-      aiGatewayClient: widget.aiGatewayClient ?? const MockAiGatewayClient(),
-      lifeGraphRepository: widget.lifeGraphRepository ?? LifeGraphRepository.seeded(),
+      localStore: resolvedLocalStore,
+      aiGatewayClient: widget.aiGatewayClient ??
+          HttpAiGatewayClient(
+            baseUri: Uri.parse(baseUrl),
+          ),
+      lifeGraphRepository: widget.lifeGraphRepository ??
+          LifeGraphRepository.seeded(localStore: resolvedLocalStore),
     );
     _router = buildAppRouter(_controller);
     unawaited(_controller.bootstrap());

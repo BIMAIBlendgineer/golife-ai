@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../domains/missions/daily_mission.dart';
 import '../app_state/golife_controller.dart';
 import 'signal_card.dart';
 
@@ -23,7 +24,7 @@ class DashboardScreen extends StatelessWidget {
           Text('Mission of the day', style: theme.textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'A mock daily loop powered by local privacy settings and a sample life graph.',
+            'A local-first loop that tries the real AI gateway first and falls back safely when the backend is unavailable.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
@@ -43,7 +44,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  mission?.body ?? 'Bootstrapping shell state and mock AI trace.',
+                  mission?.body ?? 'Bootstrapping local events and gateway trace.',
                   style: theme.textTheme.bodyLarge?.copyWith(color: const Color(0xFFF2E5D2)),
                 ),
                 const SizedBox(height: 18),
@@ -56,20 +57,38 @@ class DashboardScreen extends StatelessWidget {
                       color: const Color(0xFFD06447),
                     ),
                     _MetaPill(
-                      label: mission?.requiresConfirmation == true
-                          ? 'Needs confirmation'
-                          : 'Auto-safe',
+                      label: _missionSourceLabel(mission),
                       color: const Color(0xFF5D7A68),
+                    ),
+                    _MetaPill(
+                      label: controller.latestFeedbackLabel,
+                      color: const Color(0xFF8A6C2F),
                     ),
                   ],
                 ),
                 const SizedBox(height: 18),
-                FilledButton.tonalIcon(
-                  onPressed: mission == null
-                      ? null
-                      : () => _showExplanationSheet(context, controller),
-                  icon: const Icon(Icons.visibility_outlined),
-                  label: const Text('Explain'),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    FilledButton.tonalIcon(
+                      onPressed: mission == null
+                          ? null
+                          : () => _showExplanationSheet(context, controller),
+                      icon: const Icon(Icons.visibility_outlined),
+                      label: const Text('Explain'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: mission == null ? null : controller.markMissionUseful,
+                      icon: const Icon(Icons.thumb_up_alt_outlined),
+                      label: const Text('Useful'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: mission == null ? null : controller.rejectMission,
+                      icon: const Icon(Icons.thumb_down_alt_outlined),
+                      label: const Text('Not useful'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -166,6 +185,22 @@ class DashboardScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  String _missionSourceLabel(DailyMission? mission) {
+    if (mission == null) {
+      return 'Waiting';
+    }
+    if (mission.trace['clientFallback'] == true) {
+      return 'Fallback';
+    }
+    if (mission.trace['remote'] == true) {
+      return 'Gateway live';
+    }
+    if (mission.trace['mock'] == true) {
+      return 'Mock';
+    }
+    return 'Local';
   }
 }
 

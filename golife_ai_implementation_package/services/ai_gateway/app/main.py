@@ -1,8 +1,11 @@
 from fastapi import FastAPI, Request
 
+from app.feedback_store import MissionFeedbackStore
 from app.providers.base import LLMProvider
 from app.providers.factory import build_provider
 from app.schemas import (
+    MissionFeedbackRequest,
+    MissionFeedbackResponse,
     SuggestionRequest,
     SuggestionResponse,
     TaskRewriteRequest,
@@ -23,6 +26,7 @@ def create_app(
     app = FastAPI(title="GoLife AI Gateway", version="0.2.0")
     app.state.settings = resolved_settings
     app.state.provider = resolved_provider
+    app.state.feedback_store = MissionFeedbackStore()
 
     @app.get("/health")
     async def health() -> dict[str, object]:
@@ -105,6 +109,21 @@ def create_app(
             provider=request.app.state.provider,
             required_domain="wardrobe",
             intent="closet_decision",
+        )
+
+    @app.post("/v1/feedback", response_model=MissionFeedbackResponse)
+    async def record_feedback(
+        payload: MissionFeedbackRequest,
+        request: Request,
+    ) -> MissionFeedbackResponse:
+        feedback_id = request.app.state.feedback_store.record(payload)
+        return MissionFeedbackResponse(
+            stored=True,
+            feedback_id=feedback_id,
+            trace={
+                "feedback_count": len(request.app.state.feedback_store.all()),
+                "status": payload.status,
+            },
         )
 
     return app

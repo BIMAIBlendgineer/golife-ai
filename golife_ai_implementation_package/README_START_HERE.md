@@ -107,3 +107,16 @@ Un MVP llamado **GoLife AI** con:
 - FridgeZero.
 - AI Gateway con OpenRouter intercambiable.
 - Explicaciones y trazabilidad de cada sugerencia.
+
+## Decision actual 2026-04-24
+
+El gateway productivo unico es:
+
+`services/ai_gateway`
+
+Reglas activas:
+
+- la API canonica es `v1`
+- Flutter debe integrarse contra `services/ai_gateway`
+- `golife_ai_business_roadmap_package/ai-gateway-skeleton` queda como referencia de roadmap, no como segundo backend productivo
+- el contrato canonico de evento usa `event_id`, `user_id`, `domain`, `event_type`, `timestamp`, `payload`, `source`, `privacy_level`
