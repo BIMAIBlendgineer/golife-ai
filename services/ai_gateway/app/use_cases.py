@@ -7,6 +7,7 @@ from app.providers.base import LLMProvider
 from app.schemas import (
     EventClassificationRequest,
     EventClassificationResponse,
+    SuggestionEvidence,
     SuggestionRequest,
     SuggestionResponse,
     TaskRewriteRequest,
@@ -19,7 +20,106 @@ TASK_REWRITE_SYSTEM_PROMPT = """
 Return JSON only.
 Rewrite the task into small, safe, actionable steps.
 No external actions without confirmation.
+Return an object with a single key `rewrites`, containing an array of step objects.
 """
+
+
+def _coerce_confidence(value: object, default: float) -> float:
+    if isinstance(value, (int, float)):
+        return max(0.0, min(1.0, float(value)))
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"low", "small"}:
+            return 0.55
+        if lowered in {"medium", "moderate"}:
+            return 0.72
+        if lowered in {"high", "strong"}:
+            return 0.86
+        try:
+            return max(0.0, min(1.0, float(lowered)))
+        except ValueError:
+            return default
+    return default
+
+
+def _normalize_evidence(
+    raw_items: object,
+    *,
+    fallback_domain: str = "task",
+) -> list[SuggestionEvidence]:
+    if not isinstance(raw_items, list):
+        return []
+
+    evidence_items: list[SuggestionEvidence] = []
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        claim = (
+            raw.get("claim")
+            or raw.get("explanation")
+            or raw.get("reason")
+            or raw.get("description")
+        )
+        if not claim:
+            continue
+        evidence_items.append(
+            SuggestionEvidence(
+                source_domain=raw.get("source_domain", fallback_domain),
+                entity_id=raw.get("entity_id") or raw.get("event_id"),
+                claim=str(claim),
+                confidence=_coerce_confidence(raw.get("confidence"), 0.65),
+            )
+        )
+    return evidence_items
+
+
+def _normalize_task_rewrite_steps(
+    provider_result: object,
+) -> list[TaskRewriteStep]:
+    if isinstance(provider_result, list):
+        raw_steps = provider_result
+    elif isinstance(provider_result, dict):
+        raw_steps = (
+            provider_result.get("rewrites")
+            or provider_result.get("steps")
+            or provider_result.get("items")
+            or []
+        )
+        if not raw_steps and "description" in provider_result:
+            raw_steps = [provider_result]
+    else:
+        raw_steps = []
+
+    normalized_steps: list[TaskRewriteStep] = []
+    for index, raw in enumerate(raw_steps, start=1):
+        if not isinstance(raw, dict):
+            continue
+        title = raw.get("title") or raw.get("description") or f"Step {index}"
+        reason = (
+            raw.get("reason")
+            or raw.get("description")
+            or raw.get("why")
+            or "LLM-generated task breakdown."
+        )
+        estimated_minutes = raw.get("estimated_minutes") or raw.get("minutes") or 10
+        try:
+            estimated_minutes = max(1, min(240, int(estimated_minutes)))
+        except (TypeError, ValueError):
+            estimated_minutes = 10
+
+        normalized_steps.append(
+            TaskRewriteStep(
+                title=str(title),
+                reason=str(reason),
+                estimated_minutes=estimated_minutes,
+                evidence=_normalize_evidence(raw.get("evidence")),
+                confidence=_coerce_confidence(
+                    raw.get("confidence") or raw.get("certainty"),
+                    0.72,
+                ),
+            )
+        )
+    return normalized_steps
 
 
 async def run_suggestions(
@@ -91,11 +191,11 @@ async def run_task_rewrite(
             "task_description": request.task_description,
             "constraints": request.constraints,
         },
+        response_schema=TaskRewriteResponse.model_json_schema(),
+        temperature=0.0,
     )
-    rewrites = [
-        TaskRewriteStep.model_validate(item)
-        for item in provider_result.get("rewrites", [])
-    ]
+    rewrites = _normalize_task_rewrite_steps(provider_result)
+    provider_trace = provider_result if isinstance(provider_result, dict) else {}
     return TaskRewriteResponse(
         rewrites=rewrites,
         trace={
@@ -103,7 +203,7 @@ async def run_task_rewrite(
             "configured_provider": settings.llm_provider,
             "mock_mode": settings.resolved_mock_mode,
             "rewrite_count": len(rewrites),
-            "mock": provider_result.get("mock", False),
+            "mock": provider_trace.get("mock", False),
         },
     )
 

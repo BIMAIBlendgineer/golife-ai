@@ -6,7 +6,7 @@ from langgraph.graph import END, StateGraph
 
 from app.guardrails import filter_ai_events, sanitize_suggestions
 from app.providers.base import LLMProvider
-from app.schemas import AISuggestion, SuggestionRequest, SuggestionResponse
+from app.schemas import AISuggestion, SuggestionEvidence, SuggestionRequest, SuggestionResponse
 from app.settings import Settings
 
 SYSTEM_PROMPT = """
@@ -17,6 +17,7 @@ Each suggestion must include evidence and uncertainty.
 Do not provide regulated financial advice.
 Do not provide medical diagnosis or treatment.
 Do not trigger or imply external actions without human confirmation.
+Return an object with a top-level `suggestions` array using the requested schema.
 """
 
 
@@ -220,6 +221,143 @@ def _feedback_delta(
     return delta, reasons
 
 
+def _coerce_domain(value: object, fallback: str = "system") -> str:
+    allowed = {"task", "habit", "week", "finance", "pantry", "wardrobe", "mission", "system"}
+    if isinstance(value, str) and value in allowed:
+        return value
+    return fallback
+
+
+def _coerce_confidence(value: object, default: float) -> float:
+    if isinstance(value, (int, float)):
+        return max(0.0, min(1.0, float(value)))
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered == "low":
+            return 0.58
+        if lowered == "medium":
+            return 0.74
+        if lowered == "high":
+            return 0.88
+        try:
+            return max(0.0, min(1.0, float(lowered)))
+        except ValueError:
+            return default
+    return default
+
+
+def _normalize_uncertainty(value: object) -> str:
+    if isinstance(value, str) and value.strip():
+        lowered = value.strip().lower()
+        if lowered in {"low", "medium", "high"}:
+            return f"Model reported {lowered} uncertainty."
+        return value.strip()
+    return "Model uncertainty was not specified."
+
+
+def _map_recommendation_type(raw_type: object) -> str:
+    if not isinstance(raw_type, str):
+        return "mission"
+    lowered = raw_type.strip().lower()
+    if lowered in {"mission", "task_rewrite", "warning", "reflection", "plan_adjustment"}:
+        return lowered
+    if lowered in {"eat_soon", "complete_task", "use_pantry", "do_now"}:
+        return "mission"
+    if lowered in {"track_spending", "review", "pause_spend"}:
+        return "reflection"
+    if lowered in {"risk", "alert"}:
+        return "warning"
+    return "mission"
+
+
+def _normalize_evidence_items(
+    raw_items: object,
+    *,
+    fallback_domain: str,
+) -> list[SuggestionEvidence]:
+    if not isinstance(raw_items, list):
+        return []
+
+    evidence_items: list[SuggestionEvidence] = []
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        claim = raw.get("claim") or raw.get("explanation") or raw.get("reason")
+        if not claim:
+            continue
+        evidence_items.append(
+            SuggestionEvidence(
+                source_domain=_coerce_domain(raw.get("source_domain"), fallback_domain),
+                entity_id=raw.get("entity_id") or raw.get("event_id"),
+                claim=str(claim),
+                confidence=_coerce_confidence(raw.get("confidence") or raw.get("relevance"), 0.68),
+            )
+        )
+    return evidence_items
+
+
+def _normalize_provider_suggestions(provider_result: object) -> list[AISuggestion]:
+    if isinstance(provider_result, list):
+        raw_items = provider_result
+    elif isinstance(provider_result, dict):
+        raw_items = (
+            provider_result.get("suggestions")
+            or provider_result.get("missions")
+            or provider_result.get("recommendations")
+            or provider_result.get("items")
+            or []
+        )
+        if not raw_items and ("title" in provider_result or "reason" in provider_result):
+            raw_items = [provider_result]
+    else:
+        raw_items = []
+
+    normalized_items: list[AISuggestion] = []
+    for index, raw in enumerate(raw_items, start=1):
+        if not isinstance(raw, dict):
+            continue
+        try:
+            normalized_items.append(AISuggestion.model_validate(raw))
+            continue
+        except Exception:
+            pass
+
+        domain_targets = raw.get("domain_targets")
+        if not isinstance(domain_targets, list) or not domain_targets:
+            domain_targets = [_coerce_domain(raw.get("domain"), "system")]
+        else:
+            domain_targets = [_coerce_domain(item, "system") for item in domain_targets]
+
+        body = raw.get("body") or raw.get("reason") or raw.get("summary") or "Suggested action."
+        title = raw.get("title")
+        if not title:
+            title = str(body).split(".")[0][:80] or f"Suggestion {index}"
+
+        normalized_items.append(
+            AISuggestion(
+                suggestion_id=str(raw.get("suggestion_id") or f"normalized-{index}"),
+                title=str(title),
+                domain_targets=domain_targets,
+                recommendation_type=_map_recommendation_type(
+                    raw.get("recommendation_type") or raw.get("type")
+                ),
+                body=str(body),
+                evidence=_normalize_evidence_items(
+                    raw.get("evidence"),
+                    fallback_domain=domain_targets[0] if domain_targets else "system",
+                ),
+                confidence=_coerce_confidence(raw.get("confidence"), 0.74),
+                uncertainty=_normalize_uncertainty(raw.get("uncertainty")),
+                requires_confirmation=bool(raw.get("requires_confirmation", True)),
+                forbidden_actions=list(raw.get("forbidden_actions", []))
+                if isinstance(raw.get("forbidden_actions", []), list)
+                else [],
+                status=str(raw.get("status", "draft")),
+            )
+        )
+    return normalized_items
+
+
 def validate_consent(state: MissionGraphState) -> MissionGraphState:
     allowed_events, filtered_events = filter_ai_events(state["request"])
     consent_granted = bool(state["request"].privacy_settings.ai_enabled)
@@ -307,24 +445,24 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
             "feedback_summary": state.get("feedback_summary", {}),
             "constraints": state["request"].constraints,
         },
+        response_schema=SuggestionResponse.model_json_schema(),
+        temperature=0.0,
     )
 
-    candidates = [
-        AISuggestion.model_validate(item)
-        for item in provider_result.get("suggestions", [])
-    ]
+    candidates = _normalize_provider_suggestions(provider_result)
+    provider_trace = provider_result if isinstance(provider_result, dict) else {}
     trace = _append_trace(
         state.get("trace", {}),
         node_name="generate_candidates",
         payload={
             "provider_called": True,
             "candidates_count": len(candidates),
-            "mock": provider_result.get("mock", False),
+            "mock": provider_trace.get("mock", False),
         },
     )
     return {
         "candidates": candidates,
-        "provider_meta": provider_result.get("_provider_meta", {}),
+        "provider_meta": provider_trace.get("_provider_meta", {}),
         "trace": trace,
     }
 

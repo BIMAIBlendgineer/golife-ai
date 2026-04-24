@@ -13,6 +13,6 @@ class LLMProvider(ABC):
         user_payload: dict[str, Any],
         response_schema: dict[str, Any] | None = None,
         model: str | None = None,
-        temperature: float = 0.2,
-    ) -> dict[str, Any]:
+        temperature: float = 0.0,
+    ) -> Any:
         raise NotImplementedError

@@ -21,8 +21,8 @@ class OpenRouterProvider(LLMProvider):
         user_payload: dict[str, Any],
         response_schema: dict[str, Any] | None = None,
         model: str | None = None,
-        temperature: float = 0.2,
-    ) -> dict[str, Any]:
+        temperature: float = 0.0,
+    ) -> Any:
         if self.settings.resolved_mock_mode:
             return await MockLLMProvider(reason="mock_mode_or_missing_key").complete_json(
                 system_prompt=system_prompt,
@@ -38,16 +38,17 @@ class OpenRouterProvider(LLMProvider):
 
         last_error: Exception | None = None
         for selected_model in list(dict.fromkeys(models_to_try)):
-            try:
-                return await self._request_completion(
-                    model_name=selected_model,
-                    system_prompt=system_prompt,
-                    user_payload=user_payload,
-                    response_schema=response_schema,
-                    temperature=temperature,
-                )
-            except Exception as exc:  # pragma: no cover - exercised by fallback test indirectly
-                last_error = exc
+            for _attempt in range(2):
+                try:
+                    return await self._request_completion(
+                        model_name=selected_model,
+                        system_prompt=system_prompt,
+                        user_payload=user_payload,
+                        response_schema=response_schema,
+                        temperature=temperature,
+                    )
+                except Exception as exc:  # pragma: no cover - exercised by fallback test indirectly
+                    last_error = exc
 
         raise RuntimeError(f"OpenRouter completion failed: {last_error}") from last_error
 
@@ -59,7 +60,7 @@ class OpenRouterProvider(LLMProvider):
         user_payload: dict[str, Any],
         response_schema: dict[str, Any] | None,
         temperature: float,
-    ) -> dict[str, Any]:
+    ) -> Any:
         prompt = system_prompt
         if response_schema:
             prompt = (
@@ -94,12 +95,16 @@ class OpenRouterProvider(LLMProvider):
             data = response.json()
 
         content = self._extract_content(data)
-        parsed = json.loads(self._strip_code_fences(content))
-        parsed["_provider_meta"] = {
+        parsed = self._parse_json_content(content)
+        if isinstance(parsed, dict):
+            normalized: dict[str, Any] = dict(parsed)
+        else:
+            normalized = {"items": parsed}
+        normalized["_provider_meta"] = {
             "provider": self.provider_name,
             "model": model_name,
         }
-        return parsed
+        return normalized
 
     @staticmethod
     def _extract_content(data: dict[str, Any]) -> str:
@@ -126,3 +131,23 @@ class OpenRouterProvider(LLMProvider):
             if cleaned.startswith("json"):
                 cleaned = cleaned[4:]
         return cleaned.strip()
+
+    @classmethod
+    def _parse_json_content(cls, content: str) -> Any:
+        cleaned = cls._strip_code_fences(content)
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            fragment = cls._extract_json_fragment(cleaned)
+            if fragment is None:
+                raise
+            return json.loads(fragment)
+
+    @staticmethod
+    def _extract_json_fragment(content: str) -> str | None:
+        for opener, closer in (("{", "}"), ("[", "]")):
+            start = content.find(opener)
+            end = content.rfind(closer)
+            if start != -1 and end != -1 and end > start:
+                return content[start : end + 1]
+        return None
