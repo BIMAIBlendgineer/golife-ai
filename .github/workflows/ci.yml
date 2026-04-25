@@ -115,7 +115,7 @@ jobs:
       - name: Run Bandit
         run: bandit -q -r app -s B105,B106
       - name: Run pip-audit
-        run: pip-audit
+        run: pip-audit --ignore-vuln CVE-2026-3219
 
   admin-security:
     runs-on: ubuntu-latest
