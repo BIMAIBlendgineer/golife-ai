@@ -478,7 +478,11 @@ def create_app(
         request: Request,
         background_tasks: BackgroundTasks,
     ) -> ReflectionSafetyResponse:
-        response = assess_reflection_safety(payload)
+        response = assess_reflection_safety(
+            payload,
+            region=request.app.state.settings.crisis_resources_region,
+            catalog_path=request.app.state.settings.crisis_resources_catalog_path,
+        )
         telemetry = build_reflection_safety_operation_payloads(
             request=payload,
             response=response,

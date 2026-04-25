@@ -157,8 +157,16 @@ class ReflectionSafetyRequest(BaseModel):
     privacy_level: PrivacyLevel = "local_only"
 
 
+class ReflectionSupportResource(BaseModel):
+    label: str = Field(min_length=1)
+    contact: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    region: str = Field(min_length=1)
+
+
 class ReflectionSafetyResponse(BaseModel):
     safe: bool = True
     category: ReflectionSafetyCategory
     message: str = Field(min_length=1)
+    resources: list[ReflectionSupportResource] = Field(default_factory=list)
     trace: dict[str, Any] = Field(default_factory=dict)

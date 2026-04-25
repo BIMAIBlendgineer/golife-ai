@@ -2,6 +2,7 @@ from collections.abc import Iterable
 
 from fastapi import HTTPException
 
+from app.crisis_resources import resolve_crisis_resources
 from app.schemas import (
     AISuggestion,
     LifeEvent,
@@ -130,23 +131,32 @@ def sanitize_suggestions(
 
 def assess_reflection_safety(
     request: ReflectionSafetyRequest,
+    *,
+    region: str = "global",
+    catalog_path: str | None = None,
 ) -> ReflectionSafetyResponse:
     lowered = request.text.lower()
 
     matched_crisis = [term for term in CRISIS_TERMS if term in lowered]
     if matched_crisis:
+        resources = resolve_crisis_resources(
+            region=region,
+            catalog_path=catalog_path,
+        )
         return ReflectionSafetyResponse(
             safe=False,
             category="crisis",
             message=(
                 "GoLife can help you organize what feels heavy, but it is not crisis care. "
-                "If you might act on self-harm or feel in immediate danger, contact emergency services "
-                "or a local crisis line right now and reach out to someone nearby."
+                "If you might act on self-harm or feel in immediate danger, use the immediate support options below "
+                "and reach out to someone nearby right now."
             ),
+            resources=resources,
             trace={
                 "policy": "reflection_safety",
                 "matched_terms": matched_crisis,
                 "reason": "crisis_language",
+                "region": region,
             },
         )
 
@@ -163,6 +173,7 @@ def assess_reflection_safety(
                 "policy": "reflection_safety",
                 "matched_terms": matched_clinical,
                 "reason": "clinical_language",
+                "region": region,
             },
         )
 
@@ -177,5 +188,6 @@ def assess_reflection_safety(
             "policy": "reflection_safety",
             "matched_terms": [],
             "reason": "supportive_reflection",
+            "region": region,
         },
     )

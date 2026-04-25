@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     routing_backend_internal_token: str = "golife-internal-dev"
     routing_config_timeout_seconds: float = 3.0
     routing_config_cache_path: str = ".runtime/ai_routing_config.json"
+    crisis_resources_region: str = "global"
+    crisis_resources_catalog_path: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

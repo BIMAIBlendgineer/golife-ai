@@ -42,6 +42,32 @@ class PrivacyScreen extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
+          Text('Privacy center', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _PrivacyDisclosureCard(
+                title: 'Encrypted locally',
+                body: 'These collections are protected at rest on this device.',
+                items: controller.encryptedCollectionLabels,
+              ),
+              _PrivacyDisclosureCard(
+                title: 'Always local',
+                body:
+                    'These items stay on the device and do not go to AI routing.',
+                items: controller.alwaysLocalCollectionLabels,
+              ),
+              _PrivacyDisclosureCard(
+                title: 'Can be sent to AI if allowed',
+                body:
+                    'Only domains with AI permission and AI-allowed events can be sent.',
+                items: controller.aiSendableCollectionLabels,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
@@ -260,6 +286,47 @@ class _DomainPermissionCard extends StatelessWidget {
                 ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivacyDisclosureCard extends StatelessWidget {
+  const _PrivacyDisclosureCard({
+    required this.title,
+    required this.body,
+    required this.items,
+  });
+
+  final String title;
+  final String body;
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 320,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(body, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          for (final item in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                '- $item',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
         ],
       ),
     );

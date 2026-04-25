@@ -144,6 +144,29 @@ class GoLifeController extends ChangeNotifier {
   List<RecipeRescue> get recipeRescues =>
       List<RecipeRescue>.unmodifiable(_recipeRescues);
   bool get sensitiveLocalEncryptionEnabled => _sensitiveLocalEncryptionEnabled;
+  List<String> get encryptedCollectionLabels => const <String>[
+        'Finance records',
+        'Journal entries',
+        'Quick notes',
+      ];
+  List<String> get alwaysLocalCollectionLabels => const <String>[
+        'Privacy settings',
+        'Journal entries',
+        'Quick notes',
+        'Runtime config cache',
+        'Device encryption key',
+      ];
+  List<String> get aiSendableCollectionLabels {
+    final labels = _privacySettings.aiAllowedDomains
+        .where((domain) => domain != DomainKey.copilot)
+        .map((domain) => domain.label)
+        .toList(growable: false);
+    if (labels.isEmpty) {
+      return const <String>['Nothing is AI-enabled right now'];
+    }
+    return labels;
+  }
+
   int get totalEventCount => lifeEvents.length;
   int get aiEligibleEventCount => lifeEvents.where(_eventEligibleForAi).length;
   List<LifeEvent> get aiEligibleEvents => List<LifeEvent>.unmodifiable(
@@ -954,6 +977,28 @@ class GoLifeController extends ChangeNotifier {
     return lines.take(6).toList(growable: false);
   }
 
+  String missionDeliveryLabel(DailyMission mission) {
+    final trace = mission.trace;
+    if (trace['remote'] == true) {
+      return 'AI-assisted';
+    }
+    if (_missionUsedLocalFallback(mission)) {
+      return 'Fallback local';
+    }
+    return 'Local';
+  }
+
+  String missionDeliverySummary(DailyMission mission) {
+    final trace = mission.trace;
+    if (trace['remote'] == true) {
+      return 'GoLife used AI for this mission after local privacy filtering.';
+    }
+    if (_missionUsedLocalFallback(mission)) {
+      return 'GoLife stayed local because the gateway was unavailable or degraded.';
+    }
+    return 'GoLife kept this mission local on the device.';
+  }
+
   List<String> dataSentToAiPreview({int limit = 6}) {
     return aiEligibleEvents
         .take(limit)
@@ -961,8 +1006,40 @@ class GoLifeController extends ChangeNotifier {
         .toList(growable: false);
   }
 
+  List<String> dataSentToAiForMission(
+    DailyMission mission, {
+    int limit = 6,
+  }) {
+    if (mission.trace['remote'] != true) {
+      return const <String>[];
+    }
+    final domains = mission.domainTargets.toSet();
+    final matching = aiEligibleEvents.where((event) {
+      return domains.isEmpty || domains.contains(event.domain);
+    });
+    final selected = (matching.isNotEmpty ? matching : aiEligibleEvents)
+        .take(limit)
+        .map((event) => '${event.domain}: ${event.summary}')
+        .toList(growable: false);
+    return selected;
+  }
+
   List<String> dataBlockedFromAiPreview({int limit = 6}) {
     return blockedFromAiEvents
+        .take(limit)
+        .map((event) => '${event.domain}: ${event.summary}')
+        .toList(growable: false);
+  }
+
+  List<String> dataBlockedForMission(
+    DailyMission mission, {
+    int limit = 6,
+  }) {
+    final domains = mission.domainTargets.toSet();
+    final matching = blockedFromAiEvents.where((event) {
+      return domains.isEmpty || domains.contains(event.domain);
+    });
+    return matching
         .take(limit)
         .map((event) => '${event.domain}: ${event.summary}')
         .toList(growable: false);
@@ -1079,6 +1156,14 @@ class GoLifeController extends ChangeNotifier {
     final permission = _privacySettings.permissionForWireDomain(event.domain);
     return permission == DataPermission.aiAllowed &&
         event.privacyLevel == DataPermission.aiAllowed.storageKey;
+  }
+
+  bool _missionUsedLocalFallback(DailyMission mission) {
+    final trace = mission.trace;
+    final reason = (trace['fallbackReason'] ?? '').toString();
+    return trace['clientFallback'] == true ||
+        trace['mock'] == true ||
+        reason.isNotEmpty;
   }
 
   List<DailyRisk> _extractDailyRisksFromMission(DailyMission? mission) {

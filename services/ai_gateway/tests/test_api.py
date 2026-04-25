@@ -694,6 +694,7 @@ def test_reflection_check_returns_supportive_message(client):
     data = response.json()
     assert data["safe"] is True
     assert data["category"] == "supportive"
+    assert data["resources"] == []
     assert data["trace"]["reason"] == "supportive_reflection"
 
 
@@ -711,6 +712,7 @@ def test_reflection_check_blocks_clinical_language(client):
     data = response.json()
     assert data["safe"] is False
     assert data["category"] == "clinical"
+    assert data["resources"] == []
     assert data["trace"]["reason"] == "clinical_language"
 
 
@@ -728,7 +730,54 @@ def test_reflection_check_returns_crisis_message(client):
     data = response.json()
     assert data["safe"] is False
     assert data["category"] == "crisis"
+    assert len(data["resources"]) >= 1
+    assert data["resources"][0]["contact"]
     assert data["trace"]["reason"] == "crisis_language"
+
+
+def test_reflection_check_uses_configured_crisis_resource_catalog(tmp_path):
+    catalog_path = tmp_path / "crisis_resources.json"
+    catalog_path.write_text(
+        json.dumps(
+            {
+                "tenant-es": [
+                    {
+                        "label": "Ayuda inmediata",
+                        "contact": "112-custom",
+                        "description": "Usa este recurso configurado por entorno.",
+                        "region": "tenant-es",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            crisis_resources_region="tenant-es",
+            crisis_resources_catalog_path=str(catalog_path),
+        ),
+        provider=MockLLMProvider(),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/reflection/check",
+        json={
+            "user_id": "user-1",
+            "text": "I want to kill myself tonight.",
+            "privacy_level": "local_only",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["resources"][0]["contact"] == "112-custom"
+    assert data["trace"]["region"] == "tenant-es"
 
 
 def test_reflection_check_reports_metadata_only_operational_audit(tmp_path):

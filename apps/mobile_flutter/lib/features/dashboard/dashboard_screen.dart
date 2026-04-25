@@ -20,6 +20,9 @@ class DashboardScreen extends StatelessWidget {
         : const <DailyMission>[];
     final risks = controller.dailyRisks;
     final gatewayStatusMessage = controller.gatewayStatusMessage;
+    final disclosureSummary = primaryMission == null
+        ? 'GoLife keeps data local until a mission is ready.'
+        : controller.missionDeliverySummary(primaryMission);
     final width = MediaQuery.sizeOf(context).width;
     final crossAxisCount = width >= 1080 ? 2 : 1;
     final theme = Theme.of(context);
@@ -135,6 +138,12 @@ class DashboardScreen extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
+                      Chip(
+                        label: Text(
+                          controller.missionDeliveryLabel(primaryMission),
+                        ),
+                        backgroundColor: const Color(0xFFD6C0A7),
+                      ),
                       for (final domain in primaryMission.domainTargets)
                         Chip(
                           label: Text(domain),
@@ -202,7 +211,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sent now: ${controller.aiEligibleEventCount} local events. Blocked locally: ${controller.totalEventCount - controller.aiEligibleEventCount}.',
+                  '$disclosureSummary Sent now: ${controller.aiEligibleEventCount} local events. Blocked locally: ${controller.totalEventCount - controller.aiEligibleEventCount}.',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: const Color(0xFFF2E5D2),
                   ),
@@ -238,6 +247,7 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MissionSupportCard(
                   mission: mission,
+                  sourceLabel: controller.missionDeliveryLabel(mission),
                   onExplain: () => _showExplanationSheet(context, mission),
                   onAccept: () => controller.acceptMission(mission),
                   onComplete: () async {
@@ -316,6 +326,11 @@ class DashboardScreen extends StatelessWidget {
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
+                _DisclosurePanel(
+                  title: controller.missionDeliveryLabel(mission),
+                  body: controller.missionDeliverySummary(mission),
+                ),
+                const SizedBox(height: 16),
                 Text(
                   'Confidence ${(mission.confidence * 100).round()}% - ${mission.recommendationType}',
                   style: theme.textTheme.bodyMedium,
@@ -340,19 +355,34 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text('Data sent to AI', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
-                for (final item in controller.dataSentToAiPreview())
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text('- $item', style: theme.textTheme.bodyMedium),
-                  ),
+                _DisclosureList(
+                  items: controller.dataSentToAiForMission(mission),
+                  emptyLabel:
+                      'Nothing was sent for this mission. GoLife stayed local for this step.',
+                ),
                 const SizedBox(height: 16),
                 Text('Blocked from AI', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
-                for (final item in controller.dataBlockedFromAiPreview())
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text('- $item', style: theme.textTheme.bodyMedium),
-                  ),
+                _DisclosureList(
+                  items: controller.dataBlockedForMission(mission),
+                  emptyLabel:
+                      'No mission-specific items were blocked from AI for this step.',
+                ),
+                const SizedBox(height: 16),
+                Text('Always local on this device',
+                    style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                _DisclosureList(
+                  items: controller.alwaysLocalCollectionLabels,
+                  emptyLabel: 'No always-local collections configured.',
+                ),
+                const SizedBox(height: 16),
+                Text('Encrypted locally', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                _DisclosureList(
+                  items: controller.encryptedCollectionLabels,
+                  emptyLabel: 'No encrypted collections configured.',
+                ),
                 const SizedBox(height: 16),
                 Text('Uncertainty', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
@@ -441,12 +471,14 @@ class _DailyRiskCard extends StatelessWidget {
 class _MissionSupportCard extends StatelessWidget {
   const _MissionSupportCard({
     required this.mission,
+    required this.sourceLabel,
     required this.onExplain,
     required this.onAccept,
     required this.onComplete,
   });
 
   final DailyMission mission;
+  final String sourceLabel;
   final VoidCallback onExplain;
   final Future<void> Function() onAccept;
   final Future<void> Function() onComplete;
@@ -472,6 +504,7 @@ class _MissionSupportCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              Chip(label: Text(sourceLabel)),
               for (final domain in mission.domainTargets)
                 Chip(label: Text(domain)),
               Chip(
@@ -507,6 +540,65 @@ class _MissionSupportCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DisclosurePanel extends StatelessWidget {
+  const _DisclosurePanel({
+    required this.title,
+    required this.body,
+  });
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6EEE7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFD6C0A7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(body, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _DisclosureList extends StatelessWidget {
+  const _DisclosureList({
+    required this.items,
+    required this.emptyLabel,
+  });
+
+  final List<String> items;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Text(emptyLabel, style: Theme.of(context).textTheme.bodyMedium);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final item in items)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child:
+                Text('- $item', style: Theme.of(context).textTheme.bodyMedium),
+          ),
+      ],
     );
   }
 }
