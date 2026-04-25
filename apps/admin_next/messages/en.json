@@ -1,0 +1,270 @@
+{
+  "metadata": {
+    "title": "GoLife Admin",
+    "description": "Operational surface for GoLife AI mission quality and system health."
+  },
+  "shell": {
+    "eyebrow": "Control Surface",
+    "summary": "This panel watches the same product loop as mobile: capture, risks, missions, feedback, trust.",
+    "lastIngestionPrefix": "Last ingestion",
+    "lastIngestionEmpty": "No operational ingestion recorded yet.",
+    "stateLiveData": "LIVE DATA",
+    "stateLiveNoIngestion": "LIVE - NO INGESTION YET",
+    "stateFallbackSnapshot": "FALLBACK SNAPSHOT",
+    "stateBackendOffline": "BACKEND OFFLINE",
+    "apiLabel": "API",
+    "tokenSet": "Admin token set",
+    "tokenMissing": "Token missing"
+  },
+  "nav": {
+    "badge": "Operations Desk",
+    "title": "GoLife Admin",
+    "subtitle": "A field board for mission quality, trust, support, and AI cost.",
+    "sections": [
+      {
+        "label": "Operate",
+        "items": [
+          {
+            "href": "/dashboard",
+            "title": "Dashboard",
+            "note": "Mission health, trust pressure, cost."
+          },
+          {
+            "href": "/users",
+            "title": "Users",
+            "note": "Account state and support signals."
+          },
+          {
+            "href": "/usage",
+            "title": "Usage",
+            "note": "Capture volume, fallback, latency."
+          },
+          {
+            "href": "/ai-costs",
+            "title": "AI Costs",
+            "note": "Endpoint-level provider spend."
+          },
+          {
+            "href": "/openrouter-keys",
+            "title": "OpenRouter Keys",
+            "note": "Key health, failover, rotation history."
+          }
+        ]
+      },
+      {
+        "label": "Quality",
+        "items": [
+          {
+            "href": "/missions",
+            "title": "Missions",
+            "note": "Ranked output quality and risk links."
+          },
+          {
+            "href": "/feedback",
+            "title": "Feedback",
+            "note": "Why users accept, reject, or complete."
+          },
+          {
+            "href": "/safety",
+            "title": "Safety",
+            "note": "Blocked outputs and trust incidents."
+          },
+          {
+            "href": "/routing-snapshots",
+            "title": "Routing Snapshots",
+            "note": "Current top-3 models per capability."
+          }
+        ]
+      },
+      {
+        "label": "System",
+        "items": [
+          {
+            "href": "/feature-flags",
+            "title": "Feature Flags",
+            "note": "Operational rollout switches."
+          },
+          {
+            "href": "/settings/models",
+            "title": "Models",
+            "note": "Provider and fallback routing."
+          },
+          {
+            "href": "/routing-profiles",
+            "title": "Routing Profiles",
+            "note": "Latency, context, and parameter policy."
+          },
+          {
+            "href": "/model-catalog",
+            "title": "Model Catalog",
+            "note": "OpenRouter catalog cache and eligibility."
+          },
+          {
+            "href": "/support/export-delete",
+            "title": "Support Queue",
+            "note": "Export and delete requests."
+          }
+        ]
+      }
+    ]
+  },
+  "shared": {
+    "adminApiFallbackActive": "Admin API fallback active",
+    "snapshotFetched": "Snapshot fetched",
+    "fallbackSnapshot": "Fallback snapshot",
+    "noPrivateNoteRecorded": "No private note recorded.",
+    "privateNoteRedacted": "Private note kept out of admin telemetry.",
+    "legacyPrivateNoteRedacted": "Legacy private note redacted from admin view.",
+    "providerLabel": "Provider",
+    "requestsLabel": "Requests",
+    "latencyLabel": "Latency",
+    "costFallbackLabel": "Cost / fallback",
+    "generatedLabel": "Generated",
+    "expiresLabel": "Expires",
+    "none": "None",
+    "notAvailable": "N/A",
+    "never": "Never",
+    "noNotesRecorded": "No notes recorded.",
+    "noModelName": "No model name",
+    "noEndpoint": "No endpoint",
+    "updatedFlag": "Updated flag",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "export": "Export",
+    "delete": "Delete",
+    "weeklyActive": "Weekly active",
+    "dormantThisWeek": "Dormant this week",
+    "exportRequested": "Export requested",
+    "deleteRequested": "Delete requested",
+    "created": "Created",
+    "lastSeen": "Last seen",
+    "supportFlags": "Support flags",
+    "noManualFlags": "No manual flags",
+    "domains": "Domains",
+    "risks": "Risks",
+    "score": "Score",
+    "msUnit": "ms"
+  },
+  "pages": {
+    "dashboard": {
+      "eyebrow": "Decision Desk",
+      "title": "Operational pulse for the personal OS",
+      "description": "Watch whether GoLife is generating useful missions, staying inside trust boundaries, and keeping AI cost under control.",
+      "badge": "Mission ops",
+      "usefulMissionsLabel": "Useful missions / active user / week",
+      "usefulMissionsNote": "North star of real product utility.",
+      "completionRateLabel": "Mission completion rate",
+      "completionRateNote": "Checks whether recommendations become action.",
+      "aiCostLabel": "AI cost / active user",
+      "aiCostNote": "Keep the margin visible while usage grows.",
+      "safetyRateLabel": "Safety intervention rate",
+      "safetyRateNote": "Signals whether prompts are drifting into regulated or unsafe territory.",
+      "activeKeysLabel": "Active routing keys",
+      "activeKeysNote": "Healthy keys currently available to the OpenRouter executor.",
+      "disabledKeysLabel": "Disabled routing keys",
+      "disabledKeysNote": "Paused or invalid keys excluded from live routing.",
+      "snapshotAgeLabel": "Routing snapshot age",
+      "snapshotAgeNote": "Older snapshots increase the chance of using stale model rankings.",
+      "briefingEyebrow": "Briefing",
+      "briefingTitle": "What to watch today",
+      "briefingNote": "The board is organized around the same three questions product asks every morning: are missions useful, are risks clear, and is trust intact?",
+      "missionQualityTitle": "Mission quality",
+      "missionQualityBodyPrefix": "Usefulness is at",
+      "missionQualityBodyMiddle": "Rejections are",
+      "operationalLoadTitle": "Operational load",
+      "operationalLoadBodyPrefix": "WAU is",
+      "operationalLoadBodyMiddle": "DAU is",
+      "operationalLoadBodySuffix": "and capture volume is",
+      "operationalLoadBodyTail": "events per active user.",
+      "trustQueueTitle": "Trust queue",
+      "trustQueueBodyPrefix": "There are",
+      "trustQueueBodyMiddle": "export/delete requests and",
+      "trustQueueBodySuffix": "recent safety incidents to review.",
+      "flagsEyebrow": "Release Surface",
+      "flagsTitle": "Feature flags",
+      "flagsNote": "Operational rollouts stay visible here so mobile, gateway, and admin work from the same switchboard."
+    },
+    "aiCosts": {
+      "eyebrow": "AI Spend",
+      "title": "Provider cost and endpoint pressure",
+      "description": "The fastest way to lose margin is to ignore which endpoint is expensive, slow, or frequently falling back. This board keeps that visible.",
+      "badge": "Cost control",
+      "totalCostLabel": "Total cost",
+      "totalCostNote": "Estimated spend across ranked missions, classification, and support endpoints.",
+      "trackedEndpointsLabel": "Tracked endpoints",
+      "trackedEndpointsNote": "Operational breakdown by endpoint rather than by provider alone.",
+      "averageFallbackLabel": "Average fallback",
+      "averageFallbackNote": "High fallback can mean prompt trouble, timeout pressure, or quota issues.",
+      "panelEyebrow": "Spend detail",
+      "panelTitle": "Endpoint ledger",
+      "panelNote": "Classify cheaply, rank carefully, and keep feedback storage nearly free."
+    },
+    "feedback": {
+      "eyebrow": "Learning Loop",
+      "title": "Feedback journal",
+      "description": "Accepted, completed, and rejected missions are the live teaching signal for the ranking layer.",
+      "badge": "Ranking input",
+      "eventsLabel": "Feedback events",
+      "eventsNote": "Stored signals available to improve future ranking.",
+      "positiveLabel": "Useful or accepted",
+      "positiveNote": "Positive signals that should reinforce similar mission patterns.",
+      "rejectedLabel": "Rejected",
+      "rejectedNote": "The clearest early warning for repetition or poor context.",
+      "panelEyebrow": "Journal",
+      "panelTitle": "Feedback records",
+      "panelNote": "Admin keeps status and domain metadata for learning. Private note text stays out of this surface.",
+      "domainsPrefix": "Domains"
+    },
+    "users": {
+      "eyebrow": "Operators",
+      "title": "User state and support signals",
+      "description": "A compact list for account health, current plan mix, and who may need export, delete, or trust follow-up.",
+      "badge": "Accounts",
+      "totalUsersLabel": "Total users",
+      "totalUsersNote": "Seeded operational scope for now.",
+      "weeklyActiveLabel": "Weekly active",
+      "weeklyActiveNote": "Users who are still inside the weekly mission loop.",
+      "supportQueueLabel": "Support queue",
+      "supportQueueNote": "Export or delete requests that need manual action.",
+      "panelEyebrow": "Roster",
+      "panelTitle": "Users",
+      "panelNote": "The detail page combines account profile, usage footprint, mission history, and feedback journal.",
+      "tableUser": "User",
+      "tablePlan": "Plan",
+      "tableStatus": "Status",
+      "tableAiCalls": "AI calls",
+      "tableUsefulMissions": "Useful missions",
+      "tableLastSeen": "Last seen",
+      "tableSupport": "Support"
+    },
+    "userDetail": {
+      "eyebrow": "User File",
+      "description": "This dossier combines current plan, live usage footprint, mission outcomes, and the feedback that should shape ranking next.",
+      "planLabel": "Plan",
+      "planNote": "Commercial state of this account.",
+      "aiCallsLabel": "AI calls",
+      "aiCallsNote": "Total operational gateway traffic so far.",
+      "usefulMissionsLabel": "Useful missions",
+      "usefulMissionsNote": "Completed or accepted missions that mattered.",
+      "fallbackRateLabel": "Fallback rate",
+      "fallbackRateNote": "How often this user needed deterministic fallback.",
+      "accountEyebrow": "Account",
+      "accountTitle": "State and support",
+      "accountNote": "Support flags are early warning markers for trust, monetization, or product learning.",
+      "behaviorEyebrow": "Behavior",
+      "behaviorTitle": "Mission and feedback journal",
+      "behaviorNote": "Mission outcomes stay visible here. Private feedback notes are redacted before they reach admin.",
+      "emptyBehavior": "No mission or feedback records found for this user yet."
+    }
+  },
+  "localeSwitcher": {
+    "label": "Language",
+    "options": {
+      "en": "EN",
+      "es": "ES",
+      "pt-BR": "PT-BR",
+      "ja": "JA",
+      "zh-Hans": "ZH"
+    }
+  }
+}

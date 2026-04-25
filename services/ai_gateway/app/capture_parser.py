@@ -61,15 +61,64 @@ def _split_into_clauses(text: str) -> list[str]:
 def _split_on_connector(text: str) -> list[str]:
     lowered = text.lower()
     signal_count = (
-        _count_signals(lowered, ["compr", "gaste", "pague", "paid", "pay ", "coffee"])
-        + _count_signals(lowered, ["vence", "caduc", "fridge", "expires"])
-        + _count_signals(lowered, ["debo", "tengo que", "submit", "need to"])
-        + _count_signals(lowered, ["comprar", "jacket", "ropa"])
+        _count_signals(
+            lowered,
+            [
+                "compr",
+                "gaste",
+                "pague",
+                "paid",
+                "pay ",
+                "coffee",
+                "comprei",
+                "gastei",
+                "買",
+                "支払",
+                "买",
+                "支付",
+            ],
+        )
+        + _count_signals(
+            lowered,
+            [
+                "vence",
+                "caduc",
+                "fridge",
+                "expires",
+                "geladeira",
+                "consum",
+                "賞味",
+                "消費",
+                "冰箱",
+                "过期",
+            ],
+        )
+        + _count_signals(
+            lowered,
+            [
+                "debo",
+                "tengo que",
+                "submit",
+                "need to",
+                "preciso",
+                "tenho que",
+                "する必要",
+                "需要",
+            ],
+        )
+        + _count_signals(
+            lowered,
+            ["comprar", "jacket", "ropa", "jaqueta", "服", "衣服"],
+        )
     )
-    if signal_count < 2 or (" y " not in lowered and " and " not in lowered):
+    if signal_count < 2 or (
+        " y " not in lowered and " and " not in lowered and " e " not in lowered
+    ):
         return [text]
     if " y " in lowered:
         return text.split(" y ")
+    if " e " in lowered:
+        return text.split(" e ")
     return text.split(" and ")
 
 
@@ -79,7 +128,7 @@ def _count_signals(lowered: str, signals: list[str]) -> int:
 
 def _clean_clause(text: str) -> str:
     cleaned = text.strip()
-    for prefix in ("y ", "and "):
+    for prefix in ("y ", "and ", "e "):
         if cleaned.lower().startswith(prefix):
             return cleaned[len(prefix) :].strip()
     return cleaned
@@ -165,7 +214,16 @@ def _extract_hints(clause: str, domain: str) -> dict[str, Any]:
         hints["time_hint"] = time_hint
 
     if domain == "task" and any(
-        signal in lowered for signal in ("debo", "tengo que", "need to")
+        signal in lowered
+        for signal in (
+            "debo",
+            "tengo que",
+            "need to",
+            "preciso",
+            "tenho que",
+            "する必要",
+            "需要",
+        )
     ):
         hints["task_intent"] = "required"
     if domain == "habit":
@@ -175,7 +233,8 @@ def _extract_hints(clause: str, domain: str) -> dict[str, Any]:
     if domain == "finance":
         hints["finance_intent"] = "expense"
     if domain == "pantry" and any(
-        signal in lowered for signal in ("vence", "caduca", "expires")
+        signal in lowered
+        for signal in ("vence", "caduca", "expires", "consome", "賞味", "消費", "过期")
     ):
         hints["expiry_hint"] = time_hint or "soon"
     if domain == "wardrobe":
@@ -206,9 +265,13 @@ def _extract_first_amount(text: str) -> float | None:
 
 
 def _extract_time_hint(lowered: str) -> str | None:
-    for hint in ("today", "tomorrow", "tonight", "manana", "hoy"):
+    for hint in ("today", "tomorrow", "tonight", "manana", "hoy", "hoje", "amanha"):
         if hint in lowered:
             return hint
+    if "明日" in lowered or "明天" in lowered:
+        return "tomorrow"
+    if "今日" in lowered or "今天" in lowered:
+        return "today"
     return None
 
 
@@ -217,11 +280,22 @@ def _looks_like_finance(lowered: str) -> bool:
         signal in lowered
         for signal in (
             "compr",
+            "comprei",
             "gaste",
+            "gastei",
             "pague",
+            "paguei",
             "coffee",
             "cafe",
             "sandwich",
+            "almoco",
+            "mercado",
+            "買",
+            "支払",
+            "円",
+            "买",
+            "支付",
+            "元",
         )
     ) or any(char.isdigit() for char in lowered)
 
@@ -239,6 +313,15 @@ def _looks_like_pantry(lowered: str) -> bool:
             "pantry",
             "food",
             "rice",
+            "geladeira",
+            "comida",
+            "alface",
+            "consome",
+            "賞味",
+            "消費",
+            "冷蔵庫",
+            "冰箱",
+            "过期",
         )
     )
 
@@ -254,6 +337,12 @@ def _looks_like_wardrobe(lowered: str) -> bool:
             "buy another",
             "comprar",
             "chaqueta",
+            "jaqueta",
+            "sapato",
+            "服",
+            "靴",
+            "衣服",
+            "鞋",
         )
     )
 
@@ -269,6 +358,14 @@ def _looks_like_habit(lowered: str) -> bool:
             "habit",
             "agua",
             "exercise",
+            "caminh",
+            "dormi",
+            "exercicio",
+            "散歩",
+            "睡眠",
+            "瞑想",
+            "散步",
+            "冥想",
         )
     )
 
@@ -284,6 +381,19 @@ def _looks_like_week(lowered: str) -> bool:
             "schedule",
             "plan",
             "meeting",
+            "semana",
+            "segunda",
+            "sexta",
+            "agenda",
+            "今週",
+            "月曜",
+            "金曜",
+            "予定",
+            "本周",
+            "周一",
+            "周五",
+            "日程",
+            "计划",
         )
     )
 

@@ -18,6 +18,7 @@ from app.schemas import (
     TaskRewriteResponse,
 )
 from app.settings import Settings
+from app.i18n import normalize_locale
 
 
 def _utcnow_iso() -> str:
@@ -134,6 +135,7 @@ def build_suggestion_operation_payloads(
             "metadata": {
                 "scope": request.scope,
                 "suggestions_count": len(response.suggestions),
+                "locale": normalize_locale(request.locale),
             },
         },
         "ai_invocation": {
@@ -155,6 +157,7 @@ def build_suggestion_operation_payloads(
             "created_at": created_at,
             "metadata": {
                 "intent": endpoint,
+                "locale": normalize_locale(request.locale),
                 "filtered_events_count": response.trace.get("validate_consent", {}).get(
                     "filtered_events_count",
                     0,
@@ -189,6 +192,7 @@ def build_classification_operation_payloads(
             "metadata": {
                 "event_type": response.event_type,
                 "classifier": response.trace.get("classifier"),
+                "locale": normalize_locale(request.locale),
             },
         },
         "ai_invocation": {
@@ -211,6 +215,7 @@ def build_classification_operation_payloads(
             "metadata": {
                 "domain": response.domain,
                 "confidence": response.confidence,
+                "locale": normalize_locale(request.locale),
             },
         },
     }
@@ -237,6 +242,7 @@ def build_parse_operation_payloads(
             "metadata": {
                 "item_count": len(response.items),
                 "parser": classifier,
+                "locale": normalize_locale(request.locale),
             },
         },
         "ai_invocation": {
@@ -258,6 +264,7 @@ def build_parse_operation_payloads(
             "created_at": created_at,
             "metadata": {
                 "item_count": len(response.items),
+                "locale": normalize_locale(request.locale),
             },
         },
     }
@@ -284,6 +291,7 @@ def build_feedback_operation_payloads(
                 "suggestion_id": request.suggestion_id,
                 "notes_present": bool(note_text),
                 "notes_char_count": len(note_text),
+                "locale": normalize_locale(request.locale),
             },
         },
         "feedback_audit": {
@@ -316,6 +324,8 @@ def build_reflection_safety_operation_payloads(
             "metadata": {
                 "category": response.category,
                 "safe": response.safe,
+                "locale": normalize_locale(request.locale),
+                "region": response.trace.get("region"),
             },
         },
         "safety_events": (
@@ -364,6 +374,7 @@ def build_task_rewrite_operation_payloads(
             "metadata": {
                 "rewrite_count": rewrite_count,
                 "status": status,
+                "locale": normalize_locale(request.locale),
             },
         },
         "ai_invocation": {
@@ -390,6 +401,7 @@ def build_task_rewrite_operation_payloads(
             "created_at": created_at,
             "metadata": {
                 "error": error_detail,
+                "locale": normalize_locale(request.locale),
                 "routing_mode": provider_meta.get("routing_mode"),
                 "config_source": provider_meta.get("config_source"),
                 "key_label": provider_meta.get("key_label"),

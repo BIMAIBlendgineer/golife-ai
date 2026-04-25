@@ -7,12 +7,15 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getFeedback, getMissions, getUsage, getUser } from "@/lib/api";
 import { formatDateTime, formatFeedbackReason, formatPercent } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function UserDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.userDetail;
   const { id } = await params;
   const [userResult, usageResult, missionResult, feedbackResult] =
     await Promise.all([
@@ -38,45 +41,45 @@ export default async function UserDetailPage({
   return (
     <>
       <PageHeader
-        eyebrow="User File"
+        eyebrow={t.eyebrow}
         title={user.email}
-        description="This dossier combines current plan, live usage footprint, mission outcomes, and the feedback that should shape ranking next."
+        description={t.description}
         badge={user.user_id}
       />
       <ErrorBanner error={error} />
 
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard
-          label="Plan"
+          label={t.planLabel}
           value={user.plan}
-          note="Commercial state of this account."
+          note={t.planNote}
           tone="ink"
         />
         <MetricCard
-          label="AI calls"
+          label={t.aiCallsLabel}
           value={user.ai_calls.toString()}
-          note="Total operational gateway traffic so far."
+          note={t.aiCallsNote}
           tone="bronze"
         />
         <MetricCard
-          label="Useful missions"
+          label={t.usefulMissionsLabel}
           value={user.useful_missions_completed.toString()}
-          note="Completed or accepted missions that mattered."
+          note={t.usefulMissionsNote}
           tone="sage"
         />
         <MetricCard
-          label="Fallback rate"
-          value={usage ? formatPercent(usage.fallback_rate) : "0%"}
-          note="How often this user needed deterministic fallback."
+          label={t.fallbackRateLabel}
+          value={usage ? formatPercent(usage.fallback_rate, locale) : "0%"}
+          note={t.fallbackRateNote}
           tone="clay"
         />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Panel
-          eyebrow="Account"
-          title="State and support"
-          note="Support flags are early warning markers for trust, monetization, or product learning."
+          eyebrow={t.accountEyebrow}
+          title={t.accountTitle}
+          note={t.accountNote}
         >
           <div className="space-y-4 text-sm leading-6 text-[color:var(--ink-soft)]">
             <div className="flex flex-wrap gap-2">
@@ -84,36 +87,38 @@ export default async function UserDetailPage({
                 {user.status}
               </StatusPill>
               {user.weekly_active ? (
-                <StatusPill tone="info">Weekly active</StatusPill>
+                <StatusPill tone="info">{messages.shared.weeklyActive}</StatusPill>
               ) : (
-                <StatusPill tone="warn">Dormant this week</StatusPill>
+                <StatusPill tone="warn">{messages.shared.dormantThisWeek}</StatusPill>
               )}
               {user.export_requested ? (
-                <StatusPill tone="warn">Export requested</StatusPill>
+                <StatusPill tone="warn">{messages.shared.exportRequested}</StatusPill>
               ) : null}
               {user.delete_requested ? (
-                <StatusPill tone="danger">Delete requested</StatusPill>
+                <StatusPill tone="danger">{messages.shared.deleteRequested}</StatusPill>
               ) : null}
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
-                  Created
+                  {messages.shared.created}
                 </p>
-                <p className="mt-2 text-sm text-ink">{formatDateTime(user.created_at)}</p>
+                <p className="mt-2 text-sm text-ink">
+                  {formatDateTime(user.created_at, locale)}
+                </p>
               </div>
               <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
-                  Last seen
+                  {messages.shared.lastSeen}
                 </p>
                 <p className="mt-2 text-sm text-ink">
-                  {formatDateTime(user.last_seen_at)}
+                  {formatDateTime(user.last_seen_at, locale)}
                 </p>
               </div>
             </div>
             <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
-                Support flags
+                {messages.shared.supportFlags}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {user.support_flags.length > 0 ? (
@@ -123,7 +128,7 @@ export default async function UserDetailPage({
                     </StatusPill>
                   ))
                 ) : (
-                  <StatusPill tone="neutral">No manual flags</StatusPill>
+                  <StatusPill tone="neutral">{messages.shared.noManualFlags}</StatusPill>
                 )}
               </div>
             </div>
@@ -131,9 +136,9 @@ export default async function UserDetailPage({
         </Panel>
 
         <Panel
-          eyebrow="Behavior"
-          title="Mission and feedback journal"
-          note="Mission outcomes stay visible here. Private feedback notes are redacted before they reach admin."
+          eyebrow={t.behaviorEyebrow}
+          title={t.behaviorTitle}
+          note={t.behaviorNote}
         >
           <div className="space-y-3">
             {missions.map((mission) => (
@@ -145,8 +150,9 @@ export default async function UserDetailPage({
                   <div>
                     <p className="text-sm font-semibold text-ink">{mission.title}</p>
                     <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                      Domains: {mission.domains.join(", ")}. Risks:{" "}
-                      {mission.matched_risks.join(", ") || "none"}.
+                      {messages.shared.domains}: {mission.domains.join(", ")}.{" "}
+                      {messages.shared.risks}:{" "}
+                      {mission.matched_risks.join(", ") || messages.shared.none}.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -162,7 +168,7 @@ export default async function UserDetailPage({
                       {mission.status}
                     </StatusPill>
                     <StatusPill tone="neutral">
-                      score {mission.final_score.toFixed(2)}
+                      {messages.shared.score} {mission.final_score.toFixed(2)}
                     </StatusPill>
                   </div>
                 </div>
@@ -177,18 +183,18 @@ export default async function UserDetailPage({
                   <div>
                     <p className="text-sm font-semibold text-ink">{item.status}</p>
                     <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                      {formatFeedbackReason(item.reason)}
+                      {formatFeedbackReason(item.reason, messages)}
                     </p>
                   </div>
                   <p className="text-sm text-[color:var(--ink-muted)]">
-                    {formatDateTime(item.created_at)}
+                    {formatDateTime(item.created_at, locale)}
                   </p>
                 </div>
               </div>
             ))}
             {missions.length === 0 && feedback.length === 0 ? (
               <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
-                No mission or feedback records found for this user yet.
+                {t.emptyBehavior}
               </p>
             ) : null}
           </div>

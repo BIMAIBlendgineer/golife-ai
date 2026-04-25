@@ -3,29 +3,35 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { StatusPill } from "@/components/status-pill";
 import { cn } from "@/lib/cn";
-import { navSections } from "@/lib/nav";
+import type { AdminLocale, AdminMessages } from "@/lib/i18n";
 
-export function NavSidebar() {
+type NavSidebarProps = {
+  locale: AdminLocale;
+  nav: AdminMessages["nav"];
+  localeSwitcher: AdminMessages["localeSwitcher"];
+};
+
+export function NavSidebar({ locale, nav, localeSwitcher }: NavSidebarProps) {
   const pathname = usePathname();
 
   return (
     <aside className="flex h-full flex-col gap-8 rounded-[28px] border border-[color:var(--line)] bg-[color:rgba(255,248,242,0.72)] p-5">
       <div className="space-y-3">
-        <StatusPill tone="info">Operations Desk</StatusPill>
+        <StatusPill tone="info">{nav.badge}</StatusPill>
         <div className="space-y-2">
-          <h1 className="text-xl font-semibold tracking-[-0.04em] text-ink">
-            GoLife Admin
-          </h1>
+          <h1 className="text-xl font-semibold tracking-[-0.04em] text-ink">{nav.title}</h1>
           <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
-            A field board for mission quality, trust, support, and AI cost.
+            {nav.subtitle}
           </p>
         </div>
+        <LocaleSwitcher currentLocale={locale} labels={localeSwitcher} />
       </div>
 
       <nav className="space-y-6">
-        {navSections.map((section) => (
+        {nav.sections.map((section) => (
           <div key={section.label} className="space-y-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--ink-muted)]">
               {section.label}

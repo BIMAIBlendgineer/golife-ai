@@ -1,10 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../../core/ai_client/ai_gateway_client.dart';
 import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
+import '../../core/i18n/app_locale.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
 import '../../core/lifegraph/lifegraph_repository.dart';
@@ -61,6 +62,8 @@ class GoLifeController extends ChangeNotifier {
   List<CalendarItem> _calendarItems = <CalendarItem>[];
   List<RecipeRescue> _recipeRescues = <RecipeRescue>[];
   bool _sensitiveLocalEncryptionEnabled = false;
+  AppLocalePreference _localePreference = AppLocalePreference.system;
+  String _deviceLocaleTag = 'en';
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -144,6 +147,11 @@ class GoLifeController extends ChangeNotifier {
   List<RecipeRescue> get recipeRescues =>
       List<RecipeRescue>.unmodifiable(_recipeRescues);
   bool get sensitiveLocalEncryptionEnabled => _sensitiveLocalEncryptionEnabled;
+  AppLocalePreference get localePreference => _localePreference;
+  Locale? get preferredLocale => _localePreference.locale;
+  String get currentLocaleTag => _localePreference == AppLocalePreference.system
+      ? normalizeLocaleTag(_deviceLocaleTag)
+      : _localePreference.storageKey;
   List<String> get encryptedCollectionLabels => const <String>[
         'Finance records',
         'Journal entries',
@@ -248,6 +256,9 @@ class GoLifeController extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     _privacySettings = await _localStore.loadPrivacySettings();
+    _localePreference = appLocalePreferenceFromStorage(
+      await _localStore.loadLocalePreference(),
+    );
     _sensitiveLocalEncryptionEnabled =
         await _localStore.supportsSensitiveLocalEncryption();
     _runtimeConfig = await _localStore.loadRuntimeConfig();
@@ -308,6 +319,25 @@ class GoLifeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateLocalePreference(AppLocalePreference preference) async {
+    _localePreference = preference;
+    await _localStore.saveLocalePreference(
+      preference == AppLocalePreference.system ? null : preference.storageKey,
+    );
+    notifyListeners();
+  }
+
+  void updateDeviceLocaleTag(String? rawLocaleTag) {
+    final normalized = normalizeLocaleTag(rawLocaleTag);
+    if (_deviceLocaleTag == normalized) {
+      return;
+    }
+    _deviceLocaleTag = normalized;
+    if (_localePreference == AppLocalePreference.system) {
+      notifyListeners();
+    }
+  }
+
   Future<void> emitMissionEvent() => _recordEvent(
         domain: 'mission',
         type: 'mission_ping',
@@ -353,6 +383,7 @@ class GoLifeController extends ChangeNotifier {
       return null;
     }
     return _aiGatewayClient.classifyCapture(
+      locale: currentLocaleTag,
       privacySettings: _privacySettings,
       text: trimmed,
     );
@@ -379,6 +410,7 @@ class GoLifeController extends ChangeNotifier {
 
     try {
       final parsed = await _aiGatewayClient.parseCapture(
+        locale: currentLocaleTag,
         privacySettings: _privacySettings,
         text: trimmed,
       );
@@ -900,6 +932,7 @@ class GoLifeController extends ChangeNotifier {
   Future<String> exportLocalDataJson() async {
     final snapshot = <String, Object?>{
       'exported_at': DateTime.now().toUtc().toIso8601String(),
+      'locale_preference': _localePreference.storageKey,
       'privacy_settings': _privacySettings.toJson(),
       'runtime_config': _runtimeConfig?.toJson(),
       'storage_security': {
@@ -947,6 +980,7 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.deleteAllData();
     await _lifeGraphRepository.clear();
     _privacySettings = PrivacySettings.defaults();
+    _localePreference = AppLocalePreference.system;
     _runtimeConfig = null;
     _dailyMissions = <DailyMission>[];
     _cachedDailyRisks = <DailyRisk>[];
@@ -1077,6 +1111,7 @@ class GoLifeController extends ChangeNotifier {
 
   Future<void> _refreshMissionPlan() async {
     final dto = await _aiGatewayClient.fetchDailyPlan(
+      locale: currentLocaleTag,
       privacySettings: _privacySettings,
       lifeEvents: lifeEvents,
     );
@@ -1135,7 +1170,10 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.saveMissionFeedback(_missionFeedback);
 
     try {
-      await _aiGatewayClient.submitMissionFeedback(feedback: feedback);
+      await _aiGatewayClient.submitMissionFeedback(
+        locale: currentLocaleTag,
+        feedback: feedback,
+      );
     } catch (_) {
       // Local persistence remains the source of truth until the gateway is available.
     }

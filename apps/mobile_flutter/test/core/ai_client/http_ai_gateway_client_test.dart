@@ -238,5 +238,57 @@ void main() {
       expect(response.items.first.domain, 'finance');
       expect(response.trace['parser'], 'semantic_openrouter');
     });
+
+    test('sends locale to parse and classify endpoints', () async {
+      final seenBodies = <Map<String, dynamic>>[];
+      final client = HttpAiGatewayClient(
+        baseUri: Uri.parse('http://localhost:8000'),
+        httpClient: MockClient((request) async {
+          seenBodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+          if (request.url.path.endsWith('/classify')) {
+            return http.Response(
+              jsonEncode({
+                'domain': 'task',
+                'event_type': 'task_captured',
+                'confidence': 0.9,
+                'rationale': 'Locale-aware response.',
+                'trace': {'classifier': 'semantic_openrouter'}
+              }),
+              200,
+            );
+          }
+          return http.Response(
+            jsonEncode({
+              'items': [
+                {
+                  'text': 'Comprei cafe 8.50',
+                  'domain': 'finance',
+                  'event_type': 'expense_logged',
+                  'confidence': 0.91,
+                  'rationale': 'Resposta em portugues.',
+                  'hints': {'amount': 8.5}
+                }
+              ],
+              'trace': {'parser': 'semantic_openrouter'}
+            }),
+            200,
+          );
+        }),
+      );
+
+      await client.classifyCapture(
+        locale: 'pt-BR',
+        privacySettings: PrivacySettings.defaults(),
+        text: 'Preciso enviar o recibo.',
+      );
+      await client.parseCapture(
+        locale: 'ja',
+        privacySettings: PrivacySettings.defaults(),
+        text: '冷蔵庫のほうれん草は明日まで',
+      );
+
+      expect(seenBodies[0]['locale'], 'pt-BR');
+      expect(seenBodies[1]['locale'], 'ja');
+    });
   });
 }

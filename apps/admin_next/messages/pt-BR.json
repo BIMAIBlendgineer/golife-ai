@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "GoLife Admin",
+    "description": "Superficie operacional para qualidade das missoes e saude do sistema do GoLife AI."
+  },
+  "shell": {
+    "eyebrow": "Superficie de controle",
+    "summary": "Este painel acompanha o mesmo ciclo do mobile: captura, riscos, missoes, feedback e confianca.",
+    "lastIngestionPrefix": "Ultima ingestao",
+    "lastIngestionEmpty": "Ainda nao existe ingestao operacional registrada.",
+    "stateLiveData": "DADOS AO VIVO",
+    "stateLiveNoIngestion": "AO VIVO - SEM INGESTAO AINDA",
+    "stateFallbackSnapshot": "SNAPSHOT FALLBACK",
+    "stateBackendOffline": "BACKEND OFFLINE",
+    "apiLabel": "API",
+    "tokenSet": "Token admin configurado",
+    "tokenMissing": "Token ausente"
+  },
+  "nav": {
+    "badge": "Mesa operacional",
+    "title": "GoLife Admin",
+    "subtitle": "Painel para qualidade de missoes, confianca, suporte e custo de IA.",
+    "sections": [
+      {
+        "label": "Operar",
+        "items": [
+          {"href": "/dashboard", "title": "Dashboard", "note": "Saude das missoes, pressao de confianca e custo."},
+          {"href": "/users", "title": "Usuarios", "note": "Estado de conta e sinais de suporte."},
+          {"href": "/usage", "title": "Uso", "note": "Volume de captura, fallback e latencia."},
+          {"href": "/ai-costs", "title": "Custos IA", "note": "Gasto por endpoint e provedor."},
+          {"href": "/openrouter-keys", "title": "Chaves OpenRouter", "note": "Saude das chaves, failover e historico de rotacao."}
+        ]
+      },
+      {
+        "label": "Qualidade",
+        "items": [
+          {"href": "/missions", "title": "Missoes", "note": "Qualidade do ranking e riscos ligados."},
+          {"href": "/feedback", "title": "Feedback", "note": "Por que usuarios aceitam, rejeitam ou concluem."},
+          {"href": "/safety", "title": "Safety", "note": "Bloqueios e incidentes de confianca."},
+          {"href": "/routing-snapshots", "title": "Snapshots de routing", "note": "Top-3 modelos atuais por capacidade."}
+        ]
+      },
+      {
+        "label": "Sistema",
+        "items": [
+          {"href": "/feature-flags", "title": "Feature flags", "note": "Chaves operacionais de rollout."},
+          {"href": "/settings/models", "title": "Modelos", "note": "Provedor e routing de fallback."},
+          {"href": "/routing-profiles", "title": "Perfis de routing", "note": "Politica de latencia, contexto e parametros."},
+          {"href": "/model-catalog", "title": "Catalogo de modelos", "note": "Cache do catalogo OpenRouter e elegibilidade."},
+          {"href": "/support/export-delete", "title": "Fila de suporte", "note": "Pedidos de exportacao e exclusao."}
+        ]
+      }
+    ]
+  },
+  "localeSwitcher": {
+    "label": "Idioma",
+    "options": {
+      "en": "EN",
+      "es": "ES",
+      "pt-BR": "PT-BR",
+      "ja": "JA",
+      "zh-Hans": "ZH"
+    }
+  }
+}

@@ -17,6 +17,8 @@ Each suggestion must include evidence and uncertainty.
 Do not provide regulated financial advice.
 Do not provide medical diagnosis or treatment.
 Do not trigger or imply external actions without human confirmation.
+Write titles, bodies, evidence, and uncertainty in the locale requested in `user_payload.locale`.
+Do not mix languages unless the user input already mixes them.
 Return an object with a top-level `suggestions` array using the requested schema.
 """
 
@@ -567,6 +569,7 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
         user_payload={
             "intent": state["intent"],
             "user_id": state["request"].user_id,
+            "locale": state["request"].locale,
             "scope": state["request"].scope,
             "allowed_domains": state["request"].privacy_settings.allowed_domains,
             "events": [event.model_dump(mode="json") for event in state.get("allowed_events", [])],

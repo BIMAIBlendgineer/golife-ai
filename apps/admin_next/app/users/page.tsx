@@ -7,8 +7,11 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getUsers } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function UsersPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.users;
   const usersResult = await getUsers();
   const users = usersResult.data ?? [];
   const weeklyActive = users.filter((user) => user.weekly_active).length;
@@ -19,50 +22,50 @@ export default async function UsersPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Operators"
-        title="User state and support signals"
-        description="A compact list for account health, current plan mix, and who may need export, delete, or trust follow-up."
-        badge="Accounts"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={usersResult.error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Total users"
+          label={t.totalUsersLabel}
           value={users.length.toString()}
-          note="Seeded operational scope for now."
+          note={t.totalUsersNote}
           tone="ink"
         />
         <MetricCard
-          label="Weekly active"
+          label={t.weeklyActiveLabel}
           value={weeklyActive.toString()}
-          note="Users who are still inside the weekly mission loop."
+          note={t.weeklyActiveNote}
           tone="sage"
         />
         <MetricCard
-          label="Support queue"
+          label={t.supportQueueLabel}
           value={supportQueue.toString()}
-          note="Export or delete requests that need manual action."
+          note={t.supportQueueNote}
           tone="clay"
         />
       </div>
 
       <Panel
-        eyebrow="Roster"
-        title="Users"
-        note="The detail page combines account profile, usage footprint, mission history, and feedback journal."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="overflow-x-auto">
           <table className="min-w-full border-separate border-spacing-y-3">
             <thead>
               <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
-                <th className="px-3">User</th>
-                <th className="px-3">Plan</th>
-                <th className="px-3">Status</th>
-                <th className="px-3">AI calls</th>
-                <th className="px-3">Useful missions</th>
-                <th className="px-3">Last seen</th>
-                <th className="px-3">Support</th>
+                <th className="px-3">{t.tableUser}</th>
+                <th className="px-3">{t.tablePlan}</th>
+                <th className="px-3">{t.tableStatus}</th>
+                <th className="px-3">{t.tableAiCalls}</th>
+                <th className="px-3">{t.tableUsefulMissions}</th>
+                <th className="px-3">{t.tableLastSeen}</th>
+                <th className="px-3">{t.tableSupport}</th>
               </tr>
             </thead>
             <tbody>
@@ -94,15 +97,15 @@ export default async function UsersPage() {
                     {user.useful_missions_completed}
                   </td>
                   <td className="px-3 py-4 text-sm text-[color:var(--ink-soft)]">
-                    {formatDateTime(user.last_seen_at)}
+                    {formatDateTime(user.last_seen_at, locale)}
                   </td>
                   <td className="rounded-r-[18px] px-3 py-4">
                     <div className="flex flex-wrap gap-2">
                       {user.export_requested ? (
-                        <StatusPill tone="warn">Export</StatusPill>
+                        <StatusPill tone="warn">{messages.shared.export}</StatusPill>
                       ) : null}
                       {user.delete_requested ? (
-                        <StatusPill tone="danger">Delete</StatusPill>
+                        <StatusPill tone="danger">{messages.shared.delete}</StatusPill>
                       ) : null}
                       {user.support_flags.map((flag) => (
                         <StatusPill key={flag} tone="info">
@@ -112,7 +115,7 @@ export default async function UsersPage() {
                       {!user.export_requested &&
                       !user.delete_requested &&
                       user.support_flags.length === 0 ? (
-                        <StatusPill tone="neutral">None</StatusPill>
+                        <StatusPill tone="neutral">{messages.shared.none}</StatusPill>
                       ) : null}
                     </div>
                   </td>

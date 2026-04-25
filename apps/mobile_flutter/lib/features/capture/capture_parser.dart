@@ -127,21 +127,58 @@ class CaptureParser {
     final lowered = text.toLowerCase();
     final signalCount = _countSignals(
           lowered,
-          <String>['compr', 'gaste', 'pague', 'paid', 'pay ', 'coffee'],
+          <String>[
+            'compr',
+            'gaste',
+            'pague',
+            'paid',
+            'pay ',
+            'coffee',
+            'comprei',
+            'gastei',
+            '買',
+            '支払',
+            '买',
+            '支付',
+          ],
         ) +
-        _countSignals(
-            lowered, <String>['vence', 'caduc', 'fridge', 'expires']) +
+        _countSignals(lowered, <String>[
+          'vence',
+          'caduc',
+          'fridge',
+          'expires',
+          'geladeira',
+          'consum',
+          '賞味',
+          '消費',
+          '冰箱',
+          '过期',
+        ]) +
         _countSignals(
           lowered,
-          <String>['debo', 'tengo que', 'submit', 'need to'],
+          <String>[
+            'debo',
+            'tengo que',
+            'submit',
+            'need to',
+            'preciso',
+            'tenho que',
+            'する必要',
+            '需要',
+          ],
         ) +
-        _countSignals(lowered, <String>['comprar', 'jacket', 'ropa']);
+        _countSignals(
+          lowered,
+          <String>['comprar', 'jacket', 'ropa', 'jaqueta', '服', '衣服'],
+        );
 
     if (signalCount < 2 ||
-        (!lowered.contains(' y ') && !lowered.contains(' and '))) {
+        (!lowered.contains(' y ') &&
+            !lowered.contains(' and ') &&
+            !lowered.contains(' e '))) {
       return <String>[text];
     }
-    return text.split(RegExp(r'\s+(y|and)\s+', caseSensitive: false));
+    return text.split(RegExp(r'\s+(y|and|e)\s+', caseSensitive: false));
   }
 
   int _countSignals(String lowered, List<String> signals) {
@@ -265,15 +302,25 @@ class CaptureParser {
     }
 
     final timeHintMatch =
-        RegExp(r'\b(today|tomorrow|tonight|manana|hoy)\b').firstMatch(lowered);
+        RegExp(r'\b(today|tomorrow|tonight|manana|hoy|hoje|amanha)\b')
+            .firstMatch(lowered);
     if (timeHintMatch != null) {
       hints['time_hint'] = timeHintMatch.group(1);
+    }
+    if (lowered.contains('明日') || lowered.contains('明天')) {
+      hints['time_hint'] = 'tomorrow';
+    } else if (lowered.contains('今日') || lowered.contains('今天')) {
+      hints['time_hint'] = 'today';
     }
 
     if (domain == DomainKey.tasks &&
         (lowered.contains('debo') ||
             lowered.contains('tengo que') ||
-            lowered.contains('need to'))) {
+            lowered.contains('need to') ||
+            lowered.contains('preciso') ||
+            lowered.contains('tenho que') ||
+            lowered.contains('する必要') ||
+            lowered.contains('需要'))) {
       hints['task_intent'] = 'required';
     }
     if (domain == DomainKey.habits) {
@@ -288,7 +335,11 @@ class CaptureParser {
     if (domain == DomainKey.pantry &&
         (lowered.contains('vence') ||
             lowered.contains('caduca') ||
-            lowered.contains('expires'))) {
+            lowered.contains('expires') ||
+            lowered.contains('consome') ||
+            lowered.contains('賞味') ||
+            lowered.contains('消費') ||
+            lowered.contains('过期'))) {
       hints['expiry_hint'] = hints['time_hint'] ?? 'soon';
     }
     if (domain == DomainKey.wardrobe) {
@@ -300,11 +351,22 @@ class CaptureParser {
 
   bool _looksLikeFinance(String lowered) {
     return lowered.contains('compr') ||
+        lowered.contains('comprei') ||
         lowered.contains('gaste') ||
+        lowered.contains('gastei') ||
         lowered.contains('pague') ||
+        lowered.contains('paguei') ||
         lowered.contains('coffee') ||
         lowered.contains('cafe') ||
         lowered.contains('sandwich') ||
+        lowered.contains('almoco') ||
+        lowered.contains('mercado') ||
+        lowered.contains('買') ||
+        lowered.contains('支払') ||
+        lowered.contains('円') ||
+        lowered.contains('买') ||
+        lowered.contains('支付') ||
+        lowered.contains('元') ||
         RegExp(r'(\d+[.,]?\d{0,2})').hasMatch(lowered);
   }
 
@@ -316,7 +378,16 @@ class CaptureParser {
         lowered.contains('lechuga') ||
         lowered.contains('spinach') ||
         lowered.contains('pantry') ||
-        lowered.contains('food');
+        lowered.contains('food') ||
+        lowered.contains('geladeira') ||
+        lowered.contains('comida') ||
+        lowered.contains('alface') ||
+        lowered.contains('consome') ||
+        lowered.contains('賞味') ||
+        lowered.contains('消費') ||
+        lowered.contains('冷蔵庫') ||
+        lowered.contains('冰箱') ||
+        lowered.contains('过期');
   }
 
   bool _looksLikeWardrobe(String lowered) {
@@ -326,7 +397,13 @@ class CaptureParser {
         lowered.contains('closet') ||
         lowered.contains('buy another') ||
         lowered.contains('comprar') ||
-        lowered.contains('chaqueta');
+        lowered.contains('chaqueta') ||
+        lowered.contains('jaqueta') ||
+        lowered.contains('sapato') ||
+        lowered.contains('服') ||
+        lowered.contains('靴') ||
+        lowered.contains('衣服') ||
+        lowered.contains('鞋');
   }
 
   bool _looksLikeHabit(String lowered) {
@@ -336,7 +413,15 @@ class CaptureParser {
         lowered.contains('reset') ||
         lowered.contains('habit') ||
         lowered.contains('agua') ||
-        lowered.contains('exercise');
+        lowered.contains('exercise') ||
+        lowered.contains('caminh') ||
+        lowered.contains('dormi') ||
+        lowered.contains('exercicio') ||
+        lowered.contains('散歩') ||
+        lowered.contains('睡眠') ||
+        lowered.contains('瞑想') ||
+        lowered.contains('散步') ||
+        lowered.contains('冥想');
   }
 
   bool _looksLikeWeek(String lowered) {
@@ -345,7 +430,20 @@ class CaptureParser {
         lowered.contains('friday') ||
         lowered.contains('calendar') ||
         lowered.contains('schedule') ||
-        lowered.contains('plan');
+        lowered.contains('plan') ||
+        lowered.contains('semana') ||
+        lowered.contains('segunda') ||
+        lowered.contains('sexta') ||
+        lowered.contains('agenda') ||
+        lowered.contains('今週') ||
+        lowered.contains('月曜') ||
+        lowered.contains('金曜') ||
+        lowered.contains('予定') ||
+        lowered.contains('本周') ||
+        lowered.contains('周一') ||
+        lowered.contains('周五') ||
+        lowered.contains('日程') ||
+        lowered.contains('计划');
   }
 
   String _defaultEventType(DomainKey domain) {

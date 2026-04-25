@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/i18n/app_localized_values.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
 import 'signal_card.dart';
 
@@ -13,6 +15,7 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final missions = controller.dailyMissions;
     final primaryMission = missions.isEmpty ? null : missions.first;
     final secondaryMissions = missions.length > 1
@@ -21,8 +24,8 @@ class DashboardScreen extends StatelessWidget {
     final risks = controller.dailyRisks;
     final gatewayStatusMessage = controller.gatewayStatusMessage;
     final disclosureSummary = primaryMission == null
-        ? 'GoLife keeps data local until a mission is ready.'
-        : controller.missionDeliverySummary(primaryMission);
+        ? l10n.dashboardDisclosurePending
+        : controller.localizedMissionDeliverySummary(primaryMission, l10n);
     final width = MediaQuery.sizeOf(context).width;
     final crossAxisCount = width >= 1080 ? 2 : 1;
     final theme = Theme.of(context);
@@ -32,10 +35,13 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('3 Missions for today', style: theme.textTheme.headlineMedium),
+          Text(
+            l10n.dashboardMissionCountTitle(missions.length),
+            style: theme.textTheme.headlineMedium,
+          ),
           const SizedBox(height: 8),
           Text(
-            'Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.',
+            l10n.dashboardMissionIntro,
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -46,17 +52,17 @@ class DashboardScreen extends StatelessWidget {
               FilledButton.icon(
                 onPressed: () => context.go('/capture'),
                 icon: const Icon(Icons.bolt_rounded),
-                label: const Text('Capturar'),
+                label: Text(l10n.navCapture),
               ),
               FilledButton.tonalIcon(
                 onPressed: () => context.go('/journal'),
                 icon: const Icon(Icons.edit_note_rounded),
-                label: const Text('Escribir'),
+                label: Text(l10n.actionWrite),
               ),
               FilledButton.tonalIcon(
                 onPressed: () => context.go('/copilot'),
                 icon: const Icon(Icons.record_voice_over_rounded),
-                label: const Text('Conversar'),
+                label: Text(l10n.actionChat),
               ),
             ],
           ),
@@ -90,7 +96,7 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  primaryMission?.title ?? 'Loading missions...',
+                  primaryMission?.title ?? l10n.dashboardLoadingMissions,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     color: Colors.white,
                   ),
@@ -98,7 +104,7 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   primaryMission?.body ??
-                      'Bootstrapping local events, ranked missions and gateway trace.',
+                      l10n.dashboardBootstrappingMission,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: const Color(0xFFF2E5D2),
                   ),
@@ -109,25 +115,28 @@ class DashboardScreen extends StatelessWidget {
                   runSpacing: 10,
                   children: [
                     _MetaPill(
-                      label: controller.isReady ? 'Ready' : 'Booting',
+                      label: controller.isReady
+                          ? l10n.statusReady
+                          : l10n.statusBooting,
                       color: const Color(0xFFD06447),
                     ),
                     _MetaPill(
-                      label: controller.gatewayStatusLabel,
+                      label: controller.localizedGatewayStatusLabel(l10n),
                       color: const Color(0xFF5D7A68),
                     ),
                     _MetaPill(
-                      label: controller.latestFeedbackLabel,
+                      label: controller.localizedLatestFeedbackLabel(l10n),
                       color: const Color(0xFF8A6C2F),
                     ),
                     _MetaPill(
-                      label: '${risks.length} risks',
+                      label: l10n.dashboardRiskCount(risks.length),
                       color: const Color(0xFF7A5167),
                     ),
                     if (primaryMission != null)
                       _MetaPill(
-                        label:
-                            '${(primaryMission.confidence * 100).round()}% confidence',
+                        label: l10n.dashboardConfidencePill(
+                          (primaryMission.confidence * 100).round(),
+                        ),
                         color: const Color(0xFF4C6A4F),
                       ),
                   ],
@@ -140,13 +149,16 @@ class DashboardScreen extends StatelessWidget {
                     children: [
                       Chip(
                         label: Text(
-                          controller.missionDeliveryLabel(primaryMission),
+                          controller.localizedMissionDeliveryLabel(
+                            primaryMission,
+                            l10n,
+                          ),
                         ),
                         backgroundColor: const Color(0xFFD6C0A7),
                       ),
                       for (final domain in primaryMission.domainTargets)
                         Chip(
-                          label: Text(domain),
+                          label: Text(domain.localizedDomainLabel(l10n)),
                           backgroundColor: Colors.white.withValues(alpha: 0.14),
                           labelStyle: theme.textTheme.labelLarge?.copyWith(
                             color: Colors.white,
@@ -167,14 +179,14 @@ class DashboardScreen extends StatelessWidget {
                                 primaryMission,
                               ),
                       icon: const Icon(Icons.visibility_outlined),
-                      label: const Text('Explain'),
+                      label: Text(l10n.actionExplain),
                     ),
                     FilledButton.icon(
                       onPressed: primaryMission == null
                           ? null
                           : () => controller.markMissionUseful(primaryMission),
                       icon: const Icon(Icons.thumb_up_alt_outlined),
-                      label: const Text('Useful'),
+                      label: Text(l10n.actionUseful),
                     ),
                     FilledButton.icon(
                       onPressed: primaryMission == null
@@ -191,27 +203,31 @@ class DashboardScreen extends StatelessWidget {
                               }
                             },
                       icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Do now'),
+                      label: Text(l10n.actionDoNow),
                     ),
                     OutlinedButton.icon(
                       onPressed: primaryMission == null
                           ? null
                           : () => controller.rejectMission(primaryMission),
                       icon: const Icon(Icons.thumb_down_alt_outlined),
-                      label: const Text('Not useful'),
+                      label: Text(l10n.actionNotUseful),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'AI data disclosure',
+                  l10n.dashboardAiDisclosureTitle,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '$disclosureSummary Sent now: ${controller.aiEligibleEventCount} local events. Blocked locally: ${controller.totalEventCount - controller.aiEligibleEventCount}.',
+                  l10n.dashboardAiDisclosureSummary(
+                    disclosureSummary,
+                    controller.aiEligibleEventCount,
+                    controller.totalEventCount - controller.aiEligibleEventCount,
+                  ),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: const Color(0xFFF2E5D2),
                   ),
@@ -220,11 +236,11 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Risks today', style: theme.textTheme.titleLarge),
+          Text(l10n.dashboardRisksTitle, style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
           if (risks.isEmpty)
             Text(
-              'No explicit daily risks were detected from the current AI-eligible graph.',
+              l10n.dashboardNoRisks,
               style: theme.textTheme.bodyMedium,
             )
           else
@@ -234,11 +250,14 @@ class DashboardScreen extends StatelessWidget {
                 child: _DailyRiskCard(risk: risk),
               ),
           const SizedBox(height: 20),
-          Text('Support missions', style: theme.textTheme.titleLarge),
+          Text(
+            l10n.dashboardSupportMissionsTitle,
+            style: theme.textTheme.titleLarge,
+          ),
           const SizedBox(height: 12),
           if (secondaryMissions.isEmpty)
             Text(
-              'Secondary missions will appear once the daily plan is available.',
+              l10n.dashboardNoSupportMissions,
               style: theme.textTheme.bodyMedium,
             )
           else
@@ -272,27 +291,29 @@ class DashboardScreen extends StatelessWidget {
             childAspectRatio: width >= 1080 ? 1.65 : 1.2,
             children: [
               SignalCard(
-                eyebrow: 'Critical task',
+                eyebrow: l10n.signalCriticalTask,
                 title: controller.criticalTask.title,
                 body:
                     '${controller.criticalTask.timeboxLabel} - ${controller.criticalTask.priorityLabel}',
                 color: const Color(0xFFD06447),
               ),
               SignalCard(
-                eyebrow: 'Recovery habit',
+                eyebrow: l10n.signalRecoveryHabit,
                 title: controller.recoveryHabit.title,
-                body:
-                    'Cue: ${controller.recoveryHabit.cue} - ${controller.recoveryHabit.streakLabel}',
+                body: l10n.signalRecoveryHabitBody(
+                  controller.recoveryHabit.cue,
+                  controller.recoveryHabit.streakLabel,
+                ),
                 color: const Color(0xFF5D7A68),
               ),
               SignalCard(
-                eyebrow: 'Relevant spend',
+                eyebrow: l10n.signalRelevantSpend,
                 title: controller.financeSummary.label,
                 body: controller.financeSummary.reflectionLabel,
                 color: const Color(0xFF8A6C2F),
               ),
               SignalCard(
-                eyebrow: 'Use this food',
+                eyebrow: l10n.signalUseThisFood,
                 title: controller.pantrySummary.name,
                 body: controller.pantrySummary.rescueHint,
                 color: const Color(0xFF4C6A4F),
@@ -310,6 +331,7 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFFFF8EF),
       showDragHandle: true,
       builder: (context) {
+        final l10n = AppLocalizations.of(context)!;
         final theme = Theme.of(context);
         return Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
@@ -322,21 +344,24 @@ class DashboardScreen extends StatelessWidget {
                 Text(mission.body, style: theme.textTheme.bodyLarge),
                 const SizedBox(height: 16),
                 Text(
-                  'Why this one today',
+                  l10n.dashboardWhyThisToday,
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
                 _DisclosurePanel(
-                  title: controller.missionDeliveryLabel(mission),
-                  body: controller.missionDeliverySummary(mission),
+                  title: controller.localizedMissionDeliveryLabel(mission, l10n),
+                  body: controller.localizedMissionDeliverySummary(mission, l10n),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Confidence ${(mission.confidence * 100).round()}% - ${mission.recommendationType}',
+                  l10n.dashboardConfidenceWithType(
+                    (mission.confidence * 100).round(),
+                    mission.recommendationType,
+                  ),
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
-                Text('Evidence', style: theme.textTheme.titleLarge),
+                Text(l10n.labelEvidence, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 for (final item in mission.evidence)
                   Padding(
@@ -344,8 +369,10 @@ class DashboardScreen extends StatelessWidget {
                     child: Text('- $item', style: theme.textTheme.bodyMedium),
                   ),
                 const SizedBox(height: 16),
-                Text('Data used for this mission',
-                    style: theme.textTheme.titleLarge),
+                Text(
+                  l10n.labelDataUsedForMission,
+                  style: theme.textTheme.titleLarge,
+                ),
                 const SizedBox(height: 8),
                 for (final item in controller.missionDataUsed(mission))
                   Padding(
@@ -353,42 +380,42 @@ class DashboardScreen extends StatelessWidget {
                     child: Text('- $item', style: theme.textTheme.bodyMedium),
                   ),
                 const SizedBox(height: 16),
-                Text('Data sent to AI', style: theme.textTheme.titleLarge),
+                Text(l10n.labelDataSentToAi, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 _DisclosureList(
                   items: controller.dataSentToAiForMission(mission),
-                  emptyLabel:
-                      'Nothing was sent for this mission. GoLife stayed local for this step.',
+                  emptyLabel: l10n.dashboardNothingSent,
                 ),
                 const SizedBox(height: 16),
-                Text('Blocked from AI', style: theme.textTheme.titleLarge),
+                Text(l10n.labelBlockedFromAi, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 _DisclosureList(
                   items: controller.dataBlockedForMission(mission),
-                  emptyLabel:
-                      'No mission-specific items were blocked from AI for this step.',
+                  emptyLabel: l10n.dashboardNothingBlocked,
                 ),
                 const SizedBox(height: 16),
-                Text('Always local on this device',
-                    style: theme.textTheme.titleLarge),
+                Text(
+                  l10n.labelAlwaysLocalOnDevice,
+                  style: theme.textTheme.titleLarge,
+                ),
                 const SizedBox(height: 8),
                 _DisclosureList(
-                  items: controller.alwaysLocalCollectionLabels,
-                  emptyLabel: 'No always-local collections configured.',
+                  items: controller.localizedAlwaysLocalCollectionLabels(l10n),
+                  emptyLabel: l10n.dashboardNoAlwaysLocalCollections,
                 ),
                 const SizedBox(height: 16),
-                Text('Encrypted locally', style: theme.textTheme.titleLarge),
+                Text(l10n.labelEncryptedLocally, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 _DisclosureList(
-                  items: controller.encryptedCollectionLabels,
-                  emptyLabel: 'No encrypted collections configured.',
+                  items: controller.localizedEncryptedCollectionLabels(l10n),
+                  emptyLabel: l10n.dashboardNoEncryptedCollections,
                 ),
                 const SizedBox(height: 16),
-                Text('Uncertainty', style: theme.textTheme.titleLarge),
+                Text(l10n.labelUncertainty, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(mission.uncertainty, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 16),
-                Text('Trace', style: theme.textTheme.titleLarge),
+                Text(l10n.labelTrace, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 for (final entry in mission.trace.entries)
                   Padding(
@@ -416,6 +443,7 @@ class _DailyRiskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
@@ -431,7 +459,7 @@ class _DailyRiskCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${risk.severity.toUpperCase()} RISK',
+            l10n.dashboardRiskSeverityLabel(risk.severity.toUpperCase()),
             style: theme.textTheme.labelLarge?.copyWith(
               color: _severityColor(risk.severity),
             ),
@@ -485,6 +513,7 @@ class _MissionSupportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
@@ -506,7 +535,7 @@ class _MissionSupportCard extends StatelessWidget {
             children: [
               Chip(label: Text(sourceLabel)),
               for (final domain in mission.domainTargets)
-                Chip(label: Text(domain)),
+                Chip(label: Text(domain.localizedDomainLabel(l10n))),
               Chip(
                 label: Text('${(mission.confidence * 100).round()}%'),
               ),
@@ -520,21 +549,21 @@ class _MissionSupportCard extends StatelessWidget {
               TextButton.icon(
                 onPressed: onExplain,
                 icon: const Icon(Icons.visibility_outlined),
-                label: const Text('Explain'),
+                label: Text(l10n.actionExplain),
               ),
               TextButton.icon(
                 onPressed: () {
                   onAccept();
                 },
                 icon: const Icon(Icons.playlist_add_check_circle_outlined),
-                label: const Text('Accept'),
+                label: Text(l10n.actionAccept),
               ),
               TextButton.icon(
                 onPressed: () {
                   onComplete();
                 },
                 icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Do now'),
+                label: Text(l10n.actionDoNow),
               ),
             ],
           ),

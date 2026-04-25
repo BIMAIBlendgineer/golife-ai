@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "GoLife Admin",
+    "description": "GoLife AI のミッション品質とシステム健全性を扱う運用画面。"
+  },
+  "shell": {
+    "eyebrow": "制御画面",
+    "summary": "このパネルは mobile と同じループを監視します。capture、risks、missions、feedback、trust。",
+    "lastIngestionPrefix": "最終取り込み",
+    "lastIngestionEmpty": "まだ運用取り込みは記録されていません。",
+    "stateLiveData": "LIVE DATA",
+    "stateLiveNoIngestion": "LIVE - NO INGESTION YET",
+    "stateFallbackSnapshot": "FALLBACK SNAPSHOT",
+    "stateBackendOffline": "BACKEND OFFLINE",
+    "apiLabel": "API",
+    "tokenSet": "Admin トークン設定済み",
+    "tokenMissing": "トークン未設定"
+  },
+  "nav": {
+    "badge": "運用デスク",
+    "title": "GoLife Admin",
+    "subtitle": "ミッション品質、信頼、サポート、AI コストを扱う運用ボード。",
+    "sections": [
+      {
+        "label": "運用",
+        "items": [
+          {"href": "/dashboard", "title": "Dashboard", "note": "ミッション健全性、信頼圧力、コスト。"},
+          {"href": "/users", "title": "Users", "note": "アカウント状態とサポート信号。"},
+          {"href": "/usage", "title": "Usage", "note": "Capture 量、fallback、遅延。"},
+          {"href": "/ai-costs", "title": "AI Costs", "note": "エンドポイント単位のプロバイダ支出。"},
+          {"href": "/openrouter-keys", "title": "OpenRouter Keys", "note": "キー健全性、failover、ローテーション履歴。"}
+        ]
+      },
+      {
+        "label": "品質",
+        "items": [
+          {"href": "/missions", "title": "Missions", "note": "順位付け結果の品質とリスク連携。"},
+          {"href": "/feedback", "title": "Feedback", "note": "なぜ受理・拒否・完了されたか。"},
+          {"href": "/safety", "title": "Safety", "note": "ブロックされた出力と信頼インシデント。"},
+          {"href": "/routing-snapshots", "title": "Routing Snapshots", "note": "各能力の現在の上位3モデル。"}
+        ]
+      },
+      {
+        "label": "システム",
+        "items": [
+          {"href": "/feature-flags", "title": "Feature Flags", "note": "運用リリース用のスイッチ。"},
+          {"href": "/settings/models", "title": "Models", "note": "プロバイダと fallback routing。"},
+          {"href": "/routing-profiles", "title": "Routing Profiles", "note": "遅延、コンテキスト、パラメータ方針。"},
+          {"href": "/model-catalog", "title": "Model Catalog", "note": "OpenRouter カタログキャッシュと適格性。"},
+          {"href": "/support/export-delete", "title": "Support Queue", "note": "エクスポートと削除の依頼。"}
+        ]
+      }
+    ]
+  },
+  "localeSwitcher": {
+    "label": "言語",
+    "options": {
+      "en": "EN",
+      "es": "ES",
+      "pt-BR": "PT-BR",
+      "ja": "JA",
+      "zh-Hans": "ZH"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "title": "GoLife Admin",
+    "description": "用于 GoLife AI 任务质量与系统健康度的运营界面。"
+  },
+  "shell": {
+    "eyebrow": "控制面板",
+    "summary": "此面板监控与 mobile 相同的产品循环：capture、risks、missions、feedback、trust。",
+    "lastIngestionPrefix": "最近摄取",
+    "lastIngestionEmpty": "尚未记录任何运营摄取。",
+    "stateLiveData": "LIVE DATA",
+    "stateLiveNoIngestion": "LIVE - NO INGESTION YET",
+    "stateFallbackSnapshot": "FALLBACK SNAPSHOT",
+    "stateBackendOffline": "BACKEND OFFLINE",
+    "apiLabel": "API",
+    "tokenSet": "已配置 Admin token",
+    "tokenMissing": "缺少 token"
+  },
+  "nav": {
+    "badge": "运营台",
+    "title": "GoLife Admin",
+    "subtitle": "用于任务质量、信任、支持和 AI 成本的运营看板。",
+    "sections": [
+      {
+        "label": "运营",
+        "items": [
+          {"href": "/dashboard", "title": "Dashboard", "note": "任务健康、信任压力与成本。"},
+          {"href": "/users", "title": "Users", "note": "账户状态与支持信号。"},
+          {"href": "/usage", "title": "Usage", "note": "Capture 量、fallback 与延迟。"},
+          {"href": "/ai-costs", "title": "AI Costs", "note": "按端点划分的 provider 支出。"},
+          {"href": "/openrouter-keys", "title": "OpenRouter Keys", "note": "密钥健康、failover 与轮换历史。"}
+        ]
+      },
+      {
+        "label": "质量",
+        "items": [
+          {"href": "/missions", "title": "Missions", "note": "排序结果质量与风险关联。"},
+          {"href": "/feedback", "title": "Feedback", "note": "用户为何接受、拒绝或完成。"},
+          {"href": "/safety", "title": "Safety", "note": "被阻止的输出与信任事件。"},
+          {"href": "/routing-snapshots", "title": "Routing Snapshots", "note": "各能力当前 top-3 模型。"}
+        ]
+      },
+      {
+        "label": "系统",
+        "items": [
+          {"href": "/feature-flags", "title": "Feature Flags", "note": "运营发布开关。"},
+          {"href": "/settings/models", "title": "Models", "note": "provider 与 fallback routing。"},
+          {"href": "/routing-profiles", "title": "Routing Profiles", "note": "延迟、上下文与参数策略。"},
+          {"href": "/model-catalog", "title": "Model Catalog", "note": "OpenRouter 目录缓存与可用性。"},
+          {"href": "/support/export-delete", "title": "Support Queue", "note": "导出与删除请求。"}
+        ]
+      }
+    ]
+  },
+  "localeSwitcher": {
+    "label": "语言",
+    "options": {
+      "en": "EN",
+      "es": "ES",
+      "pt-BR": "PT-BR",
+      "ja": "JA",
+      "zh-Hans": "ZH"
+    }
+  }
+}

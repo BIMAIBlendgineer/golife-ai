@@ -18,6 +18,7 @@ import 'local_store.dart';
 
 class MemoryLocalStore implements LocalStore {
   PrivacySettings _settings = PrivacySettings.defaults();
+  String? _localePreference;
   bool _demoSeedEnabled = true;
   final List<LifeEvent> _events = <LifeEvent>[];
   final List<MissionFeedback> _feedbackItems = <MissionFeedback>[];
@@ -43,6 +44,16 @@ class MemoryLocalStore implements LocalStore {
   @override
   Future<void> savePrivacySettings(PrivacySettings settings) async {
     _settings = settings;
+  }
+
+  @override
+  Future<String?> loadLocalePreference() async {
+    return _localePreference;
+  }
+
+  @override
+  Future<void> saveLocalePreference(String? localeTag) async {
+    _localePreference = localeTag;
   }
 
   @override
@@ -227,6 +238,7 @@ class MemoryLocalStore implements LocalStore {
   @override
   Future<void> deleteAllData() async {
     _settings = PrivacySettings.defaults();
+    _localePreference = null;
     _demoSeedEnabled = false;
     _events.clear();
     _feedbackItems.clear();

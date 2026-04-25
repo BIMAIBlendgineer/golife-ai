@@ -24,6 +24,7 @@ class SharedPrefsLocalStore implements LocalStore {
   const SharedPrefsLocalStore();
 
   static const _privacyKey = 'golife.privacy_settings';
+  static const _localePreferenceKey = 'golife.locale_preference';
   static const _lifeEventsKey = 'golife.life_events';
   static const _missionFeedbackKey = 'golife.mission_feedback';
   static const _missionsKey = 'golife.missions';
@@ -57,6 +58,22 @@ class SharedPrefsLocalStore implements LocalStore {
   Future<void> savePrivacySettings(PrivacySettings settings) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_privacyKey, jsonEncode(settings.toJson()));
+  }
+
+  @override
+  Future<String?> loadLocalePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_localePreferenceKey);
+  }
+
+  @override
+  Future<void> saveLocalePreference(String? localeTag) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (localeTag == null) {
+      await prefs.remove(_localePreferenceKey);
+      return;
+    }
+    await prefs.setString(_localePreferenceKey, localeTag);
   }
 
   @override
@@ -312,6 +329,7 @@ class SharedPrefsLocalStore implements LocalStore {
   Future<void> deleteAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_privacyKey);
+    await prefs.remove(_localePreferenceKey);
     await prefs.remove(_lifeEventsKey);
     await prefs.remove(_missionFeedbackKey);
     await prefs.remove(_missionsKey);

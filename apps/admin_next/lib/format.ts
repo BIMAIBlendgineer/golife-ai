@@ -1,51 +1,60 @@
-const percentFormatter = new Intl.NumberFormat("en-US", {
-  style: "percent",
-  maximumFractionDigits: 1,
-});
+import type { AdminLocale, AdminMessages } from "@/lib/i18n";
+import { intlLocaleForAdmin } from "@/lib/i18n";
 
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 2,
-});
-
-const decimalFormatter = new Intl.NumberFormat("en-US", {
-  maximumFractionDigits: 2,
-});
-
-const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
-export function formatPercent(value: number): string {
-  return percentFormatter.format(value);
+function asIntlLocale(locale: AdminLocale): string {
+  return intlLocaleForAdmin(locale);
 }
 
-export function formatCurrency(value: number): string {
-  return currencyFormatter.format(value);
+export function formatPercent(value: number, locale: AdminLocale = "en"): string {
+  return new Intl.NumberFormat(asIntlLocale(locale), {
+    style: "percent",
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
-export function formatNumber(value: number): string {
-  return decimalFormatter.format(value);
+export function formatCurrency(value: number, locale: AdminLocale = "en"): string {
+  return new Intl.NumberFormat(asIntlLocale(locale), {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
-export function formatDateTime(value: string): string {
-  return dateTimeFormatter.format(new Date(value));
+export function formatNumber(value: number, locale: AdminLocale = "en"): string {
+  return new Intl.NumberFormat(asIntlLocale(locale), {
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
-export function formatLatency(value: number): string {
-  return `${Math.round(value)} ms`;
+export function formatDateTime(
+  value: string,
+  locale: AdminLocale = "en",
+): string {
+  return new Intl.DateTimeFormat(asIntlLocale(locale), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
-export function formatFeedbackReason(value: string | null): string {
+export function formatLatency(
+  value: number,
+  locale: AdminLocale = "en",
+  unitLabel = "ms",
+): string {
+  return `${Math.round(value)} ${unitLabel}`;
+}
+
+export function formatFeedbackReason(
+  value: string | null,
+  messages: AdminMessages,
+): string {
   if (!value) {
-    return "No private note recorded.";
+    return messages.shared.noPrivateNoteRecorded;
   }
   if (value === "private_note_redacted") {
-    return "Private note kept out of admin telemetry.";
+    return messages.shared.privateNoteRedacted;
   }
-  return "Legacy private note redacted from admin view.";
+  return messages.shared.legacyPrivateNoteRedacted;
 }
 
 export function labelizeKey(value: string): string {

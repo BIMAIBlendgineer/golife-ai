@@ -57,6 +57,14 @@ class ResilientLocalStore implements LocalStore {
       _run((store) => store.savePrivacySettings(settings));
 
   @override
+  Future<String?> loadLocalePreference() =>
+      _run((store) => store.loadLocalePreference());
+
+  @override
+  Future<void> saveLocalePreference(String? localeTag) =>
+      _run((store) => store.saveLocalePreference(localeTag));
+
+  @override
   Future<bool> loadDemoSeedEnabled() =>
       _run((store) => store.loadDemoSeedEnabled());
 
