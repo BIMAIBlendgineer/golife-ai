@@ -907,6 +907,23 @@ def test_assess_reflection_safety_detects_accented_crisis_language():
     assert response.category == "crisis"
 
 
+def test_assess_reflection_safety_blocks_spanish_clinical_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "es",
+                "text": "Necesito un diagnostico y tratamiento para mi depresion.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "clinical"
+    assert "GoLife puede apoyar" in response.message
+    assert response.trace["locale"] == "es"
+
+
 def test_assess_reflection_safety_returns_portuguese_crisis_message():
     response = assess_reflection_safety(
         ReflectionSafetyRequest.model_validate(
@@ -939,6 +956,23 @@ def test_assess_reflection_safety_returns_japanese_supportive_message():
     assert response.category == "supportive"
     assert "GoLife は" in response.message
     assert response.trace["locale"] == "ja"
+
+
+def test_assess_reflection_safety_defaults_unknown_locale_to_english():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "de",
+                "text": "I need help organizing next week.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is True
+    assert response.category == "supportive"
+    assert "GoLife can help" in response.message
+    assert response.trace["locale"] == "en"
 
 
 def test_assess_reflection_safety_detects_chinese_crisis_language():

@@ -527,6 +527,431 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get copilotNoTrace => '还没有加载任务。';
+
+  @override
+  String get navJournal => 'Journal';
+
+  @override
+  String get navCalendar => 'Calendar';
+
+  @override
+  String get navRecipes => 'Recipes';
+
+  @override
+  String get entityTask => 'task';
+
+  @override
+  String get entityHabit => 'habit';
+
+  @override
+  String get entityExpense => 'expense';
+
+  @override
+  String get entityPantryItem => 'pantry item';
+
+  @override
+  String get entityPurchaseIntention => 'purchase intention';
+
+  @override
+  String get entityWeekPlan => 'week plan';
+
+  @override
+  String get entityJournalEntry => 'journal entry';
+
+  @override
+  String get entityQuickNote => 'quick note';
+
+  @override
+  String get entityCalendarItem => 'calendar item';
+
+  @override
+  String get entityRecipeRescue => 'recipe rescue';
+
+  @override
+  String actionNewEntity(Object entity) {
+    return 'New $entity';
+  }
+
+  @override
+  String actionEditEntity(Object entity) {
+    return 'Edit $entity';
+  }
+
+  @override
+  String get actionComplete => 'Complete';
+
+  @override
+  String get actionDone => 'Done';
+
+  @override
+  String get actionCheckIn => 'Check in';
+
+  @override
+  String get actionReflect => 'Reflect';
+
+  @override
+  String get actionMarkUsed => 'Mark used';
+
+  @override
+  String get actionUsed => 'Used';
+
+  @override
+  String get actionPause24h => 'Pause 24h';
+
+  @override
+  String get actionReplan => 'Replan';
+
+  @override
+  String get actionReview => 'Review';
+
+  @override
+  String get actionKeepLocal => 'Keep local';
+
+  @override
+  String get actionOpenJournal => 'Open journal';
+
+  @override
+  String get actionOpenCalendar => 'Open calendar';
+
+  @override
+  String get actionOpenRecipes => 'Open recipes';
+
+  @override
+  String get actionCookNow => 'Cook now';
+
+  @override
+  String get actionCooked => 'Cooked';
+
+  @override
+  String get actionTimeBlock => 'Time block';
+
+  @override
+  String get actionSaving => 'Saving...';
+
+  @override
+  String get domainTasksEyebrow => 'Execution';
+
+  @override
+  String get domainTasksDescription =>
+      'TaskDoctor is now a local-first task board with direct create, edit, and complete flows.';
+
+  @override
+  String get domainHabitsEyebrow => 'Continuity';
+
+  @override
+  String get domainHabitsDescription =>
+      'LifeQuest now supports direct habit creation and recovery-friendly check-ins.';
+
+  @override
+  String get domainMoneyEyebrow => 'Awareness';
+
+  @override
+  String get domainMoneyDescription =>
+      'MoneyMirror stays conservative: log, edit, and reflect locally without crossing into regulated advice.';
+
+  @override
+  String get domainPantryEyebrow => 'Rescue';
+
+  @override
+  String get domainPantryDescription =>
+      'FridgeZero now keeps a rescue board where ingredients can be created, edited, and marked used.';
+
+  @override
+  String get domainClosetEyebrow => 'Anti-consumption';
+
+  @override
+  String get domainClosetDescription =>
+      'ClosetLess remains an intention-first board, now with editable pauses and purchase reasons.';
+
+  @override
+  String get domainWeekEyebrow => 'Planner';
+
+  @override
+  String get domainWeekDescription =>
+      'WeekPilot stays intentionally light, but now supports quick creation and direct replanning.';
+
+  @override
+  String get domainJournalEyebrow => 'Private by default';
+
+  @override
+  String get domainJournalDescription =>
+      'Journal and notes stay local-first so the app can learn from your day without turning into therapy.';
+
+  @override
+  String get domainCalendarEyebrow => 'QuickCal';
+
+  @override
+  String get domainCalendarDescription =>
+      'QuickCal starts as a fast local layer for time blocks and overload detection, not a full sync engine.';
+
+  @override
+  String get domainRecipesEyebrow => 'Recipe Rescue';
+
+  @override
+  String get domainRecipesDescription =>
+      'Recipe Rescue turns pantry context into simple local meal plans that can mark ingredients as used.';
+
+  @override
+  String get domainEverydayEyebrow => 'Life OS';
+
+  @override
+  String get domainEverydayDescription =>
+      'Journal, calendar, and recipes live together here so the shell stays lighter while everyday context keeps growing.';
+
+  @override
+  String get tasksEmpty => 'No tasks captured yet.';
+
+  @override
+  String get habitsEmpty => 'No habits captured yet.';
+
+  @override
+  String get moneyEmpty => 'No expenses captured yet.';
+
+  @override
+  String get pantryEmpty => 'No pantry items captured yet.';
+
+  @override
+  String get closetEmpty => 'No purchase intentions captured yet.';
+
+  @override
+  String get weekEmpty => 'No week plans captured yet.';
+
+  @override
+  String get journalEmpty => 'No journal entries yet.';
+
+  @override
+  String get quickNotesEmpty => 'No quick notes yet.';
+
+  @override
+  String get calendarEmpty => 'No calendar items yet.';
+
+  @override
+  String get recipesEmpty => 'No recipe rescues yet.';
+
+  @override
+  String get calendarOverloadTitle => 'Overload detected';
+
+  @override
+  String get calendarOverloadBody =>
+      'There are already four or more local calendar items. Protect the smallest non-critical block first.';
+
+  @override
+  String get calendarCalmTitle => 'Calm calendar';
+
+  @override
+  String get calendarCalmBody =>
+      'Use QuickCal for fast local blocks before adding full calendar sync.';
+
+  @override
+  String get everydayContextTitle => 'Everyday context';
+
+  @override
+  String get everydayContextBody =>
+      'Use writing, time blocks, and recipe rescue to give Today better context without turning the app into six crowded tabs.';
+
+  @override
+  String get everydayJournalBody =>
+      'Capture reflection and short notes locally, with privacy-first defaults.';
+
+  @override
+  String get everydayCalendarBody =>
+      'Keep a quick local calendar before you need full sync.';
+
+  @override
+  String get everydayRecipesBody =>
+      'Turn pantry context into low-friction meals and mark ingredients used.';
+
+  @override
+  String get fieldTitle => 'Title';
+
+  @override
+  String get fieldEstimatedMinutes => 'Estimated minutes';
+
+  @override
+  String get fieldPriority => 'Priority';
+
+  @override
+  String get fieldNotes => 'Notes';
+
+  @override
+  String get fieldCue => 'Cue';
+
+  @override
+  String get fieldCadence => 'Cadence';
+
+  @override
+  String get fieldLabel => 'Label';
+
+  @override
+  String get fieldAmount => 'Amount';
+
+  @override
+  String get fieldCategory => 'Category';
+
+  @override
+  String get fieldName => 'Name';
+
+  @override
+  String get fieldQuantity => 'Quantity';
+
+  @override
+  String get fieldRescueHint => 'Rescue hint';
+
+  @override
+  String get fieldReason => 'Reason';
+
+  @override
+  String get fieldTheme => 'Theme';
+
+  @override
+  String get fieldFocus => 'Focus';
+
+  @override
+  String get fieldMood => 'Mood';
+
+  @override
+  String get fieldBody => 'Body';
+
+  @override
+  String get fieldNote => 'Note';
+
+  @override
+  String get fieldStartIso => 'Start ISO';
+
+  @override
+  String get fieldEndIso => 'End ISO';
+
+  @override
+  String get fieldLocation => 'Location';
+
+  @override
+  String get fieldEnergy => 'Energy';
+
+  @override
+  String get fieldSummary => 'Summary';
+
+  @override
+  String get fieldIngredientsCommaSeparated => 'Ingredients (comma separated)';
+
+  @override
+  String get chipRescue => 'Rescue';
+
+  @override
+  String get chipPurchaseIntention => 'Purchase intention';
+
+  @override
+  String get chipJournal => 'Journal';
+
+  @override
+  String get chipNote => 'Note';
+
+  @override
+  String get chipLocalOnly => 'Local only';
+
+  @override
+  String get statusTaskInbox => 'Inbox';
+
+  @override
+  String get statusTaskActive => 'Active';
+
+  @override
+  String get statusTaskDone => 'Done';
+
+  @override
+  String get priorityGentle => 'Gentle';
+
+  @override
+  String get priorityStandard => 'Standard';
+
+  @override
+  String get priorityCritical => 'Critical';
+
+  @override
+  String get cadenceDaily => 'Daily';
+
+  @override
+  String get cadenceWeekdays => 'Weekdays';
+
+  @override
+  String get cadenceWeekly => 'Weekly';
+
+  @override
+  String get recipeStatusDraft => 'Draft';
+
+  @override
+  String get recipeStatusCooked => 'Cooked';
+
+  @override
+  String get unitMinutesShort => 'min';
+
+  @override
+  String get journalQuickNotesTitle => 'Quick notes';
+
+  @override
+  String get messageTaskUpdated => 'Task updated.';
+
+  @override
+  String get messageHabitCheckedIn => 'Habit checked in.';
+
+  @override
+  String get messageExpenseRevisited => 'Expense revisited.';
+
+  @override
+  String get messagePantryItemUpdated => 'Pantry item updated.';
+
+  @override
+  String get messagePurchaseIntentionPaused => 'Purchase intention paused.';
+
+  @override
+  String get messageWeekPlanUpdated => 'Week plan updated.';
+
+  @override
+  String get messageJournalLocalOnly => 'Journal stays local on this device.';
+
+  @override
+  String get messageNoteLocalOnly => 'Note stays local on this device.';
+
+  @override
+  String get messageOpeningEditor => 'Opening editor.';
+
+  @override
+  String get messageRecipeUpdated => 'Recipe rescue updated.';
+
+  @override
+  String messageEntitySaved(Object entity) {
+    return '$entity saved.';
+  }
+
+  @override
+  String taskTimeboxFirstBlock(int minutes) {
+    return '$minutes min first block';
+  }
+
+  @override
+  String habitStreakDays(int count) {
+    return '$count-day streak';
+  }
+
+  @override
+  String everydayJournalSubtitle(int entryCount, int noteCount) {
+    return '$entryCount entries | $noteCount quick notes';
+  }
+
+  @override
+  String get overloadDetected => 'detected';
+
+  @override
+  String get overloadNotDetected => 'not detected';
+
+  @override
+  String everydayCalendarSubtitle(int blockCount, Object status) {
+    return '$blockCount local blocks | overload $status';
+  }
+
+  @override
+  String everydayRecipesSubtitle(int count) {
+    return '$count rescue ideas';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

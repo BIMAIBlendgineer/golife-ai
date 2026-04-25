@@ -243,5 +243,190 @@
   "copilotTodayPlanTitle": "Plano de hoje",
   "copilotNoPlan": "Nenhum plano de missoes carregado ainda.",
   "copilotLatestTraceTitle": "Ultimo trace",
-  "copilotNoTrace": "Nenhuma missao carregada ainda."
+  "copilotNoTrace": "Nenhuma missao carregada ainda.",
+  "navJournal": "Journal",
+  "navCalendar": "Calendario",
+  "navRecipes": "Receitas",
+  "entityTask": "tarefa",
+  "entityHabit": "habito",
+  "entityExpense": "gasto",
+  "entityPantryItem": "item da despensa",
+  "entityPurchaseIntention": "intencao de compra",
+  "entityWeekPlan": "plano semanal",
+  "entityJournalEntry": "entrada do journal",
+  "entityQuickNote": "nota rapida",
+  "entityCalendarItem": "bloco de calendario",
+  "entityRecipeRescue": "receita de resgate",
+  "actionNewEntity": "Nova {entity}",
+  "@actionNewEntity": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "actionEditEntity": "Editar {entity}",
+  "@actionEditEntity": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "actionComplete": "Concluir",
+  "actionDone": "Feita",
+  "actionCheckIn": "Registrar",
+  "actionReflect": "Revisar",
+  "actionMarkUsed": "Marcar como usado",
+  "actionUsed": "Usado",
+  "actionPause24h": "Pausar 24 h",
+  "actionReplan": "Replanejar",
+  "actionReview": "Revisar",
+  "actionKeepLocal": "Manter local",
+  "actionOpenJournal": "Abrir journal",
+  "actionOpenCalendar": "Abrir calendario",
+  "actionOpenRecipes": "Abrir receitas",
+  "actionCookNow": "Cozinhar agora",
+  "actionCooked": "Cozinhado",
+  "actionTimeBlock": "Bloco",
+  "actionSaving": "Salvando...",
+  "domainTasksEyebrow": "Execucao",
+  "domainTasksDescription": "TaskDoctor agora e um quadro local-first com fluxos diretos para criar, editar e concluir.",
+  "domainHabitsEyebrow": "Continuidade",
+  "domainHabitsDescription": "LifeQuest agora suporta criacao direta de habitos e check-ins amigaveis para recuperacao.",
+  "domainMoneyEyebrow": "Consciencia",
+  "domainMoneyDescription": "MoneyMirror continua conservador: registrar, editar e revisar localmente sem cruzar para conselho regulado.",
+  "domainPantryEyebrow": "Resgate",
+  "domainPantryDescription": "FridgeZero agora mantem um quadro de resgate onde ingredientes podem ser criados, editados e marcados como usados.",
+  "domainClosetEyebrow": "Anti-consumo",
+  "domainClosetDescription": "ClosetLess continua um quadro orientado por intencao, agora com pausas editaveis e motivos de compra.",
+  "domainWeekEyebrow": "Planner",
+  "domainWeekDescription": "WeekPilot continua leve de proposito, mas agora suporta criacao rapida e replanejamento direto.",
+  "domainJournalEyebrow": "Privado por padrao",
+  "domainJournalDescription": "Journal e notas continuam local-first para que o app aprenda com seu dia sem virar terapia.",
+  "domainCalendarEyebrow": "QuickCal",
+  "domainCalendarDescription": "QuickCal comeca como uma camada local rapida para blocos de tempo e deteccao de sobrecarga, nao como um motor completo de sync.",
+  "domainRecipesEyebrow": "Recipe Rescue",
+  "domainRecipesDescription": "Recipe Rescue transforma o contexto da despensa em planos locais simples de refeicao que podem marcar ingredientes como usados.",
+  "domainEverydayEyebrow": "Life OS",
+  "domainEverydayDescription": "Journal, calendario e receitas vivem juntos aqui para que o shell continue leve enquanto o contexto do dia a dia cresce.",
+  "tasksEmpty": "Nenhuma tarefa capturada ainda.",
+  "habitsEmpty": "Nenhum habito capturado ainda.",
+  "moneyEmpty": "Nenhum gasto capturado ainda.",
+  "pantryEmpty": "Nenhum item de despensa ainda.",
+  "closetEmpty": "Nenhuma intencao de compra ainda.",
+  "weekEmpty": "Nenhum plano semanal ainda.",
+  "journalEmpty": "Nenhuma entrada de journal ainda.",
+  "quickNotesEmpty": "Nenhuma nota rapida ainda.",
+  "calendarEmpty": "Nenhum bloco de calendario ainda.",
+  "recipesEmpty": "Nenhuma receita de resgate ainda.",
+  "calendarOverloadTitle": "Sobrecarga detectada",
+  "calendarOverloadBody": "Ja existem quatro ou mais blocos locais no calendario. Proteja primeiro o menor bloco nao critico.",
+  "calendarCalmTitle": "Calendario calmo",
+  "calendarCalmBody": "Use o QuickCal para blocos locais rapidos antes de adicionar sync completo.",
+  "everydayContextTitle": "Contexto cotidiano",
+  "everydayContextBody": "Use escrita, blocos de tempo e recipe rescue para dar ao Today mais contexto sem transformar o app em seis abas cheias.",
+  "everydayJournalBody": "Capture reflexao e notas curtas localmente, com padroes de privacidade em primeiro lugar.",
+  "everydayCalendarBody": "Mantenha um calendario local rapido antes de precisar de sync completo.",
+  "everydayRecipesBody": "Transforme o contexto da despensa em refeicoes de baixa friccao e marque ingredientes usados.",
+  "fieldTitle": "Titulo",
+  "fieldEstimatedMinutes": "Minutos estimados",
+  "fieldPriority": "Prioridade",
+  "fieldNotes": "Notas",
+  "fieldCue": "Gatilho",
+  "fieldCadence": "Cadencia",
+  "fieldLabel": "Rotulo",
+  "fieldAmount": "Valor",
+  "fieldCategory": "Categoria",
+  "fieldName": "Nome",
+  "fieldQuantity": "Quantidade",
+  "fieldRescueHint": "Dica de resgate",
+  "fieldReason": "Motivo",
+  "fieldTheme": "Tema",
+  "fieldFocus": "Foco",
+  "fieldMood": "Humor",
+  "fieldBody": "Texto",
+  "fieldNote": "Nota",
+  "fieldStartIso": "Inicio ISO",
+  "fieldEndIso": "Fim ISO",
+  "fieldLocation": "Local",
+  "fieldEnergy": "Energia",
+  "fieldSummary": "Resumo",
+  "fieldIngredientsCommaSeparated": "Ingredientes (separados por virgula)",
+  "chipRescue": "Resgate",
+  "chipPurchaseIntention": "Intencao de compra",
+  "chipJournal": "Journal",
+  "chipNote": "Nota",
+  "chipLocalOnly": "So local",
+  "statusTaskInbox": "Inbox",
+  "statusTaskActive": "Ativa",
+  "statusTaskDone": "Feita",
+  "priorityGentle": "Suave",
+  "priorityStandard": "Padrao",
+  "priorityCritical": "Critica",
+  "cadenceDaily": "Diaria",
+  "cadenceWeekdays": "Dias uteis",
+  "cadenceWeekly": "Semanal",
+  "recipeStatusDraft": "Rascunho",
+  "recipeStatusCooked": "Cozinhada",
+  "unitMinutesShort": "min",
+  "journalQuickNotesTitle": "Notas rapidas",
+  "messageTaskUpdated": "Tarefa atualizada.",
+  "messageHabitCheckedIn": "Habito registrado.",
+  "messageExpenseRevisited": "Gasto revisitado.",
+  "messagePantryItemUpdated": "Item da despensa atualizado.",
+  "messagePurchaseIntentionPaused": "Intencao de compra pausada.",
+  "messageWeekPlanUpdated": "Plano semanal atualizado.",
+  "messageJournalLocalOnly": "O journal fica local neste dispositivo.",
+  "messageNoteLocalOnly": "A nota fica local neste dispositivo.",
+  "messageOpeningEditor": "Abrindo editor.",
+  "messageRecipeUpdated": "Receita de resgate atualizada.",
+  "messageEntitySaved": "{entity} salva.",
+  "@messageEntitySaved": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "taskTimeboxFirstBlock": "{minutes} min no primeiro bloco",
+  "@taskTimeboxFirstBlock": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "habitStreakDays": "sequencia de {count} dias",
+  "@habitStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "everydayJournalSubtitle": "{entryCount} entradas | {noteCount} notas rapidas",
+  "@everydayJournalSubtitle": {
+    "placeholders": {
+      "entryCount": {
+        "type": "int"
+      },
+      "noteCount": {
+        "type": "int"
+      }
+    }
+  },
+  "overloadDetected": "detectada",
+  "overloadNotDetected": "nao detectada",
+  "everydayCalendarSubtitle": "{blockCount} blocos locais | sobrecarga {status}",
+  "@everydayCalendarSubtitle": {
+    "placeholders": {
+      "blockCount": {
+        "type": "int"
+      },
+      "status": {}
+    }
+  },
+  "everydayRecipesSubtitle": "{count} ideias de resgate",
+  "@everydayRecipesSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

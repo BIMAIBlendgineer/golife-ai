@@ -1054,6 +1054,792 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No mission loaded yet.'**
   String get copilotNoTrace;
+
+  /// No description provided for @navJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal'**
+  String get navJournal;
+
+  /// No description provided for @navCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get navCalendar;
+
+  /// No description provided for @navRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipes'**
+  String get navRecipes;
+
+  /// No description provided for @entityTask.
+  ///
+  /// In en, this message translates to:
+  /// **'task'**
+  String get entityTask;
+
+  /// No description provided for @entityHabit.
+  ///
+  /// In en, this message translates to:
+  /// **'habit'**
+  String get entityHabit;
+
+  /// No description provided for @entityExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'expense'**
+  String get entityExpense;
+
+  /// No description provided for @entityPantryItem.
+  ///
+  /// In en, this message translates to:
+  /// **'pantry item'**
+  String get entityPantryItem;
+
+  /// No description provided for @entityPurchaseIntention.
+  ///
+  /// In en, this message translates to:
+  /// **'purchase intention'**
+  String get entityPurchaseIntention;
+
+  /// No description provided for @entityWeekPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'week plan'**
+  String get entityWeekPlan;
+
+  /// No description provided for @entityJournalEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'journal entry'**
+  String get entityJournalEntry;
+
+  /// No description provided for @entityQuickNote.
+  ///
+  /// In en, this message translates to:
+  /// **'quick note'**
+  String get entityQuickNote;
+
+  /// No description provided for @entityCalendarItem.
+  ///
+  /// In en, this message translates to:
+  /// **'calendar item'**
+  String get entityCalendarItem;
+
+  /// No description provided for @entityRecipeRescue.
+  ///
+  /// In en, this message translates to:
+  /// **'recipe rescue'**
+  String get entityRecipeRescue;
+
+  /// No description provided for @actionNewEntity.
+  ///
+  /// In en, this message translates to:
+  /// **'New {entity}'**
+  String actionNewEntity(Object entity);
+
+  /// No description provided for @actionEditEntity.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit {entity}'**
+  String actionEditEntity(Object entity);
+
+  /// No description provided for @actionComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get actionComplete;
+
+  /// No description provided for @actionDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get actionDone;
+
+  /// No description provided for @actionCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in'**
+  String get actionCheckIn;
+
+  /// No description provided for @actionReflect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reflect'**
+  String get actionReflect;
+
+  /// No description provided for @actionMarkUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark used'**
+  String get actionMarkUsed;
+
+  /// No description provided for @actionUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get actionUsed;
+
+  /// No description provided for @actionPause24h.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause 24h'**
+  String get actionPause24h;
+
+  /// No description provided for @actionReplan.
+  ///
+  /// In en, this message translates to:
+  /// **'Replan'**
+  String get actionReplan;
+
+  /// No description provided for @actionReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get actionReview;
+
+  /// No description provided for @actionKeepLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep local'**
+  String get actionKeepLocal;
+
+  /// No description provided for @actionOpenJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Open journal'**
+  String get actionOpenJournal;
+
+  /// No description provided for @actionOpenCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Open calendar'**
+  String get actionOpenCalendar;
+
+  /// No description provided for @actionOpenRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Open recipes'**
+  String get actionOpenRecipes;
+
+  /// No description provided for @actionCookNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cook now'**
+  String get actionCookNow;
+
+  /// No description provided for @actionCooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooked'**
+  String get actionCooked;
+
+  /// No description provided for @actionTimeBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Time block'**
+  String get actionTimeBlock;
+
+  /// No description provided for @actionSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get actionSaving;
+
+  /// No description provided for @domainTasksEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Execution'**
+  String get domainTasksEyebrow;
+
+  /// No description provided for @domainTasksDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'TaskDoctor is now a local-first task board with direct create, edit, and complete flows.'**
+  String get domainTasksDescription;
+
+  /// No description provided for @domainHabitsEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuity'**
+  String get domainHabitsEyebrow;
+
+  /// No description provided for @domainHabitsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'LifeQuest now supports direct habit creation and recovery-friendly check-ins.'**
+  String get domainHabitsDescription;
+
+  /// No description provided for @domainMoneyEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Awareness'**
+  String get domainMoneyEyebrow;
+
+  /// No description provided for @domainMoneyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'MoneyMirror stays conservative: log, edit, and reflect locally without crossing into regulated advice.'**
+  String get domainMoneyDescription;
+
+  /// No description provided for @domainPantryEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescue'**
+  String get domainPantryEyebrow;
+
+  /// No description provided for @domainPantryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'FridgeZero now keeps a rescue board where ingredients can be created, edited, and marked used.'**
+  String get domainPantryDescription;
+
+  /// No description provided for @domainClosetEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Anti-consumption'**
+  String get domainClosetEyebrow;
+
+  /// No description provided for @domainClosetDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'ClosetLess remains an intention-first board, now with editable pauses and purchase reasons.'**
+  String get domainClosetDescription;
+
+  /// No description provided for @domainWeekEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Planner'**
+  String get domainWeekEyebrow;
+
+  /// No description provided for @domainWeekDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'WeekPilot stays intentionally light, but now supports quick creation and direct replanning.'**
+  String get domainWeekDescription;
+
+  /// No description provided for @domainJournalEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Private by default'**
+  String get domainJournalEyebrow;
+
+  /// No description provided for @domainJournalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal and notes stay local-first so the app can learn from your day without turning into therapy.'**
+  String get domainJournalDescription;
+
+  /// No description provided for @domainCalendarEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'QuickCal'**
+  String get domainCalendarEyebrow;
+
+  /// No description provided for @domainCalendarDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'QuickCal starts as a fast local layer for time blocks and overload detection, not a full sync engine.'**
+  String get domainCalendarDescription;
+
+  /// No description provided for @domainRecipesEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe Rescue'**
+  String get domainRecipesEyebrow;
+
+  /// No description provided for @domainRecipesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe Rescue turns pantry context into simple local meal plans that can mark ingredients as used.'**
+  String get domainRecipesDescription;
+
+  /// No description provided for @domainEverydayEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Life OS'**
+  String get domainEverydayEyebrow;
+
+  /// No description provided for @domainEverydayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal, calendar, and recipes live together here so the shell stays lighter while everyday context keeps growing.'**
+  String get domainEverydayDescription;
+
+  /// No description provided for @tasksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks captured yet.'**
+  String get tasksEmpty;
+
+  /// No description provided for @habitsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No habits captured yet.'**
+  String get habitsEmpty;
+
+  /// No description provided for @moneyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses captured yet.'**
+  String get moneyEmpty;
+
+  /// No description provided for @pantryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No pantry items captured yet.'**
+  String get pantryEmpty;
+
+  /// No description provided for @closetEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchase intentions captured yet.'**
+  String get closetEmpty;
+
+  /// No description provided for @weekEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No week plans captured yet.'**
+  String get weekEmpty;
+
+  /// No description provided for @journalEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No journal entries yet.'**
+  String get journalEmpty;
+
+  /// No description provided for @quickNotesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No quick notes yet.'**
+  String get quickNotesEmpty;
+
+  /// No description provided for @calendarEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No calendar items yet.'**
+  String get calendarEmpty;
+
+  /// No description provided for @recipesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipe rescues yet.'**
+  String get recipesEmpty;
+
+  /// No description provided for @calendarOverloadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overload detected'**
+  String get calendarOverloadTitle;
+
+  /// No description provided for @calendarOverloadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'There are already four or more local calendar items. Protect the smallest non-critical block first.'**
+  String get calendarOverloadBody;
+
+  /// No description provided for @calendarCalmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm calendar'**
+  String get calendarCalmTitle;
+
+  /// No description provided for @calendarCalmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use QuickCal for fast local blocks before adding full calendar sync.'**
+  String get calendarCalmBody;
+
+  /// No description provided for @everydayContextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyday context'**
+  String get everydayContextTitle;
+
+  /// No description provided for @everydayContextBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use writing, time blocks, and recipe rescue to give Today better context without turning the app into six crowded tabs.'**
+  String get everydayContextBody;
+
+  /// No description provided for @everydayJournalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture reflection and short notes locally, with privacy-first defaults.'**
+  String get everydayJournalBody;
+
+  /// No description provided for @everydayCalendarBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a quick local calendar before you need full sync.'**
+  String get everydayCalendarBody;
+
+  /// No description provided for @everydayRecipesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn pantry context into low-friction meals and mark ingredients used.'**
+  String get everydayRecipesBody;
+
+  /// No description provided for @fieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get fieldTitle;
+
+  /// No description provided for @fieldEstimatedMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated minutes'**
+  String get fieldEstimatedMinutes;
+
+  /// No description provided for @fieldPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get fieldPriority;
+
+  /// No description provided for @fieldNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get fieldNotes;
+
+  /// No description provided for @fieldCue.
+  ///
+  /// In en, this message translates to:
+  /// **'Cue'**
+  String get fieldCue;
+
+  /// No description provided for @fieldCadence.
+  ///
+  /// In en, this message translates to:
+  /// **'Cadence'**
+  String get fieldCadence;
+
+  /// No description provided for @fieldLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get fieldLabel;
+
+  /// No description provided for @fieldAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get fieldAmount;
+
+  /// No description provided for @fieldCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get fieldCategory;
+
+  /// No description provided for @fieldName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get fieldName;
+
+  /// No description provided for @fieldQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get fieldQuantity;
+
+  /// No description provided for @fieldRescueHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescue hint'**
+  String get fieldRescueHint;
+
+  /// No description provided for @fieldReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get fieldReason;
+
+  /// No description provided for @fieldTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get fieldTheme;
+
+  /// No description provided for @fieldFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get fieldFocus;
+
+  /// No description provided for @fieldMood.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get fieldMood;
+
+  /// No description provided for @fieldBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Body'**
+  String get fieldBody;
+
+  /// No description provided for @fieldNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get fieldNote;
+
+  /// No description provided for @fieldStartIso.
+  ///
+  /// In en, this message translates to:
+  /// **'Start ISO'**
+  String get fieldStartIso;
+
+  /// No description provided for @fieldEndIso.
+  ///
+  /// In en, this message translates to:
+  /// **'End ISO'**
+  String get fieldEndIso;
+
+  /// No description provided for @fieldLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get fieldLocation;
+
+  /// No description provided for @fieldEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get fieldEnergy;
+
+  /// No description provided for @fieldSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get fieldSummary;
+
+  /// No description provided for @fieldIngredientsCommaSeparated.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredients (comma separated)'**
+  String get fieldIngredientsCommaSeparated;
+
+  /// No description provided for @chipRescue.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescue'**
+  String get chipRescue;
+
+  /// No description provided for @chipPurchaseIntention.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase intention'**
+  String get chipPurchaseIntention;
+
+  /// No description provided for @chipJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal'**
+  String get chipJournal;
+
+  /// No description provided for @chipNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get chipNote;
+
+  /// No description provided for @chipLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Local only'**
+  String get chipLocalOnly;
+
+  /// No description provided for @statusTaskInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get statusTaskInbox;
+
+  /// No description provided for @statusTaskActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get statusTaskActive;
+
+  /// No description provided for @statusTaskDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get statusTaskDone;
+
+  /// No description provided for @priorityGentle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gentle'**
+  String get priorityGentle;
+
+  /// No description provided for @priorityStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get priorityStandard;
+
+  /// No description provided for @priorityCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get priorityCritical;
+
+  /// No description provided for @cadenceDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get cadenceDaily;
+
+  /// No description provided for @cadenceWeekdays.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekdays'**
+  String get cadenceWeekdays;
+
+  /// No description provided for @cadenceWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get cadenceWeekly;
+
+  /// No description provided for @recipeStatusDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get recipeStatusDraft;
+
+  /// No description provided for @recipeStatusCooked.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooked'**
+  String get recipeStatusCooked;
+
+  /// No description provided for @unitMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get unitMinutesShort;
+
+  /// No description provided for @journalQuickNotesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick notes'**
+  String get journalQuickNotesTitle;
+
+  /// No description provided for @messageTaskUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Task updated.'**
+  String get messageTaskUpdated;
+
+  /// No description provided for @messageHabitCheckedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Habit checked in.'**
+  String get messageHabitCheckedIn;
+
+  /// No description provided for @messageExpenseRevisited.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense revisited.'**
+  String get messageExpenseRevisited;
+
+  /// No description provided for @messagePantryItemUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Pantry item updated.'**
+  String get messagePantryItemUpdated;
+
+  /// No description provided for @messagePurchaseIntentionPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase intention paused.'**
+  String get messagePurchaseIntentionPaused;
+
+  /// No description provided for @messageWeekPlanUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Week plan updated.'**
+  String get messageWeekPlanUpdated;
+
+  /// No description provided for @messageJournalLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal stays local on this device.'**
+  String get messageJournalLocalOnly;
+
+  /// No description provided for @messageNoteLocalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Note stays local on this device.'**
+  String get messageNoteLocalOnly;
+
+  /// No description provided for @messageOpeningEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening editor.'**
+  String get messageOpeningEditor;
+
+  /// No description provided for @messageRecipeUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe rescue updated.'**
+  String get messageRecipeUpdated;
+
+  /// No description provided for @messageEntitySaved.
+  ///
+  /// In en, this message translates to:
+  /// **'{entity} saved.'**
+  String messageEntitySaved(Object entity);
+
+  /// No description provided for @taskTimeboxFirstBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min first block'**
+  String taskTimeboxFirstBlock(int minutes);
+
+  /// No description provided for @habitStreakDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}-day streak'**
+  String habitStreakDays(int count);
+
+  /// No description provided for @everydayJournalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{entryCount} entries | {noteCount} quick notes'**
+  String everydayJournalSubtitle(int entryCount, int noteCount);
+
+  /// No description provided for @overloadDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'detected'**
+  String get overloadDetected;
+
+  /// No description provided for @overloadNotDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'not detected'**
+  String get overloadNotDetected;
+
+  /// No description provided for @everydayCalendarSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{blockCount} local blocks | overload {status}'**
+  String everydayCalendarSubtitle(int blockCount, Object status);
+
+  /// No description provided for @everydayRecipesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rescue ideas'**
+  String everydayRecipesSubtitle(int count);
 }
 
 class _AppLocalizationsDelegate
