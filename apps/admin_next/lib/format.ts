@@ -38,6 +38,16 @@ export function formatLatency(value: number): string {
   return `${Math.round(value)} ms`;
 }
 
+export function formatFeedbackReason(value: string | null): string {
+  if (!value) {
+    return "No private note recorded.";
+  }
+  if (value === "private_note_redacted") {
+    return "Private note kept out of admin telemetry.";
+  }
+  return "Legacy private note redacted from admin view.";
+}
+
 export function labelizeKey(value: string): string {
   return value
       .split(/[_-]/g)

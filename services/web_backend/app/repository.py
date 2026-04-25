@@ -44,6 +44,8 @@ from app.schemas import (
 )
 from app.routing import build_default_routing_profiles
 
+REDACTED_FEEDBACK_REASON = "private_note_redacted"
+
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
@@ -67,6 +69,12 @@ def _json_loads(value: str | None, *, default: object) -> object:
     if not value:
         return default
     return json.loads(value)
+
+
+def _sanitize_feedback_reason(reason: str | None) -> str | None:
+    if not reason or not reason.strip():
+        return None
+    return REDACTED_FEEDBACK_REASON
 
 
 class OperationalRepository:
@@ -100,6 +108,7 @@ class OperationalRepository:
         self._ensure_defaults()
         if seed_demo_data:
             self._seed_demo_data_if_empty()
+        self._sanitize_existing_feedback_reasons()
 
     def _sql(self, query: str) -> str:
         if self._dialect == "postgres":
@@ -906,6 +915,7 @@ class OperationalRepository:
 
     def record_feedback_audit(self, feedback: FeedbackAuditUpsert) -> None:
         self._ensure_user(feedback.user_id)
+        sanitized_reason = _sanitize_feedback_reason(feedback.reason)
         self._execute(
             """
             INSERT INTO feedback_audit_records(
@@ -931,13 +941,26 @@ class OperationalRepository:
                 feedback.user_id,
                 feedback.suggestion_id,
                 feedback.status,
-                feedback.reason,
+                sanitized_reason,
                 _json_dumps(feedback.domains),
                 _to_iso(feedback.created_at),
             ),
         )
         self._commit()
         self._update_last_seen(feedback.user_id, feedback.created_at)
+
+    def _sanitize_existing_feedback_reasons(self) -> None:
+        self._execute(
+            """
+            UPDATE feedback_audit_records
+            SET reason = ?
+            WHERE reason IS NOT NULL
+              AND TRIM(reason) <> ''
+              AND reason <> ?
+            """,
+            (REDACTED_FEEDBACK_REASON, REDACTED_FEEDBACK_REASON),
+        )
+        self._commit()
 
     def record_safety_event(self, safety_event: SafetyAuditUpsert) -> None:
         self._ensure_user(safety_event.user_id)

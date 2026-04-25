@@ -1,0 +1,82 @@
+{
+  "global": [
+    {
+      "label": "Emergency services",
+      "contact": "Call your local emergency number now",
+      "description": "Use the official emergency number in your location if there is immediate danger or risk of self-harm.",
+      "region": "global"
+    },
+    {
+      "label": "Trusted person nearby",
+      "contact": "Call or go to someone you trust right now",
+      "description": "Stay with another person while the immediate crisis is active.",
+      "region": "global"
+    },
+    {
+      "label": "Local crisis line",
+      "contact": "Use the official crisis or suicide prevention line available where you live",
+      "description": "If you are outside the listed regions, use the local crisis service published by your health authority.",
+      "region": "global"
+    }
+  ],
+  "us": [
+    {
+      "label": "Emergency services",
+      "contact": "911",
+      "description": "Use 911 if there is immediate danger or you might act on self-harm right now.",
+      "region": "us"
+    },
+    {
+      "label": "988 Suicide and Crisis Lifeline",
+      "contact": "Call or text 988",
+      "description": "The official US 988 Lifeline offers free crisis support by phone or text, 24/7.",
+      "region": "us"
+    },
+    {
+      "label": "Someone with you now",
+      "contact": "Ask a trusted person to stay with you",
+      "description": "Do not stay alone while the immediate crisis is active.",
+      "region": "us"
+    }
+  ],
+  "es": [
+    {
+      "label": "Emergencias",
+      "contact": "112",
+      "description": "Usa el 112 si hay peligro inmediato o riesgo de hacerte dano ahora mismo.",
+      "region": "es"
+    },
+    {
+      "label": "Linea 024",
+      "contact": "024",
+      "description": "La linea 024 del Ministerio de Sanidad ofrece ayuda para conducta suicida las 24 horas.",
+      "region": "es"
+    },
+    {
+      "label": "Persona de confianza",
+      "contact": "Llama o ve con alguien cercano ahora mismo",
+      "description": "No te quedes solo mientras el riesgo inmediato siga activo.",
+      "region": "es"
+    }
+  ],
+  "br": [
+    {
+      "label": "Emergencia",
+      "contact": "192 ou o numero de emergencia local",
+      "description": "Use o servico de emergencia local se houver perigo imediato ou risco de se machucar agora.",
+      "region": "br"
+    },
+    {
+      "label": "CVV",
+      "contact": "188",
+      "description": "O CVV oferece apoio emocional e prevencao do suicidio por telefone, gratuitamente, 24 horas por dia.",
+      "region": "br"
+    },
+    {
+      "label": "Pessoa de confianca",
+      "contact": "Ligue ou va para perto de alguem agora",
+      "description": "Nao fique sozinho enquanto a crise imediata estiver ativa.",
+      "region": "br"
+    }
+  ]
+}

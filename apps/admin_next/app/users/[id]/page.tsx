@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getFeedback, getMissions, getUsage, getUser } from "@/lib/api";
-import { formatDateTime, formatPercent } from "@/lib/format";
+import { formatDateTime, formatFeedbackReason, formatPercent } from "@/lib/format";
 
 export default async function UserDetailPage({
   params,
@@ -133,7 +133,7 @@ export default async function UserDetailPage({
         <Panel
           eyebrow="Behavior"
           title="Mission and feedback journal"
-          note="Mission outcomes and explicit feedback are the sharpest learning signals available today."
+          note="Mission outcomes stay visible here. Private feedback notes are redacted before they reach admin."
         >
           <div className="space-y-3">
             {missions.map((mission) => (
@@ -177,7 +177,7 @@ export default async function UserDetailPage({
                   <div>
                     <p className="text-sm font-semibold text-ink">{item.status}</p>
                     <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                      {item.reason ?? "No explicit reason captured."}
+                      {formatFeedbackReason(item.reason)}
                     </p>
                   </div>
                   <p className="text-sm text-[color:var(--ink-muted)]">

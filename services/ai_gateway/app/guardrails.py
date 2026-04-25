@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+import unicodedata
 
 from fastapi import HTTPException
 
@@ -36,22 +37,37 @@ EMOTIONAL_CLINICAL_TERMS = (
     "panic disorder",
     "diagnostico",
     "diagnosis",
+    "diagnosticar",
     "terapia",
     "therapy",
     "tratamiento",
     "treatment",
+    "medicacion",
 )
 CRISIS_TERMS = (
     "suicide",
     "suicidal",
     "kill myself",
+    "end my life",
     "self harm",
     "harm myself",
     "quiero morir",
+    "quitarme la vida",
     "suicid",
-    "hacerme daño",
+    "hacerme dano",
     "lastimarme",
+    "matarme",
+    "me matar",
+    "nao quero viver",
 )
+
+
+def _normalize_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_only = "".join(
+        character for character in normalized if not unicodedata.combining(character)
+    )
+    return " ".join(ascii_only.lower().split())
 
 
 def filter_ai_events(request: SuggestionRequest) -> tuple[list[LifeEvent], list[dict[str, str]]]:
@@ -135,7 +151,7 @@ def assess_reflection_safety(
     region: str = "global",
     catalog_path: str | None = None,
 ) -> ReflectionSafetyResponse:
-    lowered = request.text.lower()
+    lowered = _normalize_text(request.text)
 
     matched_crisis = [term for term in CRISIS_TERMS if term in lowered]
     if matched_crisis:

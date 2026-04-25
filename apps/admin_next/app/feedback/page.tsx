@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getFeedback } from "@/lib/api";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatFeedbackReason } from "@/lib/format";
 
 export default async function FeedbackPage() {
   const feedbackResult = await getFeedback();
@@ -48,7 +48,7 @@ export default async function FeedbackPage() {
       <Panel
         eyebrow="Journal"
         title="Feedback records"
-        note="Capture the reason whenever possible. Bare status is weaker than an explicit explanation."
+        note="Admin keeps status and domain metadata for learning. Private note text stays out of this surface."
       >
         <div className="space-y-3">
           {feedback.map((item) => (
@@ -73,7 +73,7 @@ export default async function FeedbackPage() {
                     <StatusPill tone="neutral">{item.suggestion_id}</StatusPill>
                   </div>
                   <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
-                    {item.reason ?? "No explicit reason recorded."}
+                    {formatFeedbackReason(item.reason)}
                   </p>
                   <p className="text-sm text-[color:var(--ink-muted)]">
                     Domains: {item.domains.join(", ")}

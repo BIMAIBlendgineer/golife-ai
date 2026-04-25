@@ -298,6 +298,7 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
     dashboard = client.get("/admin/dashboard", headers=_admin_headers())
     users = client.get("/admin/users", headers=_admin_headers())
     costs = client.get("/admin/ai-costs", headers=_admin_headers())
+    feedback = client.get("/admin/feedback", headers=_admin_headers())
     health = client.get("/health")
 
     assert dashboard.status_code == 200
@@ -307,6 +308,8 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
     assert users.json()[0]["user_id"] == "live-user"
     assert costs.status_code == 200
     assert costs.json()[0]["endpoint"] == "/v1/missions/daily"
+    assert feedback.status_code == 200
+    assert feedback.json()[0]["reason"] == "private_note_redacted"
     assert health.json()["mode"] == "live"
     assert health.json()["last_ingestion_at"] is not None
 

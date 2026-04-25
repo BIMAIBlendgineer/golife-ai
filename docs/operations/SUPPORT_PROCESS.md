@@ -39,6 +39,7 @@ Support exists to resolve product issues, privacy requests, trust concerns, and 
 
 - Any report of harmful, regulated, or unsafe AI output becomes a safety review ticket.
 - Keep only operational metadata in admin unless a protected investigation is required.
+- Mission feedback notes and reflection text must stay redacted from admin by default.
 - Feature flags may be used to disable a risky route or model profile immediately.
 
 ## Bug Handling

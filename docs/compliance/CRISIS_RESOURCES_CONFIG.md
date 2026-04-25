@@ -11,6 +11,7 @@ GoLife reflection safety uses configurable crisis resources. The goal is to retu
   - optional JSON file path
   - if present and valid, GoLife loads region resources from that file
   - if missing or invalid, GoLife falls back to the built-in catalog
+  - repository sample: `services/ai_gateway/config/crisis_resources.catalog.json`
 
 ## JSON Shape
 
@@ -35,6 +36,15 @@ GoLife reflection safety uses configurable crisis resources. The goal is to retu
 }
 ```
 
+## Built-in Regions
+
+- `global`
+- `us`
+- `es`
+- `br`
+
+The built-in catalog ships with official or authority-backed crisis routes for the supported regions and a generic global fallback.
+
 ## Safety Boundary
 
 - Reflection mode supports organization and reflection, not therapy or diagnosis.
@@ -45,3 +55,4 @@ GoLife reflection safety uses configurable crisis resources. The goal is to retu
   - endpoint
   - timestamp
 - Raw crisis text must not be stored in admin telemetry.
+- Mission feedback notes must not be copied into operational admin views either.

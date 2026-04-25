@@ -13,16 +13,20 @@ class MissionFeedbackStore:
         self._lock = Lock()
         self._storage_path = Path(storage_path)
         self._storage_path.parent.mkdir(parents=True, exist_ok=True)
-        self._items = self._load()
+        self._items, migrated = self._load()
+        if migrated:
+            self._persist()
 
     def record(self, payload: MissionFeedbackRequest) -> str:
         feedback_id = f"feedback-{uuid4()}"
+        note_text = (payload.notes or "").strip()
         item = {
             "feedback_id": feedback_id,
             "user_id": payload.user_id,
             "suggestion_id": payload.suggestion_id,
             "status": payload.status,
-            "notes": payload.notes,
+            "notes_present": bool(note_text),
+            "notes_char_count": len(note_text),
             "domain_targets": payload.domain_targets,
             "recommendation_type": payload.recommendation_type,
             "trace": payload.trace,
@@ -68,18 +72,35 @@ class MissionFeedbackStore:
                 "by_domain": by_domain,
             }
 
-    def _load(self) -> list[dict[str, object]]:
+    def _load(self) -> tuple[list[dict[str, object]], bool]:
         if not self._storage_path.exists():
-            return []
+            return [], False
 
         try:
             raw_data = json.loads(self._storage_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
-            return []
+            return [], False
 
         if not isinstance(raw_data, list):
-            return []
-        return [item for item in raw_data if isinstance(item, dict)]
+            return [], False
+
+        migrated = False
+        items: list[dict[str, object]] = []
+        for raw_item in raw_data:
+            if not isinstance(raw_item, dict):
+                continue
+            item = dict(raw_item)
+            legacy_notes = str(item.pop("notes", "") or "").strip()
+            if "notes" in raw_item:
+                migrated = True
+            if "notes_present" not in item:
+                item["notes_present"] = bool(legacy_notes)
+                migrated = migrated or bool(legacy_notes)
+            if "notes_char_count" not in item:
+                item["notes_char_count"] = len(legacy_notes)
+                migrated = migrated or bool(legacy_notes)
+            items.append(item)
+        return items, migrated
 
     def _persist(self) -> None:
         temp_path = self._storage_path.with_suffix(self._storage_path.suffix + ".tmp")

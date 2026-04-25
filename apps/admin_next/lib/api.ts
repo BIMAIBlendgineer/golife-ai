@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
   fallbackAICosts,
   fallbackDashboard,
@@ -39,7 +41,8 @@ import type {
 const ADMIN_API_BASE_URL =
   process.env.GOLIFE_ADMIN_API_BASE_URL ?? "http://127.0.0.1:8010";
 const ADMIN_API_TOKEN =
-  process.env.GOLIFE_ADMIN_API_TOKEN ?? "golife-admin-dev";
+  process.env.GOLIFE_ADMIN_API_TOKEN ??
+  (process.env.NODE_ENV === "production" ? "" : "golife-admin-dev");
 
 type RequestOptions = {
   method?: "GET" | "PATCH";
