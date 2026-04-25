@@ -4,27 +4,33 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getModelCatalog } from "@/lib/api";
 import { formatCurrency, formatDateTime, formatNumber } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function ModelCatalogPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.modelCatalog;
   const catalogResult = await getModelCatalog();
   const catalog = catalogResult.data ?? [];
 
   return (
     <>
       <PageHeader
-        eyebrow="Catalog Cache"
-        title="OpenRouter model catalog"
-        description="This cache is the raw material for routing decisions. Operators should check freshness, context windows, and structured-output capability before trusting a snapshot."
-        badge="Eligibility layer"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={catalogResult.error} />
 
       <Panel
-        eyebrow="Catalog"
-        title="Current cached models"
-        note="The control plane filters these models before ranking them per capability."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-4">
+          {catalog.length === 0 ? (
+            <p className="text-sm text-[color:var(--ink-soft)]">{t.empty}</p>
+          ) : null}
           {catalog.map((model) => (
             <div
               key={model.model_id}
@@ -48,27 +54,27 @@ export default async function ModelCatalogPage() {
 
               <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <p className="text-sm text-[color:var(--ink-soft)]">
-                  Context{" "}
+                  {t.contextLabel}{" "}
                   <span className="font-mono text-ink">
-                    {formatNumber(model.context_length)}
+                    {formatNumber(model.context_length, locale)}
                   </span>
                 </p>
                 <p className="text-sm text-[color:var(--ink-soft)]">
-                  Prompt{" "}
+                  {t.promptLabel}{" "}
                   <span className="font-mono text-ink">
-                    {formatCurrency(model.prompt_price_usd_per_million)}
+                    {formatCurrency(model.prompt_price_usd_per_million, locale)}
                   </span>
                 </p>
                 <p className="text-sm text-[color:var(--ink-soft)]">
-                  Completion{" "}
+                  {t.completionLabel}{" "}
                   <span className="font-mono text-ink">
-                    {formatCurrency(model.completion_price_usd_per_million)}
+                    {formatCurrency(model.completion_price_usd_per_million, locale)}
                   </span>
                 </p>
                 <p className="text-sm text-[color:var(--ink-soft)]">
-                  Refreshed{" "}
+                  {t.refreshedLabel}{" "}
                   <span className="font-medium text-ink">
-                    {formatDateTime(model.refreshed_at)}
+                    {formatDateTime(model.refreshed_at, locale)}
                   </span>
                 </p>
               </div>

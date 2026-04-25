@@ -428,5 +428,33 @@
         "type": "int"
       }
     }
-  }
+  },
+  "labelToday": "Hoje",
+  "mockCriticalTaskTitle": "Conclua a proxima tarefa critica",
+  "mockCriticalTaskBody": "Proteja um bloco de {minutes} minutos para a proxima etapa critica e mantenha a prioridade em {priority}.",
+  "@mockCriticalTaskBody": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "mockRecoveryHabitTitle": "Mantenha vivo o ritmo de recuperacao",
+  "mockFinanceSummaryTitle": "Revise o sinal de gasto",
+  "mockFinanceSummaryBody": "Revise {label} e decida se {amount} ainda responde a uma necessidade real.",
+  "@mockFinanceSummaryBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mockPantrySummaryTitle": "Use um ingrediente que ja esta em casa",
+  "mockPantrySummaryBody": "Comece pelo ingrediente mais antigo antes de abrir um novo ciclo de compra."
 }

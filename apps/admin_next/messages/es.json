@@ -24,30 +24,86 @@
       {
         "label": "Operar",
         "items": [
-          {"href": "/dashboard", "title": "Dashboard", "note": "Salud de misiones, presion de confianza y coste."},
-          {"href": "/users", "title": "Usuarios", "note": "Estado de cuenta y señales de soporte."},
-          {"href": "/usage", "title": "Uso", "note": "Volumen de captura, fallback y latencia."},
-          {"href": "/ai-costs", "title": "Costes IA", "note": "Gasto por endpoint y proveedor."},
-          {"href": "/openrouter-keys", "title": "Claves OpenRouter", "note": "Salud de claves, failover e historial de rotacion."}
+          {
+            "href": "/dashboard",
+            "title": "Dashboard",
+            "note": "Salud de misiones, presion de confianza y coste."
+          },
+          {
+            "href": "/users",
+            "title": "Usuarios",
+            "note": "Estado de cuenta y señales de soporte."
+          },
+          {
+            "href": "/usage",
+            "title": "Uso",
+            "note": "Volumen de captura, fallback y latencia."
+          },
+          {
+            "href": "/ai-costs",
+            "title": "Costes IA",
+            "note": "Gasto por endpoint y proveedor."
+          },
+          {
+            "href": "/openrouter-keys",
+            "title": "Claves OpenRouter",
+            "note": "Salud de claves, failover e historial de rotacion."
+          }
         ]
       },
       {
         "label": "Calidad",
         "items": [
-          {"href": "/missions", "title": "Misiones", "note": "Calidad del ranking y riesgos enlazados."},
-          {"href": "/feedback", "title": "Feedback", "note": "Por que se aceptan, rechazan o completan."},
-          {"href": "/safety", "title": "Safety", "note": "Bloqueos y eventos de confianza."},
-          {"href": "/routing-snapshots", "title": "Snapshots de routing", "note": "Top-3 modelos actuales por capacidad."}
+          {
+            "href": "/missions",
+            "title": "Misiones",
+            "note": "Calidad del ranking y riesgos enlazados."
+          },
+          {
+            "href": "/feedback",
+            "title": "Feedback",
+            "note": "Por que se aceptan, rechazan o completan."
+          },
+          {
+            "href": "/safety",
+            "title": "Safety",
+            "note": "Bloqueos y eventos de confianza."
+          },
+          {
+            "href": "/routing-snapshots",
+            "title": "Snapshots de routing",
+            "note": "Top-3 modelos actuales por capacidad."
+          }
         ]
       },
       {
         "label": "Sistema",
         "items": [
-          {"href": "/feature-flags", "title": "Feature flags", "note": "Interruptores operativos de despliegue."},
-          {"href": "/settings/models", "title": "Modelos", "note": "Proveedor y routing de fallback."},
-          {"href": "/routing-profiles", "title": "Perfiles de routing", "note": "Politica de latencia, contexto y parametros."},
-          {"href": "/model-catalog", "title": "Catalogo de modelos", "note": "Cache del catalogo OpenRouter y elegibilidad."},
-          {"href": "/support/export-delete", "title": "Cola de soporte", "note": "Solicitudes de exportacion y borrado."}
+          {
+            "href": "/feature-flags",
+            "title": "Feature flags",
+            "note": "Interruptores operativos de despliegue."
+          },
+          {
+            "href": "/settings/models",
+            "title": "Modelos",
+            "note": "Proveedor y routing de fallback."
+          },
+          {
+            "href": "/routing-profiles",
+            "title": "Perfiles de routing",
+            "note": "Politica de latencia, contexto y parametros."
+          },
+          {
+            "href": "/model-catalog",
+            "title": "Catalogo de modelos",
+            "note": "Cache del catalogo OpenRouter y elegibilidad."
+          },
+          {
+            "href": "/support/export-delete",
+            "title": "Cola de soporte",
+            "note": "Solicitudes de exportacion y borrado."
+          }
         ]
       }
     ]
@@ -60,6 +116,205 @@
       "pt-BR": "PT-BR",
       "ja": "JA",
       "zh-Hans": "ZH"
+    }
+  },
+  "shared": {
+    "enabled": "Activo",
+    "disabled": "Inactivo",
+    "generatedLabel": "Generado",
+    "expiresLabel": "Expira",
+    "noModelName": "Sin nombre de modelo",
+    "notAvailable": "N/D",
+    "msUnit": "ms"
+  },
+  "pages": {
+    "featureFlags": {
+      "eyebrow": "Rollout",
+      "title": "Feature flags",
+      "description": "Los flags mantienen alineados mobile, gateway y admin sobre que comportamiento esta activo, en sombra o bajo control del operador.",
+      "badge": "Switchboard",
+      "updatedFlagPrefix": "Flag actualizada",
+      "panelEyebrow": "Switches",
+      "panelTitle": "Control operativo de rollout",
+      "panelNote": "Lee valores fallback si el backend esta offline. Cuando la API admin esta viva, cada toggle envia un PATCH real.",
+      "updatedAtPrefix": "Actualizado",
+      "turnOff": "Apagar",
+      "turnOn": "Encender"
+    },
+    "usage": {
+      "eyebrow": "Uso",
+      "title": "Captura y throughput de misiones",
+      "description": "Vista por usuario de frecuencia de uso, necesidad de fallback y deriva de latencia.",
+      "badge": "Telemetria",
+      "captureEventsLabel": "Eventos de captura",
+      "captureEventsNote": "Senal de si capturar es lo bastante facil para convertirse en habito.",
+      "missionsGeneratedLabel": "Misiones generadas",
+      "missionsGeneratedNote": "Cuantos planes rankeados ha emitido el sistema.",
+      "averageLatencyLabel": "Latencia media",
+      "averageLatencyNote": "Chequeo operativo directo sobre la respuesta de IA.",
+      "panelEyebrow": "Por usuario",
+      "panelTitle": "Libro de uso",
+      "panelNote": "Vista operativa para comparar profundidad de captura, fallback y ejecucion de misiones por usuario.",
+      "tableUser": "Usuario",
+      "tableCaptureEvents": "Capturas",
+      "tableMissionsGenerated": "Misiones generadas",
+      "tableCompleted": "Completadas",
+      "tableFallback": "Fallback",
+      "tableLatency": "Latencia",
+      "tableLastActive": "Ultima actividad"
+    },
+    "safety": {
+      "eyebrow": "Trust Desk",
+      "title": "Incidentes de safety y comportamiento bloqueado",
+      "description": "Los operadores necesitan una traza compacta de salidas bloqueadas, intentos de consejo regulado y acciones que exigieron confirmacion mas fuerte.",
+      "badge": "Confianza",
+      "eventsLabel": "Eventos de safety",
+      "eventsNote": "Intervenciones recientes de confianza y policy.",
+      "highSeverityLabel": "Alta severidad",
+      "highSeverityNote": "Todo lo alto requiere revision inmediata.",
+      "financeIncidentsLabel": "Incidentes de finanzas",
+      "financeIncidentsNote": "La presion hacia consejo financiero sigue siendo el area regulada mas sensible.",
+      "panelEyebrow": "Log de incidentes",
+      "panelTitle": "Registros de safety",
+      "panelNote": "Cada evento preserva quien lo disparo, que regla salto y que dominio necesita mas trabajo de prompt o policy."
+    },
+    "missions": {
+      "eyebrow": "Auditoria de misiones",
+      "title": "Salidas rankeadas y riesgos enlazados",
+      "description": "Esta tabla es la puerta de calidad para saber si el sistema crea acciones que merecen hacerse, no solo tarjetas que se pueden renderizar.",
+      "badge": "Revision de calidad",
+      "trackedLabel": "Misiones rastreadas",
+      "trackedNote": "Corte actual de auditoria desde el backend operativo.",
+      "completedLabel": "Completadas",
+      "completedNote": "La prueba mas fuerte de utilidad practica.",
+      "rejectedLabel": "Rechazadas",
+      "rejectedNote": "Senal directa de recomendaciones repetitivas o con poco contexto.",
+      "panelEyebrow": "Revision",
+      "panelTitle": "Registros de misiones",
+      "panelNote": "Cada fila mantiene dominios, riesgos enlazados, utilidad y score final en un solo lugar.",
+      "empty": "Todavia no hay registros de misiones en este corte.",
+      "domainsLabel": "Dominios",
+      "risksLabel": "Riesgos",
+      "none": "ninguno",
+      "statusCompleted": "Completada",
+      "statusRejected": "Rechazada",
+      "statusShown": "Mostrada",
+      "scoreLabel": "Score"
+    },
+    "modelCatalog": {
+      "eyebrow": "Cache de catalogo",
+      "title": "Catalogo de modelos de OpenRouter",
+      "description": "Este cache es la materia prima del routing. Los operadores deben revisar frescura, contexto y salida estructurada antes de confiar en un snapshot.",
+      "badge": "Capa de elegibilidad",
+      "panelEyebrow": "Catalogo",
+      "panelTitle": "Modelos cacheados actuales",
+      "panelNote": "El plano de control filtra estos modelos antes de rankearlos por capacidad.",
+      "empty": "No hay modelos cacheados ahora mismo.",
+      "contextLabel": "Contexto",
+      "promptLabel": "Prompt",
+      "completionLabel": "Completion",
+      "refreshedLabel": "Refrescado"
+    },
+    "openrouterKeys": {
+      "eyebrow": "Control de routing",
+      "title": "Claves OpenRouter y salud del failover",
+      "description": "Sigue que claves estan activas, cuales estan degradadas y si GoLife rota de forma segura cuando falla una ruta o una cuota.",
+      "badge": "Failover secuencial",
+      "activeKeysLabel": "Claves activas",
+      "activeKeysNote": "Claves sanas disponibles para el plano de control del gateway.",
+      "disabledKeysLabel": "Claves inhabilitadas",
+      "disabledKeysNote": "Claves excluidas del routing por estar pausadas o ser inseguras.",
+      "recentEventsLabel": "Eventos recientes de clave",
+      "recentEventsNote": "Ultimos registros de exito y fallo escritos por el gateway.",
+      "keyPoolEyebrow": "Pool de claves",
+      "keyPoolTitle": "Claves enmascaradas del servidor",
+      "keyPoolNote": "Los secretos nunca se muestran aqui. El operador solo ve etiquetas enmascaradas, salud y orden de rotacion.",
+      "emptyKeys": "No hay claves OpenRouter disponibles.",
+      "statusHealthy": "Sana",
+      "statusDegraded": "Degradada",
+      "statusDisabled": "Inhabilitada",
+      "priorityLabel": "Prioridad",
+      "lastOkLabel": "Ultimo ok:",
+      "lastErrorLabel": "Ultimo error:",
+      "consecutiveFailuresLabel": "Fallos consecutivos:",
+      "rotationLogEyebrow": "Log de rotacion",
+      "rotationLogTitle": "Ultimos eventos de clave",
+      "rotationLogNote": "Este es el primer sitio a mirar cuando una capacidad cae demasiado en fallback.",
+      "emptyEvents": "Todavia no hay eventos de clave registrados.",
+      "eventSuccess": "Exito",
+      "eventFailure": "Fallo",
+      "eventDisabled": "Inhabilitada",
+      "noEndpoint": "Sin endpoint",
+      "noModel": "Sin modelo",
+      "noNotes": "No hay notas registradas.",
+      "never": "Nunca",
+      "none": "Ninguna"
+    },
+    "routingProfiles": {
+      "eyebrow": "Politica de routing",
+      "title": "Perfiles por capacidad",
+      "description": "Cada capacidad mantiene sus propias reglas de latencia, throughput, parametros y contexto para que el gateway no rote todo con una sola politica brusca.",
+      "badge": "Por capacidad",
+      "panelEyebrow": "Perfiles",
+      "panelTitle": "Reglas de routing orientadas a calidad",
+      "panelNote": "Estas reglas filtran todo el catalogo OpenRouter antes del ranking. Deben seguir siendo lo bastante estrictas para proteger salidas estructuradas.",
+      "empty": "No hay perfiles de routing disponibles.",
+      "strategyLabel": "Estrategia",
+      "minContextLabel": "Contexto minimo",
+      "maxLatencyLabel": "Latencia maxima",
+      "minThroughputLabel": "Throughput minimo",
+      "retryPolicyLabel": "Politica de reintento",
+      "requiredParametersLabel": "Parametros requeridos"
+    },
+    "routingSnapshots": {
+      "eyebrow": "Snapshot",
+      "title": "Top-3 modelos actuales seleccionados",
+      "description": "Esta pagina muestra la salida rankeada del plano de control tras el filtrado del catalogo, el peso de telemetria y los chequeos de policy.",
+      "badge": "Entrada de ejecucion",
+      "capabilitiesLabel": "Capacidades con snapshot",
+      "capabilitiesNote": "Cada capacidad habilitada debe exponer exactamente tres candidatas.",
+      "snapshotAgeLabel": "Edad del snapshot",
+      "snapshotAgeNote": "Snapshots viejos aumentan la probabilidad de rutear modelos obsoletos.",
+      "selectedRowsLabel": "Filas seleccionadas",
+      "selectedRowsNote": "Total de filas rankeadas guardadas entre todas las capacidades.",
+      "panelEyebrow": "Capacidad",
+      "panelNote": "El gateway pide a OpenRouter estos tres modelos en este orden, con fallback de provider activado.",
+      "emptyTitle": "Sin snapshots de routing",
+      "empty": "No hay selecciones rankeadas disponibles ahora mismo.",
+      "rankLabel": "Rango",
+      "scoreLabel": "Score"
+    },
+    "supportQueue": {
+      "eyebrow": "Cola de soporte",
+      "title": "Operaciones de exportacion y borrado",
+      "description": "La confianza de privacidad es operativa, no teorica. Esta cola mantiene visibles y accionables las solicitudes de exportacion y borrado.",
+      "badge": "Privacy ops",
+      "openRequestsLabel": "Solicitudes abiertas",
+      "openRequestsNote": "Todo el trabajo actual de soporte relacionado con privacidad.",
+      "exportLabel": "Exportar",
+      "exportNote": "Usuarios que piden su paquete portable de datos.",
+      "deleteLabel": "Borrar",
+      "deleteNote": "Usuarios que piden eliminacion total de cuenta o datos.",
+      "panelEyebrow": "Cola",
+      "panelTitle": "Solicitudes de soporte",
+      "panelNote": "El backend web expone ahora una cola seed. Sustituyelo por datos operativos persistentes en el siguiente bloque backend.",
+      "empty": "No hay solicitudes de soporte en cola.",
+      "statusOpen": "Abierta",
+      "statusResolved": "Resuelta"
+    },
+    "modelSettings": {
+      "eyebrow": "Routing IA",
+      "title": "Proveedor y ajustes de modelos",
+      "description": "Esta pagina mantiene visibles las decisiones operativas principales de modelos para que coste, fallback y estrategia de clasificacion sigan siendo explicitos.",
+      "badge": "Modelos",
+      "panelEyebrow": "Stack actual",
+      "panelTitle": "Routing de modelos",
+      "panelNote": "La clasificacion debe seguir siendo barata y determinista cuando sea posible. El razonamiento caro pertenece a sintesis rankeada o revision semanal.",
+      "activeProviderLabel": "Proveedor activo",
+      "primaryModelLabel": "Modelo primario",
+      "fallbackModelLabel": "Modelo fallback",
+      "classificationModelLabel": "Modelo de clasificacion",
+      "weeklySummaryModelLabel": "Modelo de resumen semanal"
     }
   }
 }

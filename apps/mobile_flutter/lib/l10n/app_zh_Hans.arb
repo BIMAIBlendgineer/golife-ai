@@ -1,52 +1,52 @@
 {
   "@@locale": "zh_Hans",
   "appTitle": "GoLife AI",
-  "appShellTaglineReady": "\u5e26\u6709\u660e\u786e\u9690\u79c1\u8fb9\u754c\u7684 Life OS shell\u3002",
-  "appShellTaglineBooting": "\u6b63\u5728\u521d\u59cb\u5316\u9690\u79c1\u3001\u4efb\u52a1\u548c\u672c\u5730\u56fe\u8c31...",
-  "navigate": "\u5bfc\u822a",
-  "navDashboard": "\u9996\u9875",
-  "navCapture": "\u8bb0\u5f55",
-  "navWeek": "\u672c\u5468",
-  "navTasks": "\u4efb\u52a1",
-  "navHabits": "\u4e60\u60ef",
-  "navMoney": "\u91d1\u94b1",
-  "navPantry": "\u98df\u6750",
-  "navCloset": "\u8863\u6a71",
-  "navEveryday": "\u65e5\u5e38",
-  "navCopilot": "\u526f\u9a7e",
-  "navSettings": "\u8bbe\u7f6e",
-  "language": "\u8bed\u8a00",
-  "languageSystem": "\u8ddf\u968f\u7cfb\u7edf",
+  "appShellTaglineReady": "带有明确隐私边界的 Life OS shell。",
+  "appShellTaglineBooting": "正在初始化隐私、任务和本地图谱...",
+  "navigate": "导航",
+  "navDashboard": "首页",
+  "navCapture": "记录",
+  "navWeek": "本周",
+  "navTasks": "任务",
+  "navHabits": "习惯",
+  "navMoney": "金钱",
+  "navPantry": "食材",
+  "navCloset": "衣橱",
+  "navEveryday": "日常",
+  "navCopilot": "副驾",
+  "navSettings": "设置",
+  "language": "语言",
+  "languageSystem": "跟随系统",
   "languageEnglish": "English",
-  "languageSpanish": "Espa\u00f1ol",
-  "languagePortugueseBrazil": "Portugu\u00eas Brasil",
-  "languageJapanese": "\u65e5\u672c\u8a9e",
-  "languageChineseSimplified": "\u7b80\u4f53\u4e2d\u6587",
-  "privacyTitle": "\u9690\u79c1",
-  "privacyIntro": "\u53ea\u6709\u5f53\u57df\u6743\u9650\u548c\u4e8b\u4ef6\u9690\u79c1\u7b49\u7ea7\u90fd\u5141\u8bb8 AI \u65f6\uff0c\u4e8b\u4ef6\u624d\u4f1a\u88ab\u53d1\u9001\u3002\u5426\u5219\u90fd\u4fdd\u7559\u5728\u672c\u5730\u3002",
-  "privacyEncryptedActive": "Journal\u3001Quick Notes \u548c Finance \u7684\u654f\u611f\u672c\u5730\u6570\u636e\u5df2\u5728\u6b64\u8bbe\u5907\u4e0a\u52a0\u5bc6\u3002",
-  "privacyEncryptedUnavailable": "\u5f53\u524d\u73af\u5883\u4e0d\u652f\u6301\u654f\u611f\u672c\u5730\u52a0\u5bc6\u3002\u5728 secure storage \u6062\u590d\u524d\uff0c\u8bf7\u89c6\u4e3a\u65e0\u9759\u6001\u4fdd\u62a4\u3002",
-  "privacyCenter": "\u9690\u79c1\u4e2d\u5fc3",
-  "privacyDisclosureEncryptedTitle": "\u672c\u5730\u52a0\u5bc6",
-  "privacyDisclosureEncryptedBody": "\u8fd9\u4e9b\u96c6\u5408\u5728\u8bbe\u5907\u4e0a\u9759\u6001\u53d7\u4fdd\u62a4\u3002",
-  "privacyDisclosureLocalTitle": "\u59cb\u7ec8\u672c\u5730",
-  "privacyDisclosureLocalBody": "\u8fd9\u4e9b\u6570\u636e\u4fdd\u7559\u5728\u8bbe\u5907\u4e0a\uff0c\u4e0d\u4f1a\u8fdb\u5165 AI \u8def\u7531\u3002",
-  "privacyDisclosureAiTitle": "\u5141\u8bb8\u65f6\u53ef\u53d1\u9001\u7ed9 AI",
-  "privacyDisclosureAiBody": "\u53ea\u6709\u5177\u5907 AI \u6743\u9650\u7684\u57df\u548c AI-allowed \u4e8b\u4ef6\u624d\u4f1a\u88ab\u53d1\u9001\u3002",
-  "privacyMetricTotalEvents": "\u603b\u4e8b\u4ef6",
-  "privacyMetricAiEligible": "AI \u53ef\u53d1\u9001",
-  "privacyMetricBlockedLocal": "\u672c\u5730\u62e6\u622a",
-  "dataControls": "\u6570\u636e\u63a7\u5236",
-  "dataControlsBody": "Export \u4f1a\u5bfc\u51fa\u672c\u5730\u56fe\u8c31 JSON \u5feb\u7167\u3002Delete all \u4f1a\u6e05\u9664\u672c\u5730\u6570\u636e\u5e76\u5173\u95ed demo \u91cd\u7f6e\u3002",
-  "exportJson": "\u5bfc\u51fa JSON",
-  "deleteAllLocalData": "\u5220\u9664\u6240\u6709\u672c\u5730\u6570\u636e",
-  "domainControls": "\u57df\u63a7\u5236",
-  "exportCopied": "\u5df2\u590d\u5236\u672c\u5730 JSON \u5bfc\u51fa\u5185\u5bb9\u3002",
-  "deleteAllTitle": "\u5220\u9664\u6240\u6709\u672c\u5730\u6570\u636e?",
-  "deleteAllBody": "\u8fd9\u5c06\u5220\u9664\u672c\u5730\u4e8b\u4ef6\u3001\u5b9e\u4f53\u3001\u4efb\u52a1\u3001\u53cd\u9988\u3001\u9690\u79c1\u8bbe\u7f6e\u3001runtime config \u7f13\u5b58\u548c\u8bed\u8a00\u504f\u597d\u3002",
-  "cancel": "\u53d6\u6d88",
-  "deleteAll": "\u5168\u90e8\u5220\u9664",
-  "deleteAllDone": "\u6240\u6709\u672c\u5730\u6570\u636e\u5df2\u5220\u9664\u3002",
+  "languageSpanish": "Español",
+  "languagePortugueseBrazil": "Português Brasil",
+  "languageJapanese": "日本語",
+  "languageChineseSimplified": "简体中文",
+  "privacyTitle": "隐私",
+  "privacyIntro": "只有当域权限和事件隐私等级都允许 AI 时，事件才会被发送。否则都保留在本地。",
+  "privacyEncryptedActive": "Journal、Quick Notes 和 Finance 的敏感本地数据已在此设备上加密。",
+  "privacyEncryptedUnavailable": "当前环境不支持敏感本地加密。在 secure storage 恢复前，请视为无静态保护。",
+  "privacyCenter": "隐私中心",
+  "privacyDisclosureEncryptedTitle": "本地加密",
+  "privacyDisclosureEncryptedBody": "这些集合在设备上静态受保护。",
+  "privacyDisclosureLocalTitle": "始终本地",
+  "privacyDisclosureLocalBody": "这些数据保留在设备上，不会进入 AI 路由。",
+  "privacyDisclosureAiTitle": "允许时可发送给 AI",
+  "privacyDisclosureAiBody": "只有具备 AI 权限的域和 AI-allowed 事件才会被发送。",
+  "privacyMetricTotalEvents": "总事件",
+  "privacyMetricAiEligible": "AI 可发送",
+  "privacyMetricBlockedLocal": "本地拦截",
+  "dataControls": "数据控制",
+  "dataControlsBody": "Export 会导出本地图谱 JSON 快照。Delete all 会清除本地数据并关闭 demo 重置。",
+  "exportJson": "导出 JSON",
+  "deleteAllLocalData": "删除所有本地数据",
+  "domainControls": "域控制",
+  "exportCopied": "已复制本地 JSON 导出内容。",
+  "deleteAllTitle": "删除所有本地数据?",
+  "deleteAllBody": "这将删除本地事件、实体、任务、反馈、隐私设置、runtime config 缓存和语言偏好。",
+  "cancel": "取消",
+  "deleteAll": "全部删除",
+  "deleteAllDone": "所有本地数据已删除。",
   "domainEventsEligible": "{eventCount} events · {aiCount} currently AI-eligible",
   "@domainEventsEligible": {
     "placeholders": {
@@ -58,16 +58,16 @@
       }
     }
   },
-  "permissionLocal": "\u672c\u5730",
-  "permissionSync": "\u540c\u6b65",
+  "permissionLocal": "本地",
+  "permissionSync": "同步",
   "permissionAi": "AI",
-  "domainHabits": "\u4e60\u60ef",
-  "domainTasks": "\u4efb\u52a1",
-  "domainWeek": "\u672c\u5468",
-  "domainFinance": "\u91d1\u94b1",
-  "domainPantry": "\u98df\u6750",
-  "domainWardrobe": "\u8863\u6a71",
-  "domainCopilot": "\u526f\u9a7e",
+  "domainHabits": "习惯",
+  "domainTasks": "任务",
+  "domainWeek": "本周",
+  "domainFinance": "金钱",
+  "domainPantry": "食材",
+  "domainWardrobe": "衣橱",
+  "domainCopilot": "副驾",
   "collectionFinanceRecords": "Finance records",
   "collectionJournalEntries": "Journal entries",
   "collectionQuickNotes": "Quick notes",
@@ -76,9 +76,9 @@
   "collectionDeviceEncryptionKey": "Device encryption key",
   "nothingAiEnabled": "Nothing is AI-enabled right now",
   "gatewayLive": "Gateway live",
-  "gatewayNoConnection": "No connection",
+  "gatewayNoConnection": "???",
   "gatewayUnavailable": "AI temporarily unavailable",
-  "gatewayLocalFallback": "Using local fallback",
+  "gatewayLocalFallback": "????????",
   "feedbackNone": "No feedback yet",
   "feedbackUseful": "Useful",
   "feedbackRejected": "Rejected",
@@ -91,19 +91,19 @@
   "missionDeliverySummaryAi": "GoLife used AI for this mission after local privacy filtering.",
   "missionDeliverySummaryFallback": "GoLife stayed local because the gateway was unavailable or degraded.",
   "missionDeliverySummaryLocal": "GoLife kept this mission local on the device.",
-  "actionWrite": "\u5199\u4e0b",
-  "actionChat": "\u5bf9\u8bdd",
-  "actionExplain": "\u89e3\u91ca",
-  "actionUseful": "\u6709\u5e2e\u52a9",
-  "actionDoNow": "\u73b0\u5728\u53bb\u505a",
-  "actionNotUseful": "\u6ca1\u5e2e\u52a9",
-  "actionAccept": "\u63a5\u53d7",
-  "actionEdit": "\u7f16\u8f91",
-  "actionRemove": "\u79fb\u9664",
-  "actionSave": "\u4fdd\u5b58",
-  "actionParseCapture": "\u89e3\u6790\u8bb0\u5f55",
-  "actionReparseCapture": "\u91cd\u65b0\u89e3\u6790",
-  "actionSaveCaptureItems": "\u4fdd\u5b58 {count} \u9879",
+  "actionWrite": "写下",
+  "actionChat": "对话",
+  "actionExplain": "解释",
+  "actionUseful": "有帮助",
+  "actionDoNow": "现在去做",
+  "actionNotUseful": "没帮助",
+  "actionAccept": "接受",
+  "actionEdit": "编辑",
+  "actionRemove": "移除",
+  "actionSave": "保存",
+  "actionParseCapture": "解析记录",
+  "actionReparseCapture": "重新解析",
+  "actionSaveCaptureItems": "保存 {count} 项",
   "@actionSaveCaptureItems": {
     "placeholders": {
       "count": {
@@ -111,20 +111,20 @@
       }
     }
   },
-  "statusReady": "\u5c31\u7eea",
-  "statusBooting": "\u542f\u52a8\u4e2d",
-  "labelEvidence": "\u8bc1\u636e",
-  "labelDataUsedForMission": "\u6b64\u4efb\u52a1\u4f7f\u7528\u7684\u6570\u636e",
-  "labelDataSentToAi": "\u53d1\u9001\u5230 AI \u7684\u6570\u636e",
-  "labelBlockedFromAi": "\u88ab AI \u62e6\u622a",
-  "labelAlwaysLocalOnDevice": "\u59cb\u7ec8\u53ea\u5728\u8fd9\u53f0\u8bbe\u5907\u672c\u5730",
-  "labelEncryptedLocally": "\u672c\u5730\u52a0\u5bc6",
-  "labelUncertainty": "\u4e0d\u786e\u5b9a\u6027",
-  "labelTrace": "\u8ffd\u8e2a",
-  "fieldDomain": "\u57df",
-  "fieldPrivacy": "\u9690\u79c1",
-  "dashboardDisclosurePending": "GoLife keeps data local until a mission is ready.",
-  "dashboardMissionCountTitle": "{count} missions for today",
+  "statusReady": "就绪",
+  "statusBooting": "启动中",
+  "labelEvidence": "证据",
+  "labelDataUsedForMission": "此任务使用的数据",
+  "labelDataSentToAi": "发送到 AI 的数据",
+  "labelBlockedFromAi": "被 AI 拦截",
+  "labelAlwaysLocalOnDevice": "始终只在这台设备本地",
+  "labelEncryptedLocally": "本地加密",
+  "labelUncertainty": "不确定性",
+  "labelTrace": "追踪",
+  "fieldDomain": "域",
+  "fieldPrivacy": "隐私",
+  "dashboardDisclosurePending": "?????????GoLife ??????????",
+  "dashboardMissionCountTitle": "??? {count} ???",
   "@dashboardMissionCountTitle": {
     "placeholders": {
       "count": {
@@ -132,9 +132,9 @@
       }
     }
   },
-  "dashboardMissionIntro": "Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.",
-  "dashboardLoadingMissions": "Loading missions...",
-  "dashboardBootstrappingMission": "Bootstrapping local events, ranked missions and gateway trace.",
+  "dashboardMissionIntro": "Home Today ??????????1 ?????2 ????????????????",
+  "dashboardLoadingMissions": "??????...",
+  "dashboardBootstrappingMission": "??????????????????????",
   "dashboardRiskCount": "{count} risks",
   "@dashboardRiskCount": {
     "placeholders": {
@@ -151,7 +151,7 @@
       }
     }
   },
-  "dashboardAiDisclosureTitle": "AI data disclosure",
+  "dashboardAiDisclosureTitle": "AI ????",
   "dashboardAiDisclosureSummary": "{summary} Sent now: {sentCount} local events. Blocked locally: {blockedCount}.",
   "@dashboardAiDisclosureSummary": {
     "placeholders": {
@@ -179,7 +179,7 @@
   },
   "signalRelevantSpend": "Relevant spend",
   "signalUseThisFood": "Use this food",
-  "dashboardWhyThisToday": "Why this one today",
+  "dashboardWhyThisToday": "????????",
   "dashboardConfidenceWithType": "Confidence {percent}% - {type}",
   "@dashboardConfidenceWithType": {
     "placeholders": {
@@ -189,8 +189,8 @@
       "type": {}
     }
   },
-  "dashboardNothingSent": "Nothing was sent for this mission. GoLife stayed local for this step.",
-  "dashboardNothingBlocked": "No mission-specific items were blocked from AI for this step.",
+  "dashboardNothingSent": "?????????????GoLife ???????????",
+  "dashboardNothingBlocked": "??????????????????? AI?",
   "dashboardNoAlwaysLocalCollections": "No always-local collections configured.",
   "dashboardNoEncryptedCollections": "No encrypted collections configured.",
   "dashboardRiskSeverityLabel": "{severity} risk",
@@ -199,27 +199,27 @@
       "severity": {}
     }
   },
-  "captureTitle": "\u8bb0\u5f55",
-  "captureIntro": "\u5199\u4e0b\u4e00\u53e5\u8bdd\u3002GoLife \u53ef\u4ee5\u5c06\u5176\u62c6\u5206\u4e3a\u591a\u4e2a\u8349\u7a3f\uff0c\u4f60\u53ef\u4ee5\u4e3a\u6bcf\u4e00\u9879\u7f16\u8f91\u57df\u548c\u9690\u79c1\uff0c\u7136\u540e\u4e00\u8d77\u4fdd\u5b58\u3002",
-  "captureRouteTitle": "\u8def\u7531",
-  "captureAutoRoute": "\u81ea\u52a8",
-  "captureAutoModeBody": "\u81ea\u52a8\u6a21\u5f0f\u4f1a\u5148\u62c6\u5206\u5e76\u5206\u7c7b\u6bcf\u4e00\u4e2a\u5b50\u53e5\u3002",
-  "captureCurrentDefaultPrivacy": "{domain} \u7684\u5f53\u524d\u9ed8\u8ba4\u9690\u79c1: {permission}",
+  "captureTitle": "记录",
+  "captureIntro": "写下一句话。GoLife 可以将其拆分为多个草稿，你可以为每一项编辑域和隐私，然后一起保存。",
+  "captureRouteTitle": "路由",
+  "captureAutoRoute": "自动",
+  "captureAutoModeBody": "自动模式会先拆分并分类每一个子句。",
+  "captureCurrentDefaultPrivacy": "{domain} 的当前默认隐私: {permission}",
   "@captureCurrentDefaultPrivacy": {
     "placeholders": {
       "domain": {},
       "permission": {}
     }
   },
-  "captureDraftsToConfirm": "\u5f85\u786e\u8ba4\u8349\u7a3f",
-  "captureRecentEvents": "\u6700\u8fd1\u4e8b\u4ef6",
-  "capturePrivacyLabel": "\u9690\u79c1: {privacy}",
+  "captureDraftsToConfirm": "待确认草稿",
+  "captureRecentEvents": "最近事件",
+  "capturePrivacyLabel": "隐私: {privacy}",
   "@capturePrivacyLabel": {
     "placeholders": {
       "privacy": {}
     }
   },
-  "captureItemsCaptured": "\u5df2\u8bb0\u5f55 {count} \u9879\u3002",
+  "captureItemsCaptured": "已记录 {count} 项。",
   "@captureItemsCaptured": {
     "placeholders": {
       "count": {
@@ -227,7 +227,7 @@
       }
     }
   },
-  "captureEditItemTitle": "\u7f16\u8f91\u9879\u76ee",
+  "captureEditItemTitle": "编辑项目",
   "captureHintAuto": "Example: I bought coffee for 4.50, lettuce expires tomorrow, and I need to pay internet.",
   "captureHintTasks": "Example: submit rent receipt before lunch",
   "captureHintHabits": "Example: walked 15 minutes after dinner",
@@ -236,12 +236,41 @@
   "captureHintPantry": "Example: spinach expires tomorrow",
   "captureHintWardrobe": "Example: thinking about buying another black jacket",
   "captureHintCopilot": "Example: a mission note",
-  "copilotTitle": "\u526f\u9a7e",
-  "copilotIntro": "The copilot now works around a ranked daily plan: visible trace, three missions and local fallback when the gateway is unavailable.",
-  "copilotBoundariesTitle": "\u53cd\u601d\u8fb9\u754c",
-  "copilotBoundariesBody": "GoLife helps with daily organization and practical reflection. It does not diagnose, provide therapy, or replace professional care. If something feels urgent or unsafe, use real crisis or medical support.",
-  "copilotTodayPlanTitle": "\u4eca\u65e5\u8ba1\u5212",
-  "copilotNoPlan": "\u8fd8\u6ca1\u6709\u52a0\u8f7d\u4efb\u52a1\u8ba1\u5212\u3002",
-  "copilotLatestTraceTitle": "\u6700\u65b0\u8ffd\u8e2a",
-  "copilotNoTrace": "\u8fd8\u6ca1\u6709\u52a0\u8f7d\u4efb\u52a1\u3002"
+  "copilotTitle": "副驾",
+  "copilotIntro": "Copilot ??????????????????????????????????????",
+  "copilotBoundariesTitle": "反思边界",
+  "copilotBoundariesBody": "GoLife ???????????????????????????????????????????????????????????",
+  "copilotTodayPlanTitle": "今日计划",
+  "copilotNoPlan": "还没有加载任务计划。",
+  "copilotLatestTraceTitle": "最新追踪",
+  "copilotNoTrace": "还没有加载任务。",
+  "everydayContextBody": "????????????? Today ?????????????????????????",
+  "labelToday": "??",
+  "mockCriticalTaskTitle": "?????????",
+  "mockCriticalTaskBody": "?????????? {minutes} ?????????????? {priority}?",
+  "@mockCriticalTaskBody": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "mockRecoveryHabitTitle": "?????????",
+  "mockFinanceSummaryTitle": "??????",
+  "mockFinanceSummaryBody": "?? {label}??? {amount} ???????????",
+  "@mockFinanceSummaryBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mockPantrySummaryTitle": "???????????",
+  "mockPantrySummaryBody": "?????????????????????"
 }

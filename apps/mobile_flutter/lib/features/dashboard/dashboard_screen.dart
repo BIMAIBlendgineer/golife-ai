@@ -96,15 +96,18 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  primaryMission?.title ?? l10n.dashboardLoadingMissions,
+                  primaryMission == null
+                      ? l10n.dashboardLoadingMissions
+                      : controller.localizedMissionTitle(primaryMission, l10n),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  primaryMission?.body ??
-                      l10n.dashboardBootstrappingMission,
+                  primaryMission == null
+                      ? l10n.dashboardBootstrappingMission
+                      : controller.localizedMissionBody(primaryMission, l10n),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: const Color(0xFFF2E5D2),
                   ),
@@ -226,7 +229,8 @@ class DashboardScreen extends StatelessWidget {
                   l10n.dashboardAiDisclosureSummary(
                     disclosureSummary,
                     controller.aiEligibleEventCount,
-                    controller.totalEventCount - controller.aiEligibleEventCount,
+                    controller.totalEventCount -
+                        controller.aiEligibleEventCount,
                   ),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: const Color(0xFFF2E5D2),
@@ -266,7 +270,10 @@ class DashboardScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _MissionSupportCard(
                   mission: mission,
-                  sourceLabel: controller.missionDeliveryLabel(mission),
+                  title: controller.localizedMissionTitle(mission, l10n),
+                  body: controller.localizedMissionBody(mission, l10n),
+                  sourceLabel:
+                      controller.localizedMissionDeliveryLabel(mission, l10n),
                   onExplain: () => _showExplanationSheet(context, mission),
                   onAccept: () => controller.acceptMission(mission),
                   onComplete: () async {
@@ -292,30 +299,35 @@ class DashboardScreen extends StatelessWidget {
             children: [
               SignalCard(
                 eyebrow: l10n.signalCriticalTask,
-                title: controller.criticalTask.title,
-                body:
-                    '${controller.criticalTask.timeboxLabel} - ${controller.criticalTask.priorityLabel}',
+                title: l10n.mockCriticalTaskTitle,
+                body: l10n.mockCriticalTaskBody(
+                  controller.criticalTask.estimatedMinutes,
+                  l10n.priorityCritical,
+                ),
                 color: const Color(0xFFD06447),
               ),
               SignalCard(
                 eyebrow: l10n.signalRecoveryHabit,
-                title: controller.recoveryHabit.title,
+                title: l10n.mockRecoveryHabitTitle,
                 body: l10n.signalRecoveryHabitBody(
                   controller.recoveryHabit.cue,
-                  controller.recoveryHabit.streakLabel,
+                  l10n.habitStreakDays(controller.recoveryHabit.streak),
                 ),
                 color: const Color(0xFF5D7A68),
               ),
               SignalCard(
                 eyebrow: l10n.signalRelevantSpend,
-                title: controller.financeSummary.label,
-                body: controller.financeSummary.reflectionLabel,
+                title: l10n.mockFinanceSummaryTitle,
+                body: l10n.mockFinanceSummaryBody(
+                  controller.financeSummary.label,
+                  controller.financeSummary.amount.toStringAsFixed(2),
+                ),
                 color: const Color(0xFF8A6C2F),
               ),
               SignalCard(
                 eyebrow: l10n.signalUseThisFood,
-                title: controller.pantrySummary.name,
-                body: controller.pantrySummary.rescueHint,
+                title: l10n.mockPantrySummaryTitle,
+                body: l10n.mockPantrySummaryBody,
                 color: const Color(0xFF4C6A4F),
               ),
             ],
@@ -339,9 +351,15 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(mission.title, style: theme.textTheme.headlineSmall),
+                Text(
+                  controller.localizedMissionTitle(mission, l10n),
+                  style: theme.textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 10),
-                Text(mission.body, style: theme.textTheme.bodyLarge),
+                Text(
+                  controller.localizedMissionBody(mission, l10n),
+                  style: theme.textTheme.bodyLarge,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   l10n.dashboardWhyThisToday,
@@ -349,8 +367,10 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 _DisclosurePanel(
-                  title: controller.localizedMissionDeliveryLabel(mission, l10n),
-                  body: controller.localizedMissionDeliverySummary(mission, l10n),
+                  title:
+                      controller.localizedMissionDeliveryLabel(mission, l10n),
+                  body:
+                      controller.localizedMissionDeliverySummary(mission, l10n),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -363,7 +383,10 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(l10n.labelEvidence, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
-                for (final item in mission.evidence)
+                for (final item in controller.localizedMissionEvidence(
+                  mission,
+                  l10n,
+                ))
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text('- $item', style: theme.textTheme.bodyMedium),
@@ -387,7 +410,8 @@ class DashboardScreen extends StatelessWidget {
                   emptyLabel: l10n.dashboardNothingSent,
                 ),
                 const SizedBox(height: 16),
-                Text(l10n.labelBlockedFromAi, style: theme.textTheme.titleLarge),
+                Text(l10n.labelBlockedFromAi,
+                    style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 _DisclosureList(
                   items: controller.dataBlockedForMission(mission),
@@ -404,7 +428,8 @@ class DashboardScreen extends StatelessWidget {
                   emptyLabel: l10n.dashboardNoAlwaysLocalCollections,
                 ),
                 const SizedBox(height: 16),
-                Text(l10n.labelEncryptedLocally, style: theme.textTheme.titleLarge),
+                Text(l10n.labelEncryptedLocally,
+                    style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 _DisclosureList(
                   items: controller.localizedEncryptedCollectionLabels(l10n),
@@ -413,7 +438,10 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(l10n.labelUncertainty, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
-                Text(mission.uncertainty, style: theme.textTheme.bodyMedium),
+                Text(
+                  controller.localizedMissionUncertainty(mission, l10n),
+                  style: theme.textTheme.bodyMedium,
+                ),
                 const SizedBox(height: 16),
                 Text(l10n.labelTrace, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
@@ -499,6 +527,8 @@ class _DailyRiskCard extends StatelessWidget {
 class _MissionSupportCard extends StatelessWidget {
   const _MissionSupportCard({
     required this.mission,
+    required this.title,
+    required this.body,
     required this.sourceLabel,
     required this.onExplain,
     required this.onAccept,
@@ -506,6 +536,8 @@ class _MissionSupportCard extends StatelessWidget {
   });
 
   final DailyMission mission;
+  final String title;
+  final String body;
   final String sourceLabel;
   final VoidCallback onExplain;
   final Future<void> Function() onAccept;
@@ -525,9 +557,9 @@ class _MissionSupportCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(mission.title, style: theme.textTheme.titleLarge),
+          Text(title, style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text(mission.body, style: theme.textTheme.bodyMedium),
+          Text(body, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,

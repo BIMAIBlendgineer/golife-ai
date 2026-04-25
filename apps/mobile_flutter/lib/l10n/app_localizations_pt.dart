@@ -965,6 +965,35 @@ class AppLocalizationsPt extends AppLocalizations {
   String everydayRecipesSubtitle(int count) {
     return '$count rescue ideas';
   }
+
+  @override
+  String get labelToday => 'Hoje';
+
+  @override
+  String get mockCriticalTaskTitle => 'Conclua a proxima tarefa critica';
+
+  @override
+  String mockCriticalTaskBody(int minutes, String priority) {
+    return 'Proteja um bloco de $minutes minutos para a proxima etapa critica e mantenha a prioridade em $priority.';
+  }
+
+  @override
+  String get mockRecoveryHabitTitle => 'Mantenha vivo o ritmo de recuperacao';
+
+  @override
+  String get mockFinanceSummaryTitle => 'Revise o sinal de gasto';
+
+  @override
+  String mockFinanceSummaryBody(String label, String amount) {
+    return 'Revise $label e decida se $amount ainda responde a uma necessidade real.';
+  }
+
+  @override
+  String get mockPantrySummaryTitle => 'Use um ingrediente que ja esta em casa';
+
+  @override
+  String get mockPantrySummaryBody =>
+      'Comece pelo ingrediente mais antigo antes de abrir um novo ciclo de compra.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -1930,4 +1959,33 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String everydayRecipesSubtitle(int count) {
     return '$count ideias de resgate';
   }
+
+  @override
+  String get labelToday => 'Hoje';
+
+  @override
+  String get mockCriticalTaskTitle => 'Conclua a proxima tarefa critica';
+
+  @override
+  String mockCriticalTaskBody(int minutes, String priority) {
+    return 'Proteja um bloco de $minutes minutos para a proxima etapa critica e mantenha a prioridade em $priority.';
+  }
+
+  @override
+  String get mockRecoveryHabitTitle => 'Mantenha vivo o ritmo de recuperacao';
+
+  @override
+  String get mockFinanceSummaryTitle => 'Revise o sinal de gasto';
+
+  @override
+  String mockFinanceSummaryBody(String label, String amount) {
+    return 'Revise $label e decida se $amount ainda responde a uma necessidade real.';
+  }
+
+  @override
+  String get mockPantrySummaryTitle => 'Use um ingrediente que ja esta em casa';
+
+  @override
+  String get mockPantrySummaryBody =>
+      'Comece pelo ingrediente mais antigo antes de abrir um novo ciclo de compra.';
 }

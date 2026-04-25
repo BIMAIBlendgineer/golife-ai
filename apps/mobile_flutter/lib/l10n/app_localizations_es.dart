@@ -967,4 +967,33 @@ class AppLocalizationsEs extends AppLocalizations {
   String everydayRecipesSubtitle(int count) {
     return '$count ideas de rescate';
   }
+
+  @override
+  String get labelToday => 'Hoy';
+
+  @override
+  String get mockCriticalTaskTitle => 'Termina la siguiente tarea critica';
+
+  @override
+  String mockCriticalTaskBody(int minutes, String priority) {
+    return 'Protege un bloque de $minutes minutos para el siguiente paso critico y mantene la prioridad en $priority.';
+  }
+
+  @override
+  String get mockRecoveryHabitTitle => 'Mantene vivo el ritmo de recuperacion';
+
+  @override
+  String get mockFinanceSummaryTitle => 'Revisa la senal de gasto';
+
+  @override
+  String mockFinanceSummaryBody(String label, String amount) {
+    return 'Revisa $label y decide si $amount todavia responde a una necesidad real.';
+  }
+
+  @override
+  String get mockPantrySummaryTitle => 'Usa un ingrediente que ya esta en casa';
+
+  @override
+  String get mockPantrySummaryBody =>
+      'Empieza por el ingrediente mas antiguo antes de abrir un nuevo ciclo de compra.';
 }

@@ -91,6 +91,25 @@ Visible mobile coverage completed in this stage:
 - dashboard
 - capture
 - copilot
+- domain screens
+- editor dialogs
+- domain action snackbars and success/error messages
+- dashboard disclosure copy for:
+  - data used
+  - data sent to AI
+  - blocked from AI
+  - encrypted / always-local collections
+- local dashboard fallback mission copy for:
+  - primary mission card
+  - support mission cards
+  - explanation sheet
+
+Additional mobile work completed after the foundation pass:
+
+- `ja` / `zh-Hans` critical dashboard and copilot strings no longer fall back to English on the main visible surfaces
+- dashboard signal cards use localized fallback copy instead of hardcoded English mock labels
+- week/day chips localize `Today`
+- controller-generated domain action feedback now respects the current locale
 
 Parser fallback tests added for Portuguese, Japanese, and Chinese.
 
@@ -116,8 +135,22 @@ Admin pages localized in this stage:
 - feedback
 - users
 - user detail
+- feature flags
+- usage
+- safety
+- missions
+- model catalog
+- openrouter keys
+- routing profiles
+- routing snapshots
+- support queue
+- model settings
 
-Other admin pages currently fall back to English where untranslated.
+Current admin locale status:
+
+- `es` and `pt-BR` cover the long-tail operational pages above
+- `ja` and `zh-Hans` now cover the highest-visibility long-tail operational pages added in this pass
+- some earlier admin surfaces still rely on English fallback outside the pages listed above
 
 ## Privacy and telemetry constraints preserved
 
@@ -133,6 +166,7 @@ Validated locally:
 - `apps/mobile_flutter`
   - `flutter gen-l10n`
   - `flutter analyze`
+  - `flutter test test/golife_app_test.dart test/features/domains/domain_screens_test.dart test/features/capture/capture_parser_test.dart test/core/ai_client/http_ai_gateway_client_test.dart`
   - targeted widget/unit tests:
     - dashboard locale rendering (`en`, `es`, `pt-BR`)
     - multilingual capture parser fallback
@@ -142,28 +176,25 @@ Validated locally:
   - `npm run typecheck`
   - `npm run build`
 - `services/ai_gateway`
-  - targeted pytest nodeids for multilingual parse + operational audit
+  - `python -m pytest -q` targeted nodeids for:
+    - multilingual parse (`en`, `pt-BR`, `ja`, `zh-Hans`)
+    - reflection safety (`es`, `pt-BR`, `ja`, `zh-Hans`, unknown -> `en`)
+    - locale normalization in operational audit
+  - result: `9 passed`
 
 ## Remaining work
 
 Not fully covered yet:
 
-- full localization of all Flutter domain screens and editor dialogs
-- full localization of long-tail admin pages:
-  - feature flags
-  - missions
-  - model catalog
-  - openrouter keys
-  - routing profiles
-  - routing snapshots
-  - safety
-  - support queue
-  - usage
-  - model settings
-- locale-aware copy for all local mock mission fallbacks in mobile
+- professional translation review for:
+  - `ja`
+  - `zh-Hans`
+  - nuanced admin/operator copy in every locale
+- remaining English fallback on some non-critical admin pages and strings outside the surfaces listed above
+- locale-aware copy for every low-visibility local parser rationale and demo seed string in mobile
 - professional translation pass before public release
 - future RTL architecture for Arabic
 
 ## Recommendation
 
-Treat this as the i18n foundation plus critical-surface rollout, not the final translation pass.
+Treat this as i18n foundation plus critical-surface rollout with broad operational coverage, not the final translation pass for public launch.

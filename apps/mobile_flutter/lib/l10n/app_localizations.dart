@@ -1840,6 +1840,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} rescue ideas'**
   String everydayRecipesSubtitle(int count);
+
+  /// No description provided for @labelToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get labelToday;
+
+  /// No description provided for @mockCriticalTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the next critical task'**
+  String get mockCriticalTaskTitle;
+
+  /// No description provided for @mockCriticalTaskBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect a {minutes}-minute block for the next critical step and keep priority at {priority}.'**
+  String mockCriticalTaskBody(int minutes, String priority);
+
+  /// No description provided for @mockRecoveryHabitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the recovery rhythm alive'**
+  String get mockRecoveryHabitTitle;
+
+  /// No description provided for @mockFinanceSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the spend signal'**
+  String get mockFinanceSummaryTitle;
+
+  /// No description provided for @mockFinanceSummaryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check {label} and decide whether {amount} still reflects a real need.'**
+  String mockFinanceSummaryBody(String label, String amount);
+
+  /// No description provided for @mockPantrySummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use one ingredient already at home'**
+  String get mockPantrySummaryTitle;
+
+  /// No description provided for @mockPantrySummaryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with the oldest ingredient before opening a new shopping loop.'**
+  String get mockPantrySummaryBody;
 }
 
 class _AppLocalizationsDelegate

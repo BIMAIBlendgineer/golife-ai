@@ -212,13 +212,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gatewayLive => 'Gateway live';
 
   @override
-  String get gatewayNoConnection => 'No connection';
+  String get gatewayNoConnection => '???';
 
   @override
   String get gatewayUnavailable => 'AI temporarily unavailable';
 
   @override
-  String get gatewayLocalFallback => 'Using local fallback';
+  String get gatewayLocalFallback => '????????';
 
   @override
   String get feedbackNone => 'No feedback yet';
@@ -337,24 +337,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get fieldPrivacy => '隐私';
 
   @override
-  String get dashboardDisclosurePending =>
-      'GoLife keeps data local until a mission is ready.';
+  String get dashboardDisclosurePending => '?????????GoLife ??????????';
 
   @override
   String dashboardMissionCountTitle(int count) {
-    return '$count missions for today';
+    return '??? $count ???';
   }
 
   @override
   String get dashboardMissionIntro =>
-      'Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.';
+      'Home Today ??????????1 ?????2 ????????????????';
 
   @override
-  String get dashboardLoadingMissions => 'Loading missions...';
+  String get dashboardLoadingMissions => '??????...';
 
   @override
-  String get dashboardBootstrappingMission =>
-      'Bootstrapping local events, ranked missions and gateway trace.';
+  String get dashboardBootstrappingMission => '??????????????????????';
 
   @override
   String dashboardRiskCount(int count) {
@@ -367,7 +365,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dashboardAiDisclosureTitle => 'AI data disclosure';
+  String get dashboardAiDisclosureTitle => 'AI ????';
 
   @override
   String dashboardAiDisclosureSummary(
@@ -407,7 +405,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get signalUseThisFood => 'Use this food';
 
   @override
-  String get dashboardWhyThisToday => 'Why this one today';
+  String get dashboardWhyThisToday => '????????';
 
   @override
   String dashboardConfidenceWithType(int percent, Object type) {
@@ -415,12 +413,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get dashboardNothingSent =>
-      'Nothing was sent for this mission. GoLife stayed local for this step.';
+  String get dashboardNothingSent => '?????????????GoLife ???????????';
 
   @override
-  String get dashboardNothingBlocked =>
-      'No mission-specific items were blocked from AI for this step.';
+  String get dashboardNothingBlocked => '??????????????????? AI?';
 
   @override
   String get dashboardNoAlwaysLocalCollections =>
@@ -506,15 +502,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get copilotTitle => '副驾';
 
   @override
-  String get copilotIntro =>
-      'The copilot now works around a ranked daily plan: visible trace, three missions and local fallback when the gateway is unavailable.';
+  String get copilotIntro => 'Copilot ??????????????????????????????????????';
 
   @override
   String get copilotBoundariesTitle => '反思边界';
 
   @override
   String get copilotBoundariesBody =>
-      'GoLife helps with daily organization and practical reflection. It does not diagnose, provide therapy, or replace professional care. If something feels urgent or unsafe, use real crisis or medical support.';
+      'GoLife ???????????????????????????????????????????????????????????';
 
   @override
   String get copilotTodayPlanTitle => '今日计划';
@@ -747,7 +742,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get everydayContextBody =>
-      'Use writing, time blocks, and recipe rescue to give Today better context without turning the app into six crowded tabs.';
+      '????????????? Today ?????????????????????????';
 
   @override
   String get everydayJournalBody =>
@@ -952,6 +947,34 @@ class AppLocalizationsZh extends AppLocalizations {
   String everydayRecipesSubtitle(int count) {
     return '$count rescue ideas';
   }
+
+  @override
+  String get labelToday => '??';
+
+  @override
+  String get mockCriticalTaskTitle => '?????????';
+
+  @override
+  String mockCriticalTaskBody(int minutes, String priority) {
+    return '?????????? $minutes ?????????????? $priority?';
+  }
+
+  @override
+  String get mockRecoveryHabitTitle => '?????????';
+
+  @override
+  String get mockFinanceSummaryTitle => '??????';
+
+  @override
+  String mockFinanceSummaryBody(String label, String amount) {
+    return '?? $label??? $amount ???????????';
+  }
+
+  @override
+  String get mockPantrySummaryTitle => '???????????';
+
+  @override
+  String get mockPantrySummaryBody => '?????????????????????';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1162,13 +1185,13 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get gatewayLive => 'Gateway live';
 
   @override
-  String get gatewayNoConnection => 'No connection';
+  String get gatewayNoConnection => '???';
 
   @override
   String get gatewayUnavailable => 'AI temporarily unavailable';
 
   @override
-  String get gatewayLocalFallback => 'Using local fallback';
+  String get gatewayLocalFallback => '????????';
 
   @override
   String get feedbackNone => 'No feedback yet';
@@ -1287,24 +1310,22 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get fieldPrivacy => '隐私';
 
   @override
-  String get dashboardDisclosurePending =>
-      'GoLife keeps data local until a mission is ready.';
+  String get dashboardDisclosurePending => '?????????GoLife ??????????';
 
   @override
   String dashboardMissionCountTitle(int count) {
-    return '$count missions for today';
+    return '??? $count ???';
   }
 
   @override
   String get dashboardMissionIntro =>
-      'Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.';
+      'Home Today ??????????1 ?????2 ????????????????';
 
   @override
-  String get dashboardLoadingMissions => 'Loading missions...';
+  String get dashboardLoadingMissions => '??????...';
 
   @override
-  String get dashboardBootstrappingMission =>
-      'Bootstrapping local events, ranked missions and gateway trace.';
+  String get dashboardBootstrappingMission => '??????????????????????';
 
   @override
   String dashboardRiskCount(int count) {
@@ -1317,7 +1338,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get dashboardAiDisclosureTitle => 'AI data disclosure';
+  String get dashboardAiDisclosureTitle => 'AI ????';
 
   @override
   String dashboardAiDisclosureSummary(
@@ -1357,7 +1378,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get signalUseThisFood => 'Use this food';
 
   @override
-  String get dashboardWhyThisToday => 'Why this one today';
+  String get dashboardWhyThisToday => '????????';
 
   @override
   String dashboardConfidenceWithType(int percent, Object type) {
@@ -1365,12 +1386,10 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   }
 
   @override
-  String get dashboardNothingSent =>
-      'Nothing was sent for this mission. GoLife stayed local for this step.';
+  String get dashboardNothingSent => '?????????????GoLife ???????????';
 
   @override
-  String get dashboardNothingBlocked =>
-      'No mission-specific items were blocked from AI for this step.';
+  String get dashboardNothingBlocked => '??????????????????? AI?';
 
   @override
   String get dashboardNoAlwaysLocalCollections =>
@@ -1456,15 +1475,14 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get copilotTitle => '副驾';
 
   @override
-  String get copilotIntro =>
-      'The copilot now works around a ranked daily plan: visible trace, three missions and local fallback when the gateway is unavailable.';
+  String get copilotIntro => 'Copilot ??????????????????????????????????????';
 
   @override
   String get copilotBoundariesTitle => '反思边界';
 
   @override
   String get copilotBoundariesBody =>
-      'GoLife helps with daily organization and practical reflection. It does not diagnose, provide therapy, or replace professional care. If something feels urgent or unsafe, use real crisis or medical support.';
+      'GoLife ???????????????????????????????????????????????????????????';
 
   @override
   String get copilotTodayPlanTitle => '今日计划';
@@ -1477,4 +1495,36 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get copilotNoTrace => '还没有加载任务。';
+
+  @override
+  String get everydayContextBody =>
+      '????????????? Today ?????????????????????????';
+
+  @override
+  String get labelToday => '??';
+
+  @override
+  String get mockCriticalTaskTitle => '?????????';
+
+  @override
+  String mockCriticalTaskBody(int minutes, String priority) {
+    return '?????????? $minutes ?????????????? $priority?';
+  }
+
+  @override
+  String get mockRecoveryHabitTitle => '?????????';
+
+  @override
+  String get mockFinanceSummaryTitle => '??????';
+
+  @override
+  String mockFinanceSummaryBody(String label, String amount) {
+    return '?? $label??? $amount ???????????';
+  }
+
+  @override
+  String get mockPantrySummaryTitle => '???????????';
+
+  @override
+  String get mockPantrySummaryBody => '?????????????????????';
 }

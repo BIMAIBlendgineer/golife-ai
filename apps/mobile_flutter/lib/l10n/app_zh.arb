@@ -76,9 +76,9 @@
   "collectionDeviceEncryptionKey": "Device encryption key",
   "nothingAiEnabled": "Nothing is AI-enabled right now",
   "gatewayLive": "Gateway live",
-  "gatewayNoConnection": "No connection",
+  "gatewayNoConnection": "???",
   "gatewayUnavailable": "AI temporarily unavailable",
-  "gatewayLocalFallback": "Using local fallback",
+  "gatewayLocalFallback": "????????",
   "feedbackNone": "No feedback yet",
   "feedbackUseful": "Useful",
   "feedbackRejected": "Rejected",
@@ -123,8 +123,8 @@
   "labelTrace": "追踪",
   "fieldDomain": "域",
   "fieldPrivacy": "隐私",
-  "dashboardDisclosurePending": "GoLife keeps data local until a mission is ready.",
-  "dashboardMissionCountTitle": "{count} missions for today",
+  "dashboardDisclosurePending": "?????????GoLife ??????????",
+  "dashboardMissionCountTitle": "??? {count} ???",
   "@dashboardMissionCountTitle": {
     "placeholders": {
       "count": {
@@ -132,9 +132,9 @@
       }
     }
   },
-  "dashboardMissionIntro": "Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.",
-  "dashboardLoadingMissions": "Loading missions...",
-  "dashboardBootstrappingMission": "Bootstrapping local events, ranked missions and gateway trace.",
+  "dashboardMissionIntro": "Home Today ??????????1 ?????2 ????????????????",
+  "dashboardLoadingMissions": "??????...",
+  "dashboardBootstrappingMission": "??????????????????????",
   "dashboardRiskCount": "{count} risks",
   "@dashboardRiskCount": {
     "placeholders": {
@@ -151,7 +151,7 @@
       }
     }
   },
-  "dashboardAiDisclosureTitle": "AI data disclosure",
+  "dashboardAiDisclosureTitle": "AI ????",
   "dashboardAiDisclosureSummary": "{summary} Sent now: {sentCount} local events. Blocked locally: {blockedCount}.",
   "@dashboardAiDisclosureSummary": {
     "placeholders": {
@@ -179,7 +179,7 @@
   },
   "signalRelevantSpend": "Relevant spend",
   "signalUseThisFood": "Use this food",
-  "dashboardWhyThisToday": "Why this one today",
+  "dashboardWhyThisToday": "????????",
   "dashboardConfidenceWithType": "Confidence {percent}% - {type}",
   "@dashboardConfidenceWithType": {
     "placeholders": {
@@ -189,8 +189,8 @@
       "type": {}
     }
   },
-  "dashboardNothingSent": "Nothing was sent for this mission. GoLife stayed local for this step.",
-  "dashboardNothingBlocked": "No mission-specific items were blocked from AI for this step.",
+  "dashboardNothingSent": "?????????????GoLife ???????????",
+  "dashboardNothingBlocked": "??????????????????? AI?",
   "dashboardNoAlwaysLocalCollections": "No always-local collections configured.",
   "dashboardNoEncryptedCollections": "No encrypted collections configured.",
   "dashboardRiskSeverityLabel": "{severity} risk",
@@ -237,11 +237,40 @@
   "captureHintWardrobe": "Example: thinking about buying another black jacket",
   "captureHintCopilot": "Example: a mission note",
   "copilotTitle": "副驾",
-  "copilotIntro": "The copilot now works around a ranked daily plan: visible trace, three missions and local fallback when the gateway is unavailable.",
+  "copilotIntro": "Copilot ??????????????????????????????????????",
   "copilotBoundariesTitle": "反思边界",
-  "copilotBoundariesBody": "GoLife helps with daily organization and practical reflection. It does not diagnose, provide therapy, or replace professional care. If something feels urgent or unsafe, use real crisis or medical support.",
+  "copilotBoundariesBody": "GoLife ???????????????????????????????????????????????????????????",
   "copilotTodayPlanTitle": "今日计划",
   "copilotNoPlan": "还没有加载任务计划。",
   "copilotLatestTraceTitle": "最新追踪",
-  "copilotNoTrace": "还没有加载任务。"
+  "copilotNoTrace": "还没有加载任务。",
+  "everydayContextBody": "????????????? Today ?????????????????????????",
+  "labelToday": "??",
+  "mockCriticalTaskTitle": "?????????",
+  "mockCriticalTaskBody": "?????????? {minutes} ?????????????? {priority}?",
+  "@mockCriticalTaskBody": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "mockRecoveryHabitTitle": "?????????",
+  "mockFinanceSummaryTitle": "??????",
+  "mockFinanceSummaryBody": "?? {label}??? {amount} ???????????",
+  "@mockFinanceSummaryBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mockPantrySummaryTitle": "???????????",
+  "mockPantrySummaryBody": "?????????????????????"
 }

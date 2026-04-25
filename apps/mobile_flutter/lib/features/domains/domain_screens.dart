@@ -64,6 +64,13 @@ String _recipeStatusLabel(AppLocalizations l10n, String status) {
   }
 }
 
+String _dayPlanLabel(AppLocalizations l10n, String label) {
+  if (label == 'Today') {
+    return l10n.labelToday;
+  }
+  return label;
+}
+
 class TasksScreen extends StatelessWidget {
   const TasksScreen({super.key, required this.controller});
 
@@ -97,8 +104,9 @@ class TasksScreen extends StatelessWidget {
               _taskStatusLabel(l10n, task.status),
               _taskPriorityLabel(l10n, task.priority),
             ],
-            actionLabel:
-                task.status == TaskStatus.done ? l10n.actionDone : l10n.actionComplete,
+            actionLabel: task.status == TaskStatus.done
+                ? l10n.actionDone
+                : l10n.actionComplete,
             onAction: task.status == TaskStatus.done
                 ? null
                 : () async =>
@@ -223,10 +231,12 @@ class PantryScreen extends StatelessWidget {
         children: controller.pantryItems.map((item) {
           return _EntityCard(
             title: item.name,
-            subtitle: _joinSegments(<String>[item.quantityLabel, item.rescueHint]),
+            subtitle:
+                _joinSegments(<String>[item.quantityLabel, item.rescueHint]),
             chips: <String>[l10n.chipRescue],
-            actionLabel:
-                item.quantityLabel == 'used' ? l10n.actionUsed : l10n.actionMarkUsed,
+            actionLabel: item.quantityLabel == 'used'
+                ? l10n.actionUsed
+                : l10n.actionMarkUsed,
             onAction: item.quantityLabel == 'used'
                 ? null
                 : () async =>
@@ -309,7 +319,9 @@ class WeekScreen extends StatelessWidget {
           return _EntityCard(
             title: plan.theme,
             subtitle: plan.energyNote,
-            chips: plan.days.map((day) => day.label).toList(growable: false),
+            chips: plan.days
+                .map((day) => _dayPlanLabel(l10n, day.label))
+                .toList(growable: false),
             actionLabel: l10n.actionReplan,
             onAction: () async =>
                 (await controller.refreshWeekPlanById(plan.id)) ??
@@ -478,8 +490,9 @@ class RecipesScreen extends StatelessWidget {
               recipe.ingredientNames.join(', '),
             ]),
             chips: <String>[_recipeStatusLabel(l10n, recipe.status)],
-            actionLabel:
-                recipe.status == 'cooked' ? l10n.actionCooked : l10n.actionCookNow,
+            actionLabel: recipe.status == 'cooked'
+                ? l10n.actionCooked
+                : l10n.actionCookNow,
             onAction: recipe.status == 'cooked'
                 ? null
                 : () async =>
@@ -538,7 +551,8 @@ class EverydayScreen extends StatelessWidget {
           ),
           _NavigationCard(
             title: l10n.navRecipes,
-            subtitle: l10n.everydayRecipesSubtitle(controller.recipeRescues.length),
+            subtitle:
+                l10n.everydayRecipesSubtitle(controller.recipeRescues.length),
             body: l10n.everydayRecipesBody,
             actionLabel: l10n.actionOpenRecipes,
             onTap: () => context.go('/recipes'),

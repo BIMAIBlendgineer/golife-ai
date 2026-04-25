@@ -414,6 +414,27 @@ def test_event_parse_supports_mixed_spanish_and_english(client):
     assert [item["domain"] for item in data["items"]] == ["finance", "pantry", "task"]
 
 
+def test_event_parse_supports_english_task_language(client):
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "locale": "en",
+            "text": "I need to finish the budget spreadsheet before lunch",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 1
+    assert data["items"][0]["domain"] == "task"
+    assert data["trace"]["parser"] == "deterministic_capture_parser"
+
+
 def test_event_parse_supports_portuguese_connectors_and_terms(client):
     response = client.post(
         "/v1/events/parse",
@@ -688,6 +709,35 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
         }
     )
     assert "finished it" not in serialized
+
+
+def test_operational_audit_normalizes_unknown_locale_to_english(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/classify",
+        json={
+            "user_id": "user-1",
+            "locale": "de",
+            "text": "I paid the electricity bill.",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["finance"]},
+        },
+    )
+
+    assert response.status_code == 200
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["metadata"]["locale"] == "en"
 
 
 def test_task_rewrite_reports_operational_events(tmp_path):

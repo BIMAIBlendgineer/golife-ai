@@ -4,27 +4,33 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getRoutingProfiles } from "@/lib/api";
 import { formatNumber, labelizeKey } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function RoutingProfilesPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.routingProfiles;
   const profilesResult = await getRoutingProfiles();
   const profiles = profilesResult.data ?? [];
 
   return (
     <>
       <PageHeader
-        eyebrow="Routing Policy"
-        title="Capability profiles"
-        description="Each capability keeps its own latency, throughput, parameter, and context rules so the gateway does not route everything with one blunt policy."
-        badge="Per capability"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={profilesResult.error} />
 
       <Panel
-        eyebrow="Profiles"
-        title="Quality-first routing rules"
-        note="These rules gate the whole OpenRouter catalog before ranking. Keep them strict enough to protect structured outputs."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-4">
+          {profiles.length === 0 ? (
+            <p className="text-sm text-[color:var(--ink-soft)]">{t.empty}</p>
+          ) : null}
           {profiles.map((profile) => (
             <div
               key={profile.capability}
@@ -36,26 +42,26 @@ export default async function RoutingProfilesPage() {
                     {labelizeKey(profile.capability)}
                   </p>
                   <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                    Strategy {labelizeKey(profile.strategy)}
+                    {t.strategyLabel} {labelizeKey(profile.strategy)}
                   </p>
                 </div>
                 <StatusPill tone={profile.enabled ? "good" : "warn"}>
-                  {profile.enabled ? "Enabled" : "Disabled"}
+                  {profile.enabled ? messages.shared.enabled : messages.shared.disabled}
                 </StatusPill>
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--ink-muted)]">
-                    Min context
+                    {t.minContextLabel}
                   </p>
                   <p className="mt-2 font-mono text-xl text-ink">
-                    {formatNumber(profile.min_context_length)}
+                    {formatNumber(profile.min_context_length, locale)}
                   </p>
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--ink-muted)]">
-                    Max latency
+                    {t.maxLatencyLabel}
                   </p>
                   <p className="mt-2 font-mono text-xl text-ink">
                     {profile.preferred_max_latency_seconds}s
@@ -63,7 +69,7 @@ export default async function RoutingProfilesPage() {
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--ink-muted)]">
-                    Min throughput
+                    {t.minThroughputLabel}
                   </p>
                   <p className="mt-2 font-mono text-xl text-ink">
                     {profile.preferred_min_throughput_tokens_per_second} tok/s
@@ -71,7 +77,7 @@ export default async function RoutingProfilesPage() {
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--ink-muted)]">
-                    Retry policy
+                    {t.retryPolicyLabel}
                   </p>
                   <p className="mt-2 font-mono text-xl text-ink">
                     {profile.retry_policy.key_retries ?? 0}/
@@ -82,7 +88,7 @@ export default async function RoutingProfilesPage() {
 
               <div className="mt-4">
                 <p className="text-sm font-semibold text-ink">
-                  Required parameters
+                  {t.requiredParametersLabel}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {profile.required_parameters.map((parameter) => (
