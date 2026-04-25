@@ -77,6 +77,12 @@ def _sanitize_feedback_reason(reason: str | None) -> str | None:
     return REDACTED_FEEDBACK_REASON
 
 
+def _sqlite_in_placeholders(values: tuple[object, ...]) -> str:
+    if not values:
+        raise ValueError("values must not be empty")
+    return ", ".join("?" for _ in values)
+
+
 class OperationalRepository:
     def __init__(
         self,
@@ -1959,18 +1965,16 @@ class OperationalRepository:
         endpoints = endpoint_filters[capability]
         if not endpoints:
             return []
-        placeholders = ", ".join("?" for _ in endpoints)
-        rows = self._fetchall(
-            f"""
-            SELECT invocation_id, user_id, endpoint, provider, model, latency_ms, fallback,
-                   suggestions_count, estimated_cost_usd, schema_valid, status, created_at, metadata_json
-            FROM ai_invocations
-            WHERE endpoint IN ({placeholders})
-            ORDER BY created_at DESC
-            LIMIT ?
-            """,
-            (*endpoints, limit),
+        placeholders = _sqlite_in_placeholders(endpoints)
+        query = (
+            "SELECT invocation_id, user_id, endpoint, provider, model, latency_ms, fallback, "
+            "suggestions_count, estimated_cost_usd, schema_valid, status, created_at, metadata_json "
+            "FROM ai_invocations "
+            f"WHERE endpoint IN ({placeholders}) "  # nosec B608
+            "ORDER BY created_at DESC "
+            "LIMIT ?"
         )
+        rows = self._fetchall(query, (*endpoints, limit))
         return [
             AIInvocationRecord(
                 invocation_id=row["invocation_id"],
@@ -2021,10 +2025,13 @@ class OperationalRepository:
         return max(parsed) if parsed else None
 
     def _count_feedback_statuses(self, statuses: tuple[str, ...]) -> int:
-        placeholders = ", ".join("?" for _ in statuses)
+        placeholders = _sqlite_in_placeholders(statuses)
+        query = (
+            f"SELECT COUNT(*) FROM feedback_audit_records WHERE status IN ({placeholders})"  # nosec B608
+        )
         return int(
             self._scalar(
-                f"SELECT COUNT(*) FROM feedback_audit_records WHERE status IN ({placeholders})",
+                query,
                 statuses,
             )
         )
