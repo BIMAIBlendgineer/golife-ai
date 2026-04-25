@@ -79,10 +79,11 @@ class MissionFeedback {
       status: _statusFromKey((json['status'] ?? 'useful').toString()),
       createdAtIso:
           (json['created_at'] ?? json['createdAtIso'] ?? '').toString(),
-      domainTargets: ((json['domain_targets'] ?? json['domainTargets']) as List?)
-              ?.map((item) => item.toString())
-              .toList(growable: false) ??
-          const <String>[],
+      domainTargets:
+          ((json['domain_targets'] ?? json['domainTargets']) as List?)
+                  ?.map((item) => item.toString())
+                  .toList(growable: false) ??
+              const <String>[],
       recommendationType:
           (json['recommendation_type'] ?? json['recommendationType'])
               ?.toString(),

@@ -263,9 +263,10 @@ def test_daily_mission_normalizes_external_suggestion_schema(tmp_path):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data["suggestions"]) == 2
+    assert len(data["suggestions"]) == 3
     assert data["suggestions"][0]["domain_targets"] == ["pantry"]
     assert data["suggestions"][0]["recommendation_type"] == "mission"
     assert data["suggestions"][0]["evidence"][0]["entity_id"] == "evt-pan-real-1"
     assert data["suggestions"][0]["uncertainty"] == "Model reported low uncertainty."
     assert data["trace"]["active_provider"] == "external-suggestion"
+    assert data["trace"]["build_response"]["synthesized_count"] == 1

@@ -1,9 +1,13 @@
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/journal/journal_entry.dart';
+import '../../domains/journal/quick_note.dart';
+import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -25,6 +29,10 @@ class MemoryLocalStore implements LocalStore {
   final List<PantryItem> _pantryItems = <PantryItem>[];
   final List<PurchaseIntention> _purchaseIntentions = <PurchaseIntention>[];
   final List<WeekPlan> _weekPlans = <WeekPlan>[];
+  final List<JournalEntry> _journalEntries = <JournalEntry>[];
+  final List<QuickNote> _quickNotes = <QuickNote>[];
+  final List<CalendarItem> _calendarItems = <CalendarItem>[];
+  final List<RecipeRescue> _recipeRescues = <RecipeRescue>[];
   AppRuntimeConfig? _runtimeConfig;
 
   @override
@@ -136,6 +144,26 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<JournalEntry>> loadJournalEntries() async {
+    return List<JournalEntry>.unmodifiable(_journalEntries);
+  }
+
+  @override
+  Future<List<QuickNote>> loadQuickNotes() async {
+    return List<QuickNote>.unmodifiable(_quickNotes);
+  }
+
+  @override
+  Future<List<CalendarItem>> loadCalendarItems() async {
+    return List<CalendarItem>.unmodifiable(_calendarItems);
+  }
+
+  @override
+  Future<List<RecipeRescue>> loadRecipeRescues() async {
+    return List<RecipeRescue>.unmodifiable(_recipeRescues);
+  }
+
+  @override
   Future<void> upsertTask(GoTask task) async {
     _replaceById(_tasks, task, (item) => item.id);
   }
@@ -172,6 +200,26 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> upsertJournalEntry(JournalEntry journalEntry) async {
+    _replaceById(_journalEntries, journalEntry, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertQuickNote(QuickNote quickNote) async {
+    _replaceById(_quickNotes, quickNote, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertCalendarItem(CalendarItem calendarItem) async {
+    _replaceById(_calendarItems, calendarItem, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertRecipeRescue(RecipeRescue recipeRescue) async {
+    _replaceById(_recipeRescues, recipeRescue, (item) => item.id);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     _settings = PrivacySettings.defaults();
     _demoSeedEnabled = false;
@@ -185,6 +233,10 @@ class MemoryLocalStore implements LocalStore {
     _pantryItems.clear();
     _purchaseIntentions.clear();
     _weekPlans.clear();
+    _journalEntries.clear();
+    _quickNotes.clear();
+    _calendarItems.clear();
+    _recipeRescues.clear();
     _runtimeConfig = null;
   }
 }

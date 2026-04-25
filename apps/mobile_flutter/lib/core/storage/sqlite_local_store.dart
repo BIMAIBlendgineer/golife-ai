@@ -6,10 +6,14 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/journal/journal_entry.dart';
+import '../../domains/journal/quick_note.dart';
+import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -23,7 +27,7 @@ class SqliteLocalStore implements LocalStore {
       : _databaseName = databaseName ?? _defaultDatabaseName;
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2;
   static const _privacyKey = 'privacy_settings';
   static const _runtimeConfigKey = 'runtime_config';
   static const _demoSeedEnabledKey = 'demo_seed_enabled';
@@ -47,6 +51,9 @@ class SqliteLocalStore implements LocalStore {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 1) {
           await _createSchema(db);
+        }
+        if (oldVersion < 2) {
+          await _createAdditionalSchema(db);
         }
       },
     );
@@ -419,7 +426,8 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'id ASC',
     );
     return rows
-        .map((row) => PurchaseIntention.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map((row) =>
+            PurchaseIntention.fromJson(_decodeJsonRow(row['json_blob'])))
         .toList(growable: false);
   }
 
@@ -449,6 +457,114 @@ class SqliteLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> upsertJournalEntry(JournalEntry journalEntry) async {
+    final db = await _db;
+    await db.insert(
+      'journal_entries',
+      {
+        'id': journalEntry.id,
+        'created_at_iso': journalEntry.createdAtIso,
+        'privacy_level': journalEntry.privacyLevel,
+        'json_blob': jsonEncode(journalEntry.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<JournalEntry>> loadJournalEntries() async {
+    final db = await _db;
+    final rows = await db.query(
+      'journal_entries',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map((row) => JournalEntry.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertQuickNote(QuickNote quickNote) async {
+    final db = await _db;
+    await db.insert(
+      'quick_notes',
+      {
+        'id': quickNote.id,
+        'created_at_iso': quickNote.createdAtIso,
+        'privacy_level': quickNote.privacyLevel,
+        'json_blob': jsonEncode(quickNote.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<QuickNote>> loadQuickNotes() async {
+    final db = await _db;
+    final rows = await db.query(
+      'quick_notes',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map((row) => QuickNote.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertCalendarItem(CalendarItem calendarItem) async {
+    final db = await _db;
+    await db.insert(
+      'calendar_items',
+      {
+        'id': calendarItem.id,
+        'start_iso': calendarItem.startIso,
+        'end_iso': calendarItem.endIso,
+        'json_blob': jsonEncode(calendarItem.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<CalendarItem>> loadCalendarItems() async {
+    final db = await _db;
+    final rows = await db.query(
+      'calendar_items',
+      orderBy: 'start_iso ASC',
+    );
+    return rows
+        .map((row) => CalendarItem.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertRecipeRescue(RecipeRescue recipeRescue) async {
+    final db = await _db;
+    await db.insert(
+      'recipe_rescues',
+      {
+        'id': recipeRescue.id,
+        'status': recipeRescue.status,
+        'estimated_minutes': recipeRescue.estimatedMinutes,
+        'json_blob': jsonEncode(recipeRescue.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<RecipeRescue>> loadRecipeRescues() async {
+    final db = await _db;
+    final rows = await db.query(
+      'recipe_rescues',
+      orderBy: 'id ASC',
+    );
+    return rows
+        .map((row) => RecipeRescue.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -463,6 +579,10 @@ class SqliteLocalStore implements LocalStore {
       await txn.delete('pantry_items');
       await txn.delete('purchase_intentions');
       await txn.delete('week_plans');
+      await txn.delete('journal_entries');
+      await txn.delete('quick_notes');
+      await txn.delete('calendar_items');
+      await txn.delete('recipe_rescues');
       await txn.insert(
         'key_value',
         {
@@ -516,6 +636,34 @@ class SqliteLocalStore implements LocalStore {
     );
     await db.execute(
       'CREATE TABLE IF NOT EXISTS week_plans (id TEXT PRIMARY KEY, json_blob TEXT NOT NULL)',
+    );
+    await _createAdditionalSchema(db);
+  }
+
+  Future<void> _createAdditionalSchema(Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS journal_entries (id TEXT PRIMARY KEY, created_at_iso TEXT NOT NULL, privacy_level TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_journal_created ON journal_entries(created_at_iso)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS quick_notes (id TEXT PRIMARY KEY, created_at_iso TEXT NOT NULL, privacy_level TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_quick_notes_created ON quick_notes(created_at_iso)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS calendar_items (id TEXT PRIMARY KEY, start_iso TEXT NOT NULL, end_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_calendar_start ON calendar_items(start_iso)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS recipe_rescues (id TEXT PRIMARY KEY, status TEXT NOT NULL, estimated_minutes INTEGER NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_recipe_status ON recipe_rescues(status)',
     );
   }
 

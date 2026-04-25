@@ -93,6 +93,26 @@ class EventClassificationResponse(BaseModel):
     trace: dict[str, Any] = Field(default_factory=dict)
 
 
+class ParsedEventItem(BaseModel):
+    text: str = Field(min_length=1)
+    domain: Domain
+    event_type: str = Field(min_length=1)
+    confidence: float = Field(ge=0.0, le=1.0)
+    rationale: str = Field(min_length=1)
+    hints: dict[str, Any] = Field(default_factory=dict)
+
+
+class EventParseRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+
+
+class EventParseResponse(BaseModel):
+    items: list[ParsedEventItem] = Field(default_factory=list)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
 class TaskRewriteRequest(BaseModel):
     user_id: str = Field(min_length=1)
     task_title: str = Field(min_length=1)

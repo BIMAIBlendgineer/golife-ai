@@ -24,8 +24,7 @@ class LifeEvent {
   String get id => eventId;
   String get type => eventType;
   String get occurredAtIso => timestampIso;
-  String get summary =>
-      (payload['summary'] as String?) ?? '$domain:$eventType';
+  String get summary => (payload['summary'] as String?) ?? '$domain:$eventType';
 
   Map<String, Object?> toJson() {
     return {
@@ -79,8 +78,8 @@ class LifeEvent {
       privacyLevel:
           (json['privacy_level'] ?? json['privacyLevel'] ?? 'local_only')
               .toString(),
-      evidenceHash: json['evidence_hash']?.toString() ??
-          json['evidenceHash']?.toString(),
+      evidenceHash:
+          json['evidence_hash']?.toString() ?? json['evidenceHash']?.toString(),
     );
   }
 }

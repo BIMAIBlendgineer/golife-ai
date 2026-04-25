@@ -209,7 +209,8 @@ class _DestinationButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Icon(destination.icon, color: selected ? Colors.white : const Color(0xFF4F443D)),
+              Icon(destination.icon,
+                  color: selected ? Colors.white : const Color(0xFF4F443D)),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -312,14 +313,31 @@ class AppDestination {
 }
 
 const appDestinations = [
-  AppDestination(label: 'Dashboard', path: '/dashboard', icon: Icons.space_dashboard_rounded),
-  AppDestination(label: 'Capture', path: '/capture', icon: Icons.add_circle_outline_rounded),
+  AppDestination(
+      label: 'Dashboard',
+      path: '/dashboard',
+      icon: Icons.space_dashboard_rounded),
+  AppDestination(
+      label: 'Capture',
+      path: '/capture',
+      icon: Icons.add_circle_outline_rounded),
   AppDestination(label: 'Week', path: '/week', icon: Icons.view_week_rounded),
   AppDestination(label: 'Tasks', path: '/tasks', icon: Icons.checklist_rounded),
-  AppDestination(label: 'Habits', path: '/habits', icon: Icons.self_improvement_rounded),
-  AppDestination(label: 'Money', path: '/money', icon: Icons.stacked_line_chart_rounded),
+  AppDestination(
+      label: 'Habits', path: '/habits', icon: Icons.self_improvement_rounded),
+  AppDestination(
+      label: 'Money', path: '/money', icon: Icons.stacked_line_chart_rounded),
   AppDestination(label: 'Pantry', path: '/pantry', icon: Icons.kitchen_rounded),
-  AppDestination(label: 'Closet', path: '/closet', icon: Icons.checkroom_rounded),
-  AppDestination(label: 'Copilot', path: '/copilot', icon: Icons.psychology_alt_rounded),
-  AppDestination(label: 'Settings', path: '/settings', icon: Icons.tune_rounded),
+  AppDestination(
+      label: 'Closet', path: '/closet', icon: Icons.checkroom_rounded),
+  AppDestination(
+      label: 'Journal', path: '/journal', icon: Icons.menu_book_rounded),
+  AppDestination(
+      label: 'Calendar', path: '/calendar', icon: Icons.edit_calendar_rounded),
+  AppDestination(
+      label: 'Recipes', path: '/recipes', icon: Icons.restaurant_menu_rounded),
+  AppDestination(
+      label: 'Copilot', path: '/copilot', icon: Icons.psychology_alt_rounded),
+  AppDestination(
+      label: 'Settings', path: '/settings', icon: Icons.tune_rounded),
 ];

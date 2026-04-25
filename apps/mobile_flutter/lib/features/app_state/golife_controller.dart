@@ -12,12 +12,16 @@ import '../../core/privacy/privacy_models.dart';
 import '../../core/runtime/app_runtime_config.dart';
 import '../../core/runtime/runtime_config_client.dart';
 import '../../core/storage/local_store.dart';
+import '../../domains/calendar/calendar_item.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/journal/journal_entry.dart';
+import '../../domains/journal/quick_note.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -52,6 +56,10 @@ class GoLifeController extends ChangeNotifier {
   List<PantryItem> _pantryItems = <PantryItem>[];
   List<PurchaseIntention> _purchaseIntentions = <PurchaseIntention>[];
   List<WeekPlan> _weekPlans = <WeekPlan>[];
+  List<JournalEntry> _journalEntries = <JournalEntry>[];
+  List<QuickNote> _quickNotes = <QuickNote>[];
+  List<CalendarItem> _calendarItems = <CalendarItem>[];
+  List<RecipeRescue> _recipeRescues = <RecipeRescue>[];
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -127,9 +135,24 @@ class GoLifeController extends ChangeNotifier {
   List<PurchaseIntention> get purchaseIntentions =>
       List<PurchaseIntention>.unmodifiable(_purchaseIntentions);
   List<WeekPlan> get weekPlans => List<WeekPlan>.unmodifiable(_weekPlans);
+  List<JournalEntry> get journalEntries =>
+      List<JournalEntry>.unmodifiable(_journalEntries);
+  List<QuickNote> get quickNotes => List<QuickNote>.unmodifiable(_quickNotes);
+  List<CalendarItem> get calendarItems =>
+      List<CalendarItem>.unmodifiable(_calendarItems);
+  List<RecipeRescue> get recipeRescues =>
+      List<RecipeRescue>.unmodifiable(_recipeRescues);
   int get totalEventCount => lifeEvents.length;
-  int get aiEligibleEventCount =>
-      lifeEvents.where(_eventEligibleForAi).length;
+  int get aiEligibleEventCount => lifeEvents.where(_eventEligibleForAi).length;
+  List<LifeEvent> get aiEligibleEvents => List<LifeEvent>.unmodifiable(
+        lifeEvents.where(_eventEligibleForAi).toList(growable: false),
+      );
+  List<LifeEvent> get blockedFromAiEvents => List<LifeEvent>.unmodifiable(
+        lifeEvents.where((event) => !_eventEligibleForAi(event)).toList(
+              growable: false,
+            ),
+      );
+  bool get hasOverloadedCalendarDay => _calendarItems.length >= 4;
 
   MissionFeedback? get latestMissionFeedback {
     final mission = dailyMission;
@@ -212,6 +235,10 @@ class GoLifeController extends ChangeNotifier {
     _pantryItems = await _localStore.loadPantryItems();
     _purchaseIntentions = await _localStore.loadPurchaseIntentions();
     _weekPlans = await _localStore.loadWeekPlans();
+    _journalEntries = await _localStore.loadJournalEntries();
+    _quickNotes = await _localStore.loadQuickNotes();
+    _calendarItems = await _localStore.loadCalendarItems();
+    _recipeRescues = await _localStore.loadRecipeRescues();
     await _seedDomainEntitiesIfNeeded();
     await _refreshMissionPlan();
     await refreshRuntimeConfig(refreshMissionPlan: true, notify: false);
@@ -324,6 +351,17 @@ class GoLifeController extends ChangeNotifier {
     }
 
     try {
+      final parsed = await _aiGatewayClient.parseCapture(
+        privacySettings: _privacySettings,
+        text: trimmed,
+      );
+      if (parsed != null && parsed.items.isNotEmpty) {
+        return _captureParser.parse(
+          text: trimmed,
+          privacySettings: _privacySettings,
+          gatewayItems: parsed.items,
+        );
+      }
       final classification = await classifyCaptureText(trimmed);
       return _captureParser.parse(
         text: trimmed,
@@ -393,8 +431,7 @@ class GoLifeController extends ChangeNotifier {
         mission: mission,
       );
 
-  Future<void> acceptMission([DailyMission? mission]) =>
-      _submitMissionFeedback(
+  Future<void> acceptMission([DailyMission? mission]) => _submitMissionFeedback(
         MissionFeedbackStatus.accepted,
         mission: mission,
       );
@@ -405,8 +442,7 @@ class GoLifeController extends ChangeNotifier {
         mission: mission,
       );
 
-  Future<void> rejectMission([DailyMission? mission]) =>
-      _submitMissionFeedback(
+  Future<void> rejectMission([DailyMission? mission]) => _submitMissionFeedback(
         MissionFeedbackStatus.rejected,
         mission: mission,
       );
@@ -572,26 +608,301 @@ class GoLifeController extends ChangeNotifier {
     return 'Week plan updated.';
   }
 
+  Future<String?> saveTask({
+    String? id,
+    required String title,
+    required TaskPriority priority,
+    required int estimatedMinutes,
+    String notes = '',
+    TaskStatus status = TaskStatus.inbox,
+  }) async {
+    final task = GoTask(
+      id: id ?? _entityId('task'),
+      title: title,
+      priority: priority,
+      status: status,
+      estimatedMinutes: estimatedMinutes,
+      notes: notes,
+    );
+    await _upsertTask(task);
+    await _recordEvent(
+      event: task.toLifeEvent(
+        id == null ? 'task_created' : 'task_updated',
+        privacyLevel: _privacyLevelForDomain('task'),
+      ),
+    );
+    return id == null ? 'Task created.' : 'Task updated.';
+  }
+
+  Future<String?> saveHabit({
+    String? id,
+    required String title,
+    required String cue,
+    required HabitCadence cadence,
+    int streak = 0,
+  }) async {
+    final habit = Habit(
+      id: id ?? _entityId('habit'),
+      title: title,
+      cue: cue,
+      streak: streak,
+      cadence: cadence,
+    );
+    await _upsertHabit(habit);
+    await _recordEvent(
+      event: habit.toLifeEvent(
+        id == null ? 'habit_created' : 'habit_updated',
+        privacyLevel: _privacyLevelForDomain('habit'),
+      ),
+    );
+    return id == null ? 'Habit created.' : 'Habit updated.';
+  }
+
+  Future<String?> saveExpense({
+    String? id,
+    required String label,
+    required double amount,
+    required String category,
+  }) async {
+    final expense = ExpenseRecord(
+      id: id ?? _entityId('expense'),
+      label: label,
+      amount: amount,
+      category: category,
+    );
+    await _upsertExpense(expense);
+    await _recordEvent(
+      event: expense.toLifeEvent(
+        privacyLevel: _privacyLevelForDomain('finance'),
+      ),
+    );
+    return id == null ? 'Expense saved.' : 'Expense updated.';
+  }
+
+  Future<String?> savePantryItem({
+    String? id,
+    required String name,
+    required String quantityLabel,
+    required String rescueHint,
+  }) async {
+    final pantryItem = PantryItem(
+      id: id ?? _entityId('pantry'),
+      name: name,
+      quantityLabel: quantityLabel,
+      rescueHint: rescueHint,
+    );
+    await _upsertPantryItem(pantryItem);
+    await _recordEvent(
+      event: pantryItem.toLifeEvent(
+        id == null ? 'ingredient_created' : 'ingredient_updated',
+        privacyLevel: _privacyLevelForDomain('pantry'),
+      ),
+    );
+    return id == null ? 'Pantry item saved.' : 'Pantry item updated.';
+  }
+
+  Future<String?> savePurchaseIntention({
+    String? id,
+    required String label,
+    required String reason,
+  }) async {
+    final purchaseIntention = PurchaseIntention(
+      id: id ?? _entityId('purchase'),
+      label: label,
+      reason: reason,
+    );
+    await _upsertPurchaseIntention(purchaseIntention);
+    await _recordEvent(
+      event: purchaseIntention.toLifeEvent(
+        privacyLevel: _privacyLevelForDomain('wardrobe'),
+      ),
+    );
+    return id == null
+        ? 'Purchase intention saved.'
+        : 'Purchase intention updated.';
+  }
+
+  Future<String?> saveWeekPlan({
+    String? id,
+    required String theme,
+    required String focus,
+    String colorToken = 'terra',
+  }) async {
+    final plan = WeekPlan(
+      id: id ?? _entityId('week'),
+      theme: theme,
+      colorToken: colorToken,
+      days: [
+        DayPlan(
+          label: 'Today',
+          focus: focus,
+        ),
+      ],
+    );
+    await _upsertWeekPlan(plan);
+    await _recordEvent(
+      event: plan.toLifeEvent(
+        id == null ? 'week_plan_created' : 'week_plan_updated',
+        privacyLevel: _privacyLevelForDomain('week'),
+      ),
+    );
+    return id == null ? 'Week plan saved.' : 'Week plan updated.';
+  }
+
+  Future<String?> saveJournalEntry({
+    String? id,
+    required String title,
+    required String body,
+    required String mood,
+  }) async {
+    final entry = JournalEntry(
+      id: id ?? _entityId('journal'),
+      title: title,
+      body: body,
+      mood: mood,
+      createdAtIso: DateTime.now().toUtc().toIso8601String(),
+    );
+    await _upsertJournalEntry(entry);
+    await _recordEvent(
+      event: entry.toLifeEvent(
+        id == null ? 'journal_entry_created' : 'journal_entry_updated',
+      ),
+    );
+    return id == null ? 'Journal entry saved.' : 'Journal entry updated.';
+  }
+
+  Future<String?> saveQuickNote({
+    String? id,
+    required String text,
+  }) async {
+    final note = QuickNote(
+      id: id ?? _entityId('note'),
+      text: text,
+      createdAtIso: DateTime.now().toUtc().toIso8601String(),
+    );
+    await _upsertQuickNote(note);
+    await _recordEvent(
+      event: note.toLifeEvent(
+        id == null ? 'quick_note_created' : 'quick_note_updated',
+      ),
+    );
+    return id == null ? 'Quick note saved.' : 'Quick note updated.';
+  }
+
+  Future<String?> saveCalendarItem({
+    String? id,
+    required String title,
+    required String startIso,
+    required String endIso,
+    String location = '',
+    String energy = 'steady',
+  }) async {
+    final item = CalendarItem(
+      id: id ?? _entityId('calendar'),
+      title: title,
+      startIso: startIso,
+      endIso: endIso,
+      location: location,
+      energy: energy,
+    );
+    await _upsertCalendarItem(item);
+    await _recordEvent(
+      event: item.toLifeEvent(
+        id == null ? 'calendar_item_created' : 'calendar_item_updated',
+        privacyLevel: _privacyLevelForDomain('week'),
+      ),
+    );
+    return id == null ? 'Calendar item saved.' : 'Calendar item updated.';
+  }
+
+  Future<String?> saveRecipeRescue({
+    String? id,
+    required String title,
+    required String summary,
+    required List<String> ingredientNames,
+    required int estimatedMinutes,
+    String status = 'draft',
+  }) async {
+    final recipe = RecipeRescue(
+      id: id ?? _entityId('recipe'),
+      title: title,
+      summary: summary,
+      ingredientNames: ingredientNames,
+      estimatedMinutes: estimatedMinutes,
+      status: status,
+    );
+    await _upsertRecipeRescue(recipe);
+    await _recordEvent(
+      event: recipe.toLifeEvent(
+        id == null ? 'recipe_rescue_created' : 'recipe_rescue_updated',
+        privacyLevel: _privacyLevelForDomain('pantry'),
+      ),
+    );
+    return id == null ? 'Recipe rescue saved.' : 'Recipe rescue updated.';
+  }
+
+  Future<String?> markRecipeRescueCookedById(String id) async {
+    final target = _recipeRescues.firstWhere(
+      (recipe) => recipe.id == id,
+      orElse: () => RecipeRescue(
+        id: id,
+        title: 'Recipe rescue',
+        summary: 'Local recipe rescue action.',
+        ingredientNames: const <String>[],
+        estimatedMinutes: 15,
+      ),
+    );
+    final updated = RecipeRescue(
+      id: target.id,
+      title: target.title,
+      summary: target.summary,
+      ingredientNames: target.ingredientNames,
+      estimatedMinutes: target.estimatedMinutes,
+      status: 'cooked',
+    );
+    await _upsertRecipeRescue(updated);
+    await _recordEvent(
+      event: updated.toLifeEvent(
+        'recipe_rescue_cooked',
+        privacyLevel: _privacyLevelForDomain('pantry'),
+      ),
+    );
+    return 'Recipe rescue marked cooked: ${updated.title}.';
+  }
+
   Future<String> exportLocalDataJson() async {
     final snapshot = <String, Object?>{
       'exported_at': DateTime.now().toUtc().toIso8601String(),
       'privacy_settings': _privacySettings.toJson(),
       'runtime_config': _runtimeConfig?.toJson(),
-      'life_events': lifeEvents.map((item) => item.toJson()).toList(growable: false),
-      'missions': _dailyMissions.map((item) => item.toJson()).toList(growable: false),
-      'daily_risks':
-          _cachedDailyRisks.map((item) => item.toJson()).toList(growable: false),
+      'life_events':
+          lifeEvents.map((item) => item.toJson()).toList(growable: false),
+      'missions':
+          _dailyMissions.map((item) => item.toJson()).toList(growable: false),
+      'daily_risks': _cachedDailyRisks
+          .map((item) => item.toJson())
+          .toList(growable: false),
       'mission_feedback':
           _missionFeedback.map((item) => item.toJson()).toList(growable: false),
       'tasks': _tasks.map((item) => item.toJson()).toList(growable: false),
       'habits': _habits.map((item) => item.toJson()).toList(growable: false),
-      'expenses': _expenses.map((item) => item.toJson()).toList(growable: false),
+      'expenses':
+          _expenses.map((item) => item.toJson()).toList(growable: false),
       'pantry_items':
           _pantryItems.map((item) => item.toJson()).toList(growable: false),
-      'purchase_intentions':
-          _purchaseIntentions.map((item) => item.toJson()).toList(growable: false),
+      'purchase_intentions': _purchaseIntentions
+          .map((item) => item.toJson())
+          .toList(growable: false),
       'week_plans':
           _weekPlans.map((item) => item.toJson()).toList(growable: false),
+      'journal_entries':
+          _journalEntries.map((item) => item.toJson()).toList(growable: false),
+      'quick_notes':
+          _quickNotes.map((item) => item.toJson()).toList(growable: false),
+      'calendar_items':
+          _calendarItems.map((item) => item.toJson()).toList(growable: false),
+      'recipe_rescues':
+          _recipeRescues.map((item) => item.toJson()).toList(growable: false),
     };
     return const JsonEncoder.withIndent('  ').convert(snapshot);
   }
@@ -611,7 +922,38 @@ class GoLifeController extends ChangeNotifier {
     _pantryItems = <PantryItem>[];
     _purchaseIntentions = <PurchaseIntention>[];
     _weekPlans = <WeekPlan>[];
+    _journalEntries = <JournalEntry>[];
+    _quickNotes = <QuickNote>[];
+    _calendarItems = <CalendarItem>[];
+    _recipeRescues = <RecipeRescue>[];
     notifyListeners();
+  }
+
+  List<String> missionDataUsed(DailyMission mission) {
+    final lines = <String>[
+      ...mission.evidence,
+    ];
+    final relatedRisks = _cachedDailyRisks.where((risk) {
+      return risk.domainTargets.any(mission.domainTargets.contains);
+    });
+    for (final risk in relatedRisks) {
+      lines.add('Risk: ${risk.title}');
+    }
+    return lines.take(6).toList(growable: false);
+  }
+
+  List<String> dataSentToAiPreview({int limit = 6}) {
+    return aiEligibleEvents
+        .take(limit)
+        .map((event) => '${event.domain}: ${event.summary}')
+        .toList(growable: false);
+  }
+
+  List<String> dataBlockedFromAiPreview({int limit = 6}) {
+    return blockedFromAiEvents
+        .take(limit)
+        .map((event) => '${event.domain}: ${event.summary}')
+        .toList(growable: false);
   }
 
   Future<void> _recordEvent({
@@ -781,6 +1123,17 @@ class GoLifeController extends ChangeNotifier {
     if (_weekPlans.isEmpty) {
       await _upsertWeekPlan(weekSummary);
     }
+    if (_recipeRescues.isEmpty && _pantryItems.isNotEmpty) {
+      await _upsertRecipeRescue(
+        RecipeRescue(
+          id: 'recipe-spinach-rescue',
+          title: 'Spinach rescue bowl',
+          summary: 'Use spinach first with chickpeas or rice to reduce waste.',
+          ingredientNames: const <String>['spinach', 'chickpeas'],
+          estimatedMinutes: 15,
+        ),
+      );
+    }
   }
 
   Future<void> _persistDomainEntityFromDraft(CaptureDraftItem draft) async {
@@ -835,7 +1188,9 @@ class GoLifeController extends ChangeNotifier {
 
   ExpenseRecord _expenseFromCapture(CaptureDraftItem draft) {
     final lowered = draft.text.toLowerCase();
-    final amount = (draft.hints['amount'] as double?) ?? _extractFirstAmount(draft.text) ?? 0;
+    final amount = (draft.hints['amount'] as double?) ??
+        _extractFirstAmount(draft.text) ??
+        0;
     final category = lowered.contains('coffee') ||
             lowered.contains('food') ||
             lowered.contains('lunch') ||
@@ -868,7 +1223,8 @@ class GoLifeController extends ChangeNotifier {
     return PurchaseIntention(
       id: _entityId('purchase'),
       label: draft.text,
-      reason: 'Captured from quick capture. Compare against existing items first.',
+      reason:
+          'Captured from quick capture. Compare against existing items first.',
     );
   }
 
@@ -954,8 +1310,9 @@ class GoLifeController extends ChangeNotifier {
   }
 
   Future<String?> _pausePurchaseFromMission(DailyMission mission) async {
-    final target =
-        _purchaseIntentions.isNotEmpty ? _purchaseIntentions.first : closetSummary;
+    final target = _purchaseIntentions.isNotEmpty
+        ? _purchaseIntentions.first
+        : closetSummary;
     final updated = PurchaseIntention(
       id: target.id,
       label: target.label,
@@ -1038,6 +1395,29 @@ class GoLifeController extends ChangeNotifier {
   Future<void> _upsertWeekPlan(WeekPlan weekPlan) async {
     _weekPlans = _upsertById(_weekPlans, weekPlan, (item) => item.id);
     await _localStore.upsertWeekPlan(weekPlan);
+  }
+
+  Future<void> _upsertJournalEntry(JournalEntry journalEntry) async {
+    _journalEntries =
+        _upsertById(_journalEntries, journalEntry, (item) => item.id);
+    await _localStore.upsertJournalEntry(journalEntry);
+  }
+
+  Future<void> _upsertQuickNote(QuickNote quickNote) async {
+    _quickNotes = _upsertById(_quickNotes, quickNote, (item) => item.id);
+    await _localStore.upsertQuickNote(quickNote);
+  }
+
+  Future<void> _upsertCalendarItem(CalendarItem calendarItem) async {
+    _calendarItems =
+        _upsertById(_calendarItems, calendarItem, (item) => item.id);
+    await _localStore.upsertCalendarItem(calendarItem);
+  }
+
+  Future<void> _upsertRecipeRescue(RecipeRescue recipeRescue) async {
+    _recipeRescues =
+        _upsertById(_recipeRescues, recipeRescue, (item) => item.id);
+    await _localStore.upsertRecipeRescue(recipeRescue);
   }
 
   String _taskNotesFromHints(Map<String, Object?> hints) {

@@ -7,6 +7,8 @@ from uuid import uuid4
 from app.schemas import (
     EventClassificationRequest,
     EventClassificationResponse,
+    EventParseRequest,
+    EventParseResponse,
     MissionFeedbackRequest,
     SuggestionRequest,
     SuggestionResponse,
@@ -37,6 +39,7 @@ def estimate_cost_usd(
         "/v1/closet/decision": 0.01,
         "/v1/tasks/rewrite": 0.012,
         "/v1/events/classify": 0.001,
+        "/v1/events/parse": 0.002,
     }
     base = base_costs.get(endpoint, 0.008)
     multiplier = 1.0 + max(0, suggestions_count - 1) * 0.2
@@ -200,6 +203,53 @@ def build_classification_operation_payloads(
             "metadata": {
                 "domain": response.domain,
                 "confidence": response.confidence,
+            },
+        },
+    }
+
+
+def build_parse_operation_payloads(
+    *,
+    request: EventParseRequest,
+    response: EventParseResponse,
+    latency_ms: float,
+) -> dict[str, Any]:
+    created_at = _utcnow_iso()
+    classifier = response.trace.get("parser", "deterministic_capture_parser")
+    provider_name = "semantic_parser" if classifier == "semantic_openrouter" else "deterministic_parser"
+    return {
+        "usage_event": {
+            "event_id": f"usage-{uuid4()}",
+            "user_id": request.user_id,
+            "event_type": "capture_parse_requested",
+            "endpoint": "/v1/events/parse",
+            "domain": response.items[0].domain if response.items else None,
+            "quantity": max(1, len(response.items)),
+            "created_at": created_at,
+            "metadata": {
+                "item_count": len(response.items),
+                "parser": classifier,
+            },
+        },
+        "ai_invocation": {
+            "invocation_id": f"invoke-{uuid4()}",
+            "user_id": request.user_id,
+            "endpoint": "/v1/events/parse",
+            "provider": provider_name,
+            "model": response.trace.get("provider_meta", {}).get("model"),
+            "latency_ms": round(latency_ms, 2),
+            "fallback": classifier != "semantic_openrouter",
+            "suggestions_count": len(response.items),
+            "estimated_cost_usd": estimate_cost_usd(
+                endpoint="/v1/events/classify",
+                provider=provider_name,
+                suggestions_count=max(1, len(response.items)),
+            ),
+            "schema_valid": True,
+            "status": "success",
+            "created_at": created_at,
+            "metadata": {
+                "item_count": len(response.items),
             },
         },
     }

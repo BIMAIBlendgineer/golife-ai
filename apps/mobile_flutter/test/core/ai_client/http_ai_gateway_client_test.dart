@@ -10,7 +10,8 @@ import 'package:http/testing.dart';
 
 void main() {
   group('HttpAiGatewayClient', () {
-    test('sends only ai_allowed events without overriding event privacy', () async {
+    test('sends only ai_allowed events without overriding event privacy',
+        () async {
       late Map<String, dynamic> requestBody;
 
       final client = HttpAiGatewayClient(
@@ -78,7 +79,8 @@ void main() {
 
       final sentEvents = requestBody['life_events'] as List<dynamic>;
       expect(sentEvents, hasLength(1));
-      expect((sentEvents.first as Map<String, dynamic>)['privacy_level'], 'ai_allowed');
+      expect((sentEvents.first as Map<String, dynamic>)['privacy_level'],
+          'ai_allowed');
       expect(result.trace['remote'], true);
     });
 
@@ -131,7 +133,8 @@ void main() {
       expect(result.trace['fallbackReason'], 'invalid_json');
     });
 
-    test('keeps ai_temporarily_unavailable machine code from gateway', () async {
+    test('keeps ai_temporarily_unavailable machine code from gateway',
+        () async {
       final client = HttpAiGatewayClient(
         baseUri: Uri.parse('http://localhost:8000'),
         httpClient: MockClient(
@@ -192,6 +195,48 @@ void main() {
         ),
         throwsException,
       );
+    });
+
+    test('parses capture items from gateway when available', () async {
+      final client = HttpAiGatewayClient(
+        baseUri: Uri.parse('http://localhost:8000'),
+        httpClient: MockClient(
+          (request) async => http.Response(
+            jsonEncode({
+              'items': [
+                {
+                  'text': 'Compre cafe 4.50',
+                  'domain': 'finance',
+                  'event_type': 'expense_logged',
+                  'confidence': 0.91,
+                  'rationale': 'Detected finance language.',
+                  'hints': {'amount': 4.5}
+                },
+                {
+                  'text': 'la lechuga vence manana',
+                  'domain': 'pantry',
+                  'event_type': 'ingredient_flagged',
+                  'confidence': 0.84,
+                  'rationale': 'Detected expiry wording.',
+                  'hints': {'expiry_hint': 'manana'}
+                },
+              ],
+              'trace': {'parser': 'semantic_openrouter'}
+            }),
+            200,
+          ),
+        ),
+      );
+
+      final response = await client.parseCapture(
+        privacySettings: PrivacySettings.defaults(),
+        text: 'Compre cafe 4.50, la lechuga vence manana',
+      );
+
+      expect(response, isNotNull);
+      expect(response!.items, hasLength(2));
+      expect(response.items.first.domain, 'finance');
+      expect(response.trace['parser'], 'semantic_openrouter');
     });
   });
 }

@@ -53,7 +53,8 @@ class MissionSuggestionDto {
     Map<String, dynamic> suggestionJson, {
     Map<String, Object?> trace = const <String, Object?>{},
   }) {
-    final rawEvidence = suggestionJson['evidence'] as List<dynamic>? ?? const [];
+    final rawEvidence =
+        suggestionJson['evidence'] as List<dynamic>? ?? const [];
     final evidence = rawEvidence.map((item) {
       if (item is Map && item['claim'] != null) {
         return item['claim'].toString();
@@ -67,9 +68,9 @@ class MissionSuggestionDto {
     return MissionSuggestionDto(
       id: (suggestionJson['suggestion_id'] ?? 'mission-unknown').toString(),
       title: (suggestionJson['title'] ?? 'Mission unavailable').toString(),
-      body:
-          (suggestionJson['body'] ?? 'The gateway did not return a mission body.')
-              .toString(),
+      body: (suggestionJson['body'] ??
+              'The gateway did not return a mission body.')
+          .toString(),
       evidence: evidence,
       uncertainty: (suggestionJson['uncertainty'] ?? 'No uncertainty provided.')
           .toString(),
@@ -124,7 +125,8 @@ class MissionPlanDto {
   }
 
   factory MissionPlanDto.fromGatewayJson(Map<String, dynamic> responseJson) {
-    final rawSuggestions = responseJson['suggestions'] as List<dynamic>? ?? const [];
+    final rawSuggestions =
+        responseJson['suggestions'] as List<dynamic>? ?? const [];
     final trace = _normalizeTrace(
       Map<String, dynamic>.from(
         (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
@@ -193,8 +195,75 @@ class CaptureClassificationDto {
       domain: (responseJson['domain'] ?? 'task').toString(),
       eventType: (responseJson['event_type'] ?? 'task_captured').toString(),
       confidence: _asDouble(responseJson['confidence']) ?? 0.5,
-      rationale:
-          (responseJson['rationale'] ?? 'No rationale was returned.').toString(),
+      rationale: (responseJson['rationale'] ?? 'No rationale was returned.')
+          .toString(),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class CaptureParseItemDto {
+  const CaptureParseItemDto({
+    required this.text,
+    required this.domain,
+    required this.eventType,
+    required this.confidence,
+    required this.rationale,
+    required this.hints,
+  });
+
+  final String text;
+  final String domain;
+  final String eventType;
+  final double confidence;
+  final String rationale;
+  final Map<String, Object?> hints;
+
+  factory CaptureParseItemDto.fromGatewayJson(
+      Map<String, dynamic> responseJson) {
+    return CaptureParseItemDto(
+      text: (responseJson['text'] ?? '').toString(),
+      domain: (responseJson['domain'] ?? 'task').toString(),
+      eventType: (responseJson['event_type'] ?? 'task_captured').toString(),
+      confidence: _asDouble(responseJson['confidence']) ?? 0.5,
+      rationale: (responseJson['rationale'] ?? 'No rationale was returned.')
+          .toString(),
+      hints: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (responseJson['hints'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class CaptureParseResponseDto {
+  const CaptureParseResponseDto({
+    required this.items,
+    required this.trace,
+  });
+
+  final List<CaptureParseItemDto> items;
+  final Map<String, Object?> trace;
+
+  factory CaptureParseResponseDto.fromGatewayJson(
+    Map<String, dynamic> responseJson,
+  ) {
+    final rawItems = responseJson['items'] as List<dynamic>? ?? const [];
+    return CaptureParseResponseDto(
+      items: rawItems
+          .whereType<Map>()
+          .map(
+            (item) => CaptureParseItemDto.fromGatewayJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .where((item) => item.text.isNotEmpty)
+          .toList(growable: false),
       trace: _normalizeTrace(
         Map<String, dynamic>.from(
           (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},

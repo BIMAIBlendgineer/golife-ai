@@ -53,10 +53,28 @@ class CaptureParser {
     required PrivacySettings privacySettings,
     DomainKey? forcedDomain,
     CaptureClassificationDto? gatewayClassification,
+    List<CaptureParseItemDto>? gatewayItems,
   }) {
     final normalizedText = text.trim();
     if (normalizedText.isEmpty) {
       return const <CaptureDraftItem>[];
+    }
+
+    if (gatewayItems != null && gatewayItems.isNotEmpty) {
+      return List<CaptureDraftItem>.generate(gatewayItems.length, (index) {
+        final item = gatewayItems[index];
+        final domain = domainKeyFromWireName(item.domain) ?? DomainKey.tasks;
+        return CaptureDraftItem(
+          id: 'draft-$index-${DateTime.now().microsecondsSinceEpoch}',
+          text: item.text,
+          domain: domain,
+          eventType: item.eventType,
+          privacyLevel: privacySettings.permissionFor(domain).storageKey,
+          rationale: item.rationale,
+          confidence: item.confidence,
+          hints: item.hints,
+        );
+      });
     }
 
     final clauses = _splitIntoClauses(normalizedText);

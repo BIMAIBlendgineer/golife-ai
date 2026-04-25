@@ -17,7 +17,5 @@ DailyMission mapMissionSuggestion(MissionSuggestionDto dto) {
 }
 
 List<DailyMission> mapMissionPlan(MissionPlanDto dto) {
-  return dto.suggestions
-      .map(mapMissionSuggestion)
-      .toList(growable: false);
+  return dto.suggestions.map(mapMissionSuggestion).toList(growable: false);
 }

@@ -27,10 +27,11 @@ class DayPlan {
     return DayPlan(
       label: (json['label'] ?? '').toString(),
       focus: (json['focus'] ?? '').toString(),
-      recurringAnchors: ((json['recurring_anchors'] ?? json['recurringAnchors']) as List?)
-              ?.map((item) => item.toString())
-              .toList(growable: false) ??
-          const <String>[],
+      recurringAnchors:
+          ((json['recurring_anchors'] ?? json['recurringAnchors']) as List?)
+                  ?.map((item) => item.toString())
+                  .toList(growable: false) ??
+              const <String>[],
     );
   }
 }
@@ -69,7 +70,8 @@ class WeekPlan {
     );
   }
 
-  String get energyNote => days.isEmpty ? 'No focus blocks yet.' : days.first.focus;
+  String get energyNote =>
+      days.isEmpty ? 'No focus blocks yet.' : days.first.focus;
 
   LifeEvent toLifeEvent(String type, {String privacyLevel = 'local_only'}) {
     return LifeEventFactory.create(

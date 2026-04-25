@@ -65,7 +65,8 @@ class CopilotScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(mission.title, style: theme.textTheme.titleMedium),
+                          Text(mission.title,
+                              style: theme.textTheme.titleMedium),
                           const SizedBox(height: 4),
                           Text(
                             '${mission.domainTargets.join(" + ")} - ${(mission.confidence * 100).round()}%',
@@ -91,9 +92,11 @@ class CopilotScreen extends StatelessWidget {
                 Text('Latest trace', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 12),
                 if (primaryMission == null)
-                  Text('No mission loaded yet.', style: theme.textTheme.bodyMedium)
+                  Text('No mission loaded yet.',
+                      style: theme.textTheme.bodyMedium)
                 else ...[
-                  Text(primaryMission.title, style: theme.textTheme.titleMedium),
+                  Text(primaryMission.title,
+                      style: theme.textTheme.titleMedium),
                   const SizedBox(height: 12),
                   for (final entry in primaryMission.trace.entries)
                     Padding(

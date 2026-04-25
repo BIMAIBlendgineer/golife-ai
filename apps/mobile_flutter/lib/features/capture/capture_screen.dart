@@ -319,7 +319,8 @@ class _CaptureScreenState extends State<CaptureScreen> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
               child: const Text('Save'),
             ),
           ],

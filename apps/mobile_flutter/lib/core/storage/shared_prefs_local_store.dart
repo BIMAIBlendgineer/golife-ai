@@ -4,10 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/journal/journal_entry.dart';
+import '../../domains/journal/quick_note.dart';
+import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -30,6 +34,10 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _pantryItemsKey = 'golife.pantry_items';
   static const _purchaseIntentionsKey = 'golife.purchase_intentions';
   static const _weekPlansKey = 'golife.week_plans';
+  static const _journalEntriesKey = 'golife.journal_entries';
+  static const _quickNotesKey = 'golife.quick_notes';
+  static const _calendarItemsKey = 'golife.calendar_items';
+  static const _recipeRescuesKey = 'golife.recipe_rescues';
   static const _runtimeConfigKey = 'golife.runtime_config';
   static const _demoSeedEnabledKey = 'golife.demo_seed_enabled';
 
@@ -196,6 +204,38 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<JournalEntry>> loadJournalEntries() async {
+    return _loadList(
+      _journalEntriesKey,
+      (item) => JournalEntry.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<QuickNote>> loadQuickNotes() async {
+    return _loadList(
+      _quickNotesKey,
+      (item) => QuickNote.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<CalendarItem>> loadCalendarItems() async {
+    return _loadList(
+      _calendarItemsKey,
+      (item) => CalendarItem.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<RecipeRescue>> loadRecipeRescues() async {
+    return _loadList(
+      _recipeRescuesKey,
+      (item) => RecipeRescue.fromJson(item),
+    );
+  }
+
+  @override
   Future<void> upsertTask(GoTask task) async {
     await _upsertEntity(_tasksKey, task.id, task.toJson());
   }
@@ -232,6 +272,38 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> upsertJournalEntry(JournalEntry journalEntry) async {
+    await _upsertEntity(
+      _journalEntriesKey,
+      journalEntry.id,
+      journalEntry.toJson(),
+    );
+  }
+
+  @override
+  Future<void> upsertQuickNote(QuickNote quickNote) async {
+    await _upsertEntity(_quickNotesKey, quickNote.id, quickNote.toJson());
+  }
+
+  @override
+  Future<void> upsertCalendarItem(CalendarItem calendarItem) async {
+    await _upsertEntity(
+      _calendarItemsKey,
+      calendarItem.id,
+      calendarItem.toJson(),
+    );
+  }
+
+  @override
+  Future<void> upsertRecipeRescue(RecipeRescue recipeRescue) async {
+    await _upsertEntity(
+      _recipeRescuesKey,
+      recipeRescue.id,
+      recipeRescue.toJson(),
+    );
+  }
+
+  @override
   Future<void> deleteAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_privacyKey);
@@ -245,6 +317,10 @@ class SharedPrefsLocalStore implements LocalStore {
     await prefs.remove(_pantryItemsKey);
     await prefs.remove(_purchaseIntentionsKey);
     await prefs.remove(_weekPlansKey);
+    await prefs.remove(_journalEntriesKey);
+    await prefs.remove(_quickNotesKey);
+    await prefs.remove(_calendarItemsKey);
+    await prefs.remove(_recipeRescuesKey);
     await prefs.remove(_runtimeConfigKey);
     await prefs.setBool(_demoSeedEnabledKey, false);
   }
@@ -283,7 +359,8 @@ class SharedPrefsLocalStore implements LocalStore {
       key,
       (item) => item,
     );
-    final mutable = existing.map(Map<String, dynamic>.from).toList(growable: true);
+    final mutable =
+        existing.map(Map<String, dynamic>.from).toList(growable: true);
     final index = mutable.indexWhere((item) => item['id']?.toString() == id);
     if (index >= 0) {
       mutable[index] = Map<String, dynamic>.from(entity);

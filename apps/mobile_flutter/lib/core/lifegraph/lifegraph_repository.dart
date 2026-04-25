@@ -76,7 +76,8 @@ class LifeGraphRepository {
       return;
     }
 
-    final storedEvents = await _localStore?.loadLifeEvents() ?? const <LifeEvent>[];
+    final storedEvents =
+        await _localStore?.loadLifeEvents() ?? const <LifeEvent>[];
     final demoSeedEnabled = await _localStore?.loadDemoSeedEnabled() ?? true;
     _events
       ..clear()
@@ -97,7 +98,8 @@ class LifeGraphRepository {
 
   List<LifeEvent> allEvents() {
     final current = _events.isEmpty && !_bootstrapped ? _seedEvents : _events;
-    return List<LifeEvent>.unmodifiable(current.reversed.toList(growable: false));
+    return List<LifeEvent>.unmodifiable(
+        current.reversed.toList(growable: false));
   }
 
   List<LifeEvent> eventsForDomain(String domain) {

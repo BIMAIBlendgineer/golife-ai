@@ -24,8 +24,7 @@ void main() {
 
     test('captures multiple drafts into entities and life events', () async {
       final drafts = await controller.prepareCaptureDrafts(
-        text:
-            'Compre cafe 4.50, la lechuga vence manana y debo pagar internet',
+        text: 'Compre cafe 4.50, la lechuga vence manana y debo pagar internet',
       );
 
       expect(drafts, hasLength(3));
@@ -43,7 +42,8 @@ void main() {
       expect(controller.totalEventCount, initialEventCount + 3);
     });
 
-    test('mission action updates a task and records completion feedback', () async {
+    test('mission action updates a task and records completion feedback',
+        () async {
       final mission = DailyMission(
         id: 'mission-task',
         title: 'Close one critical task',
@@ -85,6 +85,41 @@ void main() {
       expect(controller.tasks, isEmpty);
       expect(controller.habits, isEmpty);
       expect(await localStore.loadDemoSeedEnabled(), isFalse);
+    });
+
+    test('stores journal, calendar, and recipe rescue entities locally',
+        () async {
+      await controller.saveJournalEntry(
+        title: 'Evening reset',
+        body: 'Need to protect a shorter evening shutdown.',
+        mood: 'reflective',
+      );
+      await controller.saveQuickNote(text: 'Call landlord tomorrow morning.');
+      await controller.saveCalendarItem(
+        title: 'Deep work',
+        startIso: '2026-04-25T09:00:00Z',
+        endIso: '2026-04-25T10:30:00Z',
+      );
+      await controller.saveRecipeRescue(
+        title: 'Spinach rescue bowl',
+        summary: 'Use spinach before it expires.',
+        ingredientNames: const <String>['spinach', 'rice'],
+        estimatedMinutes: 15,
+      );
+
+      expect(controller.journalEntries, hasLength(1));
+      expect(controller.quickNotes, hasLength(1));
+      expect(controller.calendarItems, hasLength(1));
+      expect(
+        controller.recipeRescues.any(
+          (recipe) => recipe.title == 'Spinach rescue bowl',
+        ),
+        isTrue,
+      );
+      expect(
+        controller.blockedFromAiEvents.any((event) => event.domain == 'system'),
+        isTrue,
+      );
     });
   });
 }

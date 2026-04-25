@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.capture_parser import classify_capture_request, parse_capture_request
 from app.feedback_store import MissionFeedbackStore
 from app.graphs.golife_graph import run_suggestion_graph
 from app.guardrails import enforce_task_rewrite_privacy
@@ -7,6 +8,9 @@ from app.providers.base import LLMProvider
 from app.schemas import (
     EventClassificationRequest,
     EventClassificationResponse,
+    EventParseRequest,
+    EventParseResponse,
+    ParsedEventItem,
     SuggestionEvidence,
     SuggestionRequest,
     SuggestionResponse,
@@ -28,6 +32,16 @@ Return JSON only.
 Classify the capture text into one GoLife domain and one event_type.
 Allowed domains: task, habit, week, finance, pantry, wardrobe.
 Return an object with keys: domain, event_type, confidence, rationale.
+Do not add extra keys outside the requested JSON object.
+"""
+
+SEMANTIC_PARSE_SYSTEM_PROMPT = """
+Return JSON only.
+Split the capture text into one or more GoLife items.
+Allowed domains: task, habit, week, finance, pantry, wardrobe.
+Return an object with one key `items`.
+Each item must contain: text, domain, event_type, confidence, rationale, hints.
+`hints` must be an object and may include amount, currency, time_hint, expiry_hint, task_intent, purchase_pause_hours.
 Do not add extra keys outside the requested JSON object.
 """
 
@@ -220,91 +234,44 @@ async def run_task_rewrite(
 def run_event_classification(
     request: EventClassificationRequest,
 ) -> EventClassificationResponse:
-    text = request.text.lower()
+    item = classify_capture_request(request)
+    return EventClassificationResponse(
+        domain=item.domain,  # type: ignore[arg-type]
+        event_type=item.event_type,
+        confidence=item.confidence,
+        rationale=item.rationale,
+        trace={
+            "classifier": "deterministic_capture_router",
+            "parser": "deterministic_capture_parser",
+            "ai_enabled": request.privacy_settings.ai_enabled,
+            "item_count": len(parse_capture_request(EventParseRequest.model_validate(request.model_dump()))),
+            "text_length": len(request.text),
+        },
+    )
 
-    def _response(
-        *,
-        domain: str,
-        event_type: str,
-        confidence: float,
-        rationale: str,
-        matched_keywords: tuple[str, ...] = (),
-    ) -> EventClassificationResponse:
-        return EventClassificationResponse(
-            domain=domain,
-            event_type=event_type,
-            confidence=confidence,
-            rationale=rationale,
-            trace={
-                "classifier": "deterministic_capture_router",
-                "ai_enabled": request.privacy_settings.ai_enabled,
-                "matched_keywords": list(matched_keywords),
-                "text_length": len(request.text),
-            },
-        )
 
-    rules = [
-        (
-            "finance",
-            "expense_logged",
-            0.84,
-            ("$", "eur", "gaste", "compre", "coffee", "pague", "paid", "bought"),
-            "Detected money and purchase language.",
-        ),
-        (
-            "pantry",
-            "ingredient_flagged",
-            0.82,
-            (
-                "vence",
-                "expires",
-                "fridge",
-                "pantry",
-                "spinach",
-                "lechuga",
-                "espinaca",
-            ),
-            "Detected pantry or expiry language.",
-        ),
-        (
-            "wardrobe",
-            "purchase_intention",
-            0.8,
-            ("jacket", "shirt", "ropa", "chaqueta", "closet", "armario", "outfit"),
-            "Detected wardrobe or clothing intent.",
-        ),
-        (
-            "habit",
-            "habit_logged",
-            0.77,
-            ("habit", "streak", "meditate", "walked", "camine", "sleep", "water"),
-            "Detected habit continuity language.",
-        ),
-        (
-            "week",
-            "week_note_captured",
-            0.74,
-            ("week", "semana", "monday", "martes", "viernes", "calendar"),
-            "Detected planning or weekly framing.",
-        ),
-    ]
-
-    for domain, event_type, confidence, keywords, rationale in rules:
-        matched = tuple(keyword for keyword in keywords if keyword in text)
-        if matched:
-            return _response(
-                domain=domain,
-                event_type=event_type,
-                confidence=confidence,
-                rationale=rationale,
-                matched_keywords=matched,
+def run_event_parse(
+    request: EventParseRequest,
+) -> EventParseResponse:
+    items = parse_capture_request(request)
+    return EventParseResponse(
+        items=[
+            ParsedEventItem(
+                text=item.text,
+                domain=item.domain,  # type: ignore[arg-type]
+                event_type=item.event_type,
+                confidence=item.confidence,
+                rationale=item.rationale,
+                hints=item.hints,
             )
-
-    return _response(
-        domain="task",
-        event_type="task_captured",
-        confidence=0.62,
-        rationale="Defaulted to task because no stronger domain signal was found.",
+            for item in items
+        ],
+        trace={
+            "parser": "deterministic_capture_parser",
+            "ai_enabled": request.privacy_settings.ai_enabled,
+            "item_count": len(items),
+            "text_length": len(request.text),
+        },
     )
 
 
@@ -354,5 +321,73 @@ async def run_event_classification_semantic(
             "classifier": "semantic_openrouter",
             "configured_provider": settings.llm_provider,
             "provider_meta": provider_meta,
+        },
+    )
+
+
+async def run_event_parse_semantic(
+    request: EventParseRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> EventParseResponse:
+    provider_result = await provider.complete_json(
+        system_prompt=SEMANTIC_PARSE_SYSTEM_PROMPT,
+        user_payload={
+            "intent": "semantic_classify",
+            "user_id": request.user_id,
+            "text": request.text,
+            "allowed_domains": request.privacy_settings.allowed_domains,
+            "ai_enabled": request.privacy_settings.ai_enabled,
+            "multi_item": True,
+        },
+        response_schema=EventParseResponse.model_json_schema(),
+        temperature=0.0,
+    )
+
+    if not isinstance(provider_result, dict):
+        raise ValueError("Semantic parser did not return an object.")
+
+    raw_items = provider_result.get("items")
+    if not isinstance(raw_items, list) or not raw_items:
+        raise ValueError("Semantic parser did not return any items.")
+
+    items: list[ParsedEventItem] = []
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        text = raw.get("text")
+        domain = raw.get("domain")
+        event_type = raw.get("event_type")
+        if not isinstance(text, str) or not text.strip():
+            continue
+        if not isinstance(domain, str) or not domain.strip():
+            continue
+        if not isinstance(event_type, str) or not event_type.strip():
+            continue
+        items.append(
+            ParsedEventItem(
+                text=text.strip(),
+                domain=domain,  # type: ignore[arg-type]
+                event_type=event_type.strip(),
+                confidence=_coerce_confidence(raw.get("confidence"), 0.72),
+                rationale=str(
+                    raw.get("rationale")
+                    or "Semantic parser returned a structured item."
+                ),
+                hints=raw.get("hints") if isinstance(raw.get("hints"), dict) else {},
+            )
+        )
+
+    if not items:
+        raise ValueError("Semantic parser normalization produced no valid items.")
+
+    return EventParseResponse(
+        items=items,
+        trace={
+            "parser": "semantic_openrouter",
+            "configured_provider": settings.llm_provider,
+            "provider_meta": provider_result.get("_provider_meta", {}),
+            "item_count": len(items),
         },
     )

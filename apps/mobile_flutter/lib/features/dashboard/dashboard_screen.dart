@@ -170,6 +170,20 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Text(
+                  'AI data disclosure',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sent now: ${controller.aiEligibleEventCount} local events. Blocked locally: ${controller.totalEventCount - controller.aiEligibleEventCount}.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFFF2E5D2),
+                  ),
+                ),
               ],
             ),
           ),
@@ -292,6 +306,31 @@ class DashboardScreen extends StatelessWidget {
                     child: Text('- $item', style: theme.textTheme.bodyMedium),
                   ),
                 const SizedBox(height: 16),
+                Text('Data used for this mission',
+                    style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                for (final item in controller.missionDataUsed(mission))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text('- $item', style: theme.textTheme.bodyMedium),
+                  ),
+                const SizedBox(height: 16),
+                Text('Data sent to AI', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                for (final item in controller.dataSentToAiPreview())
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text('- $item', style: theme.textTheme.bodyMedium),
+                  ),
+                const SizedBox(height: 16),
+                Text('Blocked from AI', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                for (final item in controller.dataBlockedFromAiPreview())
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text('- $item', style: theme.textTheme.bodyMedium),
+                  ),
+                const SizedBox(height: 16),
                 Text('Uncertainty', style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(mission.uncertainty, style: theme.textTheme.bodyMedium),
@@ -354,7 +393,8 @@ class _DailyRiskCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final domain in risk.domainTargets) Chip(label: Text(domain)),
+                for (final domain in risk.domainTargets)
+                  Chip(label: Text(domain)),
               ],
             ),
           ],
@@ -409,7 +449,8 @@ class _MissionSupportCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final domain in mission.domainTargets) Chip(label: Text(domain)),
+              for (final domain in mission.domainTargets)
+                Chip(label: Text(domain)),
               Chip(
                 label: Text('${(mission.confidence * 100).round()}%'),
               ),

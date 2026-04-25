@@ -60,7 +60,8 @@ class AppRuntimeConfig {
     final rawAiStatus = json['ai_status'];
     final aiStatus = rawAiStatus is Map
         ? rawAiStatus.map<String, Object?>(
-            (key, value) => MapEntry(key.toString(), _normalizeJsonValue(value)),
+            (key, value) =>
+                MapEntry(key.toString(), _normalizeJsonValue(value)),
           )
         : const <String, Object?>{};
 

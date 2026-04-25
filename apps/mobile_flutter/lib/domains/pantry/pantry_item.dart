@@ -30,7 +30,8 @@ class PantryItem {
     return PantryItem(
       id: (json['id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
-      quantityLabel: (json['quantity_label'] ?? json['quantityLabel'] ?? '').toString(),
+      quantityLabel:
+          (json['quantity_label'] ?? json['quantityLabel'] ?? '').toString(),
       rescueHint: (json['rescue_hint'] ?? json['rescueHint'] ?? '').toString(),
     );
   }

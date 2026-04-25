@@ -71,7 +71,8 @@ class GoTask {
     return GoTask(
       id: (json['id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
-      priority: _taskPriorityFromKey((json['priority'] ?? 'standard').toString()),
+      priority:
+          _taskPriorityFromKey((json['priority'] ?? 'standard').toString()),
       status: _taskStatusFromKey((json['status'] ?? 'inbox').toString()),
       estimatedMinutes:
           ((json['estimated_minutes'] ?? json['estimatedMinutes']) as num?)

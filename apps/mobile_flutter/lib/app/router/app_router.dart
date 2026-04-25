@@ -23,7 +23,8 @@ GoRouter buildAppRouter(GoLifeController controller) {
         routes: [
           GoRoute(
             path: '/dashboard',
-            builder: (context, state) => DashboardScreen(controller: controller),
+            builder: (context, state) =>
+                DashboardScreen(controller: controller),
           ),
           GoRoute(
             path: '/capture',
@@ -52,6 +53,18 @@ GoRouter buildAppRouter(GoLifeController controller) {
           GoRoute(
             path: '/closet',
             builder: (context, state) => ClosetScreen(controller: controller),
+          ),
+          GoRoute(
+            path: '/journal',
+            builder: (context, state) => JournalScreen(controller: controller),
+          ),
+          GoRoute(
+            path: '/calendar',
+            builder: (context, state) => CalendarScreen(controller: controller),
+          ),
+          GoRoute(
+            path: '/recipes',
+            builder: (context, state) => RecipesScreen(controller: controller),
           ),
           GoRoute(
             path: '/copilot',

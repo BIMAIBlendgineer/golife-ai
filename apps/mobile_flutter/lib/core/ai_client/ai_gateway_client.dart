@@ -31,6 +31,13 @@ abstract class AiGatewayClient {
     required String text,
   });
 
+  Future<CaptureParseResponseDto?> parseCapture({
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    return null;
+  }
+
   Future<void> submitMissionFeedback({
     required MissionFeedback feedback,
   });
@@ -53,7 +60,8 @@ class MockAiGatewayClient extends AiGatewayClient {
           MissionSuggestionDto(
             id: 'mission-paused',
             title: 'Copilot paused',
-            body: 'Enable AI on at least one domain to generate daily missions.',
+            body:
+                'Enable AI on at least one domain to generate daily missions.',
             evidence: const ['No domain is currently marked as AI-allowed.'],
             uncertainty: 'No cross-domain inference was attempted.',
             requiresConfirmation: true,
@@ -112,7 +120,8 @@ class MockAiGatewayClient extends AiGatewayClient {
             evidence: const [
               'Habit continuity is visible in the local graph.',
             ],
-            uncertainty: 'Mock mission; the final effort still depends on energy.',
+            uncertainty:
+                'Mock mission; the final effort still depends on energy.',
             domainTargets: const ['habit'],
             confidence: 0.71,
           ),
@@ -184,7 +193,8 @@ class MockAiGatewayClient extends AiGatewayClient {
               'Wardrobe is AI-allowed.',
               'The mission keeps the final decision with the user.',
             ],
-            uncertainty: 'Mock mission; visual comparison still needs the person.',
+            uncertainty:
+                'Mock mission; visual comparison still needs the person.',
             domainTargets: const ['wardrobe'],
             recommendationType: 'reflection',
             confidence: 0.79,
@@ -255,7 +265,8 @@ class MockAiGatewayClient extends AiGatewayClient {
           evidence: const [
             'A small closure often reduces next-day friction.',
           ],
-          uncertainty: 'Mock mission; the exact action still depends on the day.',
+          uncertainty:
+              'Mock mission; the exact action still depends on the day.',
           domainTargets: const ['mission'],
           confidence: 0.6,
         ),
@@ -273,6 +284,14 @@ class MockAiGatewayClient extends AiGatewayClient {
       text: text,
       trace: const {'mock': true},
     );
+  }
+
+  @override
+  Future<CaptureParseResponseDto?> parseCapture({
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    return null;
   }
 
   @override
@@ -504,6 +523,54 @@ class HttpAiGatewayClient extends AiGatewayClient {
         text: text,
         reason: 'gateway_degraded',
       );
+    }
+  }
+
+  @override
+  Future<CaptureParseResponseDto?> parseCapture({
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    final payload = {
+      'user_id': userId,
+      'text': text,
+      'privacy_settings': {
+        'ai_enabled': privacySettings.aiEnabled,
+        'allowed_domains': privacySettings.aiAllowedWireDomains,
+        'allow_cross_domain_patterns':
+            privacySettings.aiAllowedWireDomains.length > 1,
+      },
+    };
+
+    try {
+      final response = await _httpClient
+          .post(
+            _endpoint('/v1/events/parse'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+
+      return CaptureParseResponseDto.fromGatewayJson(decoded);
+    } on TimeoutException {
+      return null;
+    } on SocketException {
+      return null;
+    } on http.ClientException {
+      return null;
+    } on FormatException {
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 

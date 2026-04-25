@@ -68,6 +68,31 @@ class SemanticClassificationProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.0,
     ):
+        if user_payload.get("multi_item"):
+            return {
+                "items": [
+                    {
+                        "text": "Compre cafe 4.50",
+                        "domain": "finance",
+                        "event_type": "expense_logged",
+                        "confidence": 0.9,
+                        "rationale": "Detected finance language.",
+                        "hints": {"amount": 4.5},
+                    },
+                    {
+                        "text": "la lechuga vence manana",
+                        "domain": "pantry",
+                        "event_type": "ingredient_flagged",
+                        "confidence": 0.87,
+                        "rationale": "Detected expiry wording.",
+                        "hints": {"expiry_hint": "manana"},
+                    },
+                ],
+                "_provider_meta": {
+                    "provider": self.provider_name,
+                    "model": "openai/gpt-4.1-mini",
+                },
+            }
         return {
             "domain": "pantry",
             "event_type": "ingredient_flagged",
@@ -232,6 +257,59 @@ def test_event_classification_uses_semantic_provider_when_flag_enabled(tmp_path)
     assert data["domain"] == "pantry"
     assert data["event_type"] == "ingredient_flagged"
     assert data["trace"]["classifier"] == "semantic_openrouter"
+
+
+def test_event_parse_endpoint_splits_multi_item_capture(client):
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "text": "Compre cafe 4.50, la lechuga vence manana y debo pagar internet",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["finance", "pantry", "task"],
+            },
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 3
+    assert data["items"][0]["domain"] == "finance"
+    assert data["items"][1]["domain"] == "pantry"
+    assert data["items"][2]["domain"] == "task"
+    assert data["trace"]["parser"] == "deterministic_capture_parser"
+
+
+def test_event_parse_uses_semantic_provider_when_flag_enabled(tmp_path):
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            routing_control_enabled=False,
+            openrouter_api_key="test-key",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=SemanticClassificationProvider(),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "text": "Compre cafe 4.50, la lechuga vence manana",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["finance", "pantry"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 2
+    assert data["items"][0]["domain"] == "finance"
+    assert data["trace"]["parser"] == "semantic_openrouter"
 
 
 def test_feedback_store_persists_items(tmp_path):
@@ -416,13 +494,25 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
             "recommendation_type": "mission",
         },
     )
+    parse_response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "text": "Compre cafe 4.50 y la lechuga vence manana",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["finance", "pantry"]},
+        },
+    )
 
     assert classify_response.status_code == 200
     assert feedback_response.status_code == 200
-    assert len(operational_client.usage_events) == 2
+    assert parse_response.status_code == 200
+    assert len(operational_client.usage_events) == 3
     assert operational_client.usage_events[0]["event_type"] == "capture_classification_requested"
-    assert len(operational_client.invocations) == 1
+    assert operational_client.usage_events[1]["event_type"] == "mission_feedback_recorded"
+    assert operational_client.usage_events[2]["event_type"] == "capture_parse_requested"
+    assert len(operational_client.invocations) == 2
     assert operational_client.invocations[0]["endpoint"] == "/v1/events/classify"
+    assert operational_client.invocations[1]["endpoint"] == "/v1/events/parse"
     assert len(operational_client.feedback_items) == 1
     assert operational_client.feedback_items[0]["status"] == "completed"
 
