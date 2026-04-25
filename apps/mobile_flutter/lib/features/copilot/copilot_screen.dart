@@ -27,6 +27,28 @@ class CopilotScreen extends StatelessWidget {
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 24),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF6EEE7),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFFD6C0A7)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Reflection boundaries',
+                    style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  'GoLife helps with daily organization and practical reflection. It does not diagnose, provide therapy, or replace professional care. If something feels urgent or unsafe, use real crisis or medical support.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           Wrap(
             spacing: 8,
             runSpacing: 8,

@@ -55,6 +55,10 @@ GoRouter buildAppRouter(GoLifeController controller) {
             builder: (context, state) => ClosetScreen(controller: controller),
           ),
           GoRoute(
+            path: '/everyday',
+            builder: (context, state) => EverydayScreen(controller: controller),
+          ),
+          GoRoute(
             path: '/journal',
             builder: (context, state) => JournalScreen(controller: controller),
           ),

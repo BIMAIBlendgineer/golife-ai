@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/finance/expense_record.dart';
@@ -430,6 +431,57 @@ class RecipesScreen extends StatelessWidget {
   }
 }
 
+class EverydayScreen extends StatelessWidget {
+  const EverydayScreen({super.key, required this.controller});
+
+  final GoLifeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DomainScreen(
+      title: 'Everyday',
+      eyebrow: 'Life OS',
+      description:
+          'Journal, calendar, and recipes live together here so the shell stays lighter while everyday context keeps growing.',
+      accent: const Color(0xFF6A5A4B),
+      topPanel: const _InfoPanel(
+        title: 'Everyday context',
+        body:
+            'Use writing, time blocks, and recipe rescue to give Today better context without turning the app into six crowded tabs.',
+      ),
+      child: Column(
+        children: [
+          _NavigationCard(
+            title: 'Journal',
+            subtitle:
+                '${controller.journalEntries.length} entries · ${controller.quickNotes.length} quick notes',
+            body:
+                'Capture reflection and short notes locally, with privacy-first defaults.',
+            actionLabel: 'Open journal',
+            onTap: () => context.go('/journal'),
+          ),
+          _NavigationCard(
+            title: 'Calendar',
+            subtitle:
+                '${controller.calendarItems.length} local blocks · overload ${controller.hasOverloadedCalendarDay ? "detected" : "not detected"}',
+            body: 'Keep a quick local calendar before you need full sync.',
+            actionLabel: 'Open calendar',
+            onTap: () => context.go('/calendar'),
+          ),
+          _NavigationCard(
+            title: 'Recipes',
+            subtitle: '${controller.recipeRescues.length} rescue ideas',
+            body:
+                'Turn pantry context into low-friction meals and mark ingredients used.',
+            actionLabel: 'Open recipes',
+            onTap: () => context.go('/recipes'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DomainScreen extends StatelessWidget {
   const _DomainScreen({
     required this.title,
@@ -620,6 +672,50 @@ class _InfoPanel extends StatelessWidget {
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(body, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavigationCard extends StatelessWidget {
+  const _NavigationCard({
+    required this.title,
+    required this.subtitle,
+    required this.body,
+    required this.actionLabel,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final String body;
+  final String actionLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(subtitle, style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 8),
+          Text(body, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          FilledButton.tonal(
+            onPressed: onTap,
+            child: Text(actionLabel),
+          ),
         ],
       ),
     );

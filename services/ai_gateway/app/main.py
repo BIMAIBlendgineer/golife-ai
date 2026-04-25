@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 
 from app.errors import AITemporarilyUnavailableError
 from app.feedback_store import MissionFeedbackStore
+from app.guardrails import assess_reflection_safety
 from app.operational_client import NoopOperationalEventsClient, OperationalEventsClient
 from app.operational_payloads import (
     build_ai_unavailable_operation_payload,
@@ -11,6 +12,7 @@ from app.operational_payloads import (
     build_feedback_operation_payloads,
     build_model_settings_payload,
     build_parse_operation_payloads,
+    build_reflection_safety_operation_payloads,
     build_suggestion_operation_payloads,
     build_task_rewrite_operation_payloads,
 )
@@ -23,6 +25,8 @@ from app.schemas import (
     EventParseResponse,
     MissionFeedbackRequest,
     MissionFeedbackResponse,
+    ReflectionSafetyRequest,
+    ReflectionSafetyResponse,
     SuggestionRequest,
     SuggestionResponse,
     TaskRewriteRequest,
@@ -467,6 +471,28 @@ def create_app(
                 "status": payload.status,
             },
         )
+
+    @app.post("/v1/reflection/check", response_model=ReflectionSafetyResponse)
+    async def reflection_check(
+        payload: ReflectionSafetyRequest,
+        request: Request,
+        background_tasks: BackgroundTasks,
+    ) -> ReflectionSafetyResponse:
+        response = assess_reflection_safety(payload)
+        telemetry = build_reflection_safety_operation_payloads(
+            request=payload,
+            response=response,
+        )
+        background_tasks.add_task(
+            request.app.state.operational_client.record_usage_event,
+            telemetry["usage_event"],
+        )
+        if telemetry["safety_events"]:
+            background_tasks.add_task(
+                request.app.state.operational_client.record_safety_events,
+                telemetry["safety_events"],
+            )
+        return response
 
     return app
 

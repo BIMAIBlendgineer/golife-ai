@@ -9,6 +9,7 @@ RecommendationType = Literal["mission", "plan_adjustment", "task_rewrite", "warn
 SuggestionStatus = Literal["draft", "shown", "accepted", "rejected", "edited", "expired"]
 DayState = Literal["overloaded", "steady", "recovery", "unstructured", "unknown"]
 FeedbackStatus = Literal["useful", "rejected", "accepted", "completed", "edited"]
+ReflectionSafetyCategory = Literal["supportive", "clinical", "crisis"]
 
 
 class PrivacySettings(BaseModel):
@@ -147,4 +148,17 @@ class MissionFeedbackRequest(BaseModel):
 class MissionFeedbackResponse(BaseModel):
     stored: bool = True
     feedback_id: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class ReflectionSafetyRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    privacy_level: PrivacyLevel = "local_only"
+
+
+class ReflectionSafetyResponse(BaseModel):
+    safe: bool = True
+    category: ReflectionSafetyCategory
+    message: str = Field(min_length=1)
     trace: dict[str, Any] = Field(default_factory=dict)

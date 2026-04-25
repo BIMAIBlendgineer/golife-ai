@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
@@ -33,6 +34,28 @@ class DashboardScreen extends StatelessWidget {
           Text(
             'Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.',
             style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              FilledButton.icon(
+                onPressed: () => context.go('/capture'),
+                icon: const Icon(Icons.bolt_rounded),
+                label: const Text('Capturar'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => context.go('/journal'),
+                icon: const Icon(Icons.edit_note_rounded),
+                label: const Text('Escribir'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => context.go('/copilot'),
+                icon: const Icon(Icons.record_voice_over_rounded),
+                label: const Text('Hablar'),
+              ),
+            ],
           ),
           if (gatewayStatusMessage != null) ...[
             const SizedBox(height: 16),

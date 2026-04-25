@@ -331,11 +331,9 @@ const appDestinations = [
   AppDestination(
       label: 'Closet', path: '/closet', icon: Icons.checkroom_rounded),
   AppDestination(
-      label: 'Journal', path: '/journal', icon: Icons.menu_book_rounded),
-  AppDestination(
-      label: 'Calendar', path: '/calendar', icon: Icons.edit_calendar_rounded),
-  AppDestination(
-      label: 'Recipes', path: '/recipes', icon: Icons.restaurant_menu_rounded),
+      label: 'Everyday',
+      path: '/everyday',
+      icon: Icons.auto_awesome_motion_rounded),
   AppDestination(
       label: 'Copilot', path: '/copilot', icon: Icons.psychology_alt_rounded),
   AppDestination(

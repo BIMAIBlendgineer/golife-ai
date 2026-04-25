@@ -10,6 +10,8 @@ from app.schemas import (
     EventParseRequest,
     EventParseResponse,
     MissionFeedbackRequest,
+    ReflectionSafetyRequest,
+    ReflectionSafetyResponse,
     SuggestionRequest,
     SuggestionResponse,
     TaskRewriteRequest,
@@ -284,6 +286,44 @@ def build_feedback_operation_payloads(
             "domains": request.domain_targets,
             "created_at": created_at,
         },
+    }
+
+
+def build_reflection_safety_operation_payloads(
+    *,
+    request: ReflectionSafetyRequest,
+    response: ReflectionSafetyResponse,
+) -> dict[str, Any]:
+    created_at = _utcnow_iso()
+    return {
+        "usage_event": {
+            "event_id": f"usage-{uuid4()}",
+            "user_id": request.user_id,
+            "event_type": "reflection_safety_checked",
+            "endpoint": "/v1/reflection/check",
+            "domain": "system",
+            "quantity": 1,
+            "created_at": created_at,
+            "metadata": {
+                "category": response.category,
+                "safe": response.safe,
+            },
+        },
+        "safety_events": (
+            [
+                {
+                    "event_id": f"safety-{uuid4()}",
+                    "user_id": request.user_id,
+                    "category": "reflection",
+                    "rule": response.trace.get("reason", "reflection_safety"),
+                    "severity": "high" if response.category == "crisis" else "medium",
+                    "endpoint": "/v1/reflection/check",
+                    "created_at": created_at,
+                }
+            ]
+            if not response.safe
+            else []
+        ),
     }
 
 

@@ -108,6 +108,24 @@ class SemanticClassificationProvider(LLMProvider):
         return {"semantic_classifier": True}
 
 
+class BrokenSemanticParseProvider(LLMProvider):
+    provider_name = "broken-semantic"
+
+    async def complete_json(
+        self,
+        *,
+        system_prompt: str,
+        user_payload: dict,
+        response_schema: dict | None = None,
+        model: str | None = None,
+        temperature: float = 0.0,
+    ):
+        return {"items": []}
+
+    async def runtime_flags(self) -> dict[str, bool]:
+        return {"semantic_classifier": True}
+
+
 def test_health_reports_mock_mode(client):
     response = client.get("/health")
     assert response.status_code == 200
@@ -310,6 +328,87 @@ def test_event_parse_uses_semantic_provider_when_flag_enabled(tmp_path):
     assert len(data["items"]) == 2
     assert data["items"][0]["domain"] == "finance"
     assert data["trace"]["parser"] == "semantic_openrouter"
+
+
+def test_event_parse_falls_back_when_semantic_provider_returns_no_items(tmp_path):
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            routing_control_enabled=False,
+            openrouter_api_key="test-key",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=BrokenSemanticParseProvider(),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "text": "Compre cafe 4.50, la lechuga vence manana y debo pagar internet",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["finance", "pantry", "task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 3
+    assert data["trace"]["parser"] == "deterministic_capture_parser"
+
+
+def test_event_parse_uses_local_parser_when_ai_disabled(tmp_path):
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            routing_control_enabled=False,
+            openrouter_api_key="test-key",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=SemanticClassificationProvider(),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "text": "Bought coffee 4.50 and spinach expires tomorrow and I need to pay rent",
+            "privacy_settings": {
+                "ai_enabled": False,
+                "allowed_domains": ["finance", "pantry", "task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 3
+    assert data["trace"]["parser"] == "deterministic_capture_parser"
+
+
+def test_event_parse_supports_mixed_spanish_and_english(client):
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "text": "Bought coffee 4.50, la lechuga vence manana and I need to pay internet",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["finance", "pantry", "task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 3
+    assert [item["domain"] for item in data["items"]] == ["finance", "pantry", "task"]
 
 
 def test_feedback_store_persists_items(tmp_path):
@@ -577,3 +676,54 @@ def test_task_rewrite_privacy_rejection_reports_safety(tmp_path):
     assert operational_client.invocations[0]["status"] == "error"
     assert len(operational_client.safety_batches) == 1
     assert operational_client.safety_batches[0][0]["rule"] == "task_rewrite_requires_ai_allowed"
+
+
+def test_reflection_check_returns_supportive_message(client):
+    response = client.post(
+        "/v1/reflection/check",
+        json={
+            "user_id": "user-1",
+            "text": "I feel scattered and need help organizing tomorrow.",
+            "privacy_level": "local_only",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["safe"] is True
+    assert data["category"] == "supportive"
+    assert data["trace"]["reason"] == "supportive_reflection"
+
+
+def test_reflection_check_blocks_clinical_language(client):
+    response = client.post(
+        "/v1/reflection/check",
+        json={
+            "user_id": "user-1",
+            "text": "Can you diagnose my depression and give treatment?",
+            "privacy_level": "local_only",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["safe"] is False
+    assert data["category"] == "clinical"
+    assert data["trace"]["reason"] == "clinical_language"
+
+
+def test_reflection_check_returns_crisis_message(client):
+    response = client.post(
+        "/v1/reflection/check",
+        json={
+            "user_id": "user-1",
+            "text": "I want to kill myself tonight.",
+            "privacy_level": "local_only",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["safe"] is False
+    assert data["category"] == "crisis"
+    assert data["trace"]["reason"] == "crisis_language"

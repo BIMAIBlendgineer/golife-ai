@@ -125,16 +125,23 @@ class CaptureParser {
 
   List<String> _splitOnConnector(String text) {
     final lowered = text.toLowerCase();
-    final signalCount =
-        _countSignals(lowered, <String>['compr', 'gaste', 'pague', 'coffee']) +
-            _countSignals(lowered, <String>['vence', 'caduc', 'fridge']) +
-            _countSignals(lowered, <String>['debo', 'tengo que', 'submit']) +
-            _countSignals(lowered, <String>['comprar', 'jacket', 'ropa']);
+    final signalCount = _countSignals(
+          lowered,
+          <String>['compr', 'gaste', 'pague', 'paid', 'pay ', 'coffee'],
+        ) +
+        _countSignals(
+            lowered, <String>['vence', 'caduc', 'fridge', 'expires']) +
+        _countSignals(
+          lowered,
+          <String>['debo', 'tengo que', 'submit', 'need to'],
+        ) +
+        _countSignals(lowered, <String>['comprar', 'jacket', 'ropa']);
 
-    if (signalCount < 2 || !lowered.contains(' y ')) {
+    if (signalCount < 2 ||
+        (!lowered.contains(' y ') && !lowered.contains(' and '))) {
       return <String>[text];
     }
-    return text.split(RegExp(r'\s+y\s+', caseSensitive: false));
+    return text.split(RegExp(r'\s+(y|and)\s+', caseSensitive: false));
   }
 
   int _countSignals(String lowered, List<String> signals) {

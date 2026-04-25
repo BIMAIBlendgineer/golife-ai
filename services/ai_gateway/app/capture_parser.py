@@ -61,9 +61,9 @@ def _split_into_clauses(text: str) -> list[str]:
 def _split_on_connector(text: str) -> list[str]:
     lowered = text.lower()
     signal_count = (
-        _count_signals(lowered, ["compr", "gaste", "pague", "coffee"])
-        + _count_signals(lowered, ["vence", "caduc", "fridge"])
-        + _count_signals(lowered, ["debo", "tengo que", "submit"])
+        _count_signals(lowered, ["compr", "gaste", "pague", "paid", "pay ", "coffee"])
+        + _count_signals(lowered, ["vence", "caduc", "fridge", "expires"])
+        + _count_signals(lowered, ["debo", "tengo que", "submit", "need to"])
         + _count_signals(lowered, ["comprar", "jacket", "ropa"])
     )
     if signal_count < 2 or (" y " not in lowered and " and " not in lowered):
