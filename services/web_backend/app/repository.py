@@ -362,6 +362,12 @@ class OperationalRepository:
                 updated_at=now,
             ),
             FeatureFlag(
+                key="proof_parser",
+                enabled=False,
+                description="Allow semantic purchase proof parsing beyond deterministic local extraction.",
+                updated_at=now,
+            ),
+            FeatureFlag(
                 key="admin_live_metrics",
                 enabled=True,
                 description="Show backend live/offline state and ingestion timestamp in admin.",

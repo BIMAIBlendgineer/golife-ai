@@ -61,22 +61,12 @@ class PrivacyScreen extends StatelessWidget {
               _PrivacyDisclosureCard(
                 title: l10n.privacyDisclosureEncryptedTitle,
                 body: l10n.privacyDisclosureEncryptedBody,
-                items: <String>[
-                  l10n.collectionFinanceRecords,
-                  l10n.collectionJournalEntries,
-                  l10n.collectionQuickNotes,
-                ],
+                items: controller.localizedEncryptedCollectionLabels(l10n),
               ),
               _PrivacyDisclosureCard(
                 title: l10n.privacyDisclosureLocalTitle,
                 body: l10n.privacyDisclosureLocalBody,
-                items: <String>[
-                  l10n.collectionPrivacySettings,
-                  l10n.collectionJournalEntries,
-                  l10n.collectionQuickNotes,
-                  l10n.collectionRuntimeConfigCache,
-                  l10n.collectionDeviceEncryptionKey,
-                ],
+                items: controller.localizedAlwaysLocalCollectionLabels(l10n),
               ),
               _PrivacyDisclosureCard(
                 title: l10n.privacyDisclosureAiTitle,
@@ -124,7 +114,7 @@ class PrivacyScreen extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.76),
               borderRadius: BorderRadius.circular(24),
             ),
-              child: Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(l10n.dataControls, style: theme.textTheme.titleLarge),

@@ -206,6 +206,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get collectionQuickNotes => 'Notas rapidas';
 
   @override
+  String get collectionOwnedItems => 'Owned items';
+
+  @override
+  String get collectionPurchaseProofs => 'Purchase proofs';
+
+  @override
+  String get collectionClaimDrafts => 'Claim drafts';
+
+  @override
+  String get collectionEvidenceAttachments => 'Evidence attachments';
+
+  @override
   String get collectionPrivacySettings => 'Ajustes de privacidade';
 
   @override
@@ -549,6 +561,200 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get navRecipes => 'Recipes';
+
+  @override
+  String get homeMemoryEyebrow => 'RecallBox';
+
+  @override
+  String get homeMemoryTitle => 'HomeMemory';
+
+  @override
+  String get homeMemorySubtitle =>
+      'Things, receipts, warranties, and reminders.';
+
+  @override
+  String get homeMemoryDisclosureTitle => 'Local purchase memory';
+
+  @override
+  String get homeMemoryDisclosureBody =>
+      'Receipts, draft claims, and evidence stay local-first in this MVP. GoLife turns them into reminders and next actions without promising legal review.';
+
+  @override
+  String get homeMemoryWarrantySoonTitle => 'Warranty ending soon';
+
+  @override
+  String get homeMemoryWarrantySoonEmpty =>
+      'No active warranty close to expiration.';
+
+  @override
+  String get homeMemoryRecentProofsTitle => 'Recent proofs';
+
+  @override
+  String get homeMemoryRecentProofsEmpty => 'No proofs captured yet.';
+
+  @override
+  String get homeMemoryRemindersTitle => 'Maintenance reminders';
+
+  @override
+  String get homeMemoryRemindersEmpty => 'No reminders scheduled.';
+
+  @override
+  String get homeMemoryClaimsTitle => 'Claim drafts';
+
+  @override
+  String get homeMemoryClaimsEmpty => 'No draft claims yet.';
+
+  @override
+  String get homeMemoryActionAddItem => 'Add item manually';
+
+  @override
+  String get homeMemoryActionAddProof => 'Add proof';
+
+  @override
+  String get homeMemoryActionCreateReminder => 'Create reminder';
+
+  @override
+  String get homeMemoryActionDraftClaim => 'Draft claim';
+
+  @override
+  String get homeMemoryActionOpen => 'Open HomeMemory';
+
+  @override
+  String get homeMemoryItemsTitle => 'Owned items';
+
+  @override
+  String get homeMemoryItemsEmpty => 'No owned items stored yet.';
+
+  @override
+  String homeMemoryWarrantyUntilLabel(Object date) {
+    return 'Warranty until $date';
+  }
+
+  @override
+  String get homeMemoryItemNoMeta => 'No purchase metadata yet.';
+
+  @override
+  String get homeMemorySectionItem => 'Item';
+
+  @override
+  String get homeMemorySectionProofs => 'Proofs';
+
+  @override
+  String get homeMemorySectionWarranty => 'Warranty';
+
+  @override
+  String get homeMemorySectionReminders => 'Reminders';
+
+  @override
+  String get homeMemorySectionClaims => 'Claim drafts';
+
+  @override
+  String get homeMemorySectionEvidence => 'Evidence';
+
+  @override
+  String get homeMemoryFieldProductName => 'Product name';
+
+  @override
+  String get homeMemoryFieldBrand => 'Brand';
+
+  @override
+  String get homeMemoryFieldModel => 'Model';
+
+  @override
+  String get homeMemoryFieldSerialNumber => 'Serial number';
+
+  @override
+  String get homeMemoryFieldStore => 'Store';
+
+  @override
+  String get homeMemoryFieldPurchaseDate => 'Purchase date';
+
+  @override
+  String get homeMemoryFieldPrice => 'Price';
+
+  @override
+  String get homeMemoryFieldCurrency => 'Currency';
+
+  @override
+  String get homeMemoryFieldWarrantyMonths => 'Warranty months';
+
+  @override
+  String get homeMemoryFieldWarrantyUntil => 'Warranty until';
+
+  @override
+  String get homeMemoryFieldDueDate => 'Due date';
+
+  @override
+  String get homeMemoryFieldRecurrence => 'Recurrence';
+
+  @override
+  String get homeMemoryFieldIssueDescription => 'Issue description';
+
+  @override
+  String get homeMemoryFieldRecipientHint => 'Recipient hint';
+
+  @override
+  String get homeMemoryCreateWarrantyReminder =>
+      'Create a reminder before warranty expiration';
+
+  @override
+  String get homeMemoryDefaultReminderTitle =>
+      'Review warranty before expiration';
+
+  @override
+  String get homeMemorySelectItem => 'Select item';
+
+  @override
+  String get homeMemoryClaimDisclaimer =>
+      'No legal advice. Verify warranty and seller policies. Send outside the app.';
+
+  @override
+  String get homeMemoryNoNotes => 'No notes';
+
+  @override
+  String get homeMemoryUnknownMerchant => 'Unknown merchant';
+
+  @override
+  String get homeMemoryUnknownDate => 'Unknown date';
+
+  @override
+  String get homeMemoryUnknownValue => 'Unknown';
+
+  @override
+  String get homeMemoryNoProofs => 'No proofs attached yet.';
+
+  @override
+  String get homeMemoryWarrantyUnknown => 'Warranty unknown.';
+
+  @override
+  String get homeMemoryNoReminders => 'No reminders yet.';
+
+  @override
+  String get homeMemoryNoClaims => 'No claim drafts yet.';
+
+  @override
+  String get homeMemoryNoEvidence => 'No evidence attached yet.';
+
+  @override
+  String get homeMemoryEvidencePresent => 'Evidence attachment available.';
+
+  @override
+  String get homeMemoryWarrantyStatusUnknown => 'unknown';
+
+  @override
+  String get homeMemoryWarrantyStatusExpired => 'expired';
+
+  @override
+  String get homeMemoryWarrantyStatusActive => 'active warranty';
+
+  @override
+  String homeMemoryEverydaySubtitle(int itemCount, int warrantyCount) {
+    return '$itemCount items | $warrantyCount warranties ending soon';
+  }
+
+  @override
+  String get homeMemoryEverydayBody =>
+      'Keep receipts, owned items, warranties, reminders, and draft claims in one local memory surface.';
 
   @override
   String get entityTask => 'task';

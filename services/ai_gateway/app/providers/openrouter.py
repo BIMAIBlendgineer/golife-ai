@@ -362,6 +362,7 @@ class OpenRouterProvider(LLMProvider):
             "closet_decision": "daily_plan",
             "weekly_summary": "weekly_summary",
             "semantic_classify": "semantic_classify",
+            "proof_parse": "semantic_classify",
         }
         return mapping.get(intent, "daily_plan")
 

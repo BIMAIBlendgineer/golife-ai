@@ -12,6 +12,7 @@ from app.operational_payloads import (
     build_feedback_operation_payloads,
     build_model_settings_payload,
     build_parse_operation_payloads,
+    build_proof_parse_operation_payloads,
     build_reflection_safety_operation_payloads,
     build_suggestion_operation_payloads,
     build_task_rewrite_operation_payloads,
@@ -25,6 +26,8 @@ from app.schemas import (
     EventParseResponse,
     MissionFeedbackRequest,
     MissionFeedbackResponse,
+    ProofParseRequest,
+    ProofParseResponse,
     ReflectionSafetyRequest,
     ReflectionSafetyResponse,
     SuggestionRequest,
@@ -39,6 +42,8 @@ from app.use_cases import (
     run_event_classification_semantic,
     run_event_parse,
     run_event_parse_semantic,
+    run_proof_parse,
+    run_proof_parse_semantic,
     run_suggestions,
     run_task_rewrite,
 )
@@ -224,6 +229,47 @@ def create_app(
         else:
             response = run_event_parse(payload)
         telemetry = build_parse_operation_payloads(
+            request=payload,
+            response=response,
+            latency_ms=(perf_counter() - started_at) * 1000,
+        )
+        background_tasks.add_task(
+            request.app.state.operational_client.record_usage_event,
+            telemetry["usage_event"],
+        )
+        background_tasks.add_task(
+            request.app.state.operational_client.record_ai_invocation,
+            telemetry["ai_invocation"],
+        )
+        background_tasks.add_task(
+            request.app.state.operational_client.record_model_settings,
+            build_model_settings_payload(
+                request.app.state.settings,
+                request.app.state.provider.provider_name,
+            ),
+        )
+        return response
+
+    @app.post("/v1/proofs/parse", response_model=ProofParseResponse)
+    async def parse_proof(
+        payload: ProofParseRequest,
+        request: Request,
+        background_tasks: BackgroundTasks,
+    ) -> ProofParseResponse:
+        started_at = perf_counter()
+        runtime_flags = await request.app.state.provider.runtime_flags()
+        if runtime_flags.get("proof_parser") and payload.privacy_settings.ai_enabled:
+            try:
+                response = await run_proof_parse_semantic(
+                    payload,
+                    settings=request.app.state.settings,
+                    provider=request.app.state.provider,
+                )
+            except Exception:
+                response = run_proof_parse(payload)
+        else:
+            response = run_proof_parse(payload)
+        telemetry = build_proof_parse_operation_payloads(
             request=payload,
             response=response,
             latency_ms=(perf_counter() - started_at) * 1000,

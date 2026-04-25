@@ -16,4 +16,5 @@ def client(tmp_path) -> TestClient:
         ),
         provider=MockLLMProvider(),
     )
-    return TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client

@@ -4,6 +4,7 @@ from app.capture_parser import classify_capture_request, parse_capture_request
 from app.feedback_store import MissionFeedbackStore
 from app.graphs.golife_graph import run_suggestion_graph
 from app.guardrails import enforce_task_rewrite_privacy
+from app.proof_parser import parse_purchase_proof_request
 from app.providers.base import LLMProvider
 from app.schemas import (
     EventClassificationRequest,
@@ -11,6 +12,8 @@ from app.schemas import (
     EventParseRequest,
     EventParseResponse,
     ParsedEventItem,
+    ProofParseRequest,
+    ProofParseResponse,
     SuggestionEvidence,
     SuggestionRequest,
     SuggestionResponse,
@@ -46,6 +49,17 @@ Preserve the original user text language for each item unless the input itself m
 Return an object with one key `items`.
 Each item must contain: text, domain, event_type, confidence, rationale, hints.
 `hints` must be an object and may include amount, currency, time_hint, expiry_hint, task_intent, purchase_pause_hours.
+Do not add extra keys outside the requested JSON object.
+"""
+
+SEMANTIC_PROOF_PARSE_SYSTEM_PROMPT = """
+Return JSON only.
+Extract structured purchase proof fields from receipt, invoice, or purchase text.
+Write `rationale` and `disclaimer` in the locale requested in `user_payload.locale`.
+Do not invent a warranty as a fact when the text does not contain one.
+Return an object with keys:
+product_name, brand, model, merchant_name, purchase_date, total_amount, currency,
+warranty_months, confidence, rationale, disclaimer.
 Do not add extra keys outside the requested JSON object.
 """
 
@@ -280,6 +294,12 @@ def run_event_parse(
     )
 
 
+def run_proof_parse(
+    request: ProofParseRequest,
+) -> ProofParseResponse:
+    return parse_purchase_proof_request(request)
+
+
 async def run_event_classification_semantic(
     request: EventClassificationRequest,
     *,
@@ -398,3 +418,87 @@ async def run_event_parse_semantic(
             "item_count": len(items),
         },
     )
+
+
+async def run_proof_parse_semantic(
+    request: ProofParseRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> ProofParseResponse:
+    provider_result = await provider.complete_json(
+        system_prompt=SEMANTIC_PROOF_PARSE_SYSTEM_PROMPT,
+        user_payload={
+            "intent": "proof_parse",
+            "user_id": request.user_id,
+            "locale": request.locale,
+            "region": request.region,
+            "text": request.text,
+            "ai_enabled": request.privacy_settings.ai_enabled,
+        },
+        response_schema=ProofParseResponse.model_json_schema(),
+        temperature=0.0,
+    )
+
+    if not isinstance(provider_result, dict):
+        raise ValueError("Semantic proof parser did not return an object.")
+
+    rationale = provider_result.get("rationale")
+    disclaimer = provider_result.get("disclaimer")
+    if not isinstance(rationale, str) or not rationale.strip():
+        raise ValueError("Semantic proof parser did not return rationale.")
+    if not isinstance(disclaimer, str) or not disclaimer.strip():
+        raise ValueError("Semantic proof parser did not return disclaimer.")
+
+    confidence = _coerce_confidence(provider_result.get("confidence"), 0.72)
+    return ProofParseResponse(
+        product_name=_maybe_text(provider_result.get("product_name")),
+        brand=_maybe_text(provider_result.get("brand")),
+        model=_maybe_text(provider_result.get("model")),
+        merchant_name=_maybe_text(provider_result.get("merchant_name")),
+        purchase_date=_maybe_text(provider_result.get("purchase_date")),
+        total_amount=_maybe_float(provider_result.get("total_amount")),
+        currency=_maybe_text(provider_result.get("currency")),
+        warranty_months=_maybe_int(provider_result.get("warranty_months")),
+        confidence=confidence,
+        rationale=rationale.strip(),
+        disclaimer=disclaimer.strip(),
+        trace={
+            "parser": "semantic_openrouter",
+            "configured_provider": settings.llm_provider,
+            "provider_meta": provider_result.get("_provider_meta", {}),
+            "region": request.region,
+            "has_amount": provider_result.get("total_amount") is not None,
+            "has_date": bool(provider_result.get("purchase_date")),
+            "has_warranty_hint": provider_result.get("warranty_months") is not None,
+        },
+    )
+
+
+def _maybe_text(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _maybe_float(value: object) -> float | None:
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip().replace(",", "."))
+        except ValueError:
+            return None
+    return None
+
+
+def _maybe_int(value: object) -> int | None:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        stripped = value.strip()
+        return int(stripped) if stripped.isdigit() else None
+    return None

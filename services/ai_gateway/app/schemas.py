@@ -117,6 +117,29 @@ class EventParseResponse(BaseModel):
     trace: dict[str, Any] = Field(default_factory=dict)
 
 
+class ProofParseRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    locale: str = "en"
+    region: str | None = None
+    text: str = Field(min_length=1)
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+
+
+class ProofParseResponse(BaseModel):
+    product_name: str | None = None
+    brand: str | None = None
+    model: str | None = None
+    merchant_name: str | None = None
+    purchase_date: str | None = None
+    total_amount: float | None = None
+    currency: str | None = None
+    warranty_months: int | None = None
+    confidence: float = Field(ge=0.0, le=1.0)
+    rationale: str = Field(min_length=1)
+    disclaimer: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
 class TaskRewriteRequest(BaseModel):
     user_id: str = Field(min_length=1)
     locale: str = "en"

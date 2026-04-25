@@ -121,5 +121,91 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+        'manual proof flow creates item, warranty, reminder, claim, evidence, and export security',
+        () async {
+      final message = await controller.saveManualPurchaseProof(
+        productName: 'Dyson V8',
+        brand: 'Dyson',
+        model: 'V8',
+        category: 'appliance',
+        store: 'Amazon',
+        purchaseDate: '2026-04-10',
+        price: 249.99,
+        currency: 'USD',
+        warrantyMonths: 24,
+        notes: 'Keep receipt local.',
+        createWarrantyReminder: true,
+      );
+
+      final ownedItem = controller.ownedItems.single;
+      expect(message, isNotNull);
+      expect(message, isNotEmpty);
+      expect(ownedItem.name, 'Dyson V8');
+      expect(controller.purchaseProofs.single.ownedItemId, ownedItem.id);
+      expect(controller.warrantyRecords.single.ownedItemId, ownedItem.id);
+      expect(controller.maintenanceReminders.single.ownedItemId, ownedItem.id);
+
+      await controller.saveClaimDraft(
+        ownedItemId: ownedItem.id,
+        issueDescription: 'Battery stopped charging.',
+        recipientHint: 'Amazon support',
+      );
+      await controller.saveEvidenceAttachment(
+        ownedItemId: ownedItem.id,
+        proofId: controller.purchaseProofs.single.id,
+        type: 'receipt',
+        fileRef: 'files/receipt-1.jpg',
+        description: 'Receipt photo',
+        privacyLevel: 'local_only',
+      );
+
+      expect(controller.claimDrafts, hasLength(1));
+      expect(controller.evidenceAttachments, hasLength(1));
+      expect(
+        controller.lifeEvents
+            .any((event) => event.type == 'purchase_proof_added'),
+        isTrue,
+      );
+      expect(
+        controller.lifeEvents
+            .any((event) => event.type == 'owned_item_created'),
+        isTrue,
+      );
+      expect(
+        controller.lifeEvents.any((event) => event.type == 'warranty_detected'),
+        isTrue,
+      );
+      expect(
+        controller.lifeEvents
+            .any((event) => event.type == 'maintenance_scheduled'),
+        isTrue,
+      );
+      expect(
+        controller.lifeEvents
+            .any((event) => event.type == 'claim_draft_created'),
+        isTrue,
+      );
+      expect(
+        controller.lifeEvents.any(
+          (event) => event.type == 'evidence_attachment_added',
+        ),
+        isTrue,
+      );
+
+      final exportedJson = await controller.exportLocalDataJson();
+      final decoded = jsonDecode(exportedJson) as Map<String, dynamic>;
+      final storageSecurity =
+          decoded['storage_security'] as Map<String, dynamic>;
+      final encryptedCollections =
+          (storageSecurity['encrypted_collections'] as List<dynamic>)
+              .cast<String>();
+
+      expect(encryptedCollections, contains('owned_items'));
+      expect(encryptedCollections, contains('purchase_proofs'));
+      expect(encryptedCollections, contains('claim_drafts'));
+      expect(encryptedCollections, contains('evidence_attachments'));
+    });
   });
 }
