@@ -318,9 +318,11 @@ def _normalize_provider_suggestions(provider_result: object) -> list[AISuggestio
             continue
         try:
             normalized_items.append(AISuggestion.model_validate(raw))
-            continue
         except Exception:
-            pass
+            # Fall through to the compatibility normalizer for legacy payloads.
+            ...
+        else:
+            continue
 
         domain_targets = raw.get("domain_targets")
         if not isinstance(domain_targets, list) or not domain_targets:

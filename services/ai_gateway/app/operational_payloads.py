@@ -24,6 +24,12 @@ def _utcnow_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def _feedback_reason_marker(note: str | None) -> str | None:
+    if not note or not note.strip():
+        return None
+    return "private_note_redacted"
+
+
 def estimate_cost_usd(
     *,
     endpoint: str,
@@ -243,7 +249,7 @@ def build_parse_operation_payloads(
             "fallback": classifier != "semantic_openrouter",
             "suggestions_count": len(response.items),
             "estimated_cost_usd": estimate_cost_usd(
-                endpoint="/v1/events/classify",
+                endpoint="/v1/events/parse",
                 provider=provider_name,
                 suggestions_count=max(1, len(response.items)),
             ),
@@ -263,6 +269,7 @@ def build_feedback_operation_payloads(
     feedback_id: str,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
+    note_text = (request.notes or "").strip()
     return {
         "usage_event": {
             "event_id": f"usage-{uuid4()}",
@@ -275,6 +282,8 @@ def build_feedback_operation_payloads(
             "metadata": {
                 "status": request.status,
                 "suggestion_id": request.suggestion_id,
+                "notes_present": bool(note_text),
+                "notes_char_count": len(note_text),
             },
         },
         "feedback_audit": {
@@ -282,7 +291,7 @@ def build_feedback_operation_payloads(
             "user_id": request.user_id,
             "suggestion_id": request.suggestion_id,
             "status": request.status,
-            "reason": request.notes,
+            "reason": _feedback_reason_marker(note_text),
             "domains": request.domain_targets,
             "created_at": created_at,
         },

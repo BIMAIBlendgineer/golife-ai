@@ -4,6 +4,11 @@ on:
   push:
     branches: ["main"]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: monorepo-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -88,3 +93,74 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  python-security:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - services/ai_gateway
+          - services/web_backend
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install -e .[dev] bandit pip-audit
+      - name: Run Bandit
+        run: bandit -q -r app -s B105,B106
+      - name: Run pip-audit
+        run: pip-audit --ignore-vuln CVE-2026-3219
+
+  admin-security:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/admin_next
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/admin_next/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run npm audit
+        run: npm audit --omit=dev --audit-level=high
+
+  ai-gateway-load-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ai_gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install -e .[dev]
+      - name: Start AI Gateway
+        run: |
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/ai-gateway.log 2>&1 &
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8000/health > /dev/null; then
+              echo "AI Gateway is healthy"
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              cat /tmp/ai-gateway.log
+              echo "AI Gateway did not become healthy in time"
+              exit 1
+            fi
+            sleep 1
+          done
+      - name: Run load smoke
+        run: python ../../scripts/performance/ai_gateway_load_smoke.py --base-url http://127.0.0.1:8000 --requests 60 --concurrency 10 --max-p95-ms 2000 --max-error-rate 0.0

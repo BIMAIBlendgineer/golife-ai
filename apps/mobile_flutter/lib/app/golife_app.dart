@@ -7,6 +7,8 @@ import '../core/ai_client/ai_gateway_client.dart';
 import '../core/lifegraph/lifegraph_repository.dart';
 import '../core/runtime/runtime_config_client.dart';
 import '../core/storage/local_store.dart';
+import '../core/storage/memory_local_store.dart';
+import '../core/storage/resilient_local_store.dart';
 import '../core/storage/sqlite_local_store.dart';
 import '../features/app_state/golife_controller.dart';
 import 'router/app_router.dart';
@@ -36,7 +38,11 @@ class _GoLifeAppState extends State<GoLifeApp> {
   @override
   void initState() {
     super.initState();
-    final resolvedLocalStore = widget.localStore ?? SqliteLocalStore();
+    final resolvedLocalStore = widget.localStore ??
+        ResilientLocalStore(
+          primary: SqliteLocalStore(),
+          fallback: MemoryLocalStore(),
+        );
     final baseUrl = const String.fromEnvironment(
       'GOLIFE_AI_GATEWAY_BASE_URL',
       defaultValue: 'http://127.0.0.1:8000',

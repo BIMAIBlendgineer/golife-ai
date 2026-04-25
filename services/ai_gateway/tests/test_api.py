@@ -2,12 +2,13 @@ import json
 
 from fastapi.testclient import TestClient
 
+from app.guardrails import assess_reflection_safety
 from app.main import create_app
 from app.providers.factory import build_provider
 from app.feedback_store import MissionFeedbackStore
 from app.providers.mock import MockLLMProvider
 from app.providers.base import LLMProvider
-from app.schemas import MissionFeedbackRequest
+from app.schemas import MissionFeedbackRequest, ReflectionSafetyRequest
 from app.settings import Settings
 
 
@@ -430,6 +431,9 @@ def test_feedback_store_persists_items(tmp_path):
     items = reloaded_store.all()
     assert len(items) == 1
     assert items[0]["status"] == "useful"
+    assert items[0]["notes_present"] is True
+    assert items[0]["notes_char_count"] == len("kept locally")
+    assert "notes" not in items[0]
 
 
 def test_feedback_summary_is_isolated_per_user(tmp_path):
@@ -614,8 +618,18 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
     assert len(operational_client.invocations) == 2
     assert operational_client.invocations[0]["endpoint"] == "/v1/events/classify"
     assert operational_client.invocations[1]["endpoint"] == "/v1/events/parse"
+    assert operational_client.invocations[1]["estimated_cost_usd"] == 0.0024
     assert len(operational_client.feedback_items) == 1
     assert operational_client.feedback_items[0]["status"] == "completed"
+    assert operational_client.feedback_items[0]["reason"] == "private_note_redacted"
+    assert operational_client.usage_events[1]["metadata"]["notes_present"] is True
+    serialized = json.dumps(
+        {
+            "usage_events": operational_client.usage_events,
+            "feedback_items": operational_client.feedback_items,
+        }
+    )
+    assert "finished it" not in serialized
 
 
 def test_task_rewrite_reports_operational_events(tmp_path):
@@ -815,3 +829,17 @@ def test_reflection_check_reports_metadata_only_operational_audit(tmp_path):
         }
     )
     assert "kill myself" not in serialized
+
+
+def test_assess_reflection_safety_detects_accented_crisis_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "text": "Siento que podria hacerme da\u00f1o esta noche.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "crisis"

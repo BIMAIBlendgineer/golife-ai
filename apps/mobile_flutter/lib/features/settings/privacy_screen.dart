@@ -23,24 +23,28 @@ class PrivacyScreen extends StatelessWidget {
             'Each event stays local unless both the domain permission and the event privacy level allow AI. This screen also gives you direct local export and delete controls.',
             style: theme.textTheme.bodyLarge,
           ),
-          if (controller.sensitiveLocalEncryptionEnabled) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEDF4EE),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFFB6C8B4),
-                ),
-              ),
-              child: Text(
-                'Sensitive local encryption is active for Journal, Quick Notes, and Finance records stored on this device.',
-                style: theme.textTheme.bodyMedium,
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: controller.sensitiveLocalEncryptionEnabled
+                  ? const Color(0xFFEDF4EE)
+                  : const Color(0xFFF6EEE7),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: controller.sensitiveLocalEncryptionEnabled
+                    ? const Color(0xFFB6C8B4)
+                    : const Color(0xFFD6C0A7),
               ),
             ),
-          ],
+            child: Text(
+              controller.sensitiveLocalEncryptionEnabled
+                  ? 'Sensitive local encryption is active for Journal, Quick Notes, and Finance records stored on this device.'
+                  : 'Sensitive local encryption is unavailable in this runtime. Treat Journal, Quick Notes, and Finance as not protected at rest until secure storage is available again.',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
           const SizedBox(height: 24),
           Text('Privacy center', style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
