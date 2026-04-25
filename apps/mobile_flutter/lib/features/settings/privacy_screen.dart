@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/i18n/app_locale.dart';
+import '../../core/i18n/app_localized_values.dart';
 import '../../core/privacy/privacy_models.dart';
+import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
 
 class PrivacyScreen extends StatelessWidget {
@@ -12,15 +15,16 @@ class PrivacyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Privacy', style: theme.textTheme.headlineMedium),
+          Text(l10n.privacyTitle, style: theme.textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Each event stays local unless both the domain permission and the event privacy level allow AI. This screen also gives you direct local export and delete controls.',
+            l10n.privacyIntro,
             style: theme.textTheme.bodyLarge,
           ),
           const SizedBox(height: 12),
@@ -40,34 +44,48 @@ class PrivacyScreen extends StatelessWidget {
             ),
             child: Text(
               controller.sensitiveLocalEncryptionEnabled
-                  ? 'Sensitive local encryption is active for Journal, Quick Notes, and Finance records stored on this device.'
-                  : 'Sensitive local encryption is unavailable in this runtime. Treat Journal, Quick Notes, and Finance as not protected at rest until secure storage is available again.',
+                  ? l10n.privacyEncryptedActive
+                  : l10n.privacyEncryptedUnavailable,
               style: theme.textTheme.bodyMedium,
             ),
           ),
           const SizedBox(height: 24),
-          Text('Privacy center', style: theme.textTheme.titleLarge),
+          Text(l10n.privacyCenter, style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
+          _LanguageCard(controller: controller),
           const SizedBox(height: 12),
           Wrap(
             spacing: 12,
             runSpacing: 12,
             children: [
               _PrivacyDisclosureCard(
-                title: 'Encrypted locally',
-                body: 'These collections are protected at rest on this device.',
-                items: controller.encryptedCollectionLabels,
+                title: l10n.privacyDisclosureEncryptedTitle,
+                body: l10n.privacyDisclosureEncryptedBody,
+                items: <String>[
+                  l10n.collectionFinanceRecords,
+                  l10n.collectionJournalEntries,
+                  l10n.collectionQuickNotes,
+                ],
               ),
               _PrivacyDisclosureCard(
-                title: 'Always local',
-                body:
-                    'These items stay on the device and do not go to AI routing.',
-                items: controller.alwaysLocalCollectionLabels,
+                title: l10n.privacyDisclosureLocalTitle,
+                body: l10n.privacyDisclosureLocalBody,
+                items: <String>[
+                  l10n.collectionPrivacySettings,
+                  l10n.collectionJournalEntries,
+                  l10n.collectionQuickNotes,
+                  l10n.collectionRuntimeConfigCache,
+                  l10n.collectionDeviceEncryptionKey,
+                ],
               ),
               _PrivacyDisclosureCard(
-                title: 'Can be sent to AI if allowed',
-                body:
-                    'Only domains with AI permission and AI-allowed events can be sent.',
-                items: controller.aiSendableCollectionLabels,
+                title: l10n.privacyDisclosureAiTitle,
+                body: l10n.privacyDisclosureAiBody,
+                items: controller.privacySettings.aiAllowedDomains.isEmpty
+                    ? <String>[l10n.nothingAiEnabled]
+                    : controller.privacySettings.aiAllowedDomains
+                        .map((domain) => domain.localizedLabel(l10n))
+                        .toList(growable: false),
               ),
             ],
           ),
@@ -76,7 +94,7 @@ class PrivacyScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: _PrivacyMetricCard(
-                  label: 'Total events',
+                  label: l10n.privacyMetricTotalEvents,
                   value: controller.totalEventCount.toString(),
                   tone: const Color(0xFF1F4C5B),
                 ),
@@ -84,7 +102,7 @@ class PrivacyScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _PrivacyMetricCard(
-                  label: 'AI-eligible',
+                  label: l10n.privacyMetricAiEligible,
                   value: controller.aiEligibleEventCount.toString(),
                   tone: const Color(0xFF5D7A68),
                 ),
@@ -93,7 +111,7 @@ class PrivacyScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _PrivacyMetricCard(
-            label: 'Blocked locally',
+            label: l10n.privacyMetricBlockedLocal,
             value:
                 '${controller.totalEventCount - controller.aiEligibleEventCount}',
             tone: const Color(0xFFD06447),
@@ -106,13 +124,13 @@ class PrivacyScreen extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.76),
               borderRadius: BorderRadius.circular(24),
             ),
-            child: Column(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Data controls', style: theme.textTheme.titleLarge),
+                Text(l10n.dataControls, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(
-                  'Export copies the full local graph snapshot as JSON. Delete all wipes local data and disables demo reseeding.',
+                  l10n.dataControlsBody,
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
@@ -123,12 +141,12 @@ class PrivacyScreen extends StatelessWidget {
                     FilledButton.tonalIcon(
                       onPressed: () => _exportLocalJson(context),
                       icon: const Icon(Icons.download_outlined),
-                      label: const Text('Export JSON'),
+                      label: Text(l10n.exportJson),
                     ),
                     OutlinedButton.icon(
                       onPressed: () => _confirmDeleteAll(context),
                       icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete all local data'),
+                      label: Text(l10n.deleteAllLocalData),
                     ),
                   ],
                 ),
@@ -136,7 +154,7 @@ class PrivacyScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Domain controls', style: theme.textTheme.titleLarge),
+          Text(l10n.domainControls, style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
           for (final domain in DomainKey.values)
             Padding(
@@ -163,9 +181,7 @@ class PrivacyScreen extends StatelessWidget {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Local JSON export copied to clipboard.'),
-      ),
+      SnackBar(content: Text(AppLocalizations.of(context)!.exportCopied)),
     );
   }
 
@@ -174,18 +190,16 @@ class PrivacyScreen extends StatelessWidget {
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text('Delete all local data?'),
-              content: const Text(
-                'This wipes local events, entities, missions, feedback, privacy settings, and cached runtime config on this device.',
-              ),
+              title: Text(AppLocalizations.of(context)!.deleteAllTitle),
+              content: Text(AppLocalizations.of(context)!.deleteAllBody),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Delete all'),
+                  child: Text(AppLocalizations.of(context)!.deleteAll),
                 ),
               ],
             );
@@ -200,10 +214,64 @@ class PrivacyScreen extends StatelessWidget {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('All local data deleted.'),
+      SnackBar(content: Text(AppLocalizations.of(context)!.deleteAllDone)),
+    );
+  }
+}
+
+class _LanguageCard extends StatelessWidget {
+  const _LanguageCard({required this.controller});
+
+  final GoLifeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.language, style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final option in AppLocalePreference.values)
+                ChoiceChip(
+                  label: Text(_languageLabel(option, l10n)),
+                  selected: controller.localePreference == option,
+                  onSelected: (_) => controller.updateLocalePreference(option),
+                ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  String _languageLabel(AppLocalePreference option, AppLocalizations l10n) {
+    switch (option) {
+      case AppLocalePreference.system:
+        return l10n.languageSystem;
+      case AppLocalePreference.en:
+        return l10n.languageEnglish;
+      case AppLocalePreference.es:
+        return l10n.languageSpanish;
+      case AppLocalePreference.ptBr:
+        return l10n.languagePortugueseBrazil;
+      case AppLocalePreference.ja:
+        return l10n.languageJapanese;
+      case AppLocalePreference.zhHans:
+        return l10n.languageChineseSimplified;
+    }
   }
 }
 
@@ -269,10 +337,16 @@ class _DomainPermissionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(domain.label, style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            domain.localizedLabel(AppLocalizations.of(context)!),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 8),
           Text(
-            '$eventCount events - $aiEligibleCount currently AI-eligible',
+            AppLocalizations.of(context)!.domainEventsEligible(
+              eventCount,
+              aiEligibleCount,
+            ),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -282,7 +356,9 @@ class _DomainPermissionCard extends StatelessWidget {
             children: [
               for (final permission in DataPermission.values)
                 ChoiceChip(
-                  label: Text(permission.label),
+                  label: Text(
+                    permission.localizedLabel(AppLocalizations.of(context)!),
+                  ),
                   selected: permission == selected,
                   onSelected: (_) {
                     onChanged(permission);

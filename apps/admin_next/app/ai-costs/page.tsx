@@ -8,8 +8,11 @@ import {
   formatLatency,
   formatPercent,
 } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function AICostsPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.aiCosts;
   const costsResult = await getAICosts();
   const costs = costsResult.data ?? [];
   const totalCost = costs.reduce((sum, item) => sum + item.estimated_cost_usd, 0);
@@ -21,38 +24,38 @@ export default async function AICostsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="AI Spend"
-        title="Provider cost and endpoint pressure"
-        description="The fastest way to lose margin is to ignore which endpoint is expensive, slow, or frequently falling back. This board keeps that visible."
-        badge="Cost control"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={costsResult.error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Total cost"
-          value={formatCurrency(totalCost)}
-          note="Estimated spend across ranked missions, classification, and support endpoints."
+          label={t.totalCostLabel}
+          value={formatCurrency(totalCost, locale)}
+          note={t.totalCostNote}
           tone="bronze"
         />
         <MetricCard
-          label="Tracked endpoints"
+          label={t.trackedEndpointsLabel}
           value={costs.length.toString()}
-          note="Operational breakdown by endpoint rather than by provider alone."
+          note={t.trackedEndpointsNote}
           tone="ink"
         />
         <MetricCard
-          label="Average fallback"
-          value={formatPercent(avgFallback)}
-          note="High fallback can mean prompt trouble, timeout pressure, or quota issues."
+          label={t.averageFallbackLabel}
+          value={formatPercent(avgFallback, locale)}
+          note={t.averageFallbackNote}
           tone="clay"
         />
       </div>
 
       <Panel
-        eyebrow="Spend detail"
-        title="Endpoint ledger"
-        note="Classify cheaply, rank carefully, and keep feedback storage nearly free."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-3">
           {costs.map((item) => (
@@ -65,30 +68,30 @@ export default async function AICostsPage() {
                   {item.endpoint}
                 </p>
                 <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                  Provider: {item.provider}
+                  {messages.shared.providerLabel}: {item.provider}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
-                  Requests
+                  {messages.shared.requestsLabel}
                 </p>
                 <p className="mt-2 text-sm text-ink">{item.requests}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
-                  Latency
+                  {messages.shared.latencyLabel}
                 </p>
                 <p className="mt-2 text-sm text-ink">
-                  {formatLatency(item.avg_latency_ms)}
+                  {formatLatency(item.avg_latency_ms, locale, messages.shared.msUnit)}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
-                  Cost / fallback
+                  {messages.shared.costFallbackLabel}
                 </p>
                 <p className="mt-2 text-sm text-ink">
-                  {formatCurrency(item.estimated_cost_usd)} /{" "}
-                  {formatPercent(item.fallback_rate)}
+                  {formatCurrency(item.estimated_cost_usd, locale)} /{" "}
+                  {formatPercent(item.fallback_rate, locale)}
                 </p>
               </div>
             </div>

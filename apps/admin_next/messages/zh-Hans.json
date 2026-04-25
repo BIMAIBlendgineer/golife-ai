@@ -1,0 +1,270 @@
+{
+  "metadata": {
+    "title": "GoLife Admin",
+    "description": "用于 GoLife AI 任务质量与系统健康度的运营界面。"
+  },
+  "shell": {
+    "eyebrow": "控制面板",
+    "summary": "此面板监控与 mobile 相同的产品循环：capture、risks、missions、feedback、trust。",
+    "lastIngestionPrefix": "最近摄取",
+    "lastIngestionEmpty": "尚未记录任何运营摄取。",
+    "stateLiveData": "LIVE DATA",
+    "stateLiveNoIngestion": "LIVE - NO INGESTION YET",
+    "stateFallbackSnapshot": "FALLBACK SNAPSHOT",
+    "stateBackendOffline": "BACKEND OFFLINE",
+    "apiLabel": "API",
+    "tokenSet": "已配置 Admin token",
+    "tokenMissing": "缺少 token"
+  },
+  "nav": {
+    "badge": "运营台",
+    "title": "GoLife Admin",
+    "subtitle": "用于任务质量、信任、支持和 AI 成本的运营看板。",
+    "sections": [
+      {
+        "label": "运营",
+        "items": [
+          {
+            "href": "/dashboard",
+            "title": "Dashboard",
+            "note": "任务健康、信任压力与成本。"
+          },
+          {
+            "href": "/users",
+            "title": "Users",
+            "note": "账户状态与支持信号。"
+          },
+          {
+            "href": "/usage",
+            "title": "Usage",
+            "note": "Capture 量、fallback 与延迟。"
+          },
+          {
+            "href": "/ai-costs",
+            "title": "AI Costs",
+            "note": "按端点划分的 provider 支出。"
+          },
+          {
+            "href": "/openrouter-keys",
+            "title": "OpenRouter Keys",
+            "note": "密钥健康、failover 与轮换历史。"
+          }
+        ]
+      },
+      {
+        "label": "质量",
+        "items": [
+          {
+            "href": "/missions",
+            "title": "Missions",
+            "note": "排序结果质量与风险关联。"
+          },
+          {
+            "href": "/feedback",
+            "title": "Feedback",
+            "note": "用户为何接受、拒绝或完成。"
+          },
+          {
+            "href": "/safety",
+            "title": "Safety",
+            "note": "被阻止的输出与信任事件。"
+          },
+          {
+            "href": "/routing-snapshots",
+            "title": "Routing Snapshots",
+            "note": "各能力当前 top-3 模型。"
+          }
+        ]
+      },
+      {
+        "label": "系统",
+        "items": [
+          {
+            "href": "/feature-flags",
+            "title": "Feature Flags",
+            "note": "运营发布开关。"
+          },
+          {
+            "href": "/settings/models",
+            "title": "Models",
+            "note": "provider 与 fallback routing。"
+          },
+          {
+            "href": "/routing-profiles",
+            "title": "Routing Profiles",
+            "note": "延迟、上下文与参数策略。"
+          },
+          {
+            "href": "/model-catalog",
+            "title": "Model Catalog",
+            "note": "OpenRouter 目录缓存与可用性。"
+          },
+          {
+            "href": "/support/export-delete",
+            "title": "Support Queue",
+            "note": "导出与删除请求。"
+          }
+        ]
+      }
+    ]
+  },
+  "localeSwitcher": {
+    "label": "语言",
+    "options": {
+      "en": "EN",
+      "es": "ES",
+      "pt-BR": "PT-BR",
+      "ja": "JA",
+      "zh-Hans": "ZH"
+    }
+  },
+  "shared": {
+    "enabled": "启用",
+    "disabled": "停用",
+    "generatedLabel": "生成时间",
+    "expiresLabel": "过期时间",
+    "noModelName": "无模型名称",
+    "notAvailable": "N/A",
+    "msUnit": "ms"
+  },
+  "pages": {
+    "missions": {
+      "eyebrow": "任务审计",
+      "title": "排序输出与关联风险",
+      "description": "这张表是质量闸门，用来看系统是否在生成值得执行的动作，而不只是好看的卡片。",
+      "badge": "质量复核",
+      "trackedLabel": "已跟踪任务",
+      "trackedNote": "当前来自运营 backend 的审计切片。",
+      "completedLabel": "已完成",
+      "completedNote": "这是最强的实际效用证据。",
+      "rejectedLabel": "已拒绝",
+      "rejectedNote": "它直接指向重复或上下文不足的建议。",
+      "panelEyebrow": "复核",
+      "panelTitle": "任务记录",
+      "panelNote": "每一行都汇总了领域、关联风险、有用性和最终分数。",
+      "empty": "当前切片中还没有任务记录。",
+      "domainsLabel": "领域",
+      "risksLabel": "风险",
+      "none": "无",
+      "statusCompleted": "已完成",
+      "statusRejected": "已拒绝",
+      "statusShown": "已显示",
+      "scoreLabel": "分数"
+    },
+    "modelCatalog": {
+      "eyebrow": "目录缓存",
+      "title": "OpenRouter 模型目录",
+      "description": "这个缓存是 routing 决策的原料。在信任某个 snapshot 前，运营应检查新鲜度、上下文窗口和结构化输出能力。",
+      "badge": "Eligibility",
+      "panelEyebrow": "目录",
+      "panelTitle": "当前缓存模型",
+      "panelNote": "控制平面会先过滤这些模型，再按能力进行排序。",
+      "empty": "当前没有缓存模型。",
+      "contextLabel": "上下文",
+      "promptLabel": "Prompt",
+      "completionLabel": "Completion",
+      "refreshedLabel": "刷新时间"
+    },
+    "openrouterKeys": {
+      "eyebrow": "Routing 控制",
+      "title": "OpenRouter keys 与 failover 健康度",
+      "description": "跟踪哪些 key 处于 active、哪些 degraded，以及在路由或配额失败时 GoLife 是否安全轮换。",
+      "badge": "Sequential failover",
+      "activeKeysLabel": "活跃 key",
+      "activeKeysNote": "gateway control plane 可用的健康 key。",
+      "disabledKeysLabel": "停用 key",
+      "disabledKeysNote": "因暂停或不安全而从 routing 中移除的 key。",
+      "recentEventsLabel": "最近 key 事件",
+      "recentEventsNote": "gateway 写入的最新成功与失败记录。",
+      "keyPoolEyebrow": "密钥池",
+      "keyPoolTitle": "已掩码的服务端 key",
+      "keyPoolNote": "这里不会展示秘密。运营只会看到掩码标签、健康度和轮换顺序。",
+      "emptyKeys": "当前没有可用的 OpenRouter key。",
+      "statusHealthy": "健康",
+      "statusDegraded": "降级",
+      "statusDisabled": "停用",
+      "priorityLabel": "优先级",
+      "lastOkLabel": "最近成功：",
+      "lastErrorLabel": "最近错误：",
+      "consecutiveFailuresLabel": "连续失败：",
+      "rotationLogEyebrow": "轮换日志",
+      "rotationLogTitle": "最新 key 事件",
+      "rotationLogNote": "当某个能力开始频繁 fallback 时，这里是第一查看点。",
+      "emptyEvents": "尚未记录任何 key 事件。",
+      "eventSuccess": "成功",
+      "eventFailure": "失败",
+      "eventDisabled": "停用",
+      "noEndpoint": "无 endpoint",
+      "noModel": "无模型",
+      "noNotes": "没有记录备注。",
+      "never": "从不",
+      "none": "无"
+    },
+    "routingProfiles": {
+      "eyebrow": "Routing policy",
+      "title": "能力配置档",
+      "description": "每个能力都保留自己的 latency、throughput、parameter 和 context 规则，避免 gateway 用一套粗糙策略处理所有请求。",
+      "badge": "Per capability",
+      "panelEyebrow": "Profiles",
+      "panelTitle": "质量优先的 routing 规则",
+      "panelNote": "这些规则会在排序前先过滤整个 OpenRouter 目录，必须足够严格以保护结构化输出。",
+      "empty": "当前没有可用的 routing profile。",
+      "strategyLabel": "策略",
+      "minContextLabel": "最小上下文",
+      "maxLatencyLabel": "最大 latency",
+      "minThroughputLabel": "最小 throughput",
+      "retryPolicyLabel": "重试策略",
+      "requiredParametersLabel": "必需参数"
+    },
+    "routingSnapshots": {
+      "eyebrow": "Snapshot",
+      "title": "当前 top-3 模型选择",
+      "description": "此页面展示控制平面在目录过滤、遥测加权和 policy 检查之后得到的排序结果。",
+      "badge": "Execution input",
+      "capabilitiesLabel": "具有 snapshot 的能力",
+      "capabilitiesNote": "每个启用能力都应当暴露恰好三个候选。",
+      "snapshotAgeLabel": "Snapshot 年龄",
+      "snapshotAgeNote": "过旧的 snapshot 会增加路由到陈旧模型的概率。",
+      "selectedRowsLabel": "已选行数",
+      "selectedRowsNote": "跨所有能力存储的排序行总数。",
+      "panelEyebrow": "能力",
+      "panelNote": "gateway 会按这个顺序向 OpenRouter 请求这三个模型，并开启 provider fallback。",
+      "emptyTitle": "没有 routing snapshot",
+      "empty": "当前没有可用的排序选择。",
+      "rankLabel": "排名",
+      "scoreLabel": "分数"
+    },
+    "supportQueue": {
+      "eyebrow": "Support queue",
+      "title": "导出与删除操作",
+      "description": "隐私信任是运营问题，不是理论问题。这个队列让导出与删除请求保持可见、可执行。",
+      "badge": "Privacy ops",
+      "openRequestsLabel": "未关闭请求",
+      "openRequestsNote": "当前所有与隐私相关的支持工作。",
+      "exportLabel": "导出",
+      "exportNote": "请求便携数据包的用户。",
+      "deleteLabel": "删除",
+      "deleteNote": "请求删除全部账户或数据的用户。",
+      "panelEyebrow": "队列",
+      "panelTitle": "支持请求",
+      "panelNote": "web backend 目前暴露的是 seed 队列。下一个 backend 阶段应替换为持久化运营数据。",
+      "empty": "队列中没有支持请求。",
+      "statusOpen": "打开",
+      "statusResolved": "已解决"
+    },
+    "modelSettings": {
+      "eyebrow": "AI routing",
+      "title": "Provider 与模型设置",
+      "description": "此页面让主要运营模型选择保持可见，使成本、fallback 和分类策略保持明确。",
+      "badge": "Models",
+      "panelEyebrow": "当前栈",
+      "panelTitle": "模型 routing",
+      "panelNote": "分类应尽可能保持便宜且 deterministic。更昂贵的推理应放在排序综合或周度复盘里。",
+      "activeProviderLabel": "活跃 provider",
+      "primaryModelLabel": "主模型",
+      "fallbackModelLabel": "Fallback 模型",
+      "classificationModelLabel": "分类模型",
+      "weeklySummaryModelLabel": "周总结模型"
+    }
+  }
+}

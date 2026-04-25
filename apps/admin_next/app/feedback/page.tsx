@@ -5,8 +5,11 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getFeedback } from "@/lib/api";
 import { formatDateTime, formatFeedbackReason } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function FeedbackPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.feedback;
   const feedbackResult = await getFeedback();
   const feedback = feedbackResult.data ?? [];
   const usefulCount = feedback.filter((item) =>
@@ -17,38 +20,38 @@ export default async function FeedbackPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Learning Loop"
-        title="Feedback journal"
-        description="Accepted, completed, and rejected missions are the live teaching signal for the ranking layer."
-        badge="Ranking input"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={feedbackResult.error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Feedback events"
+          label={t.eventsLabel}
           value={feedback.length.toString()}
-          note="Stored signals available to improve future ranking."
+          note={t.eventsNote}
           tone="ink"
         />
         <MetricCard
-          label="Useful or accepted"
+          label={t.positiveLabel}
           value={usefulCount.toString()}
-          note="Positive signals that should reinforce similar mission patterns."
+          note={t.positiveNote}
           tone="sage"
         />
         <MetricCard
-          label="Rejected"
+          label={t.rejectedLabel}
           value={rejectedCount.toString()}
-          note="The clearest early warning for repetition or poor context."
+          note={t.rejectedNote}
           tone="clay"
         />
       </div>
 
       <Panel
-        eyebrow="Journal"
-        title="Feedback records"
-        note="Admin keeps status and domain metadata for learning. Private note text stays out of this surface."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-3">
           {feedback.map((item) => (
@@ -73,14 +76,14 @@ export default async function FeedbackPage() {
                     <StatusPill tone="neutral">{item.suggestion_id}</StatusPill>
                   </div>
                   <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
-                    {formatFeedbackReason(item.reason)}
+                    {formatFeedbackReason(item.reason, messages)}
                   </p>
                   <p className="text-sm text-[color:var(--ink-muted)]">
-                    Domains: {item.domains.join(", ")}
+                    {t.domainsPrefix}: {item.domains.join(", ")}
                   </p>
                 </div>
                 <p className="text-sm text-[color:var(--ink-muted)]">
-                  {formatDateTime(item.created_at)}
+                  {formatDateTime(item.created_at, locale)}
                 </p>
               </div>
             </div>

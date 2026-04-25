@@ -4,6 +4,7 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getFeatureFlags } from "@/lib/api";
 import { formatDateTime, labelizeKey } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 import { toggleFeatureFlag } from "./actions";
 
@@ -12,6 +13,8 @@ export default async function FeatureFlagsPage({
 }: {
   searchParams: Promise<{ updated?: string; error?: string }>;
 }) {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.featureFlags;
   const params = await searchParams;
   const flagsResult = await getFeatureFlags();
   const flags = flagsResult.data ?? [];
@@ -19,24 +22,24 @@ export default async function FeatureFlagsPage({
   return (
     <>
       <PageHeader
-        eyebrow="Rollout"
-        title="Feature flags"
-        description="Flags keep mobile, AI gateway, and admin aligned on which behavior is live, which is in shadow mode, and which stays behind operator control."
-        badge="Switchboard"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={flagsResult.error ?? params.error ?? null} />
       {params.updated ? (
         <div className="rounded-[22px] border border-[color:rgba(93,122,104,0.24)] bg-[color:var(--sage-soft)] p-4">
           <p className="text-sm font-semibold text-moss">
-            Updated flag: {labelizeKey(params.updated)}
+            {t.updatedFlagPrefix}: {labelizeKey(params.updated)}
           </p>
         </div>
       ) : null}
 
       <Panel
-        eyebrow="Switches"
-        title="Operational rollout control"
-        note="Read fallback values if the backend is offline. When the admin API is live, each toggle sends a real PATCH request."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-3">
           {flags.map((flag) => (
@@ -54,10 +57,10 @@ export default async function FeatureFlagsPage({
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
                   <StatusPill tone={flag.enabled ? "good" : "warn"}>
-                    {flag.enabled ? "Enabled" : "Disabled"}
+                    {flag.enabled ? messages.shared.enabled : messages.shared.disabled}
                   </StatusPill>
                   <StatusPill tone="neutral">
-                    updated {formatDateTime(flag.updated_at)}
+                    {t.updatedAtPrefix} {formatDateTime(flag.updated_at, locale)}
                   </StatusPill>
                 </div>
                 <div>
@@ -73,7 +76,7 @@ export default async function FeatureFlagsPage({
                 type="submit"
                 className="rounded-full border border-[color:var(--line-strong)] bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-moss hover:text-moss"
               >
-                Turn {flag.enabled ? "off" : "on"}
+                {flag.enabled ? t.turnOff : t.turnOn}
               </button>
             </form>
           ))}

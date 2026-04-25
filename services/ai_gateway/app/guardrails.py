@@ -4,6 +4,7 @@ import unicodedata
 from fastapi import HTTPException
 
 from app.crisis_resources import resolve_crisis_resources
+from app.i18n import normalize_locale, resolve_reflection_messages
 from app.schemas import (
     AISuggestion,
     LifeEvent,
@@ -43,6 +44,16 @@ EMOTIONAL_CLINICAL_TERMS = (
     "tratamiento",
     "treatment",
     "medicacion",
+    "saude mental",
+    "depressao",
+    "ansiedade",
+    "うつ",
+    "不安障害",
+    "診断",
+    "治疗",
+    "診療",
+    "抑郁",
+    "焦虑症",
 )
 CRISIS_TERMS = (
     "suicide",
@@ -59,6 +70,16 @@ CRISIS_TERMS = (
     "matarme",
     "me matar",
     "nao quero viver",
+    "quero morrer",
+    "me machucar",
+    "死にたい",
+    "自殺",
+    "消えたい",
+    "伤害自己",
+    "伤害我自己",
+    "自杀",
+    "不想活了",
+    "想死",
 )
 
 
@@ -152,6 +173,8 @@ def assess_reflection_safety(
     catalog_path: str | None = None,
 ) -> ReflectionSafetyResponse:
     lowered = _normalize_text(request.text)
+    locale = normalize_locale(request.locale)
+    messages = resolve_reflection_messages(locale)
 
     matched_crisis = [term for term in CRISIS_TERMS if term in lowered]
     if matched_crisis:
@@ -162,17 +185,14 @@ def assess_reflection_safety(
         return ReflectionSafetyResponse(
             safe=False,
             category="crisis",
-            message=(
-                "GoLife can help you organize what feels heavy, but it is not crisis care. "
-                "If you might act on self-harm or feel in immediate danger, use the immediate support options below "
-                "and reach out to someone nearby right now."
-            ),
+            message=messages["crisis"],
             resources=resources,
             trace={
                 "policy": "reflection_safety",
                 "matched_terms": matched_crisis,
                 "reason": "crisis_language",
                 "region": region,
+                "locale": locale,
             },
         )
 
@@ -181,29 +201,25 @@ def assess_reflection_safety(
         return ReflectionSafetyResponse(
             safe=False,
             category="clinical",
-            message=(
-                "GoLife can support reflection and daily organization, but it cannot diagnose, treat, "
-                "or replace a licensed mental health professional. Keep the reflection practical and non-clinical."
-            ),
+            message=messages["clinical"],
             trace={
                 "policy": "reflection_safety",
                 "matched_terms": matched_clinical,
                 "reason": "clinical_language",
                 "region": region,
+                "locale": locale,
             },
         )
 
     return ReflectionSafetyResponse(
         safe=True,
         category="supportive",
-        message=(
-            "GoLife can help you reflect on routines, energy, and daily friction. "
-            "It stays in coaching and organization mode, not diagnosis or treatment."
-        ),
+        message=messages["supportive"],
         trace={
             "policy": "reflection_safety",
             "matched_terms": [],
             "reason": "supportive_reflection",
             "region": region,
+            "locale": locale,
         },
     )

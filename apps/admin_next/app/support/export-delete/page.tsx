@@ -5,8 +5,11 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getSupportRequests } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function SupportExportDeletePage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.supportQueue;
   const supportResult = await getSupportRequests();
   const requests = supportResult.data ?? [];
   const exportCount = requests.filter((item) => item.request_type === "export").length;
@@ -15,40 +18,43 @@ export default async function SupportExportDeletePage() {
   return (
     <>
       <PageHeader
-        eyebrow="Support Queue"
-        title="Export and delete operations"
-        description="Privacy trust is operational, not theoretical. This queue keeps export and delete requests visible and actionable."
-        badge="Privacy ops"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={supportResult.error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Open requests"
+          label={t.openRequestsLabel}
           value={requests.length.toString()}
-          note="All current privacy-related support work."
+          note={t.openRequestsNote}
           tone="ink"
         />
         <MetricCard
-          label="Export"
+          label={t.exportLabel}
           value={exportCount.toString()}
-          note="Users asking for their portable data bundle."
+          note={t.exportNote}
           tone="bronze"
         />
         <MetricCard
-          label="Delete"
+          label={t.deleteLabel}
           value={deleteCount.toString()}
-          note="Users requesting full account or data removal."
+          note={t.deleteNote}
           tone="clay"
         />
       </div>
 
       <Panel
-        eyebrow="Queue"
-        title="Support requests"
-        note="The web backend currently exposes a seeded queue. Replace this with persistent operational data in the next backend block."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-3">
+          {requests.length === 0 ? (
+            <p className="text-sm text-[color:var(--ink-soft)]">{t.empty}</p>
+          ) : null}
           {requests.map((item) => (
             <div
               key={item.request_id}
@@ -57,18 +63,18 @@ export default async function SupportExportDeletePage() {
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
                   <StatusPill tone={item.request_type === "delete" ? "danger" : "warn"}>
-                    {item.request_type}
+                    {item.request_type === "delete" ? t.deleteLabel : t.exportLabel}
                   </StatusPill>
                   <StatusPill tone={item.status === "open" ? "info" : "good"}>
-                    {item.status}
+                    {item.status === "open" ? t.statusOpen : t.statusResolved}
                   </StatusPill>
                 </div>
                 <p className="font-mono text-xs text-[color:var(--ink-muted)]">
-                  {item.request_id} · {item.user_id}
+                  {item.request_id} | {item.user_id}
                 </p>
               </div>
               <p className="text-sm text-[color:var(--ink-muted)]">
-                {formatDateTime(item.requested_at)}
+                {formatDateTime(item.requested_at, locale)}
               </p>
             </div>
           ))}

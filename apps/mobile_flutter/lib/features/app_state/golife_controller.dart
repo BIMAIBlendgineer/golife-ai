@@ -1,10 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../../core/ai_client/ai_gateway_client.dart';
 import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
+import '../../core/i18n/app_locale.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
 import '../../core/lifegraph/lifegraph_repository.dart';
@@ -61,6 +62,8 @@ class GoLifeController extends ChangeNotifier {
   List<CalendarItem> _calendarItems = <CalendarItem>[];
   List<RecipeRescue> _recipeRescues = <RecipeRescue>[];
   bool _sensitiveLocalEncryptionEnabled = false;
+  AppLocalePreference _localePreference = AppLocalePreference.system;
+  String _deviceLocaleTag = 'en';
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -144,6 +147,11 @@ class GoLifeController extends ChangeNotifier {
   List<RecipeRescue> get recipeRescues =>
       List<RecipeRescue>.unmodifiable(_recipeRescues);
   bool get sensitiveLocalEncryptionEnabled => _sensitiveLocalEncryptionEnabled;
+  AppLocalePreference get localePreference => _localePreference;
+  Locale? get preferredLocale => _localePreference.locale;
+  String get currentLocaleTag => _localePreference == AppLocalePreference.system
+      ? normalizeLocaleTag(_deviceLocaleTag)
+      : _localePreference.storageKey;
   List<String> get encryptedCollectionLabels => const <String>[
         'Finance records',
         'Journal entries',
@@ -248,6 +256,9 @@ class GoLifeController extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     _privacySettings = await _localStore.loadPrivacySettings();
+    _localePreference = appLocalePreferenceFromStorage(
+      await _localStore.loadLocalePreference(),
+    );
     _sensitiveLocalEncryptionEnabled =
         await _localStore.supportsSensitiveLocalEncryption();
     _runtimeConfig = await _localStore.loadRuntimeConfig();
@@ -308,6 +319,25 @@ class GoLifeController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateLocalePreference(AppLocalePreference preference) async {
+    _localePreference = preference;
+    await _localStore.saveLocalePreference(
+      preference == AppLocalePreference.system ? null : preference.storageKey,
+    );
+    notifyListeners();
+  }
+
+  void updateDeviceLocaleTag(String? rawLocaleTag) {
+    final normalized = normalizeLocaleTag(rawLocaleTag);
+    if (_deviceLocaleTag == normalized) {
+      return;
+    }
+    _deviceLocaleTag = normalized;
+    if (_localePreference == AppLocalePreference.system) {
+      notifyListeners();
+    }
+  }
+
   Future<void> emitMissionEvent() => _recordEvent(
         domain: 'mission',
         type: 'mission_ping',
@@ -353,6 +383,7 @@ class GoLifeController extends ChangeNotifier {
       return null;
     }
     return _aiGatewayClient.classifyCapture(
+      locale: currentLocaleTag,
       privacySettings: _privacySettings,
       text: trimmed,
     );
@@ -379,6 +410,7 @@ class GoLifeController extends ChangeNotifier {
 
     try {
       final parsed = await _aiGatewayClient.parseCapture(
+        locale: currentLocaleTag,
         privacySettings: _privacySettings,
         text: trimmed,
       );
@@ -501,7 +533,7 @@ class GoLifeController extends ChangeNotifier {
         MissionFeedbackStatus.completed,
         mission: targetMission,
       );
-      return 'Mission marked as completed.';
+      return _controllerText('mission_completed');
     }
 
     await _submitMissionFeedback(
@@ -536,7 +568,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('task'),
       ),
     );
-    return 'Task completed: ${updated.title}.';
+    return _controllerText('task_completed', {'title': updated.title});
   }
 
   Future<String?> checkInHabitById(String id) async {
@@ -558,7 +590,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('habit'),
       ),
     );
-    return 'Habit checked in: ${updated.title}.';
+    return _controllerText('habit_checked_in', {'title': updated.title});
   }
 
   Future<String?> logExpenseTouchById(String id) async {
@@ -571,7 +603,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('finance'),
       ),
     );
-    return 'Expense revisited: ${target.label}.';
+    return _controllerText('expense_revisited', {'label': target.label});
   }
 
   Future<String?> markPantryItemUsedById(String id) async {
@@ -582,8 +614,8 @@ class GoLifeController extends ChangeNotifier {
     final updated = PantryItem(
       id: target.id,
       name: target.name,
-      quantityLabel: 'used',
-      rescueHint: 'Used locally from the pantry board.',
+      quantityLabel: _controllerText('pantry_used_quantity'),
+      rescueHint: _controllerText('pantry_used_board_hint'),
     );
     await _upsertPantryItem(updated);
     await _recordEvent(
@@ -592,7 +624,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('pantry'),
       ),
     );
-    return 'Pantry item used: ${updated.name}.';
+    return _controllerText('pantry_item_used', {'name': updated.name});
   }
 
   Future<String?> pausePurchaseIntentionById(String id) async {
@@ -603,7 +635,9 @@ class GoLifeController extends ChangeNotifier {
     final updated = PurchaseIntention(
       id: target.id,
       label: target.label,
-      reason: 'Paused for 24h from the closet board. ${target.reason}',
+      reason: _controllerText('purchase_paused_board_reason', {
+        'reason': target.reason,
+      }),
     );
     await _upsertPurchaseIntention(updated);
     await _recordEvent(
@@ -611,7 +645,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('wardrobe'),
       ),
     );
-    return 'Purchase intention paused: ${updated.label}.';
+    return _controllerText('purchase_paused', {'label': updated.label});
   }
 
   Future<String?> refreshWeekPlanById(String id) async {
@@ -621,7 +655,7 @@ class GoLifeController extends ChangeNotifier {
     );
     final updated = WeekPlan(
       id: target.id,
-      theme: '${target.theme} · Adjusted',
+      theme: '${target.theme}${_controllerText('week_adjusted_suffix')}',
       colorToken: target.colorToken,
       days: target.days,
     );
@@ -632,7 +666,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('week'),
       ),
     );
-    return 'Week plan updated.';
+    return _controllerText('week_plan_updated');
   }
 
   Future<String?> saveTask({
@@ -658,7 +692,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('task'),
       ),
     );
-    return id == null ? 'Task created.' : 'Task updated.';
+    return _controllerText(id == null ? 'task_created' : 'task_updated');
   }
 
   Future<String?> saveHabit({
@@ -682,7 +716,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('habit'),
       ),
     );
-    return id == null ? 'Habit created.' : 'Habit updated.';
+    return _controllerText(id == null ? 'habit_created' : 'habit_updated');
   }
 
   Future<String?> saveExpense({
@@ -703,7 +737,7 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('finance'),
       ),
     );
-    return id == null ? 'Expense saved.' : 'Expense updated.';
+    return _controllerText(id == null ? 'expense_saved' : 'expense_updated');
   }
 
   Future<String?> savePantryItem({
@@ -725,7 +759,9 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('pantry'),
       ),
     );
-    return id == null ? 'Pantry item saved.' : 'Pantry item updated.';
+    return _controllerText(
+      id == null ? 'pantry_item_saved' : 'pantry_item_updated',
+    );
   }
 
   Future<String?> savePurchaseIntention({
@@ -745,8 +781,8 @@ class GoLifeController extends ChangeNotifier {
       ),
     );
     return id == null
-        ? 'Purchase intention saved.'
-        : 'Purchase intention updated.';
+        ? _controllerText('purchase_saved')
+        : _controllerText('purchase_updated');
   }
 
   Future<String?> saveWeekPlan({
@@ -761,7 +797,7 @@ class GoLifeController extends ChangeNotifier {
       colorToken: colorToken,
       days: [
         DayPlan(
-          label: 'Today',
+          label: _controllerText('today_label'),
           focus: focus,
         ),
       ],
@@ -773,7 +809,8 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('week'),
       ),
     );
-    return id == null ? 'Week plan saved.' : 'Week plan updated.';
+    return _controllerText(
+        id == null ? 'week_plan_saved' : 'week_plan_updated');
   }
 
   Future<String?> saveJournalEntry({
@@ -795,7 +832,9 @@ class GoLifeController extends ChangeNotifier {
         id == null ? 'journal_entry_created' : 'journal_entry_updated',
       ),
     );
-    return id == null ? 'Journal entry saved.' : 'Journal entry updated.';
+    return _controllerText(
+      id == null ? 'journal_entry_saved' : 'journal_entry_updated',
+    );
   }
 
   Future<String?> saveQuickNote({
@@ -813,7 +852,9 @@ class GoLifeController extends ChangeNotifier {
         id == null ? 'quick_note_created' : 'quick_note_updated',
       ),
     );
-    return id == null ? 'Quick note saved.' : 'Quick note updated.';
+    return _controllerText(
+      id == null ? 'quick_note_saved' : 'quick_note_updated',
+    );
   }
 
   Future<String?> saveCalendarItem({
@@ -839,7 +880,9 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('week'),
       ),
     );
-    return id == null ? 'Calendar item saved.' : 'Calendar item updated.';
+    return _controllerText(
+      id == null ? 'calendar_item_saved' : 'calendar_item_updated',
+    );
   }
 
   Future<String?> saveRecipeRescue({
@@ -865,7 +908,9 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('pantry'),
       ),
     );
-    return id == null ? 'Recipe rescue saved.' : 'Recipe rescue updated.';
+    return _controllerText(
+      id == null ? 'recipe_rescue_saved' : 'recipe_rescue_updated',
+    );
   }
 
   Future<String?> markRecipeRescueCookedById(String id) async {
@@ -894,12 +939,13 @@ class GoLifeController extends ChangeNotifier {
         privacyLevel: _privacyLevelForDomain('pantry'),
       ),
     );
-    return 'Recipe rescue marked cooked: ${updated.title}.';
+    return _controllerText('recipe_rescue_cooked', {'title': updated.title});
   }
 
   Future<String> exportLocalDataJson() async {
     final snapshot = <String, Object?>{
       'exported_at': DateTime.now().toUtc().toIso8601String(),
+      'locale_preference': _localePreference.storageKey,
       'privacy_settings': _privacySettings.toJson(),
       'runtime_config': _runtimeConfig?.toJson(),
       'storage_security': {
@@ -947,6 +993,7 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.deleteAllData();
     await _lifeGraphRepository.clear();
     _privacySettings = PrivacySettings.defaults();
+    _localePreference = AppLocalePreference.system;
     _runtimeConfig = null;
     _dailyMissions = <DailyMission>[];
     _cachedDailyRisks = <DailyRisk>[];
@@ -972,7 +1019,7 @@ class GoLifeController extends ChangeNotifier {
       return risk.domainTargets.any(mission.domainTargets.contains);
     });
     for (final risk in relatedRisks) {
-      lines.add('Risk: ${risk.title}');
+      lines.add(risk.title);
     }
     return lines.take(6).toList(growable: false);
   }
@@ -1077,6 +1124,7 @@ class GoLifeController extends ChangeNotifier {
 
   Future<void> _refreshMissionPlan() async {
     final dto = await _aiGatewayClient.fetchDailyPlan(
+      locale: currentLocaleTag,
       privacySettings: _privacySettings,
       lifeEvents: lifeEvents,
     );
@@ -1135,7 +1183,10 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.saveMissionFeedback(_missionFeedback);
 
     try {
-      await _aiGatewayClient.submitMissionFeedback(feedback: feedback);
+      await _aiGatewayClient.submitMissionFeedback(
+        locale: currentLocaleTag,
+        feedback: feedback,
+      );
     } catch (_) {
       // Local persistence remains the source of truth until the gateway is available.
     }
@@ -1277,7 +1328,7 @@ class GoLifeController extends ChangeNotifier {
     return Habit(
       id: _entityId('habit'),
       title: draft.text,
-      cue: 'Captured manually',
+      cue: _controllerText('captured_manually'),
       streak: 1,
       cadence: HabitCadence.daily,
     );
@@ -1306,12 +1357,12 @@ class GoLifeController extends ChangeNotifier {
   PantryItem _pantryItemFromCapture(CaptureDraftItem draft) {
     final expiryHint = draft.hints['expiry_hint'];
     final rescueHint = expiryHint == null
-        ? 'Review expiry and use this before buying more.'
-        : 'Use soon. Detected expiry hint: $expiryHint.';
+        ? _controllerText('pantry_capture_review')
+        : _controllerText('pantry_capture_expiry', {'expiry': '$expiryHint'});
     return PantryItem(
       id: _entityId('pantry'),
       name: draft.text,
-      quantityLabel: '1 captured item',
+      quantityLabel: _controllerText('captured_item_quantity'),
       rescueHint: rescueHint,
     );
   }
@@ -1320,8 +1371,7 @@ class GoLifeController extends ChangeNotifier {
     return PurchaseIntention(
       id: _entityId('purchase'),
       label: draft.text,
-      reason:
-          'Captured from quick capture. Compare against existing items first.',
+      reason: _controllerText('purchase_capture_reason'),
     );
   }
 
@@ -1332,7 +1382,7 @@ class GoLifeController extends ChangeNotifier {
       colorToken: 'terra',
       days: [
         DayPlan(
-          label: 'Today',
+          label: _controllerText('today_label'),
           focus: draft.text,
         ),
       ],
@@ -1362,7 +1412,7 @@ class GoLifeController extends ChangeNotifier {
       refreshPlan: false,
       notifyAfter: false,
     );
-    return 'Task marked done: ${updated.title}.';
+    return _controllerText('task_marked_done', {'title': updated.title});
   }
 
   Future<String?> _checkInHabitFromMission(DailyMission mission) async {
@@ -1383,7 +1433,7 @@ class GoLifeController extends ChangeNotifier {
       refreshPlan: false,
       notifyAfter: false,
     );
-    return 'Habit checked in: ${updated.title}.';
+    return _controllerText('habit_checked_in', {'title': updated.title});
   }
 
   Future<String?> _markPantryUsedFromMission(DailyMission mission) async {
@@ -1391,8 +1441,8 @@ class GoLifeController extends ChangeNotifier {
     final updated = PantryItem(
       id: target.id,
       name: target.name,
-      quantityLabel: 'used',
-      rescueHint: 'Used by a mission action. Refill only if still needed.',
+      quantityLabel: _controllerText('pantry_used_quantity'),
+      rescueHint: _controllerText('pantry_used_mission_hint'),
     );
     await _upsertPantryItem(updated);
     await _recordEvent(
@@ -1403,7 +1453,7 @@ class GoLifeController extends ChangeNotifier {
       refreshPlan: false,
       notifyAfter: false,
     );
-    return 'Pantry item marked used: ${updated.name}.';
+    return _controllerText('pantry_item_marked_used', {'name': updated.name});
   }
 
   Future<String?> _pausePurchaseFromMission(DailyMission mission) async {
@@ -1413,7 +1463,9 @@ class GoLifeController extends ChangeNotifier {
     final updated = PurchaseIntention(
       id: target.id,
       label: target.label,
-      reason: 'Paused for 24h after mission action. ${target.reason}',
+      reason: _controllerText('purchase_paused_mission_reason', {
+        'reason': target.reason,
+      }),
     );
     await _upsertPurchaseIntention(updated);
     await _recordEvent(
@@ -1423,7 +1475,7 @@ class GoLifeController extends ChangeNotifier {
       refreshPlan: false,
       notifyAfter: false,
     );
-    return 'Purchase intention paused: ${updated.label}.';
+    return _controllerText('purchase_paused', {'label': updated.label});
   }
 
   Future<String?> _logFinanceReflectionFromMission(DailyMission mission) async {
@@ -1435,14 +1487,15 @@ class GoLifeController extends ChangeNotifier {
       refreshPlan: false,
       notifyAfter: false,
     );
-    return 'Finance reflection logged for ${target.label}.';
+    return _controllerText(
+        'finance_reflection_logged', {'label': target.label});
   }
 
   Future<String?> _refreshWeekPlanFromMission(DailyMission mission) async {
     final target = _weekPlans.isNotEmpty ? _weekPlans.first : weekSummary;
     final updated = WeekPlan(
       id: target.id,
-      theme: '${target.theme} · Replanned from mission',
+      theme: '${target.theme}${_controllerText('week_replanned_suffix')}',
       colorToken: target.colorToken,
       days: target.days,
     );
@@ -1455,7 +1508,7 @@ class GoLifeController extends ChangeNotifier {
       refreshPlan: false,
       notifyAfter: false,
     );
-    return 'Week plan refreshed from mission.';
+    return _controllerText('week_plan_refreshed');
   }
 
   Future<void> _upsertTask(GoTask task) async {
@@ -1520,9 +1573,368 @@ class GoLifeController extends ChangeNotifier {
   String _taskNotesFromHints(Map<String, Object?> hints) {
     final dueHint = hints['time_hint']?.toString();
     if (dueHint == null || dueHint.isEmpty) {
-      return 'Captured from quick capture.';
+      return _controllerText('captured_from_quick_capture');
     }
-    return 'Captured from quick capture. Due hint: $dueHint.';
+    return _controllerText('captured_due_hint', {'due': dueHint});
+  }
+
+  String _controllerText(
+    String key, [
+    Map<String, String> variables = const <String, String>{},
+  ]) {
+    final template = switch (key) {
+      'today_label' => _localizedControllerString(
+          en: 'Today',
+          es: 'Hoy',
+          ptBr: 'Hoje',
+          ja: '今日',
+          zhHans: '今天',
+        ),
+      'mission_completed' => _localizedControllerString(
+          en: 'Mission marked as completed.',
+          es: 'Mision marcada como completada.',
+          ptBr: 'Missao marcada como concluida.',
+          ja: 'ミッションを完了として記録しました。',
+          zhHans: '任务已标记为完成。',
+        ),
+      'task_completed' => _localizedControllerString(
+          en: 'Task completed: {title}.',
+          es: 'Tarea completada: {title}.',
+          ptBr: 'Tarefa concluida: {title}.',
+          ja: 'タスクを完了しました: {title}。',
+          zhHans: '任务已完成：{title}。',
+        ),
+      'task_marked_done' => _localizedControllerString(
+          en: 'Task marked done: {title}.',
+          es: 'Tarea marcada como hecha: {title}.',
+          ptBr: 'Tarefa marcada como feita: {title}.',
+          ja: 'タスクを完了済みにしました: {title}。',
+          zhHans: '任务已标记为完成：{title}。',
+        ),
+      'habit_checked_in' => _localizedControllerString(
+          en: 'Habit checked in: {title}.',
+          es: 'Habito registrado: {title}.',
+          ptBr: 'Habito registrado: {title}.',
+          ja: '習慣を記録しました: {title}。',
+          zhHans: '已记录习惯：{title}。',
+        ),
+      'expense_revisited' => _localizedControllerString(
+          en: 'Expense revisited: {label}.',
+          es: 'Gasto revisado: {label}.',
+          ptBr: 'Gasto revisado: {label}.',
+          ja: '支出を見直しました: {label}。',
+          zhHans: '已重新检查支出：{label}。',
+        ),
+      'pantry_item_used' => _localizedControllerString(
+          en: 'Pantry item used: {name}.',
+          es: 'Ingrediente usado: {name}.',
+          ptBr: 'Ingrediente usado: {name}.',
+          ja: '食材を使用済みにしました: {name}。',
+          zhHans: '食材已使用：{name}。',
+        ),
+      'pantry_item_marked_used' => _localizedControllerString(
+          en: 'Pantry item marked used: {name}.',
+          es: 'Ingrediente marcado como usado: {name}.',
+          ptBr: 'Ingrediente marcado como usado: {name}.',
+          ja: '食材を使用済みにしました: {name}。',
+          zhHans: '食材已标记为使用：{name}。',
+        ),
+      'purchase_paused' => _localizedControllerString(
+          en: 'Purchase intention paused: {label}.',
+          es: 'Intencion de compra pausada: {label}.',
+          ptBr: 'Intencao de compra pausada: {label}.',
+          ja: '購入意図を一時停止しました: {label}。',
+          zhHans: '购买意图已暂停：{label}。',
+        ),
+      'week_plan_updated' => _localizedControllerString(
+          en: 'Week plan updated.',
+          es: 'Plan semanal actualizado.',
+          ptBr: 'Plano semanal atualizado.',
+          ja: '週間プランを更新しました。',
+          zhHans: '周计划已更新。',
+        ),
+      'week_plan_saved' => _localizedControllerString(
+          en: 'Week plan saved.',
+          es: 'Plan semanal guardado.',
+          ptBr: 'Plano semanal salvo.',
+          ja: '週間プランを保存しました。',
+          zhHans: '周计划已保存。',
+        ),
+      'week_plan_refreshed' => _localizedControllerString(
+          en: 'Week plan refreshed from mission.',
+          es: 'Plan semanal refrescado desde la mision.',
+          ptBr: 'Plano semanal atualizado a partir da missao.',
+          ja: 'ミッションから週間プランを更新しました。',
+          zhHans: '已根据任务刷新周计划。',
+        ),
+      'task_created' => _localizedControllerString(
+          en: 'Task created.',
+          es: 'Tarea creada.',
+          ptBr: 'Tarefa criada.',
+          ja: 'タスクを作成しました。',
+          zhHans: '任务已创建。',
+        ),
+      'task_updated' => _localizedControllerString(
+          en: 'Task updated.',
+          es: 'Tarea actualizada.',
+          ptBr: 'Tarefa atualizada.',
+          ja: 'タスクを更新しました。',
+          zhHans: '任务已更新。',
+        ),
+      'habit_created' => _localizedControllerString(
+          en: 'Habit created.',
+          es: 'Habito creado.',
+          ptBr: 'Habito criado.',
+          ja: '習慣を作成しました。',
+          zhHans: '习惯已创建。',
+        ),
+      'habit_updated' => _localizedControllerString(
+          en: 'Habit updated.',
+          es: 'Habito actualizado.',
+          ptBr: 'Habito atualizado.',
+          ja: '習慣を更新しました。',
+          zhHans: '习惯已更新。',
+        ),
+      'expense_saved' => _localizedControllerString(
+          en: 'Expense saved.',
+          es: 'Gasto guardado.',
+          ptBr: 'Gasto salvo.',
+          ja: '支出を保存しました。',
+          zhHans: '支出已保存。',
+        ),
+      'expense_updated' => _localizedControllerString(
+          en: 'Expense updated.',
+          es: 'Gasto actualizado.',
+          ptBr: 'Gasto atualizado.',
+          ja: '支出を更新しました。',
+          zhHans: '支出已更新。',
+        ),
+      'pantry_item_saved' => _localizedControllerString(
+          en: 'Pantry item saved.',
+          es: 'Ingrediente guardado.',
+          ptBr: 'Ingrediente salvo.',
+          ja: '食材を保存しました。',
+          zhHans: '食材已保存。',
+        ),
+      'pantry_item_updated' => _localizedControllerString(
+          en: 'Pantry item updated.',
+          es: 'Ingrediente actualizado.',
+          ptBr: 'Ingrediente atualizado.',
+          ja: '食材を更新しました。',
+          zhHans: '食材已更新。',
+        ),
+      'purchase_saved' => _localizedControllerString(
+          en: 'Purchase intention saved.',
+          es: 'Intencion de compra guardada.',
+          ptBr: 'Intencao de compra salva.',
+          ja: '購入意図を保存しました。',
+          zhHans: '购买意图已保存。',
+        ),
+      'purchase_updated' => _localizedControllerString(
+          en: 'Purchase intention updated.',
+          es: 'Intencion de compra actualizada.',
+          ptBr: 'Intencao de compra atualizada.',
+          ja: '購入意図を更新しました。',
+          zhHans: '购买意图已更新。',
+        ),
+      'journal_entry_saved' => _localizedControllerString(
+          en: 'Journal entry saved.',
+          es: 'Entrada del journal guardada.',
+          ptBr: 'Entrada do journal salva.',
+          ja: 'ジャーナルを保存しました。',
+          zhHans: '日记条目已保存。',
+        ),
+      'journal_entry_updated' => _localizedControllerString(
+          en: 'Journal entry updated.',
+          es: 'Entrada del journal actualizada.',
+          ptBr: 'Entrada do journal atualizada.',
+          ja: 'ジャーナルを更新しました。',
+          zhHans: '日记条目已更新。',
+        ),
+      'quick_note_saved' => _localizedControllerString(
+          en: 'Quick note saved.',
+          es: 'Nota rapida guardada.',
+          ptBr: 'Nota rapida salva.',
+          ja: 'クイックメモを保存しました。',
+          zhHans: '快速笔记已保存。',
+        ),
+      'quick_note_updated' => _localizedControllerString(
+          en: 'Quick note updated.',
+          es: 'Nota rapida actualizada.',
+          ptBr: 'Nota rapida atualizada.',
+          ja: 'クイックメモを更新しました。',
+          zhHans: '快速笔记已更新。',
+        ),
+      'calendar_item_saved' => _localizedControllerString(
+          en: 'Calendar item saved.',
+          es: 'Item del calendario guardado.',
+          ptBr: 'Item do calendario salvo.',
+          ja: 'カレンダー項目を保存しました。',
+          zhHans: '日历项目已保存。',
+        ),
+      'calendar_item_updated' => _localizedControllerString(
+          en: 'Calendar item updated.',
+          es: 'Item del calendario actualizado.',
+          ptBr: 'Item do calendario atualizado.',
+          ja: 'カレンダー項目を更新しました。',
+          zhHans: '日历项目已更新。',
+        ),
+      'recipe_rescue_saved' => _localizedControllerString(
+          en: 'Recipe rescue saved.',
+          es: 'Rescate de receta guardado.',
+          ptBr: 'Resgate de receita salvo.',
+          ja: 'レシピ救済を保存しました。',
+          zhHans: '食谱救援已保存。',
+        ),
+      'recipe_rescue_updated' => _localizedControllerString(
+          en: 'Recipe rescue updated.',
+          es: 'Rescate de receta actualizado.',
+          ptBr: 'Resgate de receita atualizado.',
+          ja: 'レシピ救済を更新しました。',
+          zhHans: '食谱救援已更新。',
+        ),
+      'recipe_rescue_cooked' => _localizedControllerString(
+          en: 'Recipe rescue marked cooked: {title}.',
+          es: 'Rescate de receta marcado como cocinado: {title}.',
+          ptBr: 'Resgate de receita marcado como cozinhado: {title}.',
+          ja: 'レシピ救済を調理済みにしました: {title}。',
+          zhHans: '食谱救援已标记为已烹饪：{title}。',
+        ),
+      'finance_reflection_logged' => _localizedControllerString(
+          en: 'Finance reflection logged for {label}.',
+          es: 'Reflexion financiera registrada para {label}.',
+          ptBr: 'Reflexao financeira registrada para {label}.',
+          ja: '{label} の家計リフレクションを記録しました。',
+          zhHans: '已为 {label} 记录财务反思。',
+        ),
+      'captured_manually' => _localizedControllerString(
+          en: 'Captured manually',
+          es: 'Capturado manualmente',
+          ptBr: 'Capturado manualmente',
+          ja: '手動で記録',
+          zhHans: '手动记录',
+        ),
+      'pantry_capture_review' => _localizedControllerString(
+          en: 'Review expiry and use this before buying more.',
+          es: 'Revisa el vencimiento y usa esto antes de comprar mas.',
+          ptBr: 'Revise a validade e use isto antes de comprar mais.',
+          ja: '期限を確認し、買い足す前にこれを使ってください。',
+          zhHans: '先检查保质期，并在继续购买前先把它用掉。',
+        ),
+      'pantry_capture_expiry' => _localizedControllerString(
+          en: 'Use soon. Detected expiry hint: {expiry}.',
+          es: 'Usa pronto esto. Pista de vencimiento detectada: {expiry}.',
+          ptBr: 'Use em breve. Indicio de validade detectado: {expiry}.',
+          ja: '早めに使ってください。検出された期限ヒント: {expiry}。',
+          zhHans: '请尽快使用。检测到的到期提示：{expiry}。',
+        ),
+      'captured_item_quantity' => _localizedControllerString(
+          en: '1 captured item',
+          es: '1 item capturado',
+          ptBr: '1 item capturado',
+          ja: '取り込み済み1件',
+          zhHans: '已捕获 1 项',
+        ),
+      'purchase_capture_reason' => _localizedControllerString(
+          en: 'Captured from quick capture. Compare against existing items first.',
+          es: 'Capturado desde captura rapida. Compara primero con lo que ya tienes.',
+          ptBr:
+              'Capturado da captura rapida. Compare primeiro com o que voce ja tem.',
+          ja: 'クイックキャプチャから記録しました。まず手持ちの物と比較してください。',
+          zhHans: '来自快速捕获。先与已有物品进行比较。',
+        ),
+      'captured_from_quick_capture' => _localizedControllerString(
+          en: 'Captured from quick capture.',
+          es: 'Capturado desde captura rapida.',
+          ptBr: 'Capturado da captura rapida.',
+          ja: 'クイックキャプチャから記録しました。',
+          zhHans: '来自快速捕获。',
+        ),
+      'captured_due_hint' => _localizedControllerString(
+          en: 'Captured from quick capture. Due hint: {due}.',
+          es: 'Capturado desde captura rapida. Pista de fecha: {due}.',
+          ptBr: 'Capturado da captura rapida. Indicio de prazo: {due}.',
+          ja: 'クイックキャプチャから記録しました。期限ヒント: {due}。',
+          zhHans: '来自快速捕获。截止提示：{due}。',
+        ),
+      'pantry_used_quantity' => _localizedControllerString(
+          en: 'used',
+          es: 'usado',
+          ptBr: 'usado',
+          ja: '使用済み',
+          zhHans: '已使用',
+        ),
+      'pantry_used_board_hint' => _localizedControllerString(
+          en: 'Used locally from the pantry board.',
+          es: 'Usado localmente desde el tablero de pantry.',
+          ptBr: 'Usado localmente a partir do painel da despensa.',
+          ja: 'パントリーボードからローカルで使用しました。',
+          zhHans: '已在 pantry 面板中本地标记为使用。',
+        ),
+      'pantry_used_mission_hint' => _localizedControllerString(
+          en: 'Used by a mission action. Refill only if still needed.',
+          es: 'Usado por una accion de mision. Reponer solo si todavia hace falta.',
+          ptBr:
+              'Usado por uma acao de missao. Reponha apenas se ainda fizer falta.',
+          ja: 'ミッション操作で使用しました。本当に必要な場合のみ補充してください。',
+          zhHans: '已由任务动作使用。只有在仍然需要时才补充。',
+        ),
+      'purchase_paused_board_reason' => _localizedControllerString(
+          en: 'Paused for 24h from the closet board. {reason}',
+          es: 'Pausado 24 h desde el tablero de closet. {reason}',
+          ptBr: 'Pausado por 24 h a partir do painel do guarda-roupa. {reason}',
+          ja: 'クローゼットボードから24時間保留しました。{reason}',
+          zhHans: '已在衣橱面板中暂停 24 小时。{reason}',
+        ),
+      'purchase_paused_mission_reason' => _localizedControllerString(
+          en: 'Paused for 24h after mission action. {reason}',
+          es: 'Pausado 24 h despues de la accion de mision. {reason}',
+          ptBr: 'Pausado por 24 h apos a acao da missao. {reason}',
+          ja: 'ミッション操作後に24時間保留しました。{reason}',
+          zhHans: '任务动作后已暂停 24 小时。{reason}',
+        ),
+      'week_adjusted_suffix' => _localizedControllerString(
+          en: ' · Adjusted',
+          es: ' · Ajustado',
+          ptBr: ' · Ajustado',
+          ja: ' ・調整済み',
+          zhHans: ' · 已调整',
+        ),
+      'week_replanned_suffix' => _localizedControllerString(
+          en: ' · Replanned from mission',
+          es: ' · Replanificado desde la mision',
+          ptBr: ' · Replanejado a partir da missao',
+          ja: ' ・ミッションから再計画',
+          zhHans: ' · 已根据任务重排',
+        ),
+      _ => key,
+    };
+
+    return variables.entries.fold(
+      template,
+      (value, entry) => value.replaceAll('{${entry.key}}', entry.value),
+    );
+  }
+
+  String _localizedControllerString({
+    required String en,
+    required String es,
+    required String ptBr,
+    required String ja,
+    required String zhHans,
+  }) {
+    switch (normalizeLocaleTag(currentLocaleTag)) {
+      case 'es':
+        return es;
+      case 'pt-BR':
+        return ptBr;
+      case 'ja':
+        return ja;
+      case 'zh-Hans':
+        return zhHans;
+      default:
+        return en;
+    }
   }
 
   double? _extractFirstAmount(String text) {

@@ -11,15 +11,18 @@ import 'dto/ai_gateway_dto.dart';
 
 abstract class AiGatewayClient {
   Future<MissionPlanDto> fetchDailyPlan({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
   });
 
   Future<MissionSuggestionDto> fetchDailyMission({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
   }) async {
     final plan = await fetchDailyPlan(
+      locale: locale,
       privacySettings: privacySettings,
       lifeEvents: lifeEvents,
     );
@@ -27,11 +30,13 @@ abstract class AiGatewayClient {
   }
 
   Future<CaptureClassificationDto> classifyCapture({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required String text,
   });
 
   Future<CaptureParseResponseDto?> parseCapture({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required String text,
   }) async {
@@ -39,6 +44,7 @@ abstract class AiGatewayClient {
   }
 
   Future<void> submitMissionFeedback({
+    String locale = 'en',
     required MissionFeedback feedback,
   });
 }
@@ -48,6 +54,7 @@ class MockAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<MissionPlanDto> fetchDailyPlan({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
   }) async {
@@ -276,6 +283,7 @@ class MockAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<CaptureClassificationDto> classifyCapture({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required String text,
   }) async {
@@ -288,6 +296,7 @@ class MockAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<CaptureParseResponseDto?> parseCapture({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required String text,
   }) async {
@@ -296,6 +305,7 @@ class MockAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<void> submitMissionFeedback({
+    String locale = 'en',
     required MissionFeedback feedback,
   }) async {}
 }
@@ -325,6 +335,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<MissionPlanDto> fetchDailyPlan({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
   }) async {
@@ -335,6 +346,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
     );
     final requestPayload = {
       'user_id': userId,
+      'locale': locale,
       'scope': 'daily',
       'allowed_domains': allowedDomains,
       'life_events': eligibleEvents
@@ -373,6 +385,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
 
       if (response.statusCode != 200) {
         return _fallbackPlan(
+          locale: locale,
           privacySettings: privacySettings,
           lifeEvents: lifeEvents,
           reason: _fallbackReasonFromResponse(response),
@@ -384,6 +397,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic>) {
         return _fallbackPlan(
+          locale: locale,
           privacySettings: privacySettings,
           lifeEvents: lifeEvents,
           reason: 'invalid_json_shape',
@@ -404,6 +418,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       );
     } on TimeoutException {
       return _fallbackPlan(
+        locale: locale,
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
         reason: 'no_connection',
@@ -411,6 +426,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       );
     } on SocketException {
       return _fallbackPlan(
+        locale: locale,
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
         reason: 'no_connection',
@@ -418,6 +434,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       );
     } on http.ClientException {
       return _fallbackPlan(
+        locale: locale,
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
         reason: 'no_connection',
@@ -425,6 +442,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       );
     } on FormatException {
       return _fallbackPlan(
+        locale: locale,
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
         reason: 'invalid_json',
@@ -432,6 +450,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       );
     } catch (error) {
       return _fallbackPlan(
+        locale: locale,
         privacySettings: privacySettings,
         lifeEvents: lifeEvents,
         reason: 'gateway_degraded',
@@ -442,11 +461,13 @@ class HttpAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<CaptureClassificationDto> classifyCapture({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required String text,
   }) async {
     final payload = {
       'user_id': userId,
+      'locale': locale,
       'text': text,
       'privacy_settings': {
         'ai_enabled': privacySettings.aiEnabled,
@@ -467,6 +488,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
 
       if (response.statusCode != 200) {
         return _fallbackClassification(
+          locale: locale,
           privacySettings: privacySettings,
           text: text,
           reason: _fallbackReasonFromResponse(response),
@@ -477,6 +499,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic>) {
         return _fallbackClassification(
+          locale: locale,
           privacySettings: privacySettings,
           text: text,
           reason: 'invalid_json_shape',
@@ -495,30 +518,35 @@ class HttpAiGatewayClient extends AiGatewayClient {
       );
     } on TimeoutException {
       return _fallbackClassification(
+        locale: locale,
         privacySettings: privacySettings,
         text: text,
         reason: 'no_connection',
       );
     } on SocketException {
       return _fallbackClassification(
+        locale: locale,
         privacySettings: privacySettings,
         text: text,
         reason: 'no_connection',
       );
     } on http.ClientException {
       return _fallbackClassification(
+        locale: locale,
         privacySettings: privacySettings,
         text: text,
         reason: 'no_connection',
       );
     } on FormatException {
       return _fallbackClassification(
+        locale: locale,
         privacySettings: privacySettings,
         text: text,
         reason: 'invalid_json',
       );
     } catch (error) {
       return _fallbackClassification(
+        locale: locale,
         privacySettings: privacySettings,
         text: text,
         reason: 'gateway_degraded',
@@ -528,11 +556,13 @@ class HttpAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<CaptureParseResponseDto?> parseCapture({
+    String locale = 'en',
     required PrivacySettings privacySettings,
     required String text,
   }) async {
     final payload = {
       'user_id': userId,
+      'locale': locale,
       'text': text,
       'privacy_settings': {
         'ai_enabled': privacySettings.aiEnabled,
@@ -576,10 +606,12 @@ class HttpAiGatewayClient extends AiGatewayClient {
 
   @override
   Future<void> submitMissionFeedback({
+    String locale = 'en',
     required MissionFeedback feedback,
   }) async {
     final payload = {
       'user_id': userId,
+      'locale': locale,
       'suggestion_id': feedback.missionId,
       'status': feedback.status.storageKey,
       'notes': feedback.notes,
@@ -604,6 +636,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
   }
 
   Future<MissionPlanDto> _fallbackPlan({
+    required String locale,
     required PrivacySettings privacySettings,
     required List<LifeEvent> lifeEvents,
     required String reason,
@@ -611,6 +644,7 @@ class HttpAiGatewayClient extends AiGatewayClient {
     int? statusCode,
   }) async {
     final fallback = await _fallbackClient.fetchDailyPlan(
+      locale: locale,
       privacySettings: privacySettings,
       lifeEvents: lifeEvents,
     );
@@ -626,12 +660,14 @@ class HttpAiGatewayClient extends AiGatewayClient {
   }
 
   Future<CaptureClassificationDto> _fallbackClassification({
+    required String locale,
     required PrivacySettings privacySettings,
     required String text,
     required String reason,
     int? statusCode,
   }) async {
     final fallback = await _fallbackClient.classifyCapture(
+      locale: locale,
       privacySettings: privacySettings,
       text: text,
     );

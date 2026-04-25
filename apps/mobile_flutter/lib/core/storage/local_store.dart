@@ -18,6 +18,8 @@ import '../runtime/app_runtime_config.dart';
 abstract class LocalStore {
   Future<PrivacySettings> loadPrivacySettings();
   Future<void> savePrivacySettings(PrivacySettings settings);
+  Future<String?> loadLocalePreference() async => null;
+  Future<void> saveLocalePreference(String? localeTag) async {}
   Future<bool> loadDemoSeedEnabled() async => true;
   Future<void> saveDemoSeedEnabled(bool enabled) async {}
   Future<bool> supportsSensitiveLocalEncryption() async => false;

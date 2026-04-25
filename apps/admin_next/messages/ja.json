@@ -1,0 +1,270 @@
+{
+  "metadata": {
+    "title": "GoLife Admin",
+    "description": "GoLife AI のミッション品質とシステム健全性を扱う運用画面。"
+  },
+  "shell": {
+    "eyebrow": "制御画面",
+    "summary": "このパネルは mobile と同じループを監視します。capture、risks、missions、feedback、trust。",
+    "lastIngestionPrefix": "最終取り込み",
+    "lastIngestionEmpty": "まだ運用取り込みは記録されていません。",
+    "stateLiveData": "LIVE DATA",
+    "stateLiveNoIngestion": "LIVE - NO INGESTION YET",
+    "stateFallbackSnapshot": "FALLBACK SNAPSHOT",
+    "stateBackendOffline": "BACKEND OFFLINE",
+    "apiLabel": "API",
+    "tokenSet": "Admin トークン設定済み",
+    "tokenMissing": "トークン未設定"
+  },
+  "nav": {
+    "badge": "運用デスク",
+    "title": "GoLife Admin",
+    "subtitle": "ミッション品質、信頼、サポート、AI コストを扱う運用ボード。",
+    "sections": [
+      {
+        "label": "運用",
+        "items": [
+          {
+            "href": "/dashboard",
+            "title": "Dashboard",
+            "note": "ミッション健全性、信頼圧力、コスト。"
+          },
+          {
+            "href": "/users",
+            "title": "Users",
+            "note": "アカウント状態とサポート信号。"
+          },
+          {
+            "href": "/usage",
+            "title": "Usage",
+            "note": "Capture 量、fallback、遅延。"
+          },
+          {
+            "href": "/ai-costs",
+            "title": "AI Costs",
+            "note": "エンドポイント単位のプロバイダ支出。"
+          },
+          {
+            "href": "/openrouter-keys",
+            "title": "OpenRouter Keys",
+            "note": "キー健全性、failover、ローテーション履歴。"
+          }
+        ]
+      },
+      {
+        "label": "品質",
+        "items": [
+          {
+            "href": "/missions",
+            "title": "Missions",
+            "note": "順位付け結果の品質とリスク連携。"
+          },
+          {
+            "href": "/feedback",
+            "title": "Feedback",
+            "note": "なぜ受理・拒否・完了されたか。"
+          },
+          {
+            "href": "/safety",
+            "title": "Safety",
+            "note": "ブロックされた出力と信頼インシデント。"
+          },
+          {
+            "href": "/routing-snapshots",
+            "title": "Routing Snapshots",
+            "note": "各能力の現在の上位3モデル。"
+          }
+        ]
+      },
+      {
+        "label": "システム",
+        "items": [
+          {
+            "href": "/feature-flags",
+            "title": "Feature Flags",
+            "note": "運用リリース用のスイッチ。"
+          },
+          {
+            "href": "/settings/models",
+            "title": "Models",
+            "note": "プロバイダと fallback routing。"
+          },
+          {
+            "href": "/routing-profiles",
+            "title": "Routing Profiles",
+            "note": "遅延、コンテキスト、パラメータ方針。"
+          },
+          {
+            "href": "/model-catalog",
+            "title": "Model Catalog",
+            "note": "OpenRouter カタログキャッシュと適格性。"
+          },
+          {
+            "href": "/support/export-delete",
+            "title": "Support Queue",
+            "note": "エクスポートと削除の依頼。"
+          }
+        ]
+      }
+    ]
+  },
+  "localeSwitcher": {
+    "label": "言語",
+    "options": {
+      "en": "EN",
+      "es": "ES",
+      "pt-BR": "PT-BR",
+      "ja": "JA",
+      "zh-Hans": "ZH"
+    }
+  },
+  "shared": {
+    "enabled": "有効",
+    "disabled": "無効",
+    "generatedLabel": "生成",
+    "expiresLabel": "期限",
+    "noModelName": "モデル名なし",
+    "notAvailable": "N/A",
+    "msUnit": "ms"
+  },
+  "pages": {
+    "missions": {
+      "eyebrow": "ミッション監査",
+      "title": "ランク済み出力と関連リスク",
+      "description": "このテーブルは、システムが表示用カードではなく、実行する価値のある行動を作れているかを見る品質ゲートです。",
+      "badge": "品質レビュー",
+      "trackedLabel": "追跡ミッション",
+      "trackedNote": "運用 backend から見た現在の監査スライスです。",
+      "completedLabel": "完了",
+      "completedNote": "実用性を示す最も強い証拠です。",
+      "rejectedLabel": "拒否",
+      "rejectedNote": "反復的または文脈不足な提案の直接シグナルです。",
+      "panelEyebrow": "レビュー",
+      "panelTitle": "ミッション記録",
+      "panelNote": "各行にドメイン、関連リスク、有用性、最終スコアがまとまっています。",
+      "empty": "この範囲ではまだミッション記録がありません。",
+      "domainsLabel": "ドメイン",
+      "risksLabel": "リスク",
+      "none": "なし",
+      "statusCompleted": "完了",
+      "statusRejected": "拒否",
+      "statusShown": "表示",
+      "scoreLabel": "スコア"
+    },
+    "modelCatalog": {
+      "eyebrow": "Catalog cache",
+      "title": "OpenRouter モデルカタログ",
+      "description": "この cache は routing 判断の材料です。freshness、context、structured output を確認してから snapshot を信頼してください。",
+      "badge": "Eligibility",
+      "panelEyebrow": "カタログ",
+      "panelTitle": "現在の cache モデル",
+      "panelNote": "control plane は capability ごとにランキングする前にこれらを絞り込みます。",
+      "empty": "現在 cache 済みモデルはありません。",
+      "contextLabel": "Context",
+      "promptLabel": "Prompt",
+      "completionLabel": "Completion",
+      "refreshedLabel": "更新"
+    },
+    "openrouterKeys": {
+      "eyebrow": "Routing control",
+      "title": "OpenRouter keys と failover 健全性",
+      "description": "どの key が active か、どれが degraded か、ルートや quota 失敗時に GoLife が安全にローテートしているかを追跡します。",
+      "badge": "Sequential failover",
+      "activeKeysLabel": "有効 key",
+      "activeKeysNote": "gateway control plane で利用可能な健全 key です。",
+      "disabledKeysLabel": "無効 key",
+      "disabledKeysNote": "停止中または unsafe のため routing から除外された key です。",
+      "recentEventsLabel": "最近の key イベント",
+      "recentEventsNote": "gateway が記録した最新の成功/失敗です。",
+      "keyPoolEyebrow": "キープール",
+      "keyPoolTitle": "マスク済み server-side keys",
+      "keyPoolNote": "秘密はここに表示されません。運用者にはマスク済みラベル、健全性、ローテーション順のみが見えます。",
+      "emptyKeys": "利用可能な OpenRouter key はありません。",
+      "statusHealthy": "健全",
+      "statusDegraded": "劣化",
+      "statusDisabled": "無効",
+      "priorityLabel": "優先度",
+      "lastOkLabel": "最後の ok:",
+      "lastErrorLabel": "最後の error:",
+      "consecutiveFailuresLabel": "連続失敗:",
+      "rotationLogEyebrow": "ローテーションログ",
+      "rotationLogTitle": "最新 key イベント",
+      "rotationLogNote": "ある capability が fallback 過多になったとき、最初に見る場所です。",
+      "emptyEvents": "まだ key イベントは記録されていません。",
+      "eventSuccess": "成功",
+      "eventFailure": "失敗",
+      "eventDisabled": "無効",
+      "noEndpoint": "endpoint なし",
+      "noModel": "モデルなし",
+      "noNotes": "記録されたメモはありません。",
+      "never": "なし",
+      "none": "なし"
+    },
+    "routingProfiles": {
+      "eyebrow": "Routing policy",
+      "title": "Capability profiles",
+      "description": "各 capability は latency、throughput、parameter、context の独自ルールを持ち、gateway が単一の粗い方針で全てを流さないようにします。",
+      "badge": "Per capability",
+      "panelEyebrow": "Profiles",
+      "panelTitle": "品質重視の routing ルール",
+      "panelNote": "これらのルールは ranking 前に OpenRouter catalog 全体を絞り込みます。structured output を守るため十分に厳格である必要があります。",
+      "empty": "利用可能な routing profile はありません。",
+      "strategyLabel": "戦略",
+      "minContextLabel": "最小 context",
+      "maxLatencyLabel": "最大 latency",
+      "minThroughputLabel": "最小 throughput",
+      "retryPolicyLabel": "Retry policy",
+      "requiredParametersLabel": "必須 parameter"
+    },
+    "routingSnapshots": {
+      "eyebrow": "Snapshot",
+      "title": "現在の top-3 モデル選択",
+      "description": "このページは、catalog 絞り込み、telemetry 重み付け、policy check の後に control plane が出した ranking を表示します。",
+      "badge": "Execution input",
+      "capabilitiesLabel": "snapshot がある capability",
+      "capabilitiesNote": "有効 capability ごとに候補はちょうど3件であるべきです。",
+      "snapshotAgeLabel": "snapshot 年齢",
+      "snapshotAgeNote": "古い snapshot は stale model を routing する確率を上げます。",
+      "selectedRowsLabel": "選択行数",
+      "selectedRowsNote": "全 capability に保存された ranking 行の合計です。",
+      "panelEyebrow": "Capability",
+      "panelNote": "gateway は OpenRouter に対してこの3モデルをこの順で問い合わせ、provider fallback を有効にします。",
+      "emptyTitle": "Routing snapshot なし",
+      "empty": "現在利用可能な ranking 選択はありません。",
+      "rankLabel": "順位",
+      "scoreLabel": "スコア"
+    },
+    "supportQueue": {
+      "eyebrow": "Support queue",
+      "title": "Export と delete の運用",
+      "description": "プライバシー信頼は理論ではなく運用です。この queue により export / delete 要求を見える状態で処理できます。",
+      "badge": "Privacy ops",
+      "openRequestsLabel": "未解決リクエスト",
+      "openRequestsNote": "現在の privacy 関連サポート作業です。",
+      "exportLabel": "Export",
+      "exportNote": "ポータブルなデータ束を求めるユーザーです。",
+      "deleteLabel": "Delete",
+      "deleteNote": "アカウントまたはデータの完全削除を求めるユーザーです。",
+      "panelEyebrow": "Queue",
+      "panelTitle": "サポート要求",
+      "panelNote": "web backend は今は seed queue を返します。次の backend ブロックで persistent な運用データに置き換えてください。",
+      "empty": "キューにサポート要求はありません。",
+      "statusOpen": "Open",
+      "statusResolved": "Resolved"
+    },
+    "modelSettings": {
+      "eyebrow": "AI routing",
+      "title": "Provider と model 設定",
+      "description": "このページでは主要な運用モデル選択を見える化し、cost、fallback、classification 戦略を明示したままにします。",
+      "badge": "Models",
+      "panelEyebrow": "Current stack",
+      "panelTitle": "Model routing",
+      "panelNote": "classification は可能な限り安価かつ deterministic に保つべきです。高コストな推論は ranked synthesis や weekly review に置くべきです。",
+      "activeProviderLabel": "有効 provider",
+      "primaryModelLabel": "Primary model",
+      "fallbackModelLabel": "Fallback model",
+      "classificationModelLabel": "Classification model",
+      "weeklySummaryModelLabel": "Weekly summary model"
+    }
+  }
+}

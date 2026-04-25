@@ -414,6 +414,79 @@ def test_event_parse_supports_mixed_spanish_and_english(client):
     assert [item["domain"] for item in data["items"]] == ["finance", "pantry", "task"]
 
 
+def test_event_parse_supports_english_task_language(client):
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "locale": "en",
+            "text": "I need to finish the budget spreadsheet before lunch",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 1
+    assert data["items"][0]["domain"] == "task"
+    assert data["trace"]["parser"] == "deterministic_capture_parser"
+
+
+def test_event_parse_supports_portuguese_connectors_and_terms(client):
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "locale": "pt-BR",
+            "text": "Comprei cafe 8.50 e a alface vence amanha e preciso pagar internet",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["finance", "pantry", "task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert [item["domain"] for item in data["items"]] == ["finance", "pantry", "task"]
+    assert data["trace"]["parser"] == "deterministic_capture_parser"
+
+
+def test_event_parse_supports_japanese_and_chinese_pantry_terms(client):
+    japanese_response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "locale": "ja",
+            "text": "冷蔵庫のほうれん草は明日まで",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["pantry"],
+            },
+        },
+    )
+    chinese_response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "locale": "zh-Hans",
+            "text": "冰箱里的菠菜明天过期",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["pantry"],
+            },
+        },
+    )
+
+    assert japanese_response.status_code == 200
+    assert chinese_response.status_code == 200
+    assert japanese_response.json()["items"][0]["domain"] == "pantry"
+    assert chinese_response.json()["items"][0]["domain"] == "pantry"
+
+
 def test_feedback_store_persists_items(tmp_path):
     store_path = tmp_path / "feedback.json"
     store = MissionFeedbackStore(store_path)
@@ -584,6 +657,7 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
         "/v1/events/classify",
         json={
             "user_id": "user-1",
+            "locale": "pt",
             "text": "Compre cafe y pague 4.50 antes de entrar a trabajar.",
             "privacy_settings": {"ai_enabled": True, "allowed_domains": ["finance"]},
         },
@@ -592,6 +666,7 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
         "/v1/feedback",
         json={
             "user_id": "user-1",
+            "locale": "pt-BR",
             "suggestion_id": "mock-daily-task-habit",
             "status": "completed",
             "notes": "finished it",
@@ -603,6 +678,7 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
         "/v1/events/parse",
         json={
             "user_id": "user-1",
+            "locale": "ja",
             "text": "Compre cafe 4.50 y la lechuga vence manana",
             "privacy_settings": {"ai_enabled": True, "allowed_domains": ["finance", "pantry"]},
         },
@@ -619,6 +695,9 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
     assert operational_client.invocations[0]["endpoint"] == "/v1/events/classify"
     assert operational_client.invocations[1]["endpoint"] == "/v1/events/parse"
     assert operational_client.invocations[1]["estimated_cost_usd"] == 0.0024
+    assert operational_client.usage_events[0]["metadata"]["locale"] == "pt-BR"
+    assert operational_client.usage_events[1]["metadata"]["locale"] == "pt-BR"
+    assert operational_client.usage_events[2]["metadata"]["locale"] == "ja"
     assert len(operational_client.feedback_items) == 1
     assert operational_client.feedback_items[0]["status"] == "completed"
     assert operational_client.feedback_items[0]["reason"] == "private_note_redacted"
@@ -630,6 +709,35 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
         }
     )
     assert "finished it" not in serialized
+
+
+def test_operational_audit_normalizes_unknown_locale_to_english(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/classify",
+        json={
+            "user_id": "user-1",
+            "locale": "de",
+            "text": "I paid the electricity bill.",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["finance"]},
+        },
+    )
+
+    assert response.status_code == 200
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["metadata"]["locale"] == "en"
 
 
 def test_task_rewrite_reports_operational_events(tmp_path):
@@ -735,6 +843,7 @@ def test_reflection_check_returns_crisis_message(client):
         "/v1/reflection/check",
         json={
             "user_id": "user-1",
+            "locale": "zh",
             "text": "I want to kill myself tonight.",
             "privacy_level": "local_only",
         },
@@ -783,6 +892,7 @@ def test_reflection_check_uses_configured_crisis_resource_catalog(tmp_path):
         "/v1/reflection/check",
         json={
             "user_id": "user-1",
+            "locale": "zh",
             "text": "I want to kill myself tonight.",
             "privacy_level": "local_only",
         },
@@ -812,6 +922,7 @@ def test_reflection_check_reports_metadata_only_operational_audit(tmp_path):
         "/v1/reflection/check",
         json={
             "user_id": "user-1",
+            "locale": "zh",
             "text": "I want to kill myself tonight.",
             "privacy_level": "local_only",
         },
@@ -820,6 +931,7 @@ def test_reflection_check_reports_metadata_only_operational_audit(tmp_path):
     assert response.status_code == 200
     assert len(operational_client.usage_events) == 1
     assert operational_client.usage_events[0]["event_type"] == "reflection_safety_checked"
+    assert operational_client.usage_events[0]["metadata"]["locale"] == "zh-Hans"
     assert len(operational_client.safety_batches) == 1
     serialized = json.dumps(
         {
@@ -843,3 +955,88 @@ def test_assess_reflection_safety_detects_accented_crisis_language():
     )
     assert response.safe is False
     assert response.category == "crisis"
+
+
+def test_assess_reflection_safety_blocks_spanish_clinical_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "es",
+                "text": "Necesito un diagnostico y tratamiento para mi depresion.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "clinical"
+    assert "GoLife puede apoyar" in response.message
+    assert response.trace["locale"] == "es"
+
+
+def test_assess_reflection_safety_returns_portuguese_crisis_message():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "pt-BR",
+                "text": "Nao quero viver e acho que posso me machucar.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "crisis"
+    assert "GoLife pode ajudar" in response.message
+    assert response.trace["locale"] == "pt-BR"
+
+
+def test_assess_reflection_safety_returns_japanese_supportive_message():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "ja",
+                "text": "明日の予定を整理したいです。",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is True
+    assert response.category == "supportive"
+    assert "GoLife は" in response.message
+    assert response.trace["locale"] == "ja"
+
+
+def test_assess_reflection_safety_defaults_unknown_locale_to_english():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "de",
+                "text": "I need help organizing next week.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is True
+    assert response.category == "supportive"
+    assert "GoLife can help" in response.message
+    assert response.trace["locale"] == "en"
+
+
+def test_assess_reflection_safety_detects_chinese_crisis_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "zh-CN",
+                "text": "我想自杀。",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "crisis"
+    assert "GoLife 可以帮助你整理沉重的感受" in response.message
+    assert response.trace["locale"] == "zh-Hans"

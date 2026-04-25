@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../features/app_state/golife_controller.dart';
 
 class AppShellScaffold extends StatelessWidget {
@@ -18,6 +19,7 @@ class AppShellScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.sizeOf(context).width >= 980;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -57,7 +59,10 @@ class AppShellScaffold extends StatelessWidget {
                 child: isWide
                     ? Row(
                         children: [
-                          _SideRail(currentLocation: currentLocation),
+                          _SideRail(
+                            currentLocation: currentLocation,
+                            l10n: l10n,
+                          ),
                           const SizedBox(width: 20),
                           Expanded(child: _ContentFrame(child: child)),
                         ],
@@ -66,7 +71,10 @@ class AppShellScaffold extends StatelessWidget {
                         children: [
                           _Header(controller: controller),
                           const SizedBox(height: 14),
-                          _TopTabs(currentLocation: currentLocation),
+                          _TopTabs(
+                            currentLocation: currentLocation,
+                            l10n: l10n,
+                          ),
                           const SizedBox(height: 14),
                           Expanded(child: _ContentFrame(child: child)),
                         ],
@@ -88,6 +96,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -112,12 +121,12 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('GoLife AI', style: theme.textTheme.headlineSmall),
+              Text(l10n.appTitle, style: theme.textTheme.headlineSmall),
               const SizedBox(height: 2),
               Text(
                 controller.isReady
-                    ? 'Life operating system shell with explicit privacy boundaries.'
-                    : 'Bootstrapping privacy, mission mock and local graph...',
+                    ? l10n.appShellTaglineReady
+                    : l10n.appShellTaglineBooting,
                 style: theme.textTheme.bodyMedium,
               ),
             ],
@@ -129,9 +138,10 @@ class _Header extends StatelessWidget {
 }
 
 class _SideRail extends StatelessWidget {
-  const _SideRail({required this.currentLocation});
+  const _SideRail({required this.currentLocation, required this.l10n});
 
   final String currentLocation;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -146,13 +156,14 @@ class _SideRail extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Navigate', style: Theme.of(context).textTheme.titleLarge),
+          Text(l10n.navigate, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
           for (final destination in appDestinations)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _DestinationButton(
                 destination: destination,
+                l10n: l10n,
                 selected: currentLocation.startsWith(destination.path),
               ),
             ),
@@ -163,9 +174,10 @@ class _SideRail extends StatelessWidget {
 }
 
 class _TopTabs extends StatelessWidget {
-  const _TopTabs({required this.currentLocation});
+  const _TopTabs({required this.currentLocation, required this.l10n});
 
   final String currentLocation;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -176,10 +188,11 @@ class _TopTabs extends StatelessWidget {
           for (final destination in appDestinations)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: _DestinationChip(
-                destination: destination,
-                selected: currentLocation.startsWith(destination.path),
-              ),
+                child: _DestinationChip(
+                  destination: destination,
+                  l10n: l10n,
+                  selected: currentLocation.startsWith(destination.path),
+                ),
             ),
         ],
       ),
@@ -190,10 +203,12 @@ class _TopTabs extends StatelessWidget {
 class _DestinationButton extends StatelessWidget {
   const _DestinationButton({
     required this.destination,
+    required this.l10n,
     required this.selected,
   });
 
   final AppDestination destination;
+  final AppLocalizations l10n;
   final bool selected;
 
   @override
@@ -214,7 +229,7 @@ class _DestinationButton extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  destination.label,
+                  destination.localizedLabel(l10n),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: selected ? Colors.white : const Color(0xFF4F443D),
                     fontWeight: FontWeight.w700,
@@ -232,10 +247,12 @@ class _DestinationButton extends StatelessWidget {
 class _DestinationChip extends StatelessWidget {
   const _DestinationChip({
     required this.destination,
+    required this.l10n,
     required this.selected,
   });
 
   final AppDestination destination;
+  final AppLocalizations l10n;
   final bool selected;
 
   @override
@@ -244,7 +261,7 @@ class _DestinationChip extends StatelessWidget {
       selected: selected,
       showCheckmark: false,
       avatar: Icon(destination.icon, size: 18),
-      label: Text(destination.label),
+      label: Text(destination.localizedLabel(l10n)),
       labelStyle: TextStyle(
         color: selected ? Colors.white : const Color(0xFF4F443D),
         fontWeight: FontWeight.w700,
@@ -302,40 +319,100 @@ class _BlurBlob extends StatelessWidget {
 
 class AppDestination {
   const AppDestination({
-    required this.label,
+    required this.kind,
     required this.path,
     required this.icon,
   });
 
-  final String label;
+  final AppDestinationKind kind;
   final String path;
   final IconData icon;
+
+  String localizedLabel(AppLocalizations l10n) {
+    switch (kind) {
+      case AppDestinationKind.dashboard:
+        return l10n.navDashboard;
+      case AppDestinationKind.capture:
+        return l10n.navCapture;
+      case AppDestinationKind.week:
+        return l10n.navWeek;
+      case AppDestinationKind.tasks:
+        return l10n.navTasks;
+      case AppDestinationKind.habits:
+        return l10n.navHabits;
+      case AppDestinationKind.money:
+        return l10n.navMoney;
+      case AppDestinationKind.pantry:
+        return l10n.navPantry;
+      case AppDestinationKind.closet:
+        return l10n.navCloset;
+      case AppDestinationKind.everyday:
+        return l10n.navEveryday;
+      case AppDestinationKind.copilot:
+        return l10n.navCopilot;
+      case AppDestinationKind.settings:
+        return l10n.navSettings;
+    }
+  }
+}
+
+enum AppDestinationKind {
+  dashboard,
+  capture,
+  week,
+  tasks,
+  habits,
+  money,
+  pantry,
+  closet,
+  everyday,
+  copilot,
+  settings,
 }
 
 const appDestinations = [
   AppDestination(
-      label: 'Dashboard',
+      kind: AppDestinationKind.dashboard,
       path: '/dashboard',
       icon: Icons.space_dashboard_rounded),
   AppDestination(
-      label: 'Capture',
+      kind: AppDestinationKind.capture,
       path: '/capture',
       icon: Icons.add_circle_outline_rounded),
-  AppDestination(label: 'Week', path: '/week', icon: Icons.view_week_rounded),
-  AppDestination(label: 'Tasks', path: '/tasks', icon: Icons.checklist_rounded),
   AppDestination(
-      label: 'Habits', path: '/habits', icon: Icons.self_improvement_rounded),
+      kind: AppDestinationKind.week,
+      path: '/week',
+      icon: Icons.view_week_rounded),
   AppDestination(
-      label: 'Money', path: '/money', icon: Icons.stacked_line_chart_rounded),
-  AppDestination(label: 'Pantry', path: '/pantry', icon: Icons.kitchen_rounded),
+      kind: AppDestinationKind.tasks,
+      path: '/tasks',
+      icon: Icons.checklist_rounded),
   AppDestination(
-      label: 'Closet', path: '/closet', icon: Icons.checkroom_rounded),
+      kind: AppDestinationKind.habits,
+      path: '/habits',
+      icon: Icons.self_improvement_rounded),
   AppDestination(
-      label: 'Everyday',
+      kind: AppDestinationKind.money,
+      path: '/money',
+      icon: Icons.stacked_line_chart_rounded),
+  AppDestination(
+      kind: AppDestinationKind.pantry,
+      path: '/pantry',
+      icon: Icons.kitchen_rounded),
+  AppDestination(
+      kind: AppDestinationKind.closet,
+      path: '/closet',
+      icon: Icons.checkroom_rounded),
+  AppDestination(
+      kind: AppDestinationKind.everyday,
       path: '/everyday',
       icon: Icons.auto_awesome_motion_rounded),
   AppDestination(
-      label: 'Copilot', path: '/copilot', icon: Icons.psychology_alt_rounded),
+      kind: AppDestinationKind.copilot,
+      path: '/copilot',
+      icon: Icons.psychology_alt_rounded),
   AppDestination(
-      label: 'Settings', path: '/settings', icon: Icons.tune_rounded),
+      kind: AppDestinationKind.settings,
+      path: '/settings',
+      icon: Icons.tune_rounded),
 ];

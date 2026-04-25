@@ -4,8 +4,11 @@ import { PageHeader } from "@/components/page-header";
 import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getMissions } from "@/lib/api";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function MissionsPage() {
+  const { messages } = await getAdminMessages();
+  const t = messages.pages.missions;
   const missionsResult = await getMissions();
   const missions = missionsResult.data ?? [];
   const completed = missions.filter((item) => item.status === "completed").length;
@@ -14,40 +17,43 @@ export default async function MissionsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Mission Audit"
-        title="Ranked outputs and linked risks"
-        description="This table is the quality gate for whether the system is creating actions worth doing, not just cards worth rendering."
-        badge="Quality review"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={missionsResult.error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Tracked missions"
+          label={t.trackedLabel}
           value={missions.length.toString()}
-          note="Current audit slice from the operational backend."
+          note={t.trackedNote}
           tone="ink"
         />
         <MetricCard
-          label="Completed"
+          label={t.completedLabel}
           value={completed.toString()}
-          note="The strongest proof of practical utility."
+          note={t.completedNote}
           tone="sage"
         />
         <MetricCard
-          label="Rejected"
+          label={t.rejectedLabel}
           value={rejected.toString()}
-          note="A direct signal for repetitive or low-context recommendations."
+          note={t.rejectedNote}
           tone="clay"
         />
       </div>
 
       <Panel
-        eyebrow="Review"
-        title="Mission records"
-        note="Each row keeps domains, matched risks, usefulness, and final score in one place."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-3">
+          {missions.length === 0 ? (
+            <p className="text-sm text-[color:var(--ink-soft)]">{t.empty}</p>
+          ) : null}
           {missions.map((mission) => (
             <div
               key={mission.mission_id}
@@ -57,11 +63,11 @@ export default async function MissionsPage() {
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-ink">{mission.title}</p>
                   <p className="font-mono text-xs text-[color:var(--ink-muted)]">
-                    {mission.mission_id} · {mission.user_id}
+                    {mission.mission_id} | {mission.user_id}
                   </p>
                   <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
-                    Domains: {mission.domains.join(", ")}. Risks:{" "}
-                    {mission.matched_risks.join(", ") || "none"}.
+                    {t.domainsLabel}: {mission.domains.join(", ")}. {t.risksLabel}:{" "}
+                    {mission.matched_risks.join(", ") || t.none}.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -74,13 +80,17 @@ export default async function MissionsPage() {
                           : "info"
                     }
                   >
-                    {mission.status}
+                    {mission.status === "completed"
+                      ? t.statusCompleted
+                      : mission.status === "rejected"
+                        ? t.statusRejected
+                        : t.statusShown}
                   </StatusPill>
                   {mission.usefulness ? (
                     <StatusPill tone="neutral">{mission.usefulness}</StatusPill>
                   ) : null}
                   <StatusPill tone="info">
-                    score {mission.final_score.toFixed(2)}
+                    {t.scoreLabel} {mission.final_score.toFixed(2)}
                   </StatusPill>
                 </div>
               </div>

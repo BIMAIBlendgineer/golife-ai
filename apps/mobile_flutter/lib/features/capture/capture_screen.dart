@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/app_localized_values.dart';
 import '../../core/privacy/privacy_models.dart';
+import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
 import 'capture_parser.dart';
 
@@ -33,6 +35,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final selectedDomain = _selectedDomain;
     final permission = selectedDomain == null
@@ -47,10 +50,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Capture', style: theme.textTheme.headlineMedium),
+          Text(l10n.captureTitle, style: theme.textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Write one sentence. GoLife can split it into several drafts, let you edit domain and privacy per item, then save all of them together.',
+            l10n.captureIntro,
             style: theme.textTheme.bodyLarge,
           ),
           if (gatewayStatusMessage != null) ...[
@@ -77,10 +80,10 @@ class _CaptureScreenState extends State<CaptureScreen> {
               color: Colors.white.withValues(alpha: 0.74),
               borderRadius: BorderRadius.circular(28),
             ),
-            child: Column(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Route', style: theme.textTheme.titleLarge),
+                Text(l10n.captureRouteTitle, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -88,7 +91,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                   children: [
                     ChoiceChip(
                       selected: selectedDomain == null,
-                      label: const Text('Auto'),
+                      label: Text(l10n.captureAutoRoute),
                       onSelected: (_) {
                         setState(() {
                           _selectedDomain = null;
@@ -106,7 +109,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
                     ])
                       ChoiceChip(
                         selected: selectedDomain == domain,
-                        label: Text(domain.label),
+                        label: Text(domain.localizedLabel(l10n)),
                         onSelected: (_) {
                           setState(() {
                             _selectedDomain = domain;
@@ -119,8 +122,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 const SizedBox(height: 16),
                 Text(
                   selectedDomain == null
-                      ? 'Auto mode will try to split and classify each clause first.'
-                      : 'Current default privacy for ${selectedDomain.label}: ${permission?.label ?? 'Local'}',
+                      ? l10n.captureAutoModeBody
+                      : l10n.captureCurrentDefaultPrivacy(
+                          selectedDomain.localizedLabel(l10n),
+                          (permission ?? DataPermission.localOnly)
+                              .localizedLabel(l10n),
+                        ),
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
@@ -155,20 +162,25 @@ class _CaptureScreenState extends State<CaptureScreen> {
                             : Icons.rule_folder_outlined,
                       ),
                       label: Text(
-                        _drafts.isEmpty ? 'Parse capture' : 'Re-parse capture',
+                        _drafts.isEmpty
+                            ? l10n.actionParseCapture
+                            : l10n.actionReparseCapture,
                       ),
                     ),
                     if (_drafts.isNotEmpty)
                       OutlinedButton.icon(
                         onPressed: _isSubmitting ? null : _saveDrafts,
                         icon: const Icon(Icons.check_circle_outline),
-                        label: Text('Save ${_drafts.length} items'),
+                        label: Text(l10n.actionSaveCaptureItems(_drafts.length)),
                       ),
                   ],
                 ),
                 if (_drafts.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  Text('Drafts to confirm', style: theme.textTheme.titleLarge),
+                  Text(
+                    l10n.captureDraftsToConfirm,
+                    style: theme.textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 12),
                   for (final draft in _drafts)
                     Padding(
@@ -204,7 +216,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Text('Recent events', style: theme.textTheme.titleLarge),
+          Text(l10n.captureRecentEvents, style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
           for (final event in recentEvents)
             Container(
@@ -218,14 +230,16 @@ class _CaptureScreenState extends State<CaptureScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${event.domain} - ${event.eventType}',
+                    '${event.domain.localizedDomainLabel(l10n)} - ${event.eventType}',
                     style: theme.textTheme.labelLarge,
                   ),
                   const SizedBox(height: 6),
                   Text(event.summary, style: theme.textTheme.bodyLarge),
                   const SizedBox(height: 6),
                   Text(
-                    'privacy: ${event.privacyLevel}',
+                    l10n.capturePrivacyLabel(
+                      event.privacyLevel.localizedPermissionLabel(l10n),
+                    ),
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -267,6 +281,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   Future<void> _saveDrafts() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_drafts.isEmpty) {
       return;
     }
@@ -283,7 +298,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_drafts.length} item(s) captured.'),
+          content: Text(l10n.captureItemsCaptured(_drafts.length)),
         ),
       );
       setState(() {
@@ -299,12 +314,13 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   Future<void> _editDraftText(CaptureDraftItem draft) async {
+    final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: draft.text);
     final updatedText = await showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit item'),
+          title: Text(l10n.captureEditItemTitle),
           content: TextField(
             controller: controller,
             minLines: 2,
@@ -316,12 +332,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () =>
                   Navigator.of(context).pop(controller.text.trim()),
-              child: const Text('Save'),
+              child: Text(l10n.actionSave),
             ),
           ],
         );
@@ -352,23 +368,24 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   String _hintFor(DomainKey? domain) {
+    final l10n = AppLocalizations.of(context)!;
     switch (domain) {
       case null:
-        return 'Example: Compre cafe 4.50, la lechuga vence manana y debo pagar internet';
+        return l10n.captureHintAuto;
       case DomainKey.tasks:
-        return 'Example: submit rent receipt before lunch';
+        return l10n.captureHintTasks;
       case DomainKey.habits:
-        return 'Example: walked 15 minutes after dinner';
+        return l10n.captureHintHabits;
       case DomainKey.week:
-        return 'Example: Friday focus should stay on admin work';
+        return l10n.captureHintWeek;
       case DomainKey.finance:
-        return 'Example: bought coffee and sandwich for 8.50';
+        return l10n.captureHintFinance;
       case DomainKey.pantry:
-        return 'Example: spinach expires tomorrow';
+        return l10n.captureHintPantry;
       case DomainKey.wardrobe:
-        return 'Example: thinking about buying another black jacket';
+        return l10n.captureHintWardrobe;
       case DomainKey.copilot:
-        return 'Example: a mission note';
+        return l10n.captureHintCopilot;
     }
   }
 
@@ -409,6 +426,7 @@ class _CaptureDraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final currentPermission = DataPermission.values.firstWhere(
       (permission) => permission.storageKey == draft.privacyLevel,
@@ -436,12 +454,12 @@ class _CaptureDraftCard extends StatelessWidget {
               IconButton(
                 onPressed: onEditText,
                 icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Edit',
+                tooltip: l10n.actionEdit,
               ),
               IconButton(
                 onPressed: onRemove,
                 icon: const Icon(Icons.close_rounded),
-                tooltip: 'Remove',
+                tooltip: l10n.actionRemove,
               ),
             ],
           ),
@@ -456,8 +474,8 @@ class _CaptureDraftCard extends StatelessWidget {
               Expanded(
                 child: DropdownButtonFormField<DomainKey>(
                   initialValue: draft.domain,
-                  decoration: const InputDecoration(
-                    labelText: 'Domain',
+                  decoration: InputDecoration(
+                    labelText: l10n.fieldDomain,
                     border: OutlineInputBorder(),
                   ),
                   items: [
@@ -470,7 +488,7 @@ class _CaptureDraftCard extends StatelessWidget {
                   ].map((domain) {
                     return DropdownMenuItem(
                       value: domain,
-                      child: Text(domain.label),
+                      child: Text(domain.localizedLabel(l10n)),
                     );
                   }).toList(growable: false),
                   onChanged: (value) {
@@ -484,14 +502,14 @@ class _CaptureDraftCard extends StatelessWidget {
               Expanded(
                 child: DropdownButtonFormField<DataPermission>(
                   initialValue: currentPermission,
-                  decoration: const InputDecoration(
-                    labelText: 'Privacy',
+                  decoration: InputDecoration(
+                    labelText: l10n.fieldPrivacy,
                     border: OutlineInputBorder(),
                   ),
                   items: DataPermission.values.map((permission) {
                     return DropdownMenuItem(
                       value: permission,
-                      child: Text(permission.label),
+                      child: Text(permission.localizedLabel(l10n)),
                     );
                   }).toList(growable: false),
                   onChanged: (value) {

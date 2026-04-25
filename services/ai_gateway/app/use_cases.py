@@ -24,6 +24,7 @@ TASK_REWRITE_SYSTEM_PROMPT = """
 Return JSON only.
 Rewrite the task into small, safe, actionable steps.
 No external actions without confirmation.
+Write every user-facing field in the locale requested in `user_payload.locale`.
 Return an object with a single key `rewrites`, containing an array of step objects.
 """
 
@@ -31,6 +32,7 @@ SEMANTIC_CLASSIFICATION_SYSTEM_PROMPT = """
 Return JSON only.
 Classify the capture text into one GoLife domain and one event_type.
 Allowed domains: task, habit, week, finance, pantry, wardrobe.
+Write `rationale` in the locale requested in `user_payload.locale`.
 Return an object with keys: domain, event_type, confidence, rationale.
 Do not add extra keys outside the requested JSON object.
 """
@@ -39,6 +41,8 @@ SEMANTIC_PARSE_SYSTEM_PROMPT = """
 Return JSON only.
 Split the capture text into one or more GoLife items.
 Allowed domains: task, habit, week, finance, pantry, wardrobe.
+Write `rationale` in the locale requested in `user_payload.locale`.
+Preserve the original user text language for each item unless the input itself mixes languages.
 Return an object with one key `items`.
 Each item must contain: text, domain, event_type, confidence, rationale, hints.
 `hints` must be an object and may include amount, currency, time_hint, expiry_hint, task_intent, purchase_pause_hours.
@@ -209,6 +213,7 @@ async def run_task_rewrite(
         user_payload={
             "intent": "task_rewrite",
             "user_id": request.user_id,
+            "locale": request.locale,
             "task_title": request.task_title,
             "task_description": request.task_description,
             "constraints": request.constraints,
@@ -286,6 +291,7 @@ async def run_event_classification_semantic(
         user_payload={
             "intent": "semantic_classify",
             "user_id": request.user_id,
+            "locale": request.locale,
             "text": request.text,
             "allowed_domains": request.privacy_settings.allowed_domains,
             "ai_enabled": request.privacy_settings.ai_enabled,
@@ -336,6 +342,7 @@ async def run_event_parse_semantic(
         user_payload={
             "intent": "semantic_classify",
             "user_id": request.user_id,
+            "locale": request.locale,
             "text": request.text,
             "allowed_domains": request.privacy_settings.allowed_domains,
             "ai_enabled": request.privacy_settings.ai_enabled,

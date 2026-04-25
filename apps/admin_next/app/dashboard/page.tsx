@@ -15,8 +15,11 @@ import {
   formatPercent,
   labelizeKey,
 } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function DashboardPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.dashboard;
   const [dashboardResult, flagsResult, safetyResult, supportResult] =
     await Promise.all([
       getDashboard(),
@@ -42,115 +45,125 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Decision Desk"
-        title="Operational pulse for the personal OS"
-        description="Watch whether GoLife is generating useful missions, staying inside trust boundaries, and keeping AI cost under control."
-        badge="Mission ops"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={error} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Useful missions / active user / week"
-          value={formatNumber(dashboard.useful_missions_per_active_user_week)}
-          note="North star of real product utility."
+          label={t.usefulMissionsLabel}
+          value={formatNumber(dashboard.useful_missions_per_active_user_week, locale)}
+          note={t.usefulMissionsNote}
           tone="sage"
         />
         <MetricCard
-          label="Mission completion rate"
-          value={formatPercent(dashboard.mission_completion_rate)}
-          note="Checks whether recommendations become action."
+          label={t.completionRateLabel}
+          value={formatPercent(dashboard.mission_completion_rate, locale)}
+          note={t.completionRateNote}
           tone="ink"
         />
         <MetricCard
-          label="AI cost / active user"
-          value={formatCurrency(dashboard.ai_cost_per_active_user_usd)}
-          note="Keep the margin visible while usage grows."
+          label={t.aiCostLabel}
+          value={formatCurrency(dashboard.ai_cost_per_active_user_usd, locale)}
+          note={t.aiCostNote}
           tone="bronze"
         />
         <MetricCard
-          label="Safety intervention rate"
-          value={formatPercent(dashboard.safety_intervention_rate)}
-          note="Signals whether prompts are drifting into regulated or unsafe territory."
+          label={t.safetyRateLabel}
+          value={formatPercent(dashboard.safety_intervention_rate, locale)}
+          note={t.safetyRateNote}
           tone="clay"
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Active routing keys"
-          value={formatNumber(dashboard.active_key_count)}
-          note="Healthy keys currently available to the OpenRouter executor."
+          label={t.activeKeysLabel}
+          value={formatNumber(dashboard.active_key_count, locale)}
+          note={t.activeKeysNote}
           tone="sage"
         />
         <MetricCard
-          label="Disabled routing keys"
-          value={formatNumber(dashboard.disabled_key_count)}
-          note="Paused or invalid keys excluded from live routing."
+          label={t.disabledKeysLabel}
+          value={formatNumber(dashboard.disabled_key_count, locale)}
+          note={t.disabledKeysNote}
           tone="clay"
         />
         <MetricCard
-          label="Routing snapshot age"
+          label={t.snapshotAgeLabel}
           value={
             dashboard.routing_snapshot_age_seconds == null
-              ? "N/A"
+              ? messages.shared.notAvailable
               : `${dashboard.routing_snapshot_age_seconds}s`
           }
-          note="Older snapshots increase the chance of using stale model rankings."
+          note={t.snapshotAgeNote}
           tone="bronze"
         />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
         <Panel
-          eyebrow="Briefing"
-          title="What to watch today"
-          note="The board is organized around the same three questions product asks every morning: are missions useful, are risks clear, and is trust intact?"
+          eyebrow={t.briefingEyebrow}
+          title={t.briefingTitle}
+          note={t.briefingNote}
         >
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
-              <p className="text-sm font-semibold text-ink">Mission quality</p>
+              <p className="text-sm font-semibold text-ink">{t.missionQualityTitle}</p>
               <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">
-                Usefulness is at{" "}
+                {t.missionQualityBodyPrefix}{" "}
                 <span className="font-semibold text-ink">
-                  {formatPercent(dashboard.recommendation_usefulness_rate)}
+                  {formatPercent(dashboard.recommendation_usefulness_rate, locale)}
                 </span>
-                . Rejections are{" "}
+                . {t.missionQualityBodyMiddle}{" "}
                 <span className="font-semibold text-ink">
-                  {formatPercent(dashboard.rejection_rate)}
+                  {formatPercent(dashboard.rejection_rate, locale)}
                 </span>
                 .
               </p>
             </div>
             <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
-              <p className="text-sm font-semibold text-ink">Operational load</p>
+              <p className="text-sm font-semibold text-ink">{t.operationalLoadTitle}</p>
               <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">
-                WAU is <span className="font-semibold text-ink">{dashboard.wau}</span>
-                , DAU is <span className="font-semibold text-ink">{dashboard.dau}</span>,
-                and capture volume is{" "}
+                {t.operationalLoadBodyPrefix}{" "}
                 <span className="font-semibold text-ink">
-                  {formatNumber(dashboard.capture_events_per_active_user)}
+                  {formatNumber(dashboard.wau, locale)}
+                </span>
+                , {t.operationalLoadBodyMiddle}{" "}
+                <span className="font-semibold text-ink">
+                  {formatNumber(dashboard.dau, locale)}
+                </span>
+                , {t.operationalLoadBodySuffix}{" "}
+                <span className="font-semibold text-ink">
+                  {formatNumber(dashboard.capture_events_per_active_user, locale)}
                 </span>{" "}
-                events per active user.
+                {t.operationalLoadBodyTail}
               </p>
             </div>
             <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
-              <p className="text-sm font-semibold text-ink">Trust queue</p>
+              <p className="text-sm font-semibold text-ink">{t.trustQueueTitle}</p>
               <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">
-                There are{" "}
-                <span className="font-semibold text-ink">{supportRequests.length}</span>{" "}
-                export/delete requests and{" "}
-                <span className="font-semibold text-ink">{safety.length}</span>{" "}
-                recent safety incidents to review.
+                {t.trustQueueBodyPrefix}{" "}
+                <span className="font-semibold text-ink">
+                  {formatNumber(supportRequests.length, locale)}
+                </span>{" "}
+                {t.trustQueueBodyMiddle}{" "}
+                <span className="font-semibold text-ink">
+                  {formatNumber(safety.length, locale)}
+                </span>{" "}
+                {t.trustQueueBodySuffix}
               </p>
             </div>
           </div>
         </Panel>
 
         <Panel
-          eyebrow="Release Surface"
-          title="Feature flags"
-          note="Operational rollouts stay visible here so mobile, gateway, and admin work from the same switchboard."
+          eyebrow={t.flagsEyebrow}
+          title={t.flagsTitle}
+          note={t.flagsNote}
         >
           <div className="space-y-3">
             {flags.map((flag) => (
@@ -167,7 +180,7 @@ export default async function DashboardPage() {
                   </p>
                 </div>
                 <StatusPill tone={flag.enabled ? "good" : "warn"}>
-                  {flag.enabled ? "Enabled" : "Disabled"}
+                  {flag.enabled ? messages.shared.enabled : messages.shared.disabled}
                 </StatusPill>
               </div>
             ))}

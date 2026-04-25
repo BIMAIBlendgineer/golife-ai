@@ -5,8 +5,51 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getDashboard, getOpenRouterKeyEvents, getOpenRouterKeys } from "@/lib/api";
 import { formatDateTime, formatNumber } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
+
+function keyStatusLabel(
+  status: string,
+  t: {
+    statusHealthy: string;
+    statusDegraded: string;
+    statusDisabled: string;
+  },
+): string {
+  switch (status) {
+    case "healthy":
+      return t.statusHealthy;
+    case "degraded":
+      return t.statusDegraded;
+    case "disabled":
+      return t.statusDisabled;
+    default:
+      return status;
+  }
+}
+
+function eventTypeLabel(
+  eventType: string,
+  t: {
+    eventSuccess: string;
+    eventFailure: string;
+    eventDisabled: string;
+  },
+): string {
+  switch (eventType) {
+    case "success":
+      return t.eventSuccess;
+    case "failure":
+      return t.eventFailure;
+    case "disabled":
+      return t.eventDisabled;
+    default:
+      return eventType;
+  }
+}
 
 export default async function OpenRouterKeysPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.openrouterKeys;
   const [dashboardResult, keysResult, eventsResult] = await Promise.all([
     getDashboard(),
     getOpenRouterKeys(),
@@ -24,41 +67,44 @@ export default async function OpenRouterKeysPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Routing Control"
-        title="OpenRouter keys and failover health"
-        description="Track which keys are active, which ones are degraded, and whether GoLife is rotating safely when a route or quota fails."
-        badge="Sequential failover"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Active keys"
-          value={formatNumber(dashboard.active_key_count)}
-          note="Healthy keys available to the gateway control plane."
+          label={t.activeKeysLabel}
+          value={formatNumber(dashboard.active_key_count, locale)}
+          note={t.activeKeysNote}
           tone="sage"
         />
         <MetricCard
-          label="Disabled keys"
-          value={formatNumber(dashboard.disabled_key_count)}
-          note="Keys excluded from routing because they are paused or unsafe."
+          label={t.disabledKeysLabel}
+          value={formatNumber(dashboard.disabled_key_count, locale)}
+          note={t.disabledKeysNote}
           tone="clay"
         />
         <MetricCard
-          label="Recent key events"
-          value={formatNumber(events.length)}
-          note="Latest success and failure records written by the gateway."
+          label={t.recentEventsLabel}
+          value={formatNumber(events.length, locale)}
+          note={t.recentEventsNote}
           tone="bronze"
         />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel
-          eyebrow="Key pool"
-          title="Masked server-side keys"
-          note="Secrets never render here. Operators only see masked labels, health, and rotation order."
+          eyebrow={t.keyPoolEyebrow}
+          title={t.keyPoolTitle}
+          note={t.keyPoolNote}
         >
           <div className="space-y-3">
+            {keys.length === 0 ? (
+              <p className="text-sm text-[color:var(--ink-soft)]">{t.emptyKeys}</p>
+            ) : null}
             {keys.map((key) => (
               <div
                 key={key.key_id}
@@ -68,12 +114,12 @@ export default async function OpenRouterKeysPage() {
                   <div>
                     <p className="font-semibold text-ink">{key.label}</p>
                     <p className="mt-1 font-mono text-sm text-[color:var(--ink-muted)]">
-                      {key.key_id} · ****{key.secret_last4}
+                      {key.key_id} | ****{key.secret_last4}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <StatusPill tone={key.enabled ? "good" : "danger"}>
-                      {key.enabled ? "Enabled" : "Disabled"}
+                      {key.enabled ? messages.shared.enabled : messages.shared.disabled}
                     </StatusPill>
                     <StatusPill
                       tone={
@@ -86,30 +132,28 @@ export default async function OpenRouterKeysPage() {
                               : "neutral"
                       }
                     >
-                      {key.status}
+                      {keyStatusLabel(key.status, t)}
                     </StatusPill>
-                    <StatusPill tone="info">Priority {key.priority}</StatusPill>
+                    <StatusPill tone="info">{t.priorityLabel} {key.priority}</StatusPill>
                   </div>
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
                   <p className="text-sm text-[color:var(--ink-soft)]">
-                    Last ok:{" "}
+                    {t.lastOkLabel}{" "}
                     <span className="font-medium text-ink">
-                      {key.last_ok_at ? formatDateTime(key.last_ok_at) : "Never"}
+                      {key.last_ok_at ? formatDateTime(key.last_ok_at, locale) : t.never}
                     </span>
                   </p>
                   <p className="text-sm text-[color:var(--ink-soft)]">
-                    Last error:{" "}
+                    {t.lastErrorLabel}{" "}
                     <span className="font-medium text-ink">
-                      {key.last_error_at
-                        ? formatDateTime(key.last_error_at)
-                        : "None"}
+                      {key.last_error_at ? formatDateTime(key.last_error_at, locale) : t.none}
                     </span>
                   </p>
                   <p className="text-sm text-[color:var(--ink-soft)]">
-                    Consecutive failures:{" "}
+                    {t.consecutiveFailuresLabel}{" "}
                     <span className="font-medium text-ink">
-                      {key.consecutive_failures}
+                      {formatNumber(key.consecutive_failures, locale)}
                     </span>
                   </p>
                 </div>
@@ -119,11 +163,14 @@ export default async function OpenRouterKeysPage() {
         </Panel>
 
         <Panel
-          eyebrow="Rotation log"
-          title="Latest key events"
-          note="This is the first place to look when a capability starts falling back too often."
+          eyebrow={t.rotationLogEyebrow}
+          title={t.rotationLogTitle}
+          note={t.rotationLogNote}
         >
           <div className="space-y-3">
+            {events.length === 0 ? (
+              <p className="text-sm text-[color:var(--ink-soft)]">{t.emptyEvents}</p>
+            ) : null}
             {events.map((event) => (
               <div
                 key={event.event_id}
@@ -142,18 +189,18 @@ export default async function OpenRouterKeysPage() {
                             : "info"
                     }
                   >
-                    {event.event_type}
+                    {eventTypeLabel(event.event_type, t)}
                   </StatusPill>
                 </div>
                 <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
-                  {event.endpoint ?? "No endpoint"} · {event.model ?? "no model"}
+                  {event.endpoint ?? t.noEndpoint} | {event.model ?? t.noModel}
                 </p>
                 <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
-                  {event.notes ?? "No notes recorded."}
+                  {event.notes ?? t.noNotes}
                 </p>
                 <p className="mt-2 font-mono text-xs text-[color:var(--ink-muted)]">
-                  {formatDateTime(event.created_at)}
-                  {event.error_code ? ` · ${event.error_code}` : ""}
+                  {formatDateTime(event.created_at, locale)}
+                  {event.error_code ? ` | ${event.error_code}` : ""}
                 </p>
               </div>
             ))}

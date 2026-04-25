@@ -60,6 +60,7 @@ class AISuggestion(BaseModel):
 
 class SuggestionRequest(BaseModel):
     user_id: str = Field(min_length=1)
+    locale: str = "en"
     scope: Literal["daily", "weekly", "domain"] = "daily"
     allowed_domains: list[Domain] = Field(default_factory=list)
     life_events: list[LifeEvent] = Field(default_factory=list)
@@ -82,6 +83,7 @@ class SuggestionResponse(BaseModel):
 
 class EventClassificationRequest(BaseModel):
     user_id: str = Field(min_length=1)
+    locale: str = "en"
     text: str = Field(min_length=1)
     privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
 
@@ -105,6 +107,7 @@ class ParsedEventItem(BaseModel):
 
 class EventParseRequest(BaseModel):
     user_id: str = Field(min_length=1)
+    locale: str = "en"
     text: str = Field(min_length=1)
     privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
 
@@ -116,6 +119,7 @@ class EventParseResponse(BaseModel):
 
 class TaskRewriteRequest(BaseModel):
     user_id: str = Field(min_length=1)
+    locale: str = "en"
     task_title: str = Field(min_length=1)
     task_description: str | None = None
     privacy_level: PrivacyLevel = "local_only"
@@ -137,6 +141,7 @@ class TaskRewriteResponse(BaseModel):
 
 class MissionFeedbackRequest(BaseModel):
     user_id: str = Field(min_length=1)
+    locale: str = "en"
     suggestion_id: str = Field(min_length=1)
     status: FeedbackStatus
     notes: str | None = None
@@ -153,6 +158,7 @@ class MissionFeedbackResponse(BaseModel):
 
 class ReflectionSafetyRequest(BaseModel):
     user_id: str = Field(min_length=1)
+    locale: str = "en"
     text: str = Field(min_length=1)
     privacy_level: PrivacyLevel = "local_only"
 

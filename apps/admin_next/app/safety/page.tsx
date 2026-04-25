@@ -5,8 +5,11 @@ import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
 import { getSafety } from "@/lib/api";
 import { formatDateTime, labelizeKey } from "@/lib/format";
+import { getAdminMessages } from "@/lib/i18n";
 
 export default async function SafetyPage() {
+  const { locale, messages } = await getAdminMessages();
+  const t = messages.pages.safety;
   const safetyResult = await getSafety();
   const safety = safetyResult.data ?? [];
   const highSeverity = safety.filter((item) => item.severity === "high").length;
@@ -15,38 +18,38 @@ export default async function SafetyPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Trust Desk"
-        title="Safety incidents and blocked behavior"
-        description="Operators need a compact trace of blocked outputs, regulated advice attempts, and actions that required stronger confirmation."
-        badge="Trust"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        description={t.description}
+        badge={t.badge}
       />
       <ErrorBanner error={safetyResult.error} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Safety events"
+          label={t.eventsLabel}
           value={safety.length.toString()}
-          note="Recent trust and policy interventions."
+          note={t.eventsNote}
           tone="ink"
         />
         <MetricCard
-          label="High severity"
+          label={t.highSeverityLabel}
           value={highSeverity.toString()}
-          note="Anything high needs immediate operator review."
+          note={t.highSeverityNote}
           tone="clay"
         />
         <MetricCard
-          label="Finance incidents"
+          label={t.financeIncidentsLabel}
           value={financeIncidents.toString()}
-          note="Financial advice pressure remains the most sensitive regulated area."
+          note={t.financeIncidentsNote}
           tone="bronze"
         />
       </div>
 
       <Panel
-        eyebrow="Incident Log"
-        title="Safety records"
-        note="Each event preserves who triggered it, which rule fired, and the domain that needs closer prompt or policy work."
+        eyebrow={t.panelEyebrow}
+        title={t.panelTitle}
+        note={t.panelNote}
       >
         <div className="space-y-3">
           {safety.map((item) => (
@@ -72,11 +75,11 @@ export default async function SafetyPage() {
                   </div>
                   <p className="text-sm font-semibold text-ink">{item.rule}</p>
                   <p className="font-mono text-xs text-[color:var(--ink-muted)]">
-                    {item.user_id} · {item.event_id}
+                    {item.user_id} | {item.event_id}
                   </p>
                 </div>
                 <p className="text-sm text-[color:var(--ink-muted)]">
-                  {formatDateTime(item.created_at)}
+                  {formatDateTime(item.created_at, locale)}
                 </p>
               </div>
             </div>

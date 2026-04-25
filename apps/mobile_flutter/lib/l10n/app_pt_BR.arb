@@ -1,0 +1,460 @@
+{
+  "@@locale": "pt_BR",
+  "appTitle": "GoLife AI",
+  "appShellTaglineReady": "Shell do sistema de vida com limites de privacidade explicitos.",
+  "appShellTaglineBooting": "Inicializando privacidade, missoes e grafo local...",
+  "navigate": "Navegar",
+  "navDashboard": "Inicio",
+  "navCapture": "Capturar",
+  "navWeek": "Semana",
+  "navTasks": "Tarefas",
+  "navHabits": "Habitos",
+  "navMoney": "Dinheiro",
+  "navPantry": "Despensa",
+  "navCloset": "Armario",
+  "navEveryday": "Cotidiano",
+  "navCopilot": "Copilot",
+  "navSettings": "Ajustes",
+  "language": "Idioma",
+  "languageSystem": "Padrao do sistema",
+  "languageEnglish": "English",
+  "languageSpanish": "Espanol",
+  "languagePortugueseBrazil": "Portugues Brasil",
+  "languageJapanese": "Japones",
+  "languageChineseSimplified": "Chines simplificado",
+  "privacyTitle": "Privacidade",
+  "privacyIntro": "Cada evento fica local, salvo quando a permissao do dominio e o nivel de privacidade permitem IA. Esta tela tambem oferece exportacao local e limpeza completa.",
+  "privacyEncryptedActive": "A criptografia local sensivel esta ativa para Journal, Quick Notes e Finance neste dispositivo.",
+  "privacyEncryptedUnavailable": "A criptografia local sensivel nao esta disponivel neste ambiente. Trate Journal, Quick Notes e Finance como nao protegidos em repouso ate o secure storage voltar.",
+  "privacyCenter": "Centro de privacidade",
+  "privacyDisclosureEncryptedTitle": "Criptografado localmente",
+  "privacyDisclosureEncryptedBody": "Estas colecoes ficam protegidas em repouso neste dispositivo.",
+  "privacyDisclosureLocalTitle": "Sempre local",
+  "privacyDisclosureLocalBody": "Esses itens ficam no dispositivo e nao entram no roteamento de IA.",
+  "privacyDisclosureAiTitle": "Pode ser enviado para IA se permitido",
+  "privacyDisclosureAiBody": "So dominios com permissao de IA e eventos AI-allowed podem ser enviados.",
+  "privacyMetricTotalEvents": "Eventos totais",
+  "privacyMetricAiEligible": "Elegiveis para IA",
+  "privacyMetricBlockedLocal": "Bloqueados localmente",
+  "dataControls": "Controles de dados",
+  "dataControlsBody": "Exportar copia o snapshot local completo em JSON. Apagar tudo limpa os dados locais e desativa a semeadura demo.",
+  "exportJson": "Exportar JSON",
+  "deleteAllLocalData": "Apagar todos os dados locais",
+  "domainControls": "Controles por dominio",
+  "exportCopied": "A exportacao JSON local foi copiada para a area de transferencia.",
+  "deleteAllTitle": "Apagar todos os dados locais?",
+  "deleteAllBody": "Isso remove eventos locais, entidades, missoes, feedback, ajustes de privacidade, cache runtime e preferencia de idioma neste dispositivo.",
+  "cancel": "Cancelar",
+  "deleteAll": "Apagar tudo",
+  "deleteAllDone": "Todos os dados locais foram apagados.",
+  "domainEventsEligible": "{eventCount} eventos · {aiCount} elegiveis para IA agora",
+  "@domainEventsEligible": {
+    "placeholders": {
+      "eventCount": {
+        "type": "int"
+      },
+      "aiCount": {
+        "type": "int"
+      }
+    }
+  },
+  "permissionLocal": "Local",
+  "permissionSync": "Sync",
+  "permissionAi": "IA",
+  "domainHabits": "Habitos",
+  "domainTasks": "Tarefas",
+  "domainWeek": "Semana",
+  "domainFinance": "Dinheiro",
+  "domainPantry": "Despensa",
+  "domainWardrobe": "Armario",
+  "domainCopilot": "Copilot",
+  "collectionFinanceRecords": "Registros financeiros",
+  "collectionJournalEntries": "Entradas de journal",
+  "collectionQuickNotes": "Notas rapidas",
+  "collectionPrivacySettings": "Ajustes de privacidade",
+  "collectionRuntimeConfigCache": "Cache de runtime config",
+  "collectionDeviceEncryptionKey": "Chave de criptografia do dispositivo",
+  "nothingAiEnabled": "Nenhum dominio esta com IA ativa agora",
+  "gatewayLive": "Gateway ativo",
+  "gatewayNoConnection": "Sem conexao",
+  "gatewayUnavailable": "IA temporariamente indisponivel",
+  "gatewayLocalFallback": "Usando fallback local",
+  "feedbackNone": "Sem feedback ainda",
+  "feedbackUseful": "Util",
+  "feedbackRejected": "Rejeitado",
+  "feedbackAccepted": "Aceito",
+  "feedbackCompleted": "Concluido",
+  "feedbackEdited": "Editado",
+  "missionDeliveryAi": "Com ajuda de IA",
+  "missionDeliveryFallback": "Fallback local",
+  "missionDeliveryLocal": "Local",
+  "missionDeliverySummaryAi": "GoLife usou IA para esta missao depois do filtro local de privacidade.",
+  "missionDeliverySummaryFallback": "GoLife ficou local porque o gateway estava indisponivel ou degradado.",
+  "missionDeliverySummaryLocal": "GoLife manteve esta missao local no dispositivo.",
+  "actionWrite": "Escrever",
+  "actionChat": "Conversar",
+  "actionExplain": "Explicar",
+  "actionUseful": "Util",
+  "actionDoNow": "Fazer agora",
+  "actionNotUseful": "Nao util",
+  "actionAccept": "Aceitar",
+  "actionEdit": "Editar",
+  "actionRemove": "Remover",
+  "actionSave": "Salvar",
+  "actionParseCapture": "Parsear captura",
+  "actionReparseCapture": "Parsear de novo",
+  "actionSaveCaptureItems": "Salvar {count} itens",
+  "@actionSaveCaptureItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusReady": "Pronto",
+  "statusBooting": "Inicializando",
+  "labelEvidence": "Evidencia",
+  "labelDataUsedForMission": "Dados usados para esta missao",
+  "labelDataSentToAi": "Dados enviados para IA",
+  "labelBlockedFromAi": "Bloqueado para IA",
+  "labelAlwaysLocalOnDevice": "Sempre local neste dispositivo",
+  "labelEncryptedLocally": "Criptografado localmente",
+  "labelUncertainty": "Incerteza",
+  "labelTrace": "Trace",
+  "fieldDomain": "Dominio",
+  "fieldPrivacy": "Privacidade",
+  "dashboardDisclosurePending": "GoLife mantem os dados locais ate uma missao ficar pronta.",
+  "dashboardMissionCountTitle": "{count} missoes para hoje",
+  "@dashboardMissionCountTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardMissionIntro": "Home Today transforma o grafo em acoes pequenas: uma missao principal, duas de apoio, evidencia visivel e feedback rapido.",
+  "dashboardLoadingMissions": "Carregando missoes...",
+  "dashboardBootstrappingMission": "Inicializando eventos locais, ranking de missoes e trace do gateway.",
+  "dashboardRiskCount": "{count} riscos",
+  "@dashboardRiskCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardConfidencePill": "{percent}% de confianca",
+  "@dashboardConfidencePill": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardAiDisclosureTitle": "Disclosure de dados para IA",
+  "dashboardAiDisclosureSummary": "{summary} Enviado agora: {sentCount} eventos locais. Bloqueados localmente: {blockedCount}.",
+  "@dashboardAiDisclosureSummary": {
+    "placeholders": {
+      "summary": {},
+      "sentCount": {
+        "type": "int"
+      },
+      "blockedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardRisksTitle": "Riscos de hoje",
+  "dashboardNoRisks": "Nenhum risco diario explicito foi detectado no grafo atual elegivel para IA.",
+  "dashboardSupportMissionsTitle": "Missoes de apoio",
+  "dashboardNoSupportMissions": "Missoes secundarias aparecerao quando o plano diario estiver disponivel.",
+  "signalCriticalTask": "Tarefa critica",
+  "signalRecoveryHabit": "Habito de recuperacao",
+  "signalRecoveryHabitBody": "Gatilho: {cue} - {streak}",
+  "@signalRecoveryHabitBody": {
+    "placeholders": {
+      "cue": {},
+      "streak": {}
+    }
+  },
+  "signalRelevantSpend": "Gasto relevante",
+  "signalUseThisFood": "Use este alimento",
+  "dashboardWhyThisToday": "Por que esta hoje",
+  "dashboardConfidenceWithType": "Confianca {percent}% - {type}",
+  "@dashboardConfidenceWithType": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "type": {}
+    }
+  },
+  "dashboardNothingSent": "Nada foi enviado para esta missao. GoLife ficou local neste passo.",
+  "dashboardNothingBlocked": "Nenhum item especifico desta missao foi bloqueado para IA.",
+  "dashboardNoAlwaysLocalCollections": "Nenhuma colecao sempre local configurada.",
+  "dashboardNoEncryptedCollections": "Nenhuma colecao criptografada configurada.",
+  "dashboardRiskSeverityLabel": "risco {severity}",
+  "@dashboardRiskSeverityLabel": {
+    "placeholders": {
+      "severity": {}
+    }
+  },
+  "captureTitle": "Capturar",
+  "captureIntro": "Escreva uma frase. GoLife pode dividir em varios rascunhos, deixar voce editar dominio e privacidade por item, e salvar tudo junto.",
+  "captureRouteTitle": "Rota",
+  "captureAutoRoute": "Auto",
+  "captureAutoModeBody": "O modo auto tenta dividir e classificar cada clausula primeiro.",
+  "captureCurrentDefaultPrivacy": "Privacidade padrao atual para {domain}: {permission}",
+  "@captureCurrentDefaultPrivacy": {
+    "placeholders": {
+      "domain": {},
+      "permission": {}
+    }
+  },
+  "captureDraftsToConfirm": "Rascunhos para confirmar",
+  "captureRecentEvents": "Eventos recentes",
+  "capturePrivacyLabel": "Privacidade: {privacy}",
+  "@capturePrivacyLabel": {
+    "placeholders": {
+      "privacy": {}
+    }
+  },
+  "captureItemsCaptured": "{count} item(s) capturados.",
+  "@captureItemsCaptured": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureEditItemTitle": "Editar item",
+  "captureHintAuto": "Exemplo: comprei cafe por 4.50, a alface vence amanha e preciso pagar internet.",
+  "captureHintTasks": "Exemplo: enviar recibo do aluguel antes do almoco",
+  "captureHintHabits": "Exemplo: caminhei 15 minutos depois do jantar",
+  "captureHintWeek": "Exemplo: o foco de sexta deve ficar em trabalho admin",
+  "captureHintFinance": "Exemplo: comprei cafe e sanduiche por 8.50",
+  "captureHintPantry": "Exemplo: o espinafre vence amanha",
+  "captureHintWardrobe": "Exemplo: pensando em comprar outra jaqueta preta",
+  "captureHintCopilot": "Exemplo: uma nota de missao",
+  "copilotTitle": "Copilot",
+  "copilotIntro": "O copilot agora trabalha em torno de um plano diario ranqueado: trace visivel, tres missoes e fallback local quando o gateway esta indisponivel.",
+  "copilotBoundariesTitle": "Limites de reflexao",
+  "copilotBoundariesBody": "GoLife ajuda com organizacao diaria e reflexao pratica. Nao diagnostica, nao oferece terapia e nao substitui cuidado profissional. Se algo parecer urgente ou inseguro, use suporte real de crise ou medico.",
+  "copilotTodayPlanTitle": "Plano de hoje",
+  "copilotNoPlan": "Nenhum plano de missoes carregado ainda.",
+  "copilotLatestTraceTitle": "Ultimo trace",
+  "copilotNoTrace": "Nenhuma missao carregada ainda.",
+  "navJournal": "Journal",
+  "navCalendar": "Calendario",
+  "navRecipes": "Receitas",
+  "entityTask": "tarefa",
+  "entityHabit": "habito",
+  "entityExpense": "gasto",
+  "entityPantryItem": "item da despensa",
+  "entityPurchaseIntention": "intencao de compra",
+  "entityWeekPlan": "plano semanal",
+  "entityJournalEntry": "entrada do journal",
+  "entityQuickNote": "nota rapida",
+  "entityCalendarItem": "bloco de calendario",
+  "entityRecipeRescue": "receita de resgate",
+  "actionNewEntity": "Nova {entity}",
+  "@actionNewEntity": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "actionEditEntity": "Editar {entity}",
+  "@actionEditEntity": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "actionComplete": "Concluir",
+  "actionDone": "Feita",
+  "actionCheckIn": "Registrar",
+  "actionReflect": "Revisar",
+  "actionMarkUsed": "Marcar como usado",
+  "actionUsed": "Usado",
+  "actionPause24h": "Pausar 24 h",
+  "actionReplan": "Replanejar",
+  "actionReview": "Revisar",
+  "actionKeepLocal": "Manter local",
+  "actionOpenJournal": "Abrir journal",
+  "actionOpenCalendar": "Abrir calendario",
+  "actionOpenRecipes": "Abrir receitas",
+  "actionCookNow": "Cozinhar agora",
+  "actionCooked": "Cozinhado",
+  "actionTimeBlock": "Bloco",
+  "actionSaving": "Salvando...",
+  "domainTasksEyebrow": "Execucao",
+  "domainTasksDescription": "TaskDoctor agora e um quadro local-first com fluxos diretos para criar, editar e concluir.",
+  "domainHabitsEyebrow": "Continuidade",
+  "domainHabitsDescription": "LifeQuest agora suporta criacao direta de habitos e check-ins amigaveis para recuperacao.",
+  "domainMoneyEyebrow": "Consciencia",
+  "domainMoneyDescription": "MoneyMirror continua conservador: registrar, editar e revisar localmente sem cruzar para conselho regulado.",
+  "domainPantryEyebrow": "Resgate",
+  "domainPantryDescription": "FridgeZero agora mantem um quadro de resgate onde ingredientes podem ser criados, editados e marcados como usados.",
+  "domainClosetEyebrow": "Anti-consumo",
+  "domainClosetDescription": "ClosetLess continua um quadro orientado por intencao, agora com pausas editaveis e motivos de compra.",
+  "domainWeekEyebrow": "Planner",
+  "domainWeekDescription": "WeekPilot continua leve de proposito, mas agora suporta criacao rapida e replanejamento direto.",
+  "domainJournalEyebrow": "Privado por padrao",
+  "domainJournalDescription": "Journal e notas continuam local-first para que o app aprenda com seu dia sem virar terapia.",
+  "domainCalendarEyebrow": "QuickCal",
+  "domainCalendarDescription": "QuickCal comeca como uma camada local rapida para blocos de tempo e deteccao de sobrecarga, nao como um motor completo de sync.",
+  "domainRecipesEyebrow": "Recipe Rescue",
+  "domainRecipesDescription": "Recipe Rescue transforma o contexto da despensa em planos locais simples de refeicao que podem marcar ingredientes como usados.",
+  "domainEverydayEyebrow": "Life OS",
+  "domainEverydayDescription": "Journal, calendario e receitas vivem juntos aqui para que o shell continue leve enquanto o contexto do dia a dia cresce.",
+  "tasksEmpty": "Nenhuma tarefa capturada ainda.",
+  "habitsEmpty": "Nenhum habito capturado ainda.",
+  "moneyEmpty": "Nenhum gasto capturado ainda.",
+  "pantryEmpty": "Nenhum item de despensa ainda.",
+  "closetEmpty": "Nenhuma intencao de compra ainda.",
+  "weekEmpty": "Nenhum plano semanal ainda.",
+  "journalEmpty": "Nenhuma entrada de journal ainda.",
+  "quickNotesEmpty": "Nenhuma nota rapida ainda.",
+  "calendarEmpty": "Nenhum bloco de calendario ainda.",
+  "recipesEmpty": "Nenhuma receita de resgate ainda.",
+  "calendarOverloadTitle": "Sobrecarga detectada",
+  "calendarOverloadBody": "Ja existem quatro ou mais blocos locais no calendario. Proteja primeiro o menor bloco nao critico.",
+  "calendarCalmTitle": "Calendario calmo",
+  "calendarCalmBody": "Use o QuickCal para blocos locais rapidos antes de adicionar sync completo.",
+  "everydayContextTitle": "Contexto cotidiano",
+  "everydayContextBody": "Use escrita, blocos de tempo e recipe rescue para dar ao Today mais contexto sem transformar o app em seis abas cheias.",
+  "everydayJournalBody": "Capture reflexao e notas curtas localmente, com padroes de privacidade em primeiro lugar.",
+  "everydayCalendarBody": "Mantenha um calendario local rapido antes de precisar de sync completo.",
+  "everydayRecipesBody": "Transforme o contexto da despensa em refeicoes de baixa friccao e marque ingredientes usados.",
+  "fieldTitle": "Titulo",
+  "fieldEstimatedMinutes": "Minutos estimados",
+  "fieldPriority": "Prioridade",
+  "fieldNotes": "Notas",
+  "fieldCue": "Gatilho",
+  "fieldCadence": "Cadencia",
+  "fieldLabel": "Rotulo",
+  "fieldAmount": "Valor",
+  "fieldCategory": "Categoria",
+  "fieldName": "Nome",
+  "fieldQuantity": "Quantidade",
+  "fieldRescueHint": "Dica de resgate",
+  "fieldReason": "Motivo",
+  "fieldTheme": "Tema",
+  "fieldFocus": "Foco",
+  "fieldMood": "Humor",
+  "fieldBody": "Texto",
+  "fieldNote": "Nota",
+  "fieldStartIso": "Inicio ISO",
+  "fieldEndIso": "Fim ISO",
+  "fieldLocation": "Local",
+  "fieldEnergy": "Energia",
+  "fieldSummary": "Resumo",
+  "fieldIngredientsCommaSeparated": "Ingredientes (separados por virgula)",
+  "chipRescue": "Resgate",
+  "chipPurchaseIntention": "Intencao de compra",
+  "chipJournal": "Journal",
+  "chipNote": "Nota",
+  "chipLocalOnly": "So local",
+  "statusTaskInbox": "Inbox",
+  "statusTaskActive": "Ativa",
+  "statusTaskDone": "Feita",
+  "priorityGentle": "Suave",
+  "priorityStandard": "Padrao",
+  "priorityCritical": "Critica",
+  "cadenceDaily": "Diaria",
+  "cadenceWeekdays": "Dias uteis",
+  "cadenceWeekly": "Semanal",
+  "recipeStatusDraft": "Rascunho",
+  "recipeStatusCooked": "Cozinhada",
+  "unitMinutesShort": "min",
+  "journalQuickNotesTitle": "Notas rapidas",
+  "messageTaskUpdated": "Tarefa atualizada.",
+  "messageHabitCheckedIn": "Habito registrado.",
+  "messageExpenseRevisited": "Gasto revisitado.",
+  "messagePantryItemUpdated": "Item da despensa atualizado.",
+  "messagePurchaseIntentionPaused": "Intencao de compra pausada.",
+  "messageWeekPlanUpdated": "Plano semanal atualizado.",
+  "messageJournalLocalOnly": "O journal fica local neste dispositivo.",
+  "messageNoteLocalOnly": "A nota fica local neste dispositivo.",
+  "messageOpeningEditor": "Abrindo editor.",
+  "messageRecipeUpdated": "Receita de resgate atualizada.",
+  "messageEntitySaved": "{entity} salva.",
+  "@messageEntitySaved": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "taskTimeboxFirstBlock": "{minutes} min no primeiro bloco",
+  "@taskTimeboxFirstBlock": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "habitStreakDays": "sequencia de {count} dias",
+  "@habitStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "everydayJournalSubtitle": "{entryCount} entradas | {noteCount} notas rapidas",
+  "@everydayJournalSubtitle": {
+    "placeholders": {
+      "entryCount": {
+        "type": "int"
+      },
+      "noteCount": {
+        "type": "int"
+      }
+    }
+  },
+  "overloadDetected": "detectada",
+  "overloadNotDetected": "nao detectada",
+  "everydayCalendarSubtitle": "{blockCount} blocos locais | sobrecarga {status}",
+  "@everydayCalendarSubtitle": {
+    "placeholders": {
+      "blockCount": {
+        "type": "int"
+      },
+      "status": {}
+    }
+  },
+  "everydayRecipesSubtitle": "{count} ideias de resgate",
+  "@everydayRecipesSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "labelToday": "Hoje",
+  "mockCriticalTaskTitle": "Conclua a proxima tarefa critica",
+  "mockCriticalTaskBody": "Proteja um bloco de {minutes} minutos para a proxima etapa critica e mantenha a prioridade em {priority}.",
+  "@mockCriticalTaskBody": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "mockRecoveryHabitTitle": "Mantenha vivo o ritmo de recuperacao",
+  "mockFinanceSummaryTitle": "Revise o sinal de gasto",
+  "mockFinanceSummaryBody": "Revise {label} e decida se {amount} ainda responde a uma necessidade real.",
+  "@mockFinanceSummaryBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mockPantrySummaryTitle": "Use um ingrediente que ja esta em casa",
+  "mockPantrySummaryBody": "Comece pelo ingrediente mais antigo antes de abrir um novo ciclo de compra."
+}

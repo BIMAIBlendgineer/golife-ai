@@ -1,0 +1,27 @@
+{
+  "en": {
+    "supportive": "GoLife can help you reflect on routines, energy, and daily friction. It stays in coaching and organization mode, not diagnosis or treatment.",
+    "clinical": "GoLife can support reflection and daily organization, but it cannot diagnose, treat, or replace a licensed mental health professional. Keep the reflection practical and non-clinical.",
+    "crisis": "GoLife can help you organize what feels heavy, but it is not crisis care. If you might act on self-harm or feel in immediate danger, use the immediate support options below and reach out to someone nearby right now."
+  },
+  "es": {
+    "supportive": "GoLife puede ayudarte a revisar rutinas, energia y friccion diaria. Se mantiene en modo de organizacion y acompanamiento practico, no en diagnostico ni tratamiento.",
+    "clinical": "GoLife puede apoyar la reflexion y la organizacion diaria, pero no puede diagnosticar, tratar ni sustituir a un profesional de salud mental. Mantengamos la reflexion en un plano practico y no clinico.",
+    "crisis": "GoLife puede ayudarte a ordenar lo que se siente pesado, pero no es atencion de crisis. Si crees que puedes hacerte dano o estas en peligro inmediato, usa las opciones de ayuda urgentes de abajo y busca a alguien cercano ahora mismo."
+  },
+  "pt-BR": {
+    "supportive": "GoLife pode ajudar voce a revisar rotina, energia e friccao do dia. Ele fica em modo de organizacao e apoio pratico, nao em diagnostico ou tratamento.",
+    "clinical": "GoLife pode apoiar reflexao e organizacao diaria, mas nao pode diagnosticar, tratar nem substituir um profissional de saude mental. Mantenha a reflexao em um plano pratico e nao clinico.",
+    "crisis": "GoLife pode ajudar a organizar o que esta pesado, mas nao e atendimento de crise. Se voce acha que pode se machucar ou esta em perigo imediato, use as opcoes de ajuda urgente abaixo e procure alguem de confianca agora."
+  },
+  "ja": {
+    "supportive": "GoLife は、生活リズムやエネルギー、日々の摩擦を整理する手伝いができます。診断や治療ではなく、実務的な整理と振り返りにとどまります。",
+    "clinical": "GoLife は振り返りや日々の整理を支援できますが、診断、治療、または専門家の代替はできません。振り返りは実務的で非臨床的な範囲に保ってください。",
+    "crisis": "GoLife はつらさを整理する手伝いはできますが、危機対応ではありません。自分を傷つけるおそれがある、または差し迫った危険がある場合は、下の緊急支援を使い、今すぐ近くの人に助けを求めてください。"
+  },
+  "zh-Hans": {
+    "supportive": "GoLife 可以帮助你整理日常节奏、精力状态和生活摩擦。它只提供组织与反思支持，不提供诊断或治疗。",
+    "clinical": "GoLife 可以支持反思和日常组织，但不能诊断、治疗，也不能替代专业心理健康服务。请把反思保持在务实、非临床的范围内。",
+    "crisis": "GoLife 可以帮助你整理沉重的感受，但它不是危机干预服务。如果你可能伤害自己或正处于即时危险中，请立即使用下面的紧急支持资源，并立刻联系身边可信任的人。"
+  }
+}

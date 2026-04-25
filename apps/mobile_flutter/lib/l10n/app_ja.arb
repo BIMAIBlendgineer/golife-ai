@@ -1,0 +1,276 @@
+{
+  "@@locale": "ja",
+  "appTitle": "GoLife AI",
+  "appShellTaglineReady": "明示的なプライバシー境界を持つライフ OS シェル。",
+  "appShellTaglineBooting": "プライバシー、ミッション、ローカルグラフを初期化中...",
+  "navigate": "移動",
+  "navDashboard": "ホーム",
+  "navCapture": "キャプチャ",
+  "navWeek": "週",
+  "navTasks": "タスク",
+  "navHabits": "習慣",
+  "navMoney": "お金",
+  "navPantry": "食料",
+  "navCloset": "クローゼット",
+  "navEveryday": "毎日",
+  "navCopilot": "コパイロット",
+  "navSettings": "設定",
+  "language": "言語",
+  "languageSystem": "システム設定",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languagePortugueseBrazil": "Português Brasil",
+  "languageJapanese": "日本語",
+  "languageChineseSimplified": "简体中文",
+  "privacyTitle": "プライバシー",
+  "privacyIntro": "ドメイン権限とプライバシーレベルの両方が AI を許可するまで、すべてのイベントはローカルに保持されます。",
+  "privacyEncryptedActive": "Journal、Quick Notes、Finance の機密データはこのデバイスで暗号化されています。",
+  "privacyEncryptedUnavailable": "この環境では機密ローカル暗号化が利用できません。secure storage が回復するまで、保護されていないと考えてください。",
+  "privacyCenter": "プライバシーセンター",
+  "privacyDisclosureEncryptedTitle": "ローカルで暗号化",
+  "privacyDisclosureEncryptedBody": "これらのコレクションはこのデバイスで保護されます。",
+  "privacyDisclosureLocalTitle": "常にローカル",
+  "privacyDisclosureLocalBody": "これらの項目はデバイスにとどまり、AI ルーティングに送信されません。",
+  "privacyDisclosureAiTitle": "許可された場合のみ AI 送信可",
+  "privacyDisclosureAiBody": "AI 権限があり AI-allowed のイベントだけが送信されます。",
+  "privacyMetricTotalEvents": "総イベント",
+  "privacyMetricAiEligible": "AI 送信可",
+  "privacyMetricBlockedLocal": "ローカルでブロック",
+  "dataControls": "データ操作",
+  "dataControlsBody": "Export でローカルグラフの JSON スナップショットを出力し、Delete all でローカルデータを消去します。",
+  "exportJson": "JSON をエクスポート",
+  "deleteAllLocalData": "ローカルデータを全削除",
+  "domainControls": "ドメイン制御",
+  "exportCopied": "ローカル JSON エクスポートをクリップボードにコピーしました。",
+  "deleteAllTitle": "すべてのローカルデータを削除しますか?",
+  "deleteAllBody": "これはローカルイベント、エンティティ、ミッション、フィードバック、プライバシー設定、runtime config キャッシュ、言語設定を削除します。",
+  "cancel": "キャンセル",
+  "deleteAll": "すべて削除",
+  "deleteAllDone": "すべてのローカルデータを削除しました。",
+  "domainEventsEligible": "{eventCount} events · {aiCount} currently AI-eligible",
+  "@domainEventsEligible": {
+    "placeholders": {
+      "eventCount": {
+        "type": "int"
+      },
+      "aiCount": {
+        "type": "int"
+      }
+    }
+  },
+  "permissionLocal": "ローカル",
+  "permissionSync": "同期",
+  "permissionAi": "AI",
+  "domainHabits": "習慣",
+  "domainTasks": "タスク",
+  "domainWeek": "週",
+  "domainFinance": "お金",
+  "domainPantry": "食料",
+  "domainWardrobe": "クローゼット",
+  "domainCopilot": "コパイロット",
+  "collectionFinanceRecords": "Finance records",
+  "collectionJournalEntries": "Journal entries",
+  "collectionQuickNotes": "Quick notes",
+  "collectionPrivacySettings": "Privacy settings",
+  "collectionRuntimeConfigCache": "Runtime config cache",
+  "collectionDeviceEncryptionKey": "Device encryption key",
+  "nothingAiEnabled": "Nothing is AI-enabled right now",
+  "gatewayLive": "Gateway live",
+  "gatewayNoConnection": "????",
+  "gatewayUnavailable": "AI temporarily unavailable",
+  "gatewayLocalFallback": "???????????????",
+  "feedbackNone": "No feedback yet",
+  "feedbackUseful": "Useful",
+  "feedbackRejected": "Rejected",
+  "feedbackAccepted": "Accepted",
+  "feedbackCompleted": "Completed",
+  "feedbackEdited": "Edited",
+  "missionDeliveryAi": "AI-assisted",
+  "missionDeliveryFallback": "Fallback local",
+  "missionDeliveryLocal": "Local",
+  "missionDeliverySummaryAi": "GoLife used AI for this mission after local privacy filtering.",
+  "missionDeliverySummaryFallback": "GoLife stayed local because the gateway was unavailable or degraded.",
+  "missionDeliverySummaryLocal": "GoLife kept this mission local on the device.",
+  "actionWrite": "書く",
+  "actionChat": "会話",
+  "actionExplain": "説明",
+  "actionUseful": "役立つ",
+  "actionDoNow": "今すぐ行う",
+  "actionNotUseful": "役立たない",
+  "actionAccept": "受け入れる",
+  "actionEdit": "編集",
+  "actionRemove": "削除",
+  "actionSave": "保存",
+  "actionParseCapture": "キャプチャを解析",
+  "actionReparseCapture": "もう一度解析",
+  "actionSaveCaptureItems": "{count} items",
+  "@actionSaveCaptureItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusReady": "準備完了",
+  "statusBooting": "起動中",
+  "labelEvidence": "根拠",
+  "labelDataUsedForMission": "このミッションで使ったデータ",
+  "labelDataSentToAi": "AI に送信したデータ",
+  "labelBlockedFromAi": "AI からブロック",
+  "labelAlwaysLocalOnDevice": "このデバイスで常にローカル",
+  "labelEncryptedLocally": "ローカルで暗号化",
+  "labelUncertainty": "不確実性",
+  "labelTrace": "トレース",
+  "fieldDomain": "ドメイン",
+  "fieldPrivacy": "プライバシー",
+  "dashboardDisclosurePending": "GoLife ?????????????????????????????",
+  "dashboardMissionCountTitle": "???????? {count} ?",
+  "@dashboardMissionCountTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardMissionIntro": "Home Today ??????????????????????1?????????2??????????????????????",
+  "dashboardLoadingMissions": "???????????...",
+  "dashboardBootstrappingMission": "??????????????????????????????????????????",
+  "dashboardRiskCount": "{count} risks",
+  "@dashboardRiskCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardConfidencePill": "{percent}% confidence",
+  "@dashboardConfidencePill": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardAiDisclosureTitle": "AI ???????",
+  "dashboardAiDisclosureSummary": "{summary} Sent now: {sentCount} local events. Blocked locally: {blockedCount}.",
+  "@dashboardAiDisclosureSummary": {
+    "placeholders": {
+      "summary": {},
+      "sentCount": {
+        "type": "int"
+      },
+      "blockedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardRisksTitle": "Risks today",
+  "dashboardNoRisks": "No explicit daily risks were detected from the current AI-eligible graph.",
+  "dashboardSupportMissionsTitle": "Support missions",
+  "dashboardNoSupportMissions": "Secondary missions will appear once the daily plan is available.",
+  "signalCriticalTask": "Critical task",
+  "signalRecoveryHabit": "Recovery habit",
+  "signalRecoveryHabitBody": "Cue: {cue} - {streak}",
+  "@signalRecoveryHabitBody": {
+    "placeholders": {
+      "cue": {},
+      "streak": {}
+    }
+  },
+  "signalRelevantSpend": "Relevant spend",
+  "signalUseThisFood": "Use this food",
+  "dashboardWhyThisToday": "?????????",
+  "dashboardConfidenceWithType": "Confidence {percent}% - {type}",
+  "@dashboardConfidenceWithType": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "type": {}
+    }
+  },
+  "dashboardNothingSent": "????????????????????????????????????????",
+  "dashboardNothingBlocked": "??????? AI ??????????????????????????",
+  "dashboardNoAlwaysLocalCollections": "No always-local collections configured.",
+  "dashboardNoEncryptedCollections": "No encrypted collections configured.",
+  "dashboardRiskSeverityLabel": "{severity} risk",
+  "@dashboardRiskSeverityLabel": {
+    "placeholders": {
+      "severity": {}
+    }
+  },
+  "captureTitle": "キャプチャ",
+  "captureIntro": "1 文書いてください。GoLife はそれを複数の下書きに分割し、各項目のドメインとプライバシーを編集して一括保存できます。",
+  "captureRouteTitle": "ルート",
+  "captureAutoRoute": "自動",
+  "captureAutoModeBody": "自動モードでは、まず各句を分割し分類します。",
+  "captureCurrentDefaultPrivacy": "{domain} の現在の既定プライバシー: {permission}",
+  "@captureCurrentDefaultPrivacy": {
+    "placeholders": {
+      "domain": {},
+      "permission": {}
+    }
+  },
+  "captureDraftsToConfirm": "確認する下書き",
+  "captureRecentEvents": "最近のイベント",
+  "capturePrivacyLabel": "プライバシー: {privacy}",
+  "@capturePrivacyLabel": {
+    "placeholders": {
+      "privacy": {}
+    }
+  },
+  "captureItemsCaptured": "{count} item(s) captured.",
+  "@captureItemsCaptured": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureEditItemTitle": "項目を編集",
+  "captureHintAuto": "Example: I bought coffee for 4.50, lettuce expires tomorrow, and I need to pay internet.",
+  "captureHintTasks": "Example: submit rent receipt before lunch",
+  "captureHintHabits": "Example: walked 15 minutes after dinner",
+  "captureHintWeek": "Example: Friday focus should stay on admin work",
+  "captureHintFinance": "Example: bought coffee and sandwich for 8.50",
+  "captureHintPantry": "Example: spinach expires tomorrow",
+  "captureHintWardrobe": "Example: thinking about buying another black jacket",
+  "captureHintCopilot": "Example: a mission note",
+  "copilotTitle": "コパイロット",
+  "copilotIntro": "Copilot ?????????3????????????????????????????????????????????????????",
+  "copilotBoundariesTitle": "内省の境界",
+  "copilotBoundariesBody": "GoLife ??????????????????????????????????????????????????????????????????????????????",
+  "copilotTodayPlanTitle": "今日のプラン",
+  "copilotNoPlan": "まだミッションプランがありません。",
+  "copilotLatestTraceTitle": "最新のトレース",
+  "copilotNoTrace": "まだミッションがありません。",
+  "everydayContextBody": "????????????????????? Today ?????????????6?????????????????",
+  "labelToday": "??",
+  "mockCriticalTaskTitle": "???????????",
+  "mockCriticalTaskBody": "????????? {minutes} ??????????????? {priority} ??????",
+  "@mockCriticalTaskBody": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "mockRecoveryHabitTitle": "???????????",
+  "mockFinanceSummaryTitle": "??????????",
+  "mockFinanceSummaryBody": "{label} ?????{amount} ??????????????????????",
+  "@mockFinanceSummaryBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mockPantrySummaryTitle": "???????1???",
+  "mockPantrySummaryBody": "??????????????????????????????"
+}

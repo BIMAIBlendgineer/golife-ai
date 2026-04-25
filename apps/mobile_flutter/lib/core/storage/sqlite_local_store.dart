@@ -35,6 +35,7 @@ class SqliteLocalStore implements LocalStore {
   static const _defaultDatabaseName = 'golife_ai.db';
   static const _databaseVersion = 3;
   static const _privacyKey = 'privacy_settings';
+  static const _localePreferenceKey = 'locale_preference';
   static const _runtimeConfigKey = 'runtime_config';
   static const _demoSeedEnabledKey = 'demo_seed_enabled';
 
@@ -108,6 +109,39 @@ class SqliteLocalStore implements LocalStore {
       {
         'key': _privacyKey,
         'value': jsonEncode(settings.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<String?> loadLocalePreference() async {
+    final db = await _db;
+    final rows = await db.query(
+      'key_value',
+      columns: const ['value'],
+      where: 'key = ?',
+      whereArgs: const [_localePreferenceKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final rawValue = rows.first['value']?.toString();
+    if (rawValue == null || rawValue.isEmpty || rawValue == 'system') {
+      return null;
+    }
+    return rawValue;
+  }
+
+  @override
+  Future<void> saveLocalePreference(String? localeTag) async {
+    final db = await _db;
+    await db.insert(
+      'key_value',
+      {
+        'key': _localePreferenceKey,
+        'value': localeTag ?? 'system',
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
