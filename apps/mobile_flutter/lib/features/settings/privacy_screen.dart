@@ -23,6 +23,24 @@ class PrivacyScreen extends StatelessWidget {
             'Each event stays local unless both the domain permission and the event privacy level allow AI. This screen also gives you direct local export and delete controls.',
             style: theme.textTheme.bodyLarge,
           ),
+          if (controller.sensitiveLocalEncryptionEnabled) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEDF4EE),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFB6C8B4),
+                ),
+              ),
+              child: Text(
+                'Sensitive local encryption is active for Journal, Quick Notes, and Finance records stored on this device.',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           Row(
             children: [

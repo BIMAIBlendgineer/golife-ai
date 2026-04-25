@@ -56,6 +56,11 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<bool> supportsSensitiveLocalEncryption() async {
+    return false;
+  }
+
+  @override
   Future<List<LifeEvent>> loadLifeEvents() async {
     return List<LifeEvent>.unmodifiable(_events);
   }

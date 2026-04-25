@@ -72,6 +72,11 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<bool> supportsSensitiveLocalEncryption() async {
+    return false;
+  }
+
+  @override
   Future<List<LifeEvent>> loadLifeEvents() async {
     return _loadList(
       _lifeEventsKey,

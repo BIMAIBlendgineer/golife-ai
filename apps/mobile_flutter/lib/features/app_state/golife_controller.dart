@@ -60,6 +60,7 @@ class GoLifeController extends ChangeNotifier {
   List<QuickNote> _quickNotes = <QuickNote>[];
   List<CalendarItem> _calendarItems = <CalendarItem>[];
   List<RecipeRescue> _recipeRescues = <RecipeRescue>[];
+  bool _sensitiveLocalEncryptionEnabled = false;
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -142,6 +143,7 @@ class GoLifeController extends ChangeNotifier {
       List<CalendarItem>.unmodifiable(_calendarItems);
   List<RecipeRescue> get recipeRescues =>
       List<RecipeRescue>.unmodifiable(_recipeRescues);
+  bool get sensitiveLocalEncryptionEnabled => _sensitiveLocalEncryptionEnabled;
   int get totalEventCount => lifeEvents.length;
   int get aiEligibleEventCount => lifeEvents.where(_eventEligibleForAi).length;
   List<LifeEvent> get aiEligibleEvents => List<LifeEvent>.unmodifiable(
@@ -223,6 +225,8 @@ class GoLifeController extends ChangeNotifier {
 
   Future<void> bootstrap() async {
     _privacySettings = await _localStore.loadPrivacySettings();
+    _sensitiveLocalEncryptionEnabled =
+        await _localStore.supportsSensitiveLocalEncryption();
     _runtimeConfig = await _localStore.loadRuntimeConfig();
     _applyRuntimeConfig();
     await _lifeGraphRepository.bootstrap();
@@ -875,6 +879,14 @@ class GoLifeController extends ChangeNotifier {
       'exported_at': DateTime.now().toUtc().toIso8601String(),
       'privacy_settings': _privacySettings.toJson(),
       'runtime_config': _runtimeConfig?.toJson(),
+      'storage_security': {
+        'sensitive_local_encryption': _sensitiveLocalEncryptionEnabled,
+        'encrypted_collections': const <String>[
+          'expenses',
+          'journal_entries',
+          'quick_notes',
+        ],
+      },
       'life_events':
           lifeEvents.map((item) => item.toJson()).toList(growable: false),
       'missions':

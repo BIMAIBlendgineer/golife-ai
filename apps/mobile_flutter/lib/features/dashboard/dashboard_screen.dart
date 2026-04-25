@@ -53,7 +53,7 @@ class DashboardScreen extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: () => context.go('/copilot'),
                 icon: const Icon(Icons.record_voice_over_rounded),
-                label: const Text('Hablar'),
+                label: const Text('Conversar'),
               ),
             ],
           ),

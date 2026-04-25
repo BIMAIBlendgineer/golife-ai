@@ -20,6 +20,7 @@ abstract class LocalStore {
   Future<void> savePrivacySettings(PrivacySettings settings);
   Future<bool> loadDemoSeedEnabled() async => true;
   Future<void> saveDemoSeedEnabled(bool enabled) async {}
+  Future<bool> supportsSensitiveLocalEncryption() async => false;
 
   Future<List<LifeEvent>> loadLifeEvents();
   Future<void> saveLifeEvents(List<LifeEvent> events);

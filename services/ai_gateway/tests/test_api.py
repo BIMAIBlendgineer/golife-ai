@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -727,3 +729,40 @@ def test_reflection_check_returns_crisis_message(client):
     assert data["safe"] is False
     assert data["category"] == "crisis"
     assert data["trace"]["reason"] == "crisis_language"
+
+
+def test_reflection_check_reports_metadata_only_operational_audit(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/reflection/check",
+        json={
+            "user_id": "user-1",
+            "text": "I want to kill myself tonight.",
+            "privacy_level": "local_only",
+        },
+    )
+
+    assert response.status_code == 200
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["event_type"] == "reflection_safety_checked"
+    assert len(operational_client.safety_batches) == 1
+    serialized = json.dumps(
+        {
+            "usage_events": operational_client.usage_events,
+            "safety_batches": operational_client.safety_batches,
+            "model_settings": operational_client.model_settings,
+        }
+    )
+    assert "kill myself" not in serialized

@@ -21,18 +21,25 @@ import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
 import 'local_store.dart';
+import 'sensitive_data_cipher.dart';
 
 class SqliteLocalStore implements LocalStore {
-  SqliteLocalStore({String? databaseName})
-      : _databaseName = databaseName ?? _defaultDatabaseName;
+  SqliteLocalStore({
+    String? databaseName,
+    String? encryptionSecretOverride,
+  })  : _databaseName = databaseName ?? _defaultDatabaseName,
+        _sensitiveDataCipher = SensitiveDataCipher(
+          secretOverride: encryptionSecretOverride,
+        );
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 2;
+  static const _databaseVersion = 3;
   static const _privacyKey = 'privacy_settings';
   static const _runtimeConfigKey = 'runtime_config';
   static const _demoSeedEnabledKey = 'demo_seed_enabled';
 
   final String _databaseName;
+  final SensitiveDataCipher _sensitiveDataCipher;
   Database? _database;
 
   Future<Database> get _db async {
@@ -40,6 +47,7 @@ class SqliteLocalStore implements LocalStore {
       return _database!;
     }
 
+    await _sensitiveDataCipher.ensureReady();
     final databasesPath = await getDatabasesPath();
     final databasePath = path.join(databasesPath, _databaseName);
     _database = await openDatabase(
@@ -55,9 +63,18 @@ class SqliteLocalStore implements LocalStore {
         if (oldVersion < 2) {
           await _createAdditionalSchema(db);
         }
+        if (oldVersion < 3) {
+          await _migrateSensitiveRows(db);
+        }
       },
     );
     return _database!;
+  }
+
+  @override
+  Future<bool> supportsSensitiveLocalEncryption() async {
+    await _sensitiveDataCipher.ensureReady();
+    return true;
   }
 
   @override
@@ -360,7 +377,7 @@ class SqliteLocalStore implements LocalStore {
         'id': expense.id,
         'amount': expense.amount,
         'category': expense.category,
-        'json_blob': jsonEncode(expense.toJson()),
+        'json_blob': _encodeSensitiveJsonBlob(expense.toJson()),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -374,7 +391,11 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'id ASC',
     );
     return rows
-        .map((row) => ExpenseRecord.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map(
+          (row) => ExpenseRecord.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -465,7 +486,7 @@ class SqliteLocalStore implements LocalStore {
         'id': journalEntry.id,
         'created_at_iso': journalEntry.createdAtIso,
         'privacy_level': journalEntry.privacyLevel,
-        'json_blob': jsonEncode(journalEntry.toJson()),
+        'json_blob': _encodeSensitiveJsonBlob(journalEntry.toJson()),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -479,7 +500,11 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'created_at_iso DESC',
     );
     return rows
-        .map((row) => JournalEntry.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map(
+          (row) => JournalEntry.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -492,7 +517,7 @@ class SqliteLocalStore implements LocalStore {
         'id': quickNote.id,
         'created_at_iso': quickNote.createdAtIso,
         'privacy_level': quickNote.privacyLevel,
-        'json_blob': jsonEncode(quickNote.toJson()),
+        'json_blob': _encodeSensitiveJsonBlob(quickNote.toJson()),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -506,7 +531,11 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'created_at_iso DESC',
     );
     return rows
-        .map((row) => QuickNote.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map(
+          (row) => QuickNote.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -671,5 +700,48 @@ class SqliteLocalStore implements LocalStore {
     return Map<String, dynamic>.from(
       jsonDecode(rawJson?.toString() ?? '{}') as Map,
     );
+  }
+
+  Map<String, dynamic> _decodeSensitiveJsonRow(Object? rawJson) {
+    final raw = rawJson?.toString() ?? '{}';
+    return _sensitiveDataCipher.decryptJsonString(raw);
+  }
+
+  String _encodeSensitiveJsonBlob(Map<String, Object?> value) {
+    return _sensitiveDataCipher.encryptJsonMap(value);
+  }
+
+  Future<void> _migrateSensitiveRows(Database db) async {
+    await _migrateSensitiveTable(db, 'expenses', 'id');
+    await _migrateSensitiveTable(db, 'journal_entries', 'id');
+    await _migrateSensitiveTable(db, 'quick_notes', 'id');
+  }
+
+  Future<void> _migrateSensitiveTable(
+    Database db,
+    String table,
+    String idColumn,
+  ) async {
+    final rows =
+        await db.query(table, columns: <String>[idColumn, 'json_blob']);
+    for (final row in rows) {
+      final raw = row['json_blob']?.toString();
+      if (raw == null ||
+          raw.isEmpty ||
+          _sensitiveDataCipher.looksEncrypted(raw)) {
+        continue;
+      }
+      final decoded = _decodeJsonRow(raw);
+      await db.update(
+        table,
+        <String, Object?>{
+          'json_blob': _encodeSensitiveJsonBlob(
+            Map<String, Object?>.from(decoded),
+          ),
+        },
+        where: '$idColumn = ?',
+        whereArgs: <Object?>[row[idColumn]],
+      );
+    }
   }
 }
