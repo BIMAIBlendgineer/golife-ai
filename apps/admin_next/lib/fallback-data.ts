@@ -8,6 +8,7 @@ import type {
   ModelCatalogEntry,
   ModelSettingsSnapshot,
   ModelSelectionSnapshot,
+  BillingAccountRow,
   OpenRouterByokKeyRecord,
   OrganizationDetail,
   OrganizationRow,
@@ -17,6 +18,8 @@ import type {
   PlanRow,
   RoutingProfile,
   SafetyAuditRecord,
+  StorageSummary,
+  StorageUsageRow,
   SupportRequest,
   AiUsageLedgerRow,
   UserManagementRow,
@@ -625,6 +628,58 @@ export const fallbackXInsightCredits: XInsightCreditSummary = {
   total_platform_cost_usd: 0.91,
   byok_request_count: 1,
 };
+
+export const fallbackBillingAccounts: BillingAccountRow[] = [
+  {
+    organization_id: "org-household",
+    organization_name: "Household Alpha",
+    plan: "family",
+    subscription_status: "active",
+    storage_charge_usd: 2.23,
+    xinsight_charge_usd: 1.45,
+    byok_key_count: 1,
+    invoice_placeholder: "placeholder-org-household",
+  },
+  {
+    organization_id: "org-internal",
+    organization_name: "GoLife Internal Ops",
+    plan: "enterprise",
+    subscription_status: "active",
+    storage_charge_usd: 8.8,
+    xinsight_charge_usd: 0.31,
+    byok_key_count: 0,
+    invoice_placeholder: "placeholder-org-internal",
+  },
+];
+
+export const fallbackStorageSummary: StorageSummary = {
+  total_gb: 61.3,
+  billable_gb: 61.3,
+  local_only_gb: 25.75,
+  cloud_gb: 35.55,
+  export_bundle_gb: 3.68,
+  homememory_metadata_count: 0,
+  retention_risk_count: 1,
+};
+
+export const fallbackStorageUsage: StorageUsageRow[] = [
+  {
+    organization_id: "org-household",
+    organization_name: "Household Alpha",
+    plan: "family",
+    storage_used_gb: 12.4,
+    encrypted_collections: ["expenses", "journal_entries", "quick_notes"],
+    retention_risk: false,
+  },
+  {
+    organization_id: "org-internal",
+    organization_name: "GoLife Internal Ops",
+    plan: "enterprise",
+    storage_used_gb: 48.9,
+    encrypted_collections: ["expenses", "journal_entries", "quick_notes"],
+    retention_risk: true,
+  },
+];
 
 export const fallbackOpenRouterKeys: OpenRouterApiKeyRecord[] = [
   {

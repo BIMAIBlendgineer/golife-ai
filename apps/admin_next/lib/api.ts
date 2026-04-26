@@ -5,6 +5,7 @@ import {
   fallbackDashboard,
   fallbackFeatureFlags,
   fallbackFeedback,
+  fallbackBillingAccounts,
   fallbackModelCatalog,
   fallbackModelSelections,
   fallbackMissions,
@@ -24,6 +25,8 @@ import {
   fallbackUserSupportById,
   fallbackUserUsageById,
   fallbackUsage,
+  fallbackStorageSummary,
+  fallbackStorageUsage,
   fallbackXInsightCredits,
   fallbackXInsightUsage,
 } from "@/lib/fallback-data";
@@ -33,6 +36,7 @@ import type {
   AdminDataState,
   AdminFetchResult,
   AiUsageLedgerRow,
+  BillingAccountRow,
   DashboardMetrics,
   FeatureFlag,
   FeedbackAuditRecord,
@@ -49,6 +53,8 @@ import type {
   PlanRow,
   RoutingProfile,
   SafetyAuditRecord,
+  StorageSummary,
+  StorageUsageRow,
   SupportRequest,
   UserManagementRow,
   UserPrivacySummary,
@@ -312,6 +318,36 @@ export async function getXInsightCredits(): Promise<
 export async function getXInsightPlans(): Promise<AdminFetchResult<PlanRow[]>> {
   return adminRequest("/admin/xinsightai/plans", {
     fallbackData: fallbackPlans.filter((plan) => plan.ai_credit_policy !== "No bundled credits"),
+  });
+}
+
+export async function getBillingAccounts(): Promise<
+  AdminFetchResult<BillingAccountRow[]>
+> {
+  return adminRequest("/admin/billing/accounts", {
+    fallbackData: fallbackBillingAccounts,
+  });
+}
+
+export async function getBillingPlans(): Promise<AdminFetchResult<PlanRow[]>> {
+  return adminRequest("/admin/billing/plans", {
+    fallbackData: fallbackPlans,
+  });
+}
+
+export async function getStorageSummary(): Promise<
+  AdminFetchResult<StorageSummary>
+> {
+  return adminRequest("/admin/storage/summary", {
+    fallbackData: fallbackStorageSummary,
+  });
+}
+
+export async function getStorageUsage(): Promise<
+  AdminFetchResult<StorageUsageRow[]>
+> {
+  return adminRequest("/admin/storage/usage", {
+    fallbackData: fallbackStorageUsage,
   });
 }
 

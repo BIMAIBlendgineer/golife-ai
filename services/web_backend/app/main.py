@@ -20,6 +20,7 @@ from app.schemas import (
     AIInvocationRecord,
     AdminHealth,
     AiUsageLedgerRow,
+    BillingAccountRow,
     DashboardMetrics,
     FeatureFlag,
     FeatureFlagPatch,
@@ -53,6 +54,8 @@ from app.schemas import (
     UserSupportSummary,
     UserUsageSummary,
     UsageEventRecord,
+    StorageSummary,
+    StorageUsageRow,
     XInsightCreditSummary,
 )
 from app.settings import Settings
@@ -358,6 +361,22 @@ def create_app(
     @app.get("/admin/xinsightai/plans", response_model=list[PlanRow])
     async def xinsight_plans(_: None = Depends(require_admin)) -> list[PlanRow]:
         return resolved_repository.list_xinsight_plan_rows()
+
+    @app.get("/admin/billing/accounts", response_model=list[BillingAccountRow])
+    async def billing_accounts(_: None = Depends(require_admin)) -> list[BillingAccountRow]:
+        return resolved_repository.list_billing_accounts()
+
+    @app.get("/admin/billing/plans", response_model=list[PlanRow])
+    async def billing_plans(_: None = Depends(require_admin)) -> list[PlanRow]:
+        return resolved_repository.list_plans()
+
+    @app.get("/admin/storage/summary", response_model=StorageSummary)
+    async def storage_summary(_: None = Depends(require_admin)) -> StorageSummary:
+        return resolved_repository.get_storage_summary()
+
+    @app.get("/admin/storage/usage", response_model=list[StorageUsageRow])
+    async def storage_usage(_: None = Depends(require_admin)) -> list[StorageUsageRow]:
+        return resolved_repository.list_storage_usage()
 
     @app.get("/admin/usage")
     async def usage(_: None = Depends(require_admin)) -> list[dict[str, object]]:

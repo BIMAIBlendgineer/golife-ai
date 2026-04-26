@@ -19,6 +19,7 @@ from app.schemas import (
     AdminHealth,
     AdminUser,
     AiUsageLedgerRow,
+    BillingAccountRow,
     DashboardMetrics,
     FeatureFlag,
     FeedbackAuditRecord,
@@ -54,6 +55,8 @@ from app.schemas import (
     UserUsageSummary,
     UsageEventRecord,
     UsageSnapshot,
+    StorageSummary,
+    StorageUsageRow,
     XInsightCreditSummary,
 )
 from app.routing import build_default_routing_profiles
@@ -2103,6 +2106,59 @@ class OperationalRepository:
             plan
             for plan in self.list_plans()
             if plan.ai_credit_policy != "No bundled credits"
+        ]
+
+    def list_billing_accounts(self) -> list[BillingAccountRow]:
+        byok_keys = self.list_openrouter_byok_keys()
+        ledger = self.list_ai_usage_ledger()
+        accounts: list[BillingAccountRow] = []
+        for organization in self.list_organizations():
+            org_rows = [row for row in ledger if row.organization_id == organization.organization_id]
+            accounts.append(
+                BillingAccountRow(
+                    organization_id=organization.organization_id,
+                    organization_name=organization.name,
+                    plan=organization.plan,
+                    subscription_status=organization.status,
+                    storage_charge_usd=round(organization.storage_used_gb * 0.18, 2),
+                    xinsight_charge_usd=round(
+                        sum(row.customer_charge_usd for row in org_rows if row.ai_mode == "xinsightai"),
+                        2,
+                    ),
+                    byok_key_count=sum(
+                        1
+                        for key in byok_keys
+                        if key.organization_id == organization.organization_id and key.disabled_at is None
+                    ),
+                    invoice_placeholder=f"placeholder-{organization.organization_id}",
+                )
+            )
+        return accounts
+
+    def get_storage_summary(self) -> StorageSummary:
+        organizations = self.list_organizations()
+        total_gb = round(sum(item.storage_used_gb for item in organizations), 2)
+        return StorageSummary(
+            total_gb=total_gb,
+            billable_gb=total_gb,
+            local_only_gb=round(total_gb * 0.42, 2),
+            cloud_gb=round(total_gb * 0.58, 2),
+            export_bundle_gb=round(total_gb * 0.06, 2),
+            homememory_metadata_count=0,
+            retention_risk_count=sum(1 for item in organizations if item.storage_used_gb > 40),
+        )
+
+    def list_storage_usage(self) -> list[StorageUsageRow]:
+        return [
+            StorageUsageRow(
+                organization_id=organization.organization_id,
+                organization_name=organization.name,
+                plan=organization.plan,
+                storage_used_gb=organization.storage_used_gb,
+                encrypted_collections=["expenses", "journal_entries", "quick_notes"],
+                retention_risk=organization.storage_used_gb > 40,
+            )
+            for organization in self.list_organizations()
         ]
 
     def list_users(self) -> list[AdminUser]:

@@ -273,6 +273,36 @@ class XInsightCreditSummary(BaseModel):
     byok_request_count: int = Field(ge=0)
 
 
+class BillingAccountRow(BaseModel):
+    organization_id: str = Field(min_length=1)
+    organization_name: str = Field(min_length=1)
+    plan: str = Field(min_length=1)
+    subscription_status: Literal["active", "trial", "paused"]
+    storage_charge_usd: float = Field(ge=0.0)
+    xinsight_charge_usd: float = Field(ge=0.0)
+    byok_key_count: int = Field(ge=0)
+    invoice_placeholder: str = Field(min_length=1)
+
+
+class StorageSummary(BaseModel):
+    total_gb: float = Field(ge=0.0)
+    billable_gb: float = Field(ge=0.0)
+    local_only_gb: float = Field(ge=0.0)
+    cloud_gb: float = Field(ge=0.0)
+    export_bundle_gb: float = Field(ge=0.0)
+    homememory_metadata_count: int = Field(ge=0)
+    retention_risk_count: int = Field(ge=0)
+
+
+class StorageUsageRow(BaseModel):
+    organization_id: str = Field(min_length=1)
+    organization_name: str = Field(min_length=1)
+    plan: str = Field(min_length=1)
+    storage_used_gb: float = Field(ge=0.0)
+    encrypted_collections: list[str] = Field(default_factory=list)
+    retention_risk: bool = False
+
+
 class AdminHealth(BaseModel):
     status: Literal["ok"]
     data_source: str = Field(min_length=1)

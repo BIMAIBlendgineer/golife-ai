@@ -165,6 +165,20 @@ def test_xinsight_and_byok_ledgers_stay_separate(client):
     assert credits.json()["total_credits_debited"] > 0
 
 
+def test_billing_and_storage_routes_exist(client):
+    billing_accounts = client.get("/admin/billing/accounts", headers=_admin_headers())
+    billing_plans = client.get("/admin/billing/plans", headers=_admin_headers())
+    storage_summary = client.get("/admin/storage/summary", headers=_admin_headers())
+    storage_usage = client.get("/admin/storage/usage", headers=_admin_headers())
+
+    assert billing_accounts.status_code == 200
+    assert billing_plans.status_code == 200
+    assert storage_summary.status_code == 200
+    assert storage_usage.status_code == 200
+    assert len(billing_accounts.json()) >= 1
+    assert storage_summary.json()["total_gb"] >= 0
+
+
 def test_openrouter_keys_are_masked_for_admin_and_decrypted_for_internal(client):
     created = client.post(
         "/admin/openrouter/keys",

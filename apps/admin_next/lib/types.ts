@@ -176,6 +176,36 @@ export type XInsightCreditSummary = {
   byok_request_count: number;
 };
 
+export type BillingAccountRow = {
+  organization_id: string;
+  organization_name: string;
+  plan: string;
+  subscription_status: "active" | "trial" | "paused";
+  storage_charge_usd: number;
+  xinsight_charge_usd: number;
+  byok_key_count: number;
+  invoice_placeholder: string;
+};
+
+export type StorageSummary = {
+  total_gb: number;
+  billable_gb: number;
+  local_only_gb: number;
+  cloud_gb: number;
+  export_bundle_gb: number;
+  homememory_metadata_count: number;
+  retention_risk_count: number;
+};
+
+export type StorageUsageRow = {
+  organization_id: string;
+  organization_name: string;
+  plan: string;
+  storage_used_gb: number;
+  encrypted_collections: string[];
+  retention_risk: boolean;
+};
+
 export type UsageSnapshot = {
   user_id: string;
   capture_events: number;
