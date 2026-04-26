@@ -4,6 +4,7 @@ import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import TypeVar
 from urllib.parse import urlsplit, urlunsplit
 
 try:
@@ -18,12 +19,17 @@ from app.schemas import (
     AIInvocationRecord,
     AdminHealth,
     AdminUser,
+    AdminAuthStatus,
     AiUsageLedgerRow,
+    AuditLogRow,
     BillingAccountRow,
     DashboardMetrics,
     FeatureFlag,
     FeedbackAuditRecord,
     FeedbackAuditUpsert,
+    HomeMemoryParserUsageRow,
+    HomeMemorySummary,
+    IncidentRow,
     MissionAuditRecord,
     MissionAuditUpsert,
     PaginatedResponse,
@@ -42,11 +48,16 @@ from app.schemas import (
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
     PlanRow,
+    PrivacyDataMap,
+    PrivacyRequestRow,
     RoutingCapability,
     RoutingProfile,
     RoutingProfilePatch,
     SafetyAuditRecord,
     SafetyAuditUpsert,
+    QualityBreakdownRow,
+    QualitySummary,
+    SecuritySummary,
     SupportRequest,
     UserManagementRow,
     UserPrivacySummary,
@@ -62,6 +73,7 @@ from app.schemas import (
 from app.routing import build_default_routing_profiles
 
 REDACTED_FEEDBACK_REASON = "private_note_redacted"
+ItemT = TypeVar("ItemT")
 
 
 def _utcnow() -> datetime:
@@ -107,6 +119,25 @@ def _sqlite_in_placeholders(values: tuple[object, ...]) -> str:
     if not values:
         raise ValueError("values must not be empty")
     return ", ".join("?" for _ in values)
+
+
+def _paginate_sequence(
+    items: list[ItemT],
+    *,
+    limit: int,
+    offset: int,
+) -> PaginatedResponse[ItemT]:
+    safe_limit = max(limit, 1)
+    safe_offset = max(offset, 0)
+    next_offset = safe_offset + safe_limit if safe_offset + safe_limit < len(items) else None
+    return PaginatedResponse[ItemT](
+        items=items[safe_offset : safe_offset + safe_limit],
+        total=len(items),
+        limit=safe_limit,
+        offset=safe_offset,
+        next_offset=next_offset,
+        fetched_at=_utcnow(),
+    )
 
 
 class OperationalRepository:
@@ -222,6 +253,10 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_usage_events_user_time
                     ON usage_events(user_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_usage_events_time
+                    ON usage_events(created_at);
+                CREATE INDEX IF NOT EXISTS idx_usage_events_endpoint
+                    ON usage_events(endpoint);
 
                 CREATE TABLE IF NOT EXISTS ai_invocations (
                     invocation_id TEXT PRIMARY KEY,
@@ -242,6 +277,8 @@ class OperationalRepository:
                     ON ai_invocations(user_id, created_at);
                 CREATE INDEX IF NOT EXISTS idx_ai_invocations_endpoint_time
                     ON ai_invocations(endpoint, created_at);
+                CREATE INDEX IF NOT EXISTS idx_ai_invocations_model
+                    ON ai_invocations(model);
 
                 CREATE TABLE IF NOT EXISTS mission_audit_records (
                     mission_id TEXT PRIMARY KEY,
@@ -268,6 +305,8 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_feedback_user_time
                     ON feedback_audit_records(user_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_feedback_time
+                    ON feedback_audit_records(created_at);
 
                 CREATE TABLE IF NOT EXISTS safety_events (
                     event_id TEXT PRIMARY KEY,
@@ -280,6 +319,8 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_safety_user_time
                     ON safety_events(user_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_safety_time
+                    ON safety_events(created_at);
 
                 CREATE TABLE IF NOT EXISTS feature_flags (
                     key TEXT PRIMARY KEY,
@@ -295,6 +336,20 @@ class OperationalRepository:
                     status TEXT NOT NULL,
                     requested_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS admin_audit_log (
+                    audit_id TEXT PRIMARY KEY,
+                    actor_id TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    target_type TEXT NOT NULL,
+                    target_id TEXT NOT NULL,
+                    safe_diff_json TEXT NOT NULL,
+                    correlation_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_admin_audit_time
+                    ON admin_audit_log(created_at);
+                CREATE INDEX IF NOT EXISTS idx_admin_audit_actor_action
+                    ON admin_audit_log(actor_id, action, created_at);
 
                 CREATE TABLE IF NOT EXISTS model_settings (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -2160,6 +2215,496 @@ class OperationalRepository:
             )
             for organization in self.list_organizations()
         ]
+
+    def list_privacy_requests(self) -> list[PrivacyRequestRow]:
+        return [
+            PrivacyRequestRow(
+                request_id=request.request_id,
+                user_id=request.user_id,
+                request_type=request.request_type,
+                status=request.status,
+                requested_at=request.requested_at,
+            )
+            for request in self.list_support_requests()
+        ]
+
+    def get_privacy_data_map(self) -> PrivacyDataMap:
+        return PrivacyDataMap(
+            encrypted_collections=["expenses", "journal_entries", "quick_notes"],
+            sensitive_data_excluded=True,
+            retention_notes=[
+                "Support exports generate temporary bundles.",
+                "HomeMemory personal objects stay excluded until aggregate-only admin telemetry is available.",
+            ],
+        )
+
+    def record_admin_audit(
+        self,
+        *,
+        audit_id: str,
+        actor_id: str,
+        action: str,
+        target_type: str,
+        target_id: str,
+        safe_diff: dict[str, object],
+        correlation_id: str,
+        created_at: datetime | None = None,
+    ) -> None:
+        at = created_at or _utcnow()
+        self._execute(
+            """
+            INSERT INTO admin_audit_log(
+                audit_id, actor_id, action, target_type, target_id,
+                safe_diff_json, correlation_id, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                audit_id,
+                actor_id,
+                action,
+                target_type,
+                target_id,
+                _json_dumps(safe_diff),
+                correlation_id,
+                _to_iso(at),
+            ),
+        )
+        self._commit()
+
+    def list_admin_audit(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        actor: str | None = None,
+        action: str | None = None,
+    ) -> PaginatedResponse[AuditLogRow]:
+        filters: list[str] = []
+        args: list[object] = []
+        if actor:
+            filters.append("actor_id = ?")
+            args.append(actor)
+        if action:
+            filters.append("action = ?")
+            args.append(action)
+        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        total = int(
+            self._scalar(
+                f"SELECT COUNT(*) FROM admin_audit_log {where_sql}",
+                tuple(args),
+            )
+        )
+        rows = self._fetchall(
+            f"""
+            SELECT audit_id, actor_id, action, target_type, target_id, safe_diff_json, correlation_id, created_at
+            FROM admin_audit_log
+            {where_sql}
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+            """,
+            tuple([*args, limit, offset]),
+        )
+        items = [
+            AuditLogRow(
+                audit_id=row["audit_id"],
+                actor_id=row["actor_id"],
+                action=row["action"],
+                target_type=row["target_type"],
+                target_id=row["target_id"],
+                safe_diff=dict(_json_loads(row["safe_diff_json"], default={})),
+                correlation_id=row["correlation_id"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+        next_offset = offset + limit if offset + limit < total else None
+        return PaginatedResponse[AuditLogRow](
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+            next_offset=next_offset,
+            fetched_at=_utcnow(),
+        )
+
+    def latest_admin_audit_at(self) -> datetime | None:
+        value = self._scalar("SELECT MAX(created_at) FROM admin_audit_log")
+        return _from_iso(value) if isinstance(value, str) else None
+
+    def list_privacy_requests_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[PrivacyRequestRow]:
+        return _paginate_sequence(
+            sorted(
+                self.list_privacy_requests(),
+                key=lambda item: item.requested_at,
+                reverse=True,
+            ),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_organizations_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        query: str | None = None,
+        status: str | None = None,
+        plan: str | None = None,
+    ) -> PaginatedResponse[OrganizationRow]:
+        filters: list[str] = []
+        args: list[object] = []
+        if query:
+            filters.append("(LOWER(name) LIKE ? OR LOWER(organization_id) LIKE ?)")
+            like = f"%{query.strip().lower()}%"
+            args.extend([like, like])
+        if status:
+            filters.append("status = ?")
+            args.append(status)
+        if plan:
+            filters.append("plan_id = ?")
+            args.append(plan)
+        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        total = int(
+            self._scalar(
+                f"SELECT COUNT(*) FROM organizations {where_sql}",
+                tuple(args),
+            )
+        )
+        rows = self._fetchall(
+            f"""
+            SELECT organization_id, name, status, plan_id, storage_used_gb, ai_mode_default, created_at
+            FROM organizations
+            {where_sql}
+            ORDER BY created_at DESC, organization_id ASC
+            LIMIT ? OFFSET ?
+            """,
+            tuple([*args, limit, offset]),
+        )
+        items = [
+            OrganizationRow(
+                organization_id=row["organization_id"],
+                name=row["name"],
+                status=row["status"],
+                plan=row["plan_id"],
+                user_count=int(
+                    self._scalar(
+                        "SELECT COUNT(*) FROM user_profiles WHERE organization_id = ?",
+                        (row["organization_id"],),
+                    )
+                ),
+                storage_used_gb=float(row["storage_used_gb"]),
+                ai_mode_default=row["ai_mode_default"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+        next_offset = offset + limit if offset + limit < total else None
+        return PaginatedResponse[OrganizationRow](
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+            next_offset=next_offset,
+            fetched_at=_utcnow(),
+        )
+
+    def list_usage_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[UsageSnapshot]:
+        return _paginate_sequence(
+            self.list_usage(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_ai_costs_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[AICostSnapshot]:
+        return _paginate_sequence(
+            self.list_ai_costs(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_feedback_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[FeedbackAuditRecord]:
+        return _paginate_sequence(
+            self.list_feedback(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_safety_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[SafetyAuditRecord]:
+        return _paginate_sequence(
+            self.list_safety(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_billing_accounts_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[BillingAccountRow]:
+        return _paginate_sequence(
+            self.list_billing_accounts(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_storage_usage_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[StorageUsageRow]:
+        return _paginate_sequence(
+            self.list_storage_usage(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def get_homememory_summary(self) -> HomeMemorySummary:
+        rows = self._fetchall(
+            """
+            SELECT metadata_json, fallback, status
+            FROM ai_invocations
+            WHERE endpoint = '/v1/proofs/parse'
+            """
+        )
+        total = len(rows)
+        success_count = sum(1 for row in rows if row["status"] == "success")
+        fallback_count = sum(1 for row in rows if bool(row["fallback"]))
+        locale_distribution: dict[str, int] = {}
+        for row in rows:
+            metadata = dict(_json_loads(row["metadata_json"], default={}))
+            locale = str(metadata.get("locale") or "en")
+            locale_distribution[locale] = locale_distribution.get(locale, 0) + 1
+        parser_events = self._fetchall(
+            """
+            SELECT event_type
+            FROM usage_events
+            WHERE endpoint = '/v1/proofs/parse'
+               OR event_type IN (
+                    'warranty_reminder_created',
+                    'claim_draft_created',
+                    'evidence_attachment_added'
+               )
+            """
+        )
+        reminder_count = sum(
+            1 for row in parser_events if row["event_type"] == "warranty_reminder_created"
+        )
+        claim_count = sum(
+            1 for row in parser_events if row["event_type"] == "claim_draft_created"
+        )
+        evidence_count = sum(
+            1 for row in parser_events if row["event_type"] == "evidence_attachment_added"
+        )
+        return HomeMemorySummary(
+            proof_parse_count=total,
+            warranty_reminder_count=reminder_count,
+            claim_draft_count=claim_count,
+            evidence_attachment_count=evidence_count,
+            parser_success_rate=(success_count / total) if total else 0.0,
+            fallback_rate=(fallback_count / total) if total else 0.0,
+            locale_distribution=locale_distribution,
+            encrypted_collections=[],
+            storage_impact_estimate=round(evidence_count * 0.0025, 4),
+            sensitive_data_excluded=True,
+        )
+
+    def list_homememory_parser_usage(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[HomeMemoryParserUsageRow]:
+        rows = self._fetchall(
+            """
+            SELECT metadata_json, fallback, status
+            FROM ai_invocations
+            WHERE endpoint = '/v1/proofs/parse'
+            """
+        )
+        buckets: dict[tuple[str, str], dict[str, float]] = {}
+        for row in rows:
+            metadata = dict(_json_loads(row["metadata_json"], default={}))
+            locale = str(metadata.get("locale") or "en")
+            parser_name = str(metadata.get("parser") or "deterministic")
+            key = (locale, parser_name)
+            bucket = buckets.setdefault(
+                key,
+                {"requests": 0, "success": 0, "fallback": 0},
+            )
+            bucket["requests"] += 1
+            if row["status"] == "success":
+                bucket["success"] += 1
+            if bool(row["fallback"]):
+                bucket["fallback"] += 1
+        items = [
+            HomeMemoryParserUsageRow(
+                locale=locale,
+                parser=parser_name if parser_name in {"deterministic", "semantic", "fallback"} else "deterministic",
+                requests=int(values["requests"]),
+                success_rate=(values["success"] / values["requests"]) if values["requests"] else 0.0,
+                fallback_rate=(values["fallback"] / values["requests"]) if values["requests"] else 0.0,
+            )
+            for (locale, parser_name), values in sorted(buckets.items())
+        ]
+        return _paginate_sequence(items, limit=limit, offset=offset)
+
+    def get_quality_summary(self) -> QualitySummary:
+        dashboard = self.dashboard()
+        homememory = self.get_homememory_summary()
+        support_escalations = sum(
+            1
+            for request in self.list_support_requests()
+            if request.status == "open"
+        )
+        ai_cost_rows = self.list_ai_costs()
+        high_cost_anomalies = sum(
+            1 for row in ai_cost_rows if row.estimated_cost_usd >= 1.0 or row.fallback_rate >= 0.2
+        )
+        return QualitySummary(
+            mission_usefulness_rate=dashboard.recommendation_usefulness_rate,
+            mission_completion_rate=dashboard.mission_completion_rate,
+            rejection_rate=dashboard.rejection_rate,
+            fallback_rate=dashboard.fallback_rate,
+            proof_parser_success_rate=homememory.parser_success_rate,
+            safety_interventions=int(len(self.list_safety())),
+            high_cost_anomalies=high_cost_anomalies,
+            support_escalations=support_escalations,
+        )
+
+    def list_quality_breakdown(self) -> list[QualityBreakdownRow]:
+        dashboard = self.dashboard()
+        homememory = self.get_homememory_summary()
+        return [
+            QualityBreakdownRow(
+                dimension="missions",
+                label="Mission usefulness",
+                value=dashboard.recommendation_usefulness_rate,
+                unit="ratio",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="missions",
+                label="Mission completion",
+                value=dashboard.mission_completion_rate,
+                unit="ratio",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="trust",
+                label="Fallback rate",
+                value=dashboard.fallback_rate,
+                unit="ratio",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="cost",
+                label="AI cost per active user",
+                value=dashboard.ai_cost_per_active_user_usd,
+                unit="usd",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="homememory",
+                label="Proof parser success",
+                value=homememory.parser_success_rate,
+                unit="ratio",
+                source="derived",
+            ),
+            QualityBreakdownRow(
+                dimension="safety",
+                label="Safety interventions",
+                value=float(len(self.list_safety())),
+                unit="count",
+                source="live",
+            ),
+        ]
+
+    def list_incidents(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        severity: str | None = None,
+        status: str | None = None,
+    ) -> PaginatedResponse[IncidentRow]:
+        items: list[IncidentRow] = []
+        for event in self.list_safety():
+            items.append(
+                IncidentRow(
+                    incident_id=f"safety-{event.event_id}",
+                    type="safety_intervention",
+                    severity=event.severity,
+                    source="ai_gateway",
+                    status="open" if event.severity == "high" else "monitoring",
+                    created_at=event.created_at,
+                    resolved_at=None,
+                    safe_summary=f"Safety rule {event.rule} flagged category {event.category}.",
+                )
+            )
+        for event in self.list_openrouter_key_events():
+            if event.event_type not in {"failure", "disabled"}:
+                continue
+            items.append(
+                IncidentRow(
+                    incident_id=f"routing-{event.event_id}",
+                    type="routing_key_issue",
+                    severity="high" if event.event_type == "disabled" else "medium",
+                    source="web_backend",
+                    status="open" if event.event_type == "disabled" else "monitoring",
+                    created_at=event.created_at,
+                    resolved_at=None,
+                    safe_summary=f"Routing key event {event.event_type} affected endpoint {event.endpoint or 'unknown'}.",
+                )
+            )
+        for request in self.list_support_requests():
+            if request.status != "open":
+                continue
+            items.append(
+                IncidentRow(
+                    incident_id=f"support-{request.request_id}",
+                    type="privacy_request_backlog",
+                    severity="medium",
+                    source="support",
+                    status="open",
+                    created_at=request.requested_at,
+                    resolved_at=None,
+                    safe_summary=f"{request.request_type.title()} request waiting for operator action.",
+                )
+            )
+        if severity:
+            items = [item for item in items if item.severity == severity]
+        if status:
+            items = [item for item in items if item.status == status]
+        items.sort(key=lambda item: item.created_at, reverse=True)
+        return _paginate_sequence(items, limit=limit, offset=offset)
 
     def list_users(self) -> list[AdminUser]:
         rows = self._fetchall(

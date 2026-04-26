@@ -1,5 +1,6 @@
 import { DataTable, type DataColumn } from "@/components/premium/data-table";
 import { KpiGrid } from "@/components/premium/kpi-grid";
+import { PaginationFooter } from "@/components/premium/pagination-footer";
 import { RiskBanner } from "@/components/premium/risk-banner";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
@@ -8,16 +9,34 @@ import { getStorageSummary, getStorageUsage } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
 import type { StorageUsageRow } from "@/lib/types";
+import { withSearchParams } from "@/lib/url";
 
-export default async function StoragePage() {
+export default async function StoragePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale, messages } = await getAdminMessages();
   const t = messages.pages.storage;
+  const params = await searchParams;
+  const limit = Math.min(
+    100,
+    Math.max(
+      10,
+      Number.parseInt(typeof params.limit === "string" ? params.limit : "25", 10) || 25,
+    ),
+  );
+  const offset = Math.max(
+    0,
+    Number.parseInt(typeof params.offset === "string" ? params.offset : "0", 10) || 0,
+  );
   const [summaryResult, usageResult] = await Promise.all([
     getStorageSummary(),
-    getStorageUsage(),
+    getStorageUsage({ limit, offset }),
   ]);
   const summary = summaryResult.data;
-  const usage = usageResult.data ?? [];
+  const page = usageResult.data;
+  const usage = page?.items ?? [];
 
   const columns: Array<DataColumn<StorageUsageRow>> = [
     {
@@ -106,7 +125,16 @@ export default async function StoragePage() {
         />
       </KpiGrid>
 
-      <DataTable columns={columns} rows={usage} rowKey={(row) => row.organization_id} />
+      <div className="space-y-4">
+        <DataTable columns={columns} rows={usage} rowKey={(row) => row.organization_id} />
+        <PaginationFooter
+          summary={`${messages.shared.pageSummaryPrefix} ${usage.length} ${messages.shared.pageSummaryMiddle} ${page?.total ?? usage.length}`}
+          previousHref={offset > 0 ? withSearchParams({ limit, offset: Math.max(0, offset - limit) }) : null}
+          nextHref={page?.next_offset != null ? withSearchParams({ limit, offset: page.next_offset }) : null}
+          previousLabel={messages.shared.previousPage}
+          nextLabel={messages.shared.nextPage}
+        />
+      </div>
     </>
   );
 }

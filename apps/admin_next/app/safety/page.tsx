@@ -2,16 +2,35 @@ import { ErrorBanner } from "@/components/error-banner";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { Panel } from "@/components/panel";
+import { PaginationFooter } from "@/components/premium/pagination-footer";
 import { StatusPill } from "@/components/status-pill";
 import { getSafety } from "@/lib/api";
 import { formatDateTime, labelizeKey } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
+import { withSearchParams } from "@/lib/url";
 
-export default async function SafetyPage() {
+export default async function SafetyPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale, messages } = await getAdminMessages();
   const t = messages.pages.safety;
-  const safetyResult = await getSafety();
-  const safety = safetyResult.data ?? [];
+  const params = await searchParams;
+  const limit = Math.min(
+    100,
+    Math.max(
+      10,
+      Number.parseInt(typeof params.limit === "string" ? params.limit : "25", 10) || 25,
+    ),
+  );
+  const offset = Math.max(
+    0,
+    Number.parseInt(typeof params.offset === "string" ? params.offset : "0", 10) || 0,
+  );
+  const safetyResult = await getSafety({ limit, offset });
+  const page = safetyResult.data;
+  const safety = page?.items ?? [];
   const highSeverity = safety.filter((item) => item.severity === "high").length;
   const financeIncidents = safety.filter((item) => item.category === "finance").length;
 
@@ -86,6 +105,13 @@ export default async function SafetyPage() {
           ))}
         </div>
       </Panel>
+      <PaginationFooter
+        summary={`${messages.shared.pageSummaryPrefix} ${safety.length} ${messages.shared.pageSummaryMiddle} ${page?.total ?? safety.length}`}
+        previousHref={offset > 0 ? withSearchParams({ limit, offset: Math.max(0, offset - limit) }) : null}
+        nextHref={page?.next_offset != null ? withSearchParams({ limit, offset: page.next_offset }) : null}
+        previousLabel={messages.shared.previousPage}
+        nextLabel={messages.shared.nextPage}
+      />
     </>
   );
 }

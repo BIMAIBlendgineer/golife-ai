@@ -1,21 +1,40 @@
 import { CostCard } from "@/components/premium/cost-card";
 import { DataTable, type DataColumn } from "@/components/premium/data-table";
 import { KpiGrid } from "@/components/premium/kpi-grid";
+import { PaginationFooter } from "@/components/premium/pagination-footer";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import { getBillingAccounts, getBillingPlans } from "@/lib/api";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
 import type { BillingAccountRow } from "@/lib/types";
+import { withSearchParams } from "@/lib/url";
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale, messages } = await getAdminMessages();
   const t = messages.pages.billing;
+  const params = await searchParams;
+  const limit = Math.min(
+    100,
+    Math.max(
+      10,
+      Number.parseInt(typeof params.limit === "string" ? params.limit : "25", 10) || 25,
+    ),
+  );
+  const offset = Math.max(
+    0,
+    Number.parseInt(typeof params.offset === "string" ? params.offset : "0", 10) || 0,
+  );
   const [accountsResult, plansResult] = await Promise.all([
-    getBillingAccounts(),
+    getBillingAccounts({ limit, offset }),
     getBillingPlans(),
   ]);
-  const accounts = accountsResult.data ?? [];
+  const page = accountsResult.data;
+  const accounts = page?.items ?? [];
   const plans = plansResult.data ?? [];
 
   const columns: Array<DataColumn<BillingAccountRow>> = [
@@ -121,7 +140,16 @@ export default async function BillingPage() {
         ))}
       </div>
 
-      <DataTable columns={columns} rows={accounts} rowKey={(account) => account.organization_id} />
+      <div className="space-y-4">
+        <DataTable columns={columns} rows={accounts} rowKey={(account) => account.organization_id} />
+        <PaginationFooter
+          summary={`${messages.shared.pageSummaryPrefix} ${accounts.length} ${messages.shared.pageSummaryMiddle} ${page?.total ?? accounts.length}`}
+          previousHref={offset > 0 ? withSearchParams({ limit, offset: Math.max(0, offset - limit) }) : null}
+          nextHref={page?.next_offset != null ? withSearchParams({ limit, offset: page.next_offset }) : null}
+          previousLabel={messages.shared.previousPage}
+          nextLabel={messages.shared.nextPage}
+        />
+      </div>
     </>
   );
 }

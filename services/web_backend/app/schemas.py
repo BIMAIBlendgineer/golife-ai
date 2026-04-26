@@ -303,6 +303,104 @@ class StorageUsageRow(BaseModel):
     retention_risk: bool = False
 
 
+class PrivacyRequestRow(BaseModel):
+    request_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    request_type: RequestType
+    status: Literal["open", "done"]
+    requested_at: datetime
+
+
+class PrivacyDataMap(BaseModel):
+    encrypted_collections: list[str] = Field(default_factory=list)
+    sensitive_data_excluded: bool = True
+    retention_notes: list[str] = Field(default_factory=list)
+
+
+class SecuritySummary(BaseModel):
+    environment: str = Field(min_length=1)
+    admin_token_configured: bool
+    ingestion_token_configured: bool
+    internal_service_token_configured: bool
+    production_ready: bool
+    openrouter_key_count: int = Field(ge=0)
+    byok_key_count: int = Field(ge=0)
+    latest_audit_at: datetime | None = None
+    dependency_scan_status: str = Field(min_length=1)
+    failed_auth_placeholder: int = Field(ge=0)
+
+
+class AuditLogRow(BaseModel):
+    audit_id: str = Field(min_length=1)
+    actor_id: str = Field(min_length=1)
+    action: str = Field(min_length=1)
+    target_type: str = Field(min_length=1)
+    target_id: str = Field(min_length=1)
+    safe_diff: dict[str, Any] = Field(default_factory=dict)
+    correlation_id: str = Field(min_length=1)
+    created_at: datetime
+
+
+class HomeMemorySummary(BaseModel):
+    proof_parse_count: int = Field(ge=0)
+    warranty_reminder_count: int = Field(ge=0)
+    claim_draft_count: int = Field(ge=0)
+    evidence_attachment_count: int = Field(ge=0)
+    parser_success_rate: float = Field(ge=0.0, le=1.0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    locale_distribution: dict[str, int] = Field(default_factory=dict)
+    encrypted_collections: list[str] = Field(default_factory=list)
+    storage_impact_estimate: float = Field(ge=0.0)
+    sensitive_data_excluded: bool = True
+
+
+class HomeMemoryParserUsageRow(BaseModel):
+    locale: str = Field(min_length=1)
+    parser: Literal["deterministic", "semantic", "fallback"]
+    requests: int = Field(ge=0)
+    success_rate: float = Field(ge=0.0, le=1.0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+
+
+class QualitySummary(BaseModel):
+    mission_usefulness_rate: float = Field(ge=0.0, le=1.0)
+    mission_completion_rate: float = Field(ge=0.0, le=1.0)
+    rejection_rate: float = Field(ge=0.0, le=1.0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    proof_parser_success_rate: float = Field(ge=0.0, le=1.0)
+    safety_interventions: int = Field(ge=0)
+    high_cost_anomalies: int = Field(ge=0)
+    support_escalations: int = Field(ge=0)
+
+
+class QualityBreakdownRow(BaseModel):
+    dimension: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    value: float = Field(ge=0.0)
+    unit: Literal["ratio", "count", "usd", "ms"]
+    source: Literal["live", "fallback", "derived"]
+
+
+class IncidentRow(BaseModel):
+    incident_id: str = Field(min_length=1)
+    type: str = Field(min_length=1)
+    severity: Literal["low", "medium", "high"]
+    source: str = Field(min_length=1)
+    status: Literal["open", "resolved", "monitoring"]
+    created_at: datetime
+    resolved_at: datetime | None = None
+    safe_summary: str = Field(min_length=1)
+
+
+class AdminAuthStatus(BaseModel):
+    auth_mode: Literal["token_only_scaffold"]
+    environment: str = Field(min_length=1)
+    admin_token_configured: bool
+    production_ready: bool
+    enterprise_ready: bool = False
+    warning: str = Field(min_length=1)
+
+
 class AdminHealth(BaseModel):
     status: Literal["ok"]
     data_source: str = Field(min_length=1)

@@ -2,10 +2,15 @@ import "server-only";
 
 import {
   fallbackAICosts,
+  fallbackAuditLog,
+  fallbackAuthStatus,
   fallbackDashboard,
   fallbackFeatureFlags,
   fallbackFeedback,
   fallbackBillingAccounts,
+  fallbackHomeMemoryParserUsage,
+  fallbackHomeMemorySummary,
+  fallbackIncidents,
   fallbackModelCatalog,
   fallbackModelSelections,
   fallbackMissions,
@@ -16,8 +21,13 @@ import {
   fallbackOpenRouterKeyEvents,
   fallbackOpenRouterKeys,
   fallbackPlans,
+  fallbackPrivacyDataMap,
+  fallbackPrivacyRequests,
+  fallbackQualityBreakdown,
+  fallbackQualitySummary,
   fallbackRoutingProfiles,
   fallbackSafety,
+  fallbackSecuritySummary,
   fallbackSupportRequests,
   fallbackUserManagement,
   fallbackUserPrivacyById,
@@ -34,12 +44,17 @@ import type {
   AICostSnapshot,
   AdminBackendHealth,
   AdminDataState,
+  AdminAuthStatus,
   AdminFetchResult,
   AiUsageLedgerRow,
+  AuditLogRow,
   BillingAccountRow,
   DashboardMetrics,
   FeatureFlag,
   FeedbackAuditRecord,
+  HomeMemoryParserUsageRow,
+  HomeMemorySummary,
+  IncidentRow,
   ModelCatalogEntry,
   MissionAuditRecord,
   ModelSettingsSnapshot,
@@ -51,8 +66,13 @@ import type {
   OpenRouterKeyEventRecord,
   PaginatedResponse,
   PlanRow,
+  PrivacyDataMap,
+  PrivacyRequestRow,
+  QualityBreakdownRow,
+  QualitySummary,
   RoutingProfile,
   SafetyAuditRecord,
+  SecuritySummary,
   StorageSummary,
   StorageUsageRow,
   SupportRequest,
@@ -80,6 +100,26 @@ type RequestOptions = {
 
 function fallbackMessage(path: string, cause: string): string {
   return `Using fallback snapshot for ${path}: ${cause}`;
+}
+
+function asPage<T>(
+  items: T[],
+  options?: {
+    limit?: number;
+    offset?: number;
+  },
+): PaginatedResponse<T> {
+  const limit = options?.limit ?? 25;
+  const offset = options?.offset ?? 0;
+  const nextOffset = offset + limit < items.length ? offset + limit : null;
+  return {
+    items: items.slice(offset, offset + limit),
+    total: items.length,
+    limit,
+    offset,
+    next_offset: nextOffset,
+    fetched_at: new Date().toISOString(),
+  };
 }
 
 async function adminRequest<T>(
@@ -263,17 +303,35 @@ export async function getUserSupportSummary(
   });
 }
 
-export async function getUsage(): Promise<AdminFetchResult<UsageSnapshot[]>> {
-  return adminRequest("/admin/usage", {
-    fallbackData: fallbackUsage,
+export async function getUsage(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<UsageSnapshot>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  const suffix = `?limit=${limit}&offset=${offset}`;
+  return adminRequest(`/admin/usage${suffix}`, {
+    fallbackData: asPage(fallbackUsage, { limit, offset }),
   });
 }
 
-export async function getOrganizations(): Promise<
-  AdminFetchResult<OrganizationRow[]>
-> {
-  return adminRequest("/admin/organizations", {
-    fallbackData: fallbackOrganizations,
+export async function getOrganizations(params?: {
+  limit?: number;
+  offset?: number;
+  query?: string;
+  status?: string;
+  plan?: string;
+}): Promise<AdminFetchResult<PaginatedResponse<OrganizationRow>>> {
+  const searchParams = new URLSearchParams();
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  searchParams.set("limit", String(limit));
+  searchParams.set("offset", String(offset));
+  if (params?.query) searchParams.set("query", params.query);
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.plan) searchParams.set("plan", params.plan);
+  return adminRequest(`/admin/organizations?${searchParams.toString()}`, {
+    fallbackData: asPage(fallbackOrganizations, { limit, offset }),
   });
 }
 
@@ -321,11 +379,14 @@ export async function getXInsightPlans(): Promise<AdminFetchResult<PlanRow[]>> {
   });
 }
 
-export async function getBillingAccounts(): Promise<
-  AdminFetchResult<BillingAccountRow[]>
-> {
-  return adminRequest("/admin/billing/accounts", {
-    fallbackData: fallbackBillingAccounts,
+export async function getBillingAccounts(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<BillingAccountRow>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  return adminRequest(`/admin/billing/accounts?limit=${limit}&offset=${offset}`, {
+    fallbackData: asPage(fallbackBillingAccounts, { limit, offset }),
   });
 }
 
@@ -343,17 +404,25 @@ export async function getStorageSummary(): Promise<
   });
 }
 
-export async function getStorageUsage(): Promise<
-  AdminFetchResult<StorageUsageRow[]>
-> {
-  return adminRequest("/admin/storage/usage", {
-    fallbackData: fallbackStorageUsage,
+export async function getStorageUsage(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<StorageUsageRow>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  return adminRequest(`/admin/storage/usage?limit=${limit}&offset=${offset}`, {
+    fallbackData: asPage(fallbackStorageUsage, { limit, offset }),
   });
 }
 
-export async function getAICosts(): Promise<AdminFetchResult<AICostSnapshot[]>> {
-  return adminRequest("/admin/ai-costs", {
-    fallbackData: fallbackAICosts,
+export async function getAICosts(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<AICostSnapshot>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  return adminRequest(`/admin/ai-costs?limit=${limit}&offset=${offset}`, {
+    fallbackData: asPage(fallbackAICosts, { limit, offset }),
   });
 }
 
@@ -363,15 +432,25 @@ export async function getMissions(): Promise<AdminFetchResult<MissionAuditRecord
   });
 }
 
-export async function getFeedback(): Promise<AdminFetchResult<FeedbackAuditRecord[]>> {
-  return adminRequest("/admin/feedback", {
-    fallbackData: fallbackFeedback,
+export async function getFeedback(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<FeedbackAuditRecord>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  return adminRequest(`/admin/feedback?limit=${limit}&offset=${offset}`, {
+    fallbackData: asPage(fallbackFeedback, { limit, offset }),
   });
 }
 
-export async function getSafety(): Promise<AdminFetchResult<SafetyAuditRecord[]>> {
-  return adminRequest("/admin/safety", {
-    fallbackData: fallbackSafety,
+export async function getSafety(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<SafetyAuditRecord>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  return adminRequest(`/admin/safety?limit=${limit}&offset=${offset}`, {
+    fallbackData: asPage(fallbackSafety, { limit, offset }),
   });
 }
 
@@ -417,6 +496,112 @@ export async function getOpenRouterKeyEvents(): Promise<
 > {
   return adminRequest("/admin/openrouter/key-events", {
     fallbackData: fallbackOpenRouterKeyEvents,
+  });
+}
+
+export async function getPrivacyRequests(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<PrivacyRequestRow>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  return adminRequest(`/admin/privacy/requests?limit=${limit}&offset=${offset}`, {
+    fallbackData: {
+      ...fallbackPrivacyRequests,
+      limit,
+      offset,
+      items: fallbackPrivacyRequests.items.slice(offset, offset + limit),
+      next_offset:
+        offset + limit < fallbackPrivacyRequests.items.length ? offset + limit : null,
+    },
+  });
+}
+
+export async function getPrivacyDataMap(): Promise<AdminFetchResult<PrivacyDataMap>> {
+  return adminRequest("/admin/privacy/data-map", {
+    fallbackData: fallbackPrivacyDataMap,
+  });
+}
+
+export async function getSecuritySummary(): Promise<AdminFetchResult<SecuritySummary>> {
+  return adminRequest("/admin/security/summary", {
+    fallbackData: fallbackSecuritySummary,
+  });
+}
+
+export async function getAuditLog(params?: {
+  limit?: number;
+  offset?: number;
+  actor?: string;
+  action?: string;
+}): Promise<AdminFetchResult<PaginatedResponse<AuditLogRow>>> {
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(params?.limit ?? 25));
+  searchParams.set("offset", String(params?.offset ?? 0));
+  if (params?.actor) searchParams.set("actor", params.actor);
+  if (params?.action) searchParams.set("action", params.action);
+  return adminRequest(`/admin/audit?${searchParams.toString()}`, {
+    fallbackData: fallbackAuditLog,
+  });
+}
+
+export async function getHomeMemorySummary(): Promise<AdminFetchResult<HomeMemorySummary>> {
+  return adminRequest("/admin/homememory/summary", {
+    fallbackData: fallbackHomeMemorySummary,
+  });
+}
+
+export async function getHomeMemoryParserUsage(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AdminFetchResult<PaginatedResponse<HomeMemoryParserUsageRow>>> {
+  const limit = params?.limit ?? 25;
+  const offset = params?.offset ?? 0;
+  return adminRequest(`/admin/homememory/parser-usage?limit=${limit}&offset=${offset}`, {
+    fallbackData: {
+      ...fallbackHomeMemoryParserUsage,
+      limit,
+      offset,
+      items: fallbackHomeMemoryParserUsage.items.slice(offset, offset + limit),
+      next_offset:
+        offset + limit < fallbackHomeMemoryParserUsage.items.length ? offset + limit : null,
+    },
+  });
+}
+
+export async function getQualitySummary(): Promise<AdminFetchResult<QualitySummary>> {
+  return adminRequest("/admin/quality/summary", {
+    fallbackData: fallbackQualitySummary,
+  });
+}
+
+export async function getQualityBreakdown(): Promise<
+  AdminFetchResult<QualityBreakdownRow[]>
+> {
+  return adminRequest("/admin/quality/breakdown", {
+    fallbackData: fallbackQualityBreakdown,
+  });
+}
+
+export async function getIncidents(params?: {
+  limit?: number;
+  offset?: number;
+  severity?: string;
+  status?: string;
+}): Promise<AdminFetchResult<PaginatedResponse<IncidentRow>>> {
+  const searchParams = new URLSearchParams();
+  searchParams.set("limit", String(params?.limit ?? 25));
+  searchParams.set("offset", String(params?.offset ?? 0));
+  if (params?.severity) searchParams.set("severity", params.severity);
+  if (params?.status) searchParams.set("status", params.status);
+  return adminRequest(`/admin/incidents?${searchParams.toString()}`, {
+    fallbackData: fallbackIncidents,
+  });
+}
+
+export async function getAuthStatus(): Promise<AdminFetchResult<AdminAuthStatus>> {
+  return adminRequest("/admin/auth/status", {
+    fallbackData: fallbackAuthStatus,
   });
 }
 

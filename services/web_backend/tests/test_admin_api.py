@@ -104,7 +104,7 @@ def test_models_support_and_runtime_config_routes_exist(client):
 def test_organizations_and_plans_routes_exist(client):
     organizations = client.get("/admin/organizations", headers=_admin_headers())
     assert organizations.status_code == 200
-    payload = organizations.json()
+    payload = organizations.json()["items"]
     assert len(payload) >= 1
     assert payload[0]["organization_id"]
 
@@ -175,8 +175,56 @@ def test_billing_and_storage_routes_exist(client):
     assert billing_plans.status_code == 200
     assert storage_summary.status_code == 200
     assert storage_usage.status_code == 200
-    assert len(billing_accounts.json()) >= 1
+    assert len(billing_accounts.json()["items"]) >= 1
     assert storage_summary.json()["total_gb"] >= 0
+
+
+def test_privacy_security_audit_and_quality_routes_exist(client):
+    updated_flag = client.patch(
+        "/admin/feature-flags/multi_event_capture",
+        headers=_admin_headers(),
+        json={"enabled": True},
+    )
+    assert updated_flag.status_code == 200
+
+    privacy_requests = client.get("/admin/privacy/requests", headers=_admin_headers())
+    privacy_data_map = client.get("/admin/privacy/data-map", headers=_admin_headers())
+    security_summary = client.get("/admin/security/summary", headers=_admin_headers())
+    audit_log = client.get("/admin/audit", headers=_admin_headers())
+    quality_summary = client.get("/admin/quality/summary", headers=_admin_headers())
+    quality_breakdown = client.get("/admin/quality/breakdown", headers=_admin_headers())
+    incidents = client.get("/admin/incidents", headers=_admin_headers())
+    auth_status = client.get("/admin/auth/status", headers=_admin_headers())
+
+    assert privacy_requests.status_code == 200
+    assert len(privacy_requests.json()["items"]) >= 1
+    assert privacy_data_map.status_code == 200
+    assert privacy_data_map.json()["sensitive_data_excluded"] is True
+    assert security_summary.status_code == 200
+    assert "production_ready" in security_summary.json()
+    assert audit_log.status_code == 200
+    assert len(audit_log.json()["items"]) >= 1
+    assert audit_log.json()["items"][0]["action"] == "patch_feature_flag"
+    assert "secret" not in str(audit_log.json()["items"][0]["safe_diff"]).lower()
+    assert quality_summary.status_code == 200
+    assert quality_breakdown.status_code == 200
+    assert len(quality_breakdown.json()) >= 1
+    assert incidents.status_code == 200
+    assert "items" in incidents.json()
+    assert auth_status.status_code == 200
+    assert auth_status.json()["auth_mode"] == "token_only_scaffold"
+
+
+def test_homememory_admin_routes_are_aggregate_only(client):
+    summary = client.get("/admin/homememory/summary", headers=_admin_headers())
+    parser_usage = client.get("/admin/homememory/parser-usage", headers=_admin_headers())
+
+    assert summary.status_code == 200
+    payload = summary.json()
+    assert payload["sensitive_data_excluded"] is True
+    assert payload["encrypted_collections"] == []
+    assert parser_usage.status_code == 200
+    assert "items" in parser_usage.json()
 
 
 def test_openrouter_keys_are_masked_for_admin_and_decrypted_for_internal(client):
@@ -407,9 +455,9 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
     assert users.status_code == 200
     assert users.json()["items"][0]["user_id"] == "live-user"
     assert costs.status_code == 200
-    assert costs.json()[0]["endpoint"] == "/v1/missions/daily"
+    assert costs.json()["items"][0]["endpoint"] == "/v1/missions/daily"
     assert feedback.status_code == 200
-    assert feedback.json()[0]["reason"] == "private_note_redacted"
+    assert feedback.json()["items"][0]["reason"] == "private_note_redacted"
     assert health.json()["mode"] == "live"
     assert health.json()["last_ingestion_at"] is not None
 

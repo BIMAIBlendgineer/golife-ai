@@ -206,6 +206,104 @@ export type StorageUsageRow = {
   retention_risk: boolean;
 };
 
+export type PrivacyRequestRow = {
+  request_id: string;
+  user_id: string;
+  request_type: "export" | "delete";
+  status: "open" | "done";
+  requested_at: string;
+};
+
+export type PrivacyDataMap = {
+  encrypted_collections: string[];
+  sensitive_data_excluded: boolean;
+  retention_notes: string[];
+};
+
+export type SecuritySummary = {
+  environment: string;
+  admin_token_configured: boolean;
+  ingestion_token_configured: boolean;
+  internal_service_token_configured: boolean;
+  production_ready: boolean;
+  openrouter_key_count: number;
+  byok_key_count: number;
+  latest_audit_at: string | null;
+  dependency_scan_status: string;
+  failed_auth_placeholder: number;
+};
+
+export type AuditLogRow = {
+  audit_id: string;
+  actor_id: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  safe_diff: Record<string, unknown>;
+  correlation_id: string;
+  created_at: string;
+};
+
+export type HomeMemorySummary = {
+  proof_parse_count: number;
+  warranty_reminder_count: number;
+  claim_draft_count: number;
+  evidence_attachment_count: number;
+  parser_success_rate: number;
+  fallback_rate: number;
+  locale_distribution: Record<string, number>;
+  encrypted_collections: string[];
+  storage_impact_estimate: number;
+  sensitive_data_excluded: boolean;
+};
+
+export type HomeMemoryParserUsageRow = {
+  locale: string;
+  parser: "deterministic" | "semantic" | "fallback";
+  requests: number;
+  success_rate: number;
+  fallback_rate: number;
+};
+
+export type QualitySummary = {
+  mission_usefulness_rate: number;
+  mission_completion_rate: number;
+  rejection_rate: number;
+  fallback_rate: number;
+  proof_parser_success_rate: number;
+  safety_interventions: number;
+  high_cost_anomalies: number;
+  support_escalations: number;
+};
+
+export type QualityBreakdownRow = {
+  dimension: string;
+  label: string;
+  value: number;
+  unit: "ratio" | "count" | "usd" | "ms";
+  source: "live" | "fallback" | "derived";
+};
+
+export type IncidentRow = {
+  incident_id: string;
+  type: string;
+  severity: "low" | "medium" | "high";
+  source: string;
+  status: "open" | "resolved" | "monitoring";
+  created_at: string;
+  resolved_at: string | null;
+  safe_summary: string;
+};
+
+export type AdminAuthStatus = {
+  auth_mode: "token_only_scaffold";
+  environment: string;
+  admin_token_configured: boolean;
+  production_ready: boolean;
+  enterprise_ready: boolean;
+  warning: string;
+};
+
 export type UsageSnapshot = {
   user_id: string;
   capture_events: number;

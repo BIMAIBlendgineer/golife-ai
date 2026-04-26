@@ -1,8 +1,10 @@
+import { ErrorBanner } from "@/components/error-banner";
 import { DetailDrawer } from "@/components/premium/detail-drawer";
 import { DataTable, type DataColumn } from "@/components/premium/data-table";
 import { EmptyState } from "@/components/premium/empty-state";
 import { FilterBar } from "@/components/premium/filter-bar";
 import { KpiGrid } from "@/components/premium/kpi-grid";
+import { PaginationFooter } from "@/components/premium/pagination-footer";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
@@ -10,6 +12,7 @@ import { getOrganization, getOrganizations } from "@/lib/api";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
 import type { OrganizationRow } from "@/lib/types";
+import { withSearchParams } from "@/lib/url";
 
 export default async function OrganizationsPage({
   searchParams,
@@ -22,21 +25,27 @@ export default async function OrganizationsPage({
   const query = typeof params.query === "string" ? params.query.toLowerCase() : "";
   const status = typeof params.status === "string" ? params.status : "";
   const plan = typeof params.plan === "string" ? params.plan : "";
+  const limit = Math.min(
+    100,
+    Math.max(
+      10,
+      Number.parseInt(typeof params.limit === "string" ? params.limit : "25", 10) || 25,
+    ),
+  );
+  const offset = Math.max(
+    0,
+    Number.parseInt(typeof params.offset === "string" ? params.offset : "0", 10) || 0,
+  );
 
-  const organizationsResult = await getOrganizations();
-  const allOrganizations = organizationsResult.data ?? [];
-  const organizations = allOrganizations.filter((organization) => {
-    if (query && !`${organization.name} ${organization.organization_id}`.toLowerCase().includes(query)) {
-      return false;
-    }
-    if (status && organization.status !== status) {
-      return false;
-    }
-    if (plan && organization.plan !== plan) {
-      return false;
-    }
-    return true;
+  const organizationsResult = await getOrganizations({
+    limit,
+    offset,
+    query: query || undefined,
+    status: status || undefined,
+    plan: plan || undefined,
   });
+  const page = organizationsResult.data;
+  const organizations = page?.items ?? [];
   const selectedOrganizationId =
     (typeof params.selected === "string" ? params.selected : null) ??
     organizations[0]?.organization_id ??
@@ -126,11 +135,12 @@ export default async function OrganizationsPage({
         description={t.description}
         badge={t.badge}
       />
+      <ErrorBanner error={organizationsResult.error ?? detailResult?.error ?? null} />
 
       <KpiGrid className="xl:grid-cols-3">
         <MetricCard
           label={t.totalOrganizationsLabel}
-          value={organizations.length.toString()}
+          value={(page?.total ?? organizations.length).toString()}
           note={t.totalOrganizationsNote}
           tone="ink"
         />
@@ -197,12 +207,43 @@ export default async function OrganizationsPage({
       </FilterBar>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_360px]">
-        <DataTable
-          columns={columns}
-          rows={organizations}
-          rowKey={(organization) => organization.organization_id}
-          emptyState={<EmptyState title={t.emptyTitle} body={t.emptyBody} />}
-        />
+        <div className="space-y-4">
+          <DataTable
+            columns={columns}
+            rows={organizations}
+            rowKey={(organization) => organization.organization_id}
+            emptyState={<EmptyState title={t.emptyTitle} body={t.emptyBody} />}
+          />
+          <PaginationFooter
+            summary={`${messages.shared.pageSummaryPrefix} ${organizations.length} ${messages.shared.pageSummaryMiddle} ${page?.total ?? organizations.length}`}
+            previousHref={
+              offset > 0
+                ? withSearchParams({
+                    query: query || undefined,
+                    status: status || undefined,
+                    plan: plan || undefined,
+                    limit,
+                    offset: Math.max(0, offset - limit),
+                    selected: selectedOrganizationId ?? undefined,
+                  })
+                : null
+            }
+            nextHref={
+              page?.next_offset != null
+                ? withSearchParams({
+                    query: query || undefined,
+                    status: status || undefined,
+                    plan: plan || undefined,
+                    limit,
+                    offset: page.next_offset,
+                    selected: selectedOrganizationId ?? undefined,
+                  })
+                : null
+            }
+            previousLabel={messages.shared.previousPage}
+            nextLabel={messages.shared.nextPage}
+          />
+        </div>
         <DetailDrawer
           title={detailResult?.data?.name ?? t.detailEmptyTitle}
           description={detailResult?.data?.organization_id ?? t.detailEmptyBody}

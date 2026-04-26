@@ -1,9 +1,14 @@
 import type {
   AICostSnapshot,
   AdminUser,
+  AdminAuthStatus,
+  AuditLogRow,
   DashboardMetrics,
   FeatureFlag,
   FeedbackAuditRecord,
+  HomeMemoryParserUsageRow,
+  HomeMemorySummary,
+  IncidentRow,
   MissionAuditRecord,
   ModelCatalogEntry,
   ModelSettingsSnapshot,
@@ -16,8 +21,13 @@ import type {
   OpenRouterKeyEventRecord,
   PaginatedResponse,
   PlanRow,
+  PrivacyDataMap,
+  PrivacyRequestRow,
+  QualityBreakdownRow,
+  QualitySummary,
   RoutingProfile,
   SafetyAuditRecord,
+  SecuritySummary,
   StorageSummary,
   StorageUsageRow,
   SupportRequest,
@@ -841,3 +851,176 @@ export const fallbackOpenRouterKeyEvents: OpenRouterKeyEventRecord[] = [
     created_at: "2026-04-24T11:55:00Z",
   },
 ];
+
+export const fallbackPrivacyRequests: PaginatedResponse<PrivacyRequestRow> = {
+  items: [
+    {
+      request_id: "support-1",
+      user_id: "user-2",
+      request_type: "export",
+      status: "open",
+      requested_at: "2026-04-24T08:00:00Z",
+    },
+    {
+      request_id: "support-2",
+      user_id: "user-3",
+      request_type: "delete",
+      status: "done",
+      requested_at: "2026-04-21T10:00:00Z",
+    },
+  ],
+  total: 2,
+  limit: 25,
+  offset: 0,
+  next_offset: null,
+  fetched_at: "2026-04-26T09:00:00Z",
+};
+
+export const fallbackPrivacyDataMap: PrivacyDataMap = {
+  encrypted_collections: ["expenses", "journal_entries", "quick_notes"],
+  sensitive_data_excluded: true,
+  retention_notes: [
+    "Support exports generate temporary bundles.",
+    "HomeMemory personal objects stay excluded until aggregate-only admin telemetry is available.",
+  ],
+};
+
+export const fallbackSecuritySummary: SecuritySummary = {
+  environment: "dev",
+  admin_token_configured: false,
+  ingestion_token_configured: false,
+  internal_service_token_configured: false,
+  production_ready: false,
+  openrouter_key_count: 3,
+  byok_key_count: 1,
+  latest_audit_at: "2026-04-26T08:40:00Z",
+  dependency_scan_status: "ci_required",
+  failed_auth_placeholder: 0,
+};
+
+export const fallbackAuditLog: PaginatedResponse<AuditLogRow> = {
+  items: [
+    {
+      audit_id: "audit-1",
+      actor_id: "admin-operator",
+      action: "patch_feature_flag",
+      target_type: "feature_flag",
+      target_id: "proof_parser",
+      safe_diff: { enabled: true },
+      correlation_id: "corr-1",
+      created_at: "2026-04-26T08:40:00Z",
+    },
+    {
+      audit_id: "audit-2",
+      actor_id: "admin-operator",
+      action: "disable_openrouter_key",
+      target_type: "openrouter_key",
+      target_id: "or-key-3",
+      safe_diff: { enabled: false, status: "disabled" },
+      correlation_id: "corr-2",
+      created_at: "2026-04-25T17:20:00Z",
+    },
+  ],
+  total: 2,
+  limit: 25,
+  offset: 0,
+  next_offset: null,
+  fetched_at: "2026-04-26T09:00:00Z",
+};
+
+export const fallbackHomeMemorySummary: HomeMemorySummary = {
+  proof_parse_count: 0,
+  warranty_reminder_count: 0,
+  claim_draft_count: 0,
+  evidence_attachment_count: 0,
+  parser_success_rate: 0,
+  fallback_rate: 0,
+  locale_distribution: {},
+  encrypted_collections: [],
+  storage_impact_estimate: 0,
+  sensitive_data_excluded: true,
+};
+
+export const fallbackHomeMemoryParserUsage: PaginatedResponse<HomeMemoryParserUsageRow> = {
+  items: [],
+  total: 0,
+  limit: 25,
+  offset: 0,
+  next_offset: null,
+  fetched_at: "2026-04-26T09:00:00Z",
+};
+
+export const fallbackQualitySummary: QualitySummary = {
+  mission_usefulness_rate: 0.67,
+  mission_completion_rate: 0.48,
+  rejection_rate: 0.33,
+  fallback_rate: 0.1,
+  proof_parser_success_rate: 0,
+  safety_interventions: 3,
+  high_cost_anomalies: 1,
+  support_escalations: 1,
+};
+
+export const fallbackQualityBreakdown: QualityBreakdownRow[] = [
+  {
+    dimension: "missions",
+    label: "Mission usefulness",
+    value: 0.67,
+    unit: "ratio",
+    source: "live",
+  },
+  {
+    dimension: "cost",
+    label: "AI cost per active user",
+    value: 2.6,
+    unit: "usd",
+    source: "live",
+  },
+  {
+    dimension: "homememory",
+    label: "Proof parser success",
+    value: 0,
+    unit: "ratio",
+    source: "derived",
+  },
+];
+
+export const fallbackIncidents: PaginatedResponse<IncidentRow> = {
+  items: [
+    {
+      incident_id: "routing-key-event-1",
+      type: "routing_key_issue",
+      severity: "medium",
+      source: "web_backend",
+      status: "monitoring",
+      created_at: "2026-04-24T11:53:00Z",
+      resolved_at: null,
+      safe_summary: "Routing key event failure affected endpoint /v1/missions/daily.",
+    },
+    {
+      incident_id: "privacy-support-1",
+      type: "privacy_request_backlog",
+      severity: "medium",
+      source: "support",
+      status: "open",
+      created_at: "2026-04-24T08:00:00Z",
+      resolved_at: null,
+      safe_summary: "Export request waiting for operator action.",
+    },
+  ],
+  total: 2,
+  limit: 25,
+  offset: 0,
+  next_offset: null,
+  fetched_at: "2026-04-26T09:00:00Z",
+};
+
+export const fallbackAuthStatus: AdminAuthStatus = {
+  auth_mode: "token_only_scaffold",
+  environment: "dev",
+  admin_token_configured: false,
+  production_ready: false,
+  enterprise_ready: false,
+  warning:
+    "Token-only admin access is a scaffold. Use SSO or managed identity before enterprise production.",
+};
