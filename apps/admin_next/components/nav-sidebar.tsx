@@ -18,11 +18,11 @@ export function NavSidebar({ locale, nav, localeSwitcher }: NavSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full flex-col gap-8 rounded-[28px] border border-[color:var(--line)] bg-[color:rgba(255,248,242,0.72)] p-5">
+    <aside className="flex h-full flex-col gap-6 border-r border-[color:var(--line)] pr-4 lg:pr-6">
       <div className="space-y-3">
         <StatusPill tone="info">{nav.badge}</StatusPill>
         <div className="space-y-2">
-          <h1 className="text-xl font-semibold tracking-[-0.04em] text-ink">{nav.title}</h1>
+          <h1 className="text-xl font-semibold text-ink">{nav.title}</h1>
           <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
             {nav.subtitle}
           </p>
@@ -46,10 +46,10 @@ export function NavSidebar({ locale, nav, localeSwitcher }: NavSidebarProps) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "block rounded-[20px] border px-4 py-3 transition-colors",
+                      "block rounded-lg border px-4 py-3 transition-colors",
                       selected
-                        ? "border-[color:rgba(93,122,104,0.25)] bg-[color:rgba(93,122,104,0.1)]"
-                        : "border-transparent bg-white/35 hover:border-[color:var(--line)] hover:bg-white/65",
+                        ? "border-[color:rgba(72,118,96,0.25)] bg-[color:rgba(72,118,96,0.08)]"
+                        : "border-transparent bg-transparent hover:border-[color:var(--line)] hover:bg-[color:var(--surface)]",
                     )}
                   >
                     <p className="text-sm font-semibold text-ink">{item.title}</p>

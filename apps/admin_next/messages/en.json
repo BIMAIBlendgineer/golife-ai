@@ -14,7 +14,9 @@
     "stateBackendOffline": "BACKEND OFFLINE",
     "apiLabel": "API",
     "tokenSet": "Admin token set",
-    "tokenMissing": "Token missing"
+    "tokenMissing": "Token missing",
+    "commandPaletteLabel": "Jump to page",
+    "commandPalettePlaceholder": "Search routes, systems, and tools"
   },
   "nav": {
     "badge": "Operations Desk",

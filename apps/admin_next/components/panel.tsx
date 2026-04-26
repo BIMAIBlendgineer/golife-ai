@@ -16,7 +16,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-[24px] border border-[color:var(--line)] bg-[color:var(--paper-soft)] p-5",
+        "rounded-lg border border-[color:var(--line)] bg-[color:var(--surface)] p-4",
         className,
       )}
     >
@@ -24,7 +24,7 @@ export function Panel({
         <header className="mb-4 flex flex-col gap-2 border-b border-[color:var(--line)] pb-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1">
             {eyebrow ? (
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--ink-muted)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
                 {eyebrow}
               </p>
             ) : null}
