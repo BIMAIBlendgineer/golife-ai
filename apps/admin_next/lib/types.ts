@@ -113,6 +113,32 @@ export type UserSupportSummary = {
   requests: SupportRequest[];
 };
 
+export type OrganizationRow = {
+  organization_id: string;
+  name: string;
+  status: "active" | "trial" | "paused";
+  plan: string;
+  user_count: number;
+  storage_used_gb: number;
+  ai_mode_default: "xinsightai" | "byok" | "hybrid";
+  created_at: string;
+};
+
+export type OrganizationDetail = OrganizationRow & {
+  members: UserSummary[];
+};
+
+export type PlanRow = {
+  plan_id: string;
+  name: string;
+  price_label: string;
+  user_limit: number;
+  storage_limit_gb: number;
+  ai_credit_policy: string;
+  byok_allowed: boolean;
+  support_level: string;
+};
+
 export type UsageSnapshot = {
   user_id: string;
   capture_events: number;

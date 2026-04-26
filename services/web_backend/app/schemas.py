@@ -195,6 +195,32 @@ class UserSupportSummary(BaseModel):
     requests: list[SupportRequest] = Field(default_factory=list)
 
 
+class OrganizationRow(BaseModel):
+    organization_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    status: Literal["active", "trial", "paused"]
+    plan: str = Field(min_length=1)
+    user_count: int = Field(ge=0)
+    storage_used_gb: float = Field(ge=0.0)
+    ai_mode_default: Literal["xinsightai", "byok", "hybrid"]
+    created_at: datetime
+
+
+class OrganizationDetail(OrganizationRow):
+    members: list[UserSummary] = Field(default_factory=list)
+
+
+class PlanRow(BaseModel):
+    plan_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    price_label: str = Field(min_length=1)
+    user_limit: int = Field(ge=1)
+    storage_limit_gb: float = Field(ge=0.0)
+    ai_credit_policy: str = Field(min_length=1)
+    byok_allowed: bool = False
+    support_level: str = Field(min_length=1)
+
+
 class AdminHealth(BaseModel):
     status: Literal["ok"]
     data_source: str = Field(min_length=1)

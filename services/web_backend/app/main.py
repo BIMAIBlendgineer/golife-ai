@@ -30,12 +30,15 @@ from app.schemas import (
     ModelSelectionSnapshot,
     ModelSettingsSnapshot,
     ModelSettingsUpsert,
+    OrganizationDetail,
+    OrganizationRow,
     OpenRouterApiKeyCreate,
     OpenRouterApiKeyPatch,
     OpenRouterApiKeyRecord,
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
     PaginatedResponse,
+    PlanRow,
     RoutingCapability,
     RoutingProfile,
     RoutingProfilePatch,
@@ -239,6 +242,24 @@ def create_app(
         if user is None:
             raise HTTPException(status_code=404, detail="User not found.")
         return user
+
+    @app.get("/admin/organizations", response_model=list[OrganizationRow])
+    async def organizations(_: None = Depends(require_admin)) -> list[OrganizationRow]:
+        return resolved_repository.list_organizations()
+
+    @app.get("/admin/organizations/{organization_id}", response_model=OrganizationDetail)
+    async def organization_detail(
+        organization_id: str,
+        _: None = Depends(require_admin),
+    ) -> OrganizationDetail:
+        organization = resolved_repository.get_organization(organization_id)
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Organization not found.")
+        return organization
+
+    @app.get("/admin/plans", response_model=list[PlanRow])
+    async def plans(_: None = Depends(require_admin)) -> list[PlanRow]:
+        return resolved_repository.list_plans()
 
     @app.get("/admin/usage")
     async def usage(_: None = Depends(require_admin)) -> list[dict[str, object]]:

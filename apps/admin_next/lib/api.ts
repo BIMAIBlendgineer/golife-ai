@@ -9,8 +9,11 @@ import {
   fallbackModelSelections,
   fallbackMissions,
   fallbackModelSettings,
+  fallbackOrganizationDetails,
+  fallbackOrganizations,
   fallbackOpenRouterKeyEvents,
   fallbackOpenRouterKeys,
+  fallbackPlans,
   fallbackRoutingProfiles,
   fallbackSafety,
   fallbackSupportRequests,
@@ -33,9 +36,12 @@ import type {
   MissionAuditRecord,
   ModelSettingsSnapshot,
   ModelSelectionSnapshot,
+  OrganizationDetail,
+  OrganizationRow,
   OpenRouterApiKeyRecord,
   OpenRouterKeyEventRecord,
   PaginatedResponse,
+  PlanRow,
   RoutingProfile,
   SafetyAuditRecord,
   SupportRequest,
@@ -248,6 +254,28 @@ export async function getUserSupportSummary(
 export async function getUsage(): Promise<AdminFetchResult<UsageSnapshot[]>> {
   return adminRequest("/admin/usage", {
     fallbackData: fallbackUsage,
+  });
+}
+
+export async function getOrganizations(): Promise<
+  AdminFetchResult<OrganizationRow[]>
+> {
+  return adminRequest("/admin/organizations", {
+    fallbackData: fallbackOrganizations,
+  });
+}
+
+export async function getOrganization(
+  organizationId: string,
+): Promise<AdminFetchResult<OrganizationDetail | null>> {
+  return adminRequest(`/admin/organizations/${organizationId}`, {
+    fallbackData: fallbackOrganizationDetails[organizationId] ?? null,
+  });
+}
+
+export async function getPlans(): Promise<AdminFetchResult<PlanRow[]>> {
+  return adminRequest("/admin/plans", {
+    fallbackData: fallbackPlans,
   });
 }
 

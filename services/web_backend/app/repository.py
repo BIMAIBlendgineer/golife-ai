@@ -29,11 +29,14 @@ from app.schemas import (
     ModelSettingsUpsert,
     ModelCatalogEntry,
     ModelSelectionSnapshot,
+    OrganizationDetail,
+    OrganizationRow,
     OpenRouterApiKeyCreate,
     OpenRouterApiKeyPatch,
     OpenRouterApiKeyRecord,
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
+    PlanRow,
     RoutingCapability,
     RoutingProfile,
     RoutingProfilePatch,
@@ -175,6 +178,29 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_user_profiles_locale
                     ON user_profiles(locale);
+                CREATE TABLE IF NOT EXISTS plans (
+                    plan_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    price_label TEXT NOT NULL,
+                    user_limit INTEGER NOT NULL,
+                    storage_limit_gb REAL NOT NULL,
+                    ai_credit_policy TEXT NOT NULL,
+                    byok_allowed INTEGER NOT NULL,
+                    support_level TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS organizations (
+                    organization_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    plan_id TEXT NOT NULL,
+                    storage_used_gb REAL NOT NULL DEFAULT 0,
+                    ai_mode_default TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_organizations_status
+                    ON organizations(status);
+                CREATE INDEX IF NOT EXISTS idx_organizations_plan
+                    ON organizations(plan_id);
 
                 CREATE TABLE IF NOT EXISTS usage_events (
                     event_id TEXT PRIMARY KEY,
@@ -547,6 +573,84 @@ class OperationalRepository:
             display_name="Ops Internal",
             locale="ja",
             organization_id="org-internal",
+        )
+        self._execute(
+            """
+            INSERT INTO plans(
+                plan_id, name, price_label, user_limit, storage_limit_gb,
+                ai_credit_policy, byok_allowed, support_level
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(plan_id) DO NOTHING
+            """,
+            (
+                "free",
+                "Free",
+                "$0",
+                1,
+                1.0,
+                "No bundled credits",
+                0,
+                "community",
+                "pro",
+                "Pro",
+                "$19 / month",
+                1,
+                20.0,
+                "Bundled xInsightAI credits",
+                1,
+                "standard",
+                "family",
+                "Family",
+                "$29 / month",
+                5,
+                50.0,
+                "Shared household credits",
+                1,
+                "priority",
+                "team",
+                "Team",
+                "$79 / month",
+                25,
+                250.0,
+                "Seat pool + org ledger",
+                1,
+                "priority",
+                "enterprise",
+                "Enterprise",
+                "Custom",
+                500,
+                5000.0,
+                "Contracted credit policy",
+                1,
+                "dedicated",
+            ),
+        )
+        self._execute(
+            """
+            INSERT INTO organizations(
+                organization_id, name, status, plan_id, storage_used_gb,
+                ai_mode_default, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(organization_id) DO NOTHING
+            """,
+            (
+                "org-household",
+                "Household Alpha",
+                "active",
+                "family",
+                12.4,
+                "hybrid",
+                _to_iso(now - timedelta(days=60)),
+                "org-internal",
+                "GoLife Internal Ops",
+                "active",
+                "enterprise",
+                48.9,
+                "xinsightai",
+                _to_iso(now - timedelta(days=140)),
+            ),
         )
 
         usage_events = [
@@ -1510,6 +1614,111 @@ class OperationalRepository:
             open_request_count=sum(1 for request in requests if request.status == "open"),
             requests=requests,
         )
+
+    def list_organizations(self) -> list[OrganizationRow]:
+        rows = self._fetchall(
+            """
+            SELECT
+                o.organization_id,
+                o.name,
+                o.status,
+                o.plan_id,
+                o.storage_used_gb,
+                o.ai_mode_default,
+                o.created_at,
+                (
+                    SELECT COUNT(*)
+                    FROM user_profiles p
+                    WHERE p.organization_id = o.organization_id
+                ) AS user_count
+            FROM organizations o
+            ORDER BY o.created_at DESC, o.name ASC
+            """
+        )
+        return [
+            OrganizationRow(
+                organization_id=row["organization_id"],
+                name=row["name"],
+                status=row["status"],
+                plan=row["plan_id"],
+                user_count=int(row["user_count"]),
+                storage_used_gb=float(row["storage_used_gb"]),
+                ai_mode_default=row["ai_mode_default"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def get_organization(self, organization_id: str) -> OrganizationDetail | None:
+        base = self._fetchone(
+            """
+            SELECT organization_id, name, status, plan_id, storage_used_gb, ai_mode_default, created_at
+            FROM organizations
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        )
+        if base is None:
+            return None
+        member_rows = self._fetchall(
+            """
+            SELECT u.user_id
+            FROM admin_users u
+            JOIN user_profiles p ON p.user_id = u.user_id
+            WHERE p.organization_id = ?
+            ORDER BY u.last_seen_at DESC
+            """,
+            (organization_id,),
+        )
+        members = [
+            summary
+            for summary in (
+                self.get_user_summary(row["user_id"])
+                for row in member_rows
+            )
+            if summary is not None
+        ]
+        return OrganizationDetail(
+            organization_id=base["organization_id"],
+            name=base["name"],
+            status=base["status"],
+            plan=base["plan_id"],
+            user_count=len(members),
+            storage_used_gb=float(base["storage_used_gb"]),
+            ai_mode_default=base["ai_mode_default"],
+            created_at=_from_iso(base["created_at"]) or _utcnow(),
+            members=members,
+        )
+
+    def list_plans(self) -> list[PlanRow]:
+        rows = self._fetchall(
+            """
+            SELECT
+                plan_id,
+                name,
+                price_label,
+                user_limit,
+                storage_limit_gb,
+                ai_credit_policy,
+                byok_allowed,
+                support_level
+            FROM plans
+            ORDER BY user_limit ASC
+            """
+        )
+        return [
+            PlanRow(
+                plan_id=row["plan_id"],
+                name=row["name"],
+                price_label=row["price_label"],
+                user_limit=int(row["user_limit"]),
+                storage_limit_gb=float(row["storage_limit_gb"]),
+                ai_credit_policy=row["ai_credit_policy"],
+                byok_allowed=bool(row["byok_allowed"]),
+                support_level=row["support_level"],
+            )
+            for row in rows
+        ]
 
     def list_users(self) -> list[AdminUser]:
         rows = self._fetchall(

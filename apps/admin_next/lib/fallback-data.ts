@@ -8,9 +8,12 @@ import type {
   ModelCatalogEntry,
   ModelSettingsSnapshot,
   ModelSelectionSnapshot,
+  OrganizationDetail,
+  OrganizationRow,
   OpenRouterApiKeyRecord,
   OpenRouterKeyEventRecord,
   PaginatedResponse,
+  PlanRow,
   RoutingProfile,
   SafetyAuditRecord,
   SupportRequest,
@@ -454,6 +457,96 @@ export const fallbackSupportRequests: SupportRequest[] = [
     request_type: "delete",
     status: "open",
     requested_at: "2026-04-24T05:00:00Z",
+  },
+];
+
+export const fallbackOrganizations: OrganizationRow[] = [
+  {
+    organization_id: "org-household",
+    name: "Household Alpha",
+    status: "active",
+    plan: "family",
+    user_count: 2,
+    storage_used_gb: 12.4,
+    ai_mode_default: "hybrid",
+    created_at: "2026-02-25T10:00:00Z",
+  },
+  {
+    organization_id: "org-internal",
+    name: "GoLife Internal Ops",
+    status: "active",
+    plan: "enterprise",
+    user_count: 1,
+    storage_used_gb: 48.9,
+    ai_mode_default: "xinsightai",
+    created_at: "2025-12-08T08:30:00Z",
+  },
+];
+
+export const fallbackOrganizationDetails: Record<string, OrganizationDetail> = {
+  "org-household": {
+    ...fallbackOrganizations[0],
+    members: [
+      fallbackUserSummaryById["local-user"],
+      fallbackUserSummaryById["user-2"],
+    ],
+  },
+  "org-internal": {
+    ...fallbackOrganizations[1],
+    members: [fallbackUserSummaryById["user-3"]],
+  },
+};
+
+export const fallbackPlans: PlanRow[] = [
+  {
+    plan_id: "free",
+    name: "Free",
+    price_label: "$0",
+    user_limit: 1,
+    storage_limit_gb: 1,
+    ai_credit_policy: "No bundled credits",
+    byok_allowed: false,
+    support_level: "community",
+  },
+  {
+    plan_id: "pro",
+    name: "Pro",
+    price_label: "$19 / month",
+    user_limit: 1,
+    storage_limit_gb: 20,
+    ai_credit_policy: "Bundled xInsightAI credits",
+    byok_allowed: true,
+    support_level: "standard",
+  },
+  {
+    plan_id: "family",
+    name: "Family",
+    price_label: "$29 / month",
+    user_limit: 5,
+    storage_limit_gb: 50,
+    ai_credit_policy: "Shared household credits",
+    byok_allowed: true,
+    support_level: "priority",
+  },
+  {
+    plan_id: "team",
+    name: "Team",
+    price_label: "$79 / month",
+    user_limit: 25,
+    storage_limit_gb: 250,
+    ai_credit_policy: "Seat pool + org ledger",
+    byok_allowed: true,
+    support_level: "priority",
+  },
+  {
+    plan_id: "enterprise",
+    name: "Enterprise",
+    price_label: "Custom",
+    user_limit: 500,
+    storage_limit_gb: 5000,
+    ai_credit_policy: "Contracted credit policy",
+    byok_allowed: true,
+    support_level: "dedicated",
   },
 ];
 

@@ -101,6 +101,25 @@ def test_models_support_and_runtime_config_routes_exist(client):
     assert "openrouter_keys" not in runtime_config.json()
 
 
+def test_organizations_and_plans_routes_exist(client):
+    organizations = client.get("/admin/organizations", headers=_admin_headers())
+    assert organizations.status_code == 200
+    payload = organizations.json()
+    assert len(payload) >= 1
+    assert payload[0]["organization_id"]
+
+    detail = client.get(
+        f"/admin/organizations/{payload[0]['organization_id']}",
+        headers=_admin_headers(),
+    )
+    assert detail.status_code == 200
+    assert detail.json()["members"]
+
+    plans = client.get("/admin/plans", headers=_admin_headers())
+    assert plans.status_code == 200
+    assert len(plans.json()) >= 1
+
+
 def test_openrouter_keys_are_masked_for_admin_and_decrypted_for_internal(client):
     created = client.post(
         "/admin/openrouter/keys",
