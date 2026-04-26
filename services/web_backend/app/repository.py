@@ -24,6 +24,7 @@ from app.schemas import (
     FeedbackAuditUpsert,
     MissionAuditRecord,
     MissionAuditUpsert,
+    PaginatedResponse,
     ModelSettingsSnapshot,
     ModelSettingsUpsert,
     ModelCatalogEntry,
@@ -39,6 +40,11 @@ from app.schemas import (
     SafetyAuditRecord,
     SafetyAuditUpsert,
     SupportRequest,
+    UserManagementRow,
+    UserPrivacySummary,
+    UserSummary,
+    UserSupportSummary,
+    UserUsageSummary,
     UsageEventRecord,
     UsageSnapshot,
 )
@@ -75,6 +81,15 @@ def _sanitize_feedback_reason(reason: str | None) -> str | None:
     if not reason or not reason.strip():
         return None
     return REDACTED_FEEDBACK_REASON
+
+
+def _mask_email(email: str) -> str:
+    local, _, domain = email.partition("@")
+    if not local or not domain:
+        return email
+    if len(local) <= 2:
+        return f"{local[0]}***@{domain}"
+    return f"{local[:2]}***@{domain}"
 
 
 def _sqlite_in_placeholders(values: tuple[object, ...]) -> str:
@@ -152,6 +167,14 @@ class OperationalRepository:
                     export_requested INTEGER NOT NULL DEFAULT 0,
                     delete_requested INTEGER NOT NULL DEFAULT 0
                 );
+                CREATE TABLE IF NOT EXISTS user_profiles (
+                    user_id TEXT PRIMARY KEY,
+                    display_name TEXT NOT NULL,
+                    locale TEXT NOT NULL DEFAULT 'en',
+                    organization_id TEXT
+                );
+                CREATE INDEX IF NOT EXISTS idx_user_profiles_locale
+                    ON user_profiles(locale);
 
                 CREATE TABLE IF NOT EXISTS usage_events (
                     event_id TEXT PRIMARY KEY,
@@ -507,6 +530,24 @@ class OperationalRepository:
         ]
         for user in demo_users:
             self.upsert_user(user)
+        self.upsert_user_profile(
+            user_id="local-user",
+            display_name="Local User",
+            locale="en",
+            organization_id="org-household",
+        )
+        self.upsert_user_profile(
+            user_id="user-2",
+            display_name="Marta L",
+            locale="es",
+            organization_id="org-household",
+        )
+        self.upsert_user_profile(
+            user_id="user-3",
+            display_name="Ops Internal",
+            locale="ja",
+            organization_id="org-internal",
+        )
 
         usage_events = [
             UsageEventRecord(
@@ -784,6 +825,27 @@ class OperationalRepository:
                 int(user.export_requested),
                 int(user.delete_requested),
             ),
+        )
+        self._commit()
+
+    def upsert_user_profile(
+        self,
+        *,
+        user_id: str,
+        display_name: str,
+        locale: str = "en",
+        organization_id: str | None = None,
+    ) -> None:
+        self._execute(
+            """
+            INSERT INTO user_profiles(user_id, display_name, locale, organization_id)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                display_name = excluded.display_name,
+                locale = excluded.locale,
+                organization_id = excluded.organization_id
+            """,
+            (user_id, display_name, locale, organization_id),
         )
         self._commit()
 
@@ -1167,6 +1229,287 @@ class OperationalRepository:
               disabled_key_count=disabled_key_count,
               routing_snapshot_age_seconds=snapshot_age_seconds,
           )
+
+    @staticmethod
+    def _privacy_status_from_counts(
+        *,
+        open_export_count: int,
+        open_delete_count: int,
+    ) -> str:
+        if open_export_count and open_delete_count:
+            return "mixed_open"
+        if open_export_count:
+            return "export_open"
+        if open_delete_count:
+            return "delete_open"
+        return "none"
+
+    def list_user_management(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        query: str | None = None,
+        status: str | None = None,
+        plan: str | None = None,
+        locale: str | None = None,
+    ) -> PaginatedResponse[UserManagementRow]:
+        filters: list[str] = []
+        args: list[object] = []
+        if query:
+            like = f"%{query.strip()}%"
+            filters.append(
+                "(u.user_id LIKE ? OR u.email LIKE ? OR COALESCE(p.display_name, u.user_id) LIKE ?)"
+            )
+            args.extend([like, like, like])
+        if status:
+            filters.append("u.status = ?")
+            args.append(status)
+        if plan:
+            filters.append("u.plan = ?")
+            args.append(plan)
+        if locale:
+            filters.append("COALESCE(p.locale, 'en') = ?")
+            args.append(locale)
+
+        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        total = int(
+            self._scalar(
+                f"""
+                SELECT COUNT(*)
+                FROM admin_users u
+                LEFT JOIN user_profiles p ON p.user_id = u.user_id
+                {where_sql}
+                """,
+                tuple(args),
+            )
+        )
+        rows = self._fetchall(
+            f"""
+            SELECT
+                u.user_id,
+                u.email,
+                u.plan,
+                u.status,
+                u.last_seen_at,
+                u.support_flags_json,
+                COALESCE(p.display_name, u.user_id) AS display_name,
+                COALESCE(p.locale, 'en') AS locale,
+                (
+                    SELECT COUNT(*)
+                    FROM ai_invocations ai
+                    WHERE ai.user_id = u.user_id
+                ) AS ai_calls_count,
+                (
+                    SELECT COUNT(*)
+                    FROM feedback_audit_records fb
+                    WHERE fb.user_id = u.user_id
+                      AND fb.status IN ('useful', 'accepted', 'completed')
+                ) AS useful_missions_count,
+                (
+                    SELECT COALESCE(AVG(CAST(ai.fallback AS REAL)), 0)
+                    FROM ai_invocations ai
+                    WHERE ai.user_id = u.user_id
+                ) AS fallback_rate,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'export'
+                ) AS open_export_count,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'delete'
+                ) AS open_delete_count
+            FROM admin_users u
+            LEFT JOIN user_profiles p ON p.user_id = u.user_id
+            {where_sql}
+            ORDER BY u.last_seen_at DESC, u.created_at DESC
+            LIMIT ? OFFSET ?
+            """,
+            tuple([*args, limit, offset]),
+        )
+        items = [
+            UserManagementRow(
+                user_id=row["user_id"],
+                display_name=row["display_name"],
+                email_masked=_mask_email(row["email"]),
+                plan=row["plan"],
+                status=row["status"],
+                locale=row["locale"],
+                last_seen_at=_from_iso(row["last_seen_at"]) or _utcnow(),
+                ai_calls_count=int(row["ai_calls_count"]),
+                useful_missions_count=int(row["useful_missions_count"]),
+                fallback_rate=round(float(row["fallback_rate"]), 4),
+                support_flags=list(_json_loads(row["support_flags_json"], default=[])),
+                privacy_request_status=self._privacy_status_from_counts(
+                    open_export_count=int(row["open_export_count"]),
+                    open_delete_count=int(row["open_delete_count"]),
+                ),
+            )
+            for row in rows
+        ]
+        next_offset = offset + limit if offset + limit < total else None
+        return PaginatedResponse[UserManagementRow](
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+            next_offset=next_offset,
+            fetched_at=_utcnow(),
+        )
+
+    def get_user_summary(self, user_id: str) -> UserSummary | None:
+        row = self._fetchone(
+            """
+            SELECT
+                u.user_id,
+                u.email,
+                u.plan,
+                u.status,
+                u.created_at,
+                u.last_seen_at,
+                u.support_flags_json,
+                COALESCE(p.display_name, u.user_id) AS display_name,
+                COALESCE(p.locale, 'en') AS locale,
+                p.organization_id,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'export'
+                ) AS open_export_count,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'delete'
+                ) AS open_delete_count
+            FROM admin_users u
+            LEFT JOIN user_profiles p ON p.user_id = u.user_id
+            WHERE u.user_id = ?
+            """,
+            (user_id,),
+        )
+        if row is None:
+            return None
+        return UserSummary(
+            user_id=row["user_id"],
+            display_name=row["display_name"],
+            email_masked=_mask_email(row["email"]),
+            plan=row["plan"],
+            status=row["status"],
+            locale=row["locale"],
+            created_at=_from_iso(row["created_at"]) or _utcnow(),
+            last_seen_at=_from_iso(row["last_seen_at"]) or _utcnow(),
+            organization_id=row["organization_id"],
+            support_flags=list(_json_loads(row["support_flags_json"], default=[])),
+            privacy_request_status=self._privacy_status_from_counts(
+                open_export_count=int(row["open_export_count"]),
+                open_delete_count=int(row["open_delete_count"]),
+            ),
+        )
+
+    def get_user_usage_summary(self, user_id: str) -> UserUsageSummary | None:
+        user = self.get_user_summary(user_id)
+        if user is None:
+            return None
+        fallback_rate = float(
+            self._scalar(
+                """
+                SELECT COALESCE(AVG(CAST(fallback AS REAL)), 0)
+                FROM ai_invocations
+                WHERE user_id = ?
+                """,
+                (user_id,),
+            )
+        )
+        latency = float(
+            self._scalar(
+                "SELECT COALESCE(AVG(latency_ms), 0) FROM ai_invocations WHERE user_id = ?",
+                (user_id,),
+            )
+        )
+        return UserUsageSummary(
+            user_id=user_id,
+            capture_events=int(
+                self._scalar(
+                    """
+                    SELECT COALESCE(SUM(quantity), 0)
+                    FROM usage_events
+                    WHERE user_id = ? AND event_type = 'capture_classification_requested'
+                    """,
+                    (user_id,),
+                )
+            ),
+            missions_generated=int(
+                self._scalar(
+                    "SELECT COUNT(*) FROM mission_audit_records WHERE user_id = ?",
+                    (user_id,),
+                )
+            ),
+            missions_completed=int(
+                self._scalar(
+                    """
+                    SELECT COUNT(*)
+                    FROM feedback_audit_records
+                    WHERE user_id = ? AND status = 'completed'
+                    """,
+                    (user_id,),
+                )
+            ),
+            ai_calls_count=int(
+                self._scalar(
+                    "SELECT COUNT(*) FROM ai_invocations WHERE user_id = ?",
+                    (user_id,),
+                )
+            ),
+            fallback_rate=round(fallback_rate, 4),
+            latency_ms_avg=round(latency, 2),
+        )
+
+    def get_user_privacy_summary(self, user_id: str) -> UserPrivacySummary | None:
+        user = self.get_user_summary(user_id)
+        if user is None:
+            return None
+        open_requests = [
+            request.request_type
+            for request in self.list_support_requests()
+            if request.user_id == user_id and request.status == "open"
+        ]
+        return UserPrivacySummary(
+            user_id=user_id,
+            privacy_request_status=user.privacy_request_status,
+            open_requests=sorted(set(open_requests)),
+            encrypted_collections=[
+                "expenses",
+                "journal_entries",
+                "quick_notes",
+            ],
+            sensitive_data_excluded=True,
+        )
+
+    def get_user_support_summary(self, user_id: str) -> UserSupportSummary | None:
+        user = self.get_user_summary(user_id)
+        if user is None:
+            return None
+        requests = [
+            request
+            for request in self.list_support_requests()
+            if request.user_id == user_id
+        ]
+        return UserSupportSummary(
+            user_id=user_id,
+            support_flags=user.support_flags,
+            open_request_count=sum(1 for request in requests if request.status == "open"),
+            requests=requests,
+        )
 
     def list_users(self) -> list[AdminUser]:
         rows = self._fetchall(

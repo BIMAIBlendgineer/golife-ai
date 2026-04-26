@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,13 @@ SafetySeverity = Literal["low", "medium", "high"]
 RequestType = Literal["export", "delete"]
 DataMode = Literal["live", "seeded"]
 InvocationStatus = Literal["success", "error"]
+PrivacyRequestStatus = Literal[
+    "none",
+    "export_open",
+    "delete_open",
+    "mixed_open",
+    "completed",
+]
 RoutingCapability = Literal[
     "daily_plan",
     "task_rewrite",
@@ -19,6 +26,8 @@ RoutingCapability = Literal[
 RoutingConfigSource = Literal["live", "cached", "fallback"]
 OpenRouterKeyStatus = Literal["healthy", "degraded", "disabled", "unknown"]
 OpenRouterKeyEventType = Literal["success", "failure", "disabled", "enabled", "created"]
+AdminLocale = Literal["en", "es", "pt-BR", "ja", "zh-Hans"]
+T = TypeVar("T")
 
 
 class DashboardMetrics(BaseModel):
@@ -54,6 +63,53 @@ class AdminUser(BaseModel):
     support_flags: list[str] = Field(default_factory=list)
     export_requested: bool = False
     delete_requested: bool = False
+
+
+class UserManagementRow(BaseModel):
+    user_id: str = Field(min_length=1)
+    display_name: str = Field(min_length=1)
+    email_masked: str = Field(min_length=3)
+    plan: UserPlan
+    status: UserStatus
+    locale: AdminLocale = "en"
+    last_seen_at: datetime
+    ai_calls_count: int = Field(ge=0)
+    useful_missions_count: int = Field(ge=0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    support_flags: list[str] = Field(default_factory=list)
+    privacy_request_status: PrivacyRequestStatus = "none"
+
+
+class UserSummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    display_name: str = Field(min_length=1)
+    email_masked: str = Field(min_length=3)
+    plan: UserPlan
+    status: UserStatus
+    locale: AdminLocale = "en"
+    created_at: datetime
+    last_seen_at: datetime
+    organization_id: str | None = None
+    support_flags: list[str] = Field(default_factory=list)
+    privacy_request_status: PrivacyRequestStatus = "none"
+
+
+class UserUsageSummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    capture_events: int = Field(ge=0)
+    missions_generated: int = Field(ge=0)
+    missions_completed: int = Field(ge=0)
+    ai_calls_count: int = Field(ge=0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    latency_ms_avg: float = Field(ge=0.0)
+
+
+class UserPrivacySummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    privacy_request_status: PrivacyRequestStatus = "none"
+    open_requests: list[RequestType] = Field(default_factory=list)
+    encrypted_collections: list[str] = Field(default_factory=list)
+    sensitive_data_excluded: bool = True
 
 
 class UsageSnapshot(BaseModel):
@@ -132,12 +188,28 @@ class SupportRequest(BaseModel):
     requested_at: datetime
 
 
+class UserSupportSummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    support_flags: list[str] = Field(default_factory=list)
+    open_request_count: int = Field(ge=0)
+    requests: list[SupportRequest] = Field(default_factory=list)
+
+
 class AdminHealth(BaseModel):
     status: Literal["ok"]
     data_source: str = Field(min_length=1)
     mode: DataMode
     storage_path: str = Field(min_length=1)
     last_ingestion_at: datetime | None = None
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: list[T] = Field(default_factory=list)
+    total: int = Field(ge=0)
+    limit: int = Field(ge=1)
+    offset: int = Field(ge=0)
+    next_offset: int | None = Field(default=None, ge=0)
+    fetched_at: datetime
 
 
 class UsageEventRecord(BaseModel):
@@ -337,4 +409,3 @@ class MobileRuntimeConfig(BaseModel):
     friendly_copy: dict[str, str] = Field(default_factory=dict)
     ai_status: dict[str, Any] = Field(default_factory=dict)
     generated_at: datetime
-

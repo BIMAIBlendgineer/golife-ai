@@ -10,9 +10,15 @@ import type {
   ModelSelectionSnapshot,
   OpenRouterApiKeyRecord,
   OpenRouterKeyEventRecord,
+  PaginatedResponse,
   RoutingProfile,
   SafetyAuditRecord,
   SupportRequest,
+  UserManagementRow,
+  UserPrivacySummary,
+  UserSummary,
+  UserSupportSummary,
+  UserUsageSummary,
   UsageSnapshot,
 } from "@/lib/types";
 
@@ -80,6 +86,191 @@ export const fallbackUsers: AdminUser[] = [
     delete_requested: true,
   },
 ];
+
+export const fallbackUserManagement: PaginatedResponse<UserManagementRow> = {
+  items: [
+    {
+      user_id: "local-user",
+      display_name: "Local User",
+      email_masked: "lo***@golife.ai",
+      plan: "plus",
+      status: "active",
+      locale: "en",
+      last_seen_at: "2026-04-24T11:10:00Z",
+      ai_calls_count: 42,
+      useful_missions_count: 9,
+      fallback_rate: 0.08,
+      support_flags: ["high_value_feedback"],
+      privacy_request_status: "none",
+    },
+    {
+      user_id: "user-2",
+      display_name: "Marta L",
+      email_masked: "us***@golife.ai",
+      plan: "free",
+      status: "active",
+      locale: "es",
+      last_seen_at: "2026-04-23T18:00:00Z",
+      ai_calls_count: 16,
+      useful_missions_count: 3,
+      fallback_rate: 0.18,
+      support_flags: [],
+      privacy_request_status: "export_open",
+    },
+    {
+      user_id: "user-3",
+      display_name: "Ops Internal",
+      email_masked: "us***@golife.ai",
+      plan: "internal",
+      status: "trial",
+      locale: "ja",
+      last_seen_at: "2026-04-23T09:30:00Z",
+      ai_calls_count: 7,
+      useful_missions_count: 1,
+      fallback_rate: 0.04,
+      support_flags: ["safety_review"],
+      privacy_request_status: "delete_open",
+    },
+  ],
+  total: 3,
+  limit: 25,
+  offset: 0,
+  next_offset: null,
+  fetched_at: "2026-04-24T11:30:00Z",
+};
+
+export const fallbackUserSummaryById: Record<string, UserSummary> = {
+  "local-user": {
+    user_id: "local-user",
+    display_name: "Local User",
+    email_masked: "lo***@golife.ai",
+    plan: "plus",
+    status: "active",
+    locale: "en",
+    created_at: "2026-04-10T09:00:00Z",
+    last_seen_at: "2026-04-24T11:10:00Z",
+    organization_id: "org-household",
+    support_flags: ["high_value_feedback"],
+    privacy_request_status: "none",
+  },
+  "user-2": {
+    user_id: "user-2",
+    display_name: "Marta L",
+    email_masked: "us***@golife.ai",
+    plan: "free",
+    status: "active",
+    locale: "es",
+    created_at: "2026-04-20T08:20:00Z",
+    last_seen_at: "2026-04-23T18:00:00Z",
+    organization_id: "org-household",
+    support_flags: [],
+    privacy_request_status: "export_open",
+  },
+  "user-3": {
+    user_id: "user-3",
+    display_name: "Ops Internal",
+    email_masked: "us***@golife.ai",
+    plan: "internal",
+    status: "trial",
+    locale: "ja",
+    created_at: "2026-04-22T13:00:00Z",
+    last_seen_at: "2026-04-23T09:30:00Z",
+    organization_id: "org-internal",
+    support_flags: ["safety_review"],
+    privacy_request_status: "delete_open",
+  },
+};
+
+export const fallbackUserUsageById: Record<string, UserUsageSummary> = {
+  "local-user": {
+    user_id: "local-user",
+    capture_events: 28,
+    missions_generated: 18,
+    missions_completed: 9,
+    ai_calls_count: 42,
+    fallback_rate: 0.08,
+    latency_ms_avg: 840,
+  },
+  "user-2": {
+    user_id: "user-2",
+    capture_events: 10,
+    missions_generated: 8,
+    missions_completed: 3,
+    ai_calls_count: 16,
+    fallback_rate: 0.18,
+    latency_ms_avg: 950,
+  },
+  "user-3": {
+    user_id: "user-3",
+    capture_events: 4,
+    missions_generated: 4,
+    missions_completed: 1,
+    ai_calls_count: 7,
+    fallback_rate: 0.04,
+    latency_ms_avg: 720,
+  },
+};
+
+export const fallbackUserPrivacyById: Record<string, UserPrivacySummary> = {
+  "local-user": {
+    user_id: "local-user",
+    privacy_request_status: "none",
+    open_requests: [],
+    encrypted_collections: ["expenses", "journal_entries", "quick_notes"],
+    sensitive_data_excluded: true,
+  },
+  "user-2": {
+    user_id: "user-2",
+    privacy_request_status: "export_open",
+    open_requests: ["export"],
+    encrypted_collections: ["expenses", "journal_entries", "quick_notes"],
+    sensitive_data_excluded: true,
+  },
+  "user-3": {
+    user_id: "user-3",
+    privacy_request_status: "delete_open",
+    open_requests: ["delete"],
+    encrypted_collections: ["expenses", "journal_entries", "quick_notes"],
+    sensitive_data_excluded: true,
+  },
+};
+
+export const fallbackUserSupportById: Record<string, UserSupportSummary> = {
+  "local-user": {
+    user_id: "local-user",
+    support_flags: ["high_value_feedback"],
+    open_request_count: 0,
+    requests: [],
+  },
+  "user-2": {
+    user_id: "user-2",
+    support_flags: [],
+    open_request_count: 1,
+    requests: [
+      {
+        request_id: "support-001",
+        user_id: "user-2",
+        request_type: "export",
+        status: "open",
+        requested_at: "2026-04-24T02:00:00Z",
+      },
+    ],
+  },
+  "user-3": {
+    user_id: "user-3",
+    support_flags: ["safety_review"],
+    open_request_count: 1,
+    requests: [
+      {
+        request_id: "support-002",
+        user_id: "user-3",
+        request_type: "delete",
+        status: "open",
+        requested_at: "2026-04-24T05:00:00Z",
+      },
+    ],
+  },
+};
 
 export const fallbackUsage: UsageSnapshot[] = [
   {

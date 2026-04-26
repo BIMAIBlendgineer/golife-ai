@@ -35,10 +35,16 @@ from app.schemas import (
     OpenRouterApiKeyRecord,
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
+    PaginatedResponse,
     RoutingCapability,
     RoutingProfile,
     RoutingProfilePatch,
     SafetyAuditUpsert,
+    UserManagementRow,
+    UserPrivacySummary,
+    UserSummary,
+    UserSupportSummary,
+    UserUsageSummary,
     UsageEventRecord,
 )
 from app.settings import Settings
@@ -172,16 +178,67 @@ def create_app(
     async def dashboard(_: None = Depends(require_admin)) -> DashboardMetrics:
         return resolved_repository.dashboard()
 
-    @app.get("/admin/users")
-    async def users(_: None = Depends(require_admin)) -> list[dict[str, object]]:
-        return [item.model_dump(mode="json") for item in resolved_repository.list_users()]
+    @app.get("/admin/users", response_model=PaginatedResponse[UserManagementRow])
+    async def users(
+        limit: int = 25,
+        offset: int = 0,
+        query: str | None = None,
+        status: str | None = None,
+        plan: str | None = None,
+        locale: str | None = None,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[UserManagementRow]:
+        capped_limit = min(max(limit, 1), 100)
+        safe_offset = max(offset, 0)
+        return resolved_repository.list_user_management(
+            limit=capped_limit,
+            offset=safe_offset,
+            query=query,
+            status=status,
+            plan=plan,
+            locale=locale,
+        )
 
-    @app.get("/admin/users/{user_id}")
-    async def user_detail(user_id: str, _: None = Depends(require_admin)) -> dict[str, object]:
-        user = resolved_repository.get_user(user_id)
+    @app.get("/admin/users/{user_id}", response_model=UserSummary)
+    async def user_detail(user_id: str, _: None = Depends(require_admin)) -> UserSummary:
+        user = resolved_repository.get_user_summary(user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="User not found.")
-        return user.model_dump(mode="json")
+        return user
+
+    @app.get("/admin/users/{user_id}/summary", response_model=UserSummary)
+    async def user_summary(user_id: str, _: None = Depends(require_admin)) -> UserSummary:
+        user = resolved_repository.get_user_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
+
+    @app.get("/admin/users/{user_id}/usage", response_model=UserUsageSummary)
+    async def user_usage(user_id: str, _: None = Depends(require_admin)) -> UserUsageSummary:
+        user = resolved_repository.get_user_usage_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
+
+    @app.get("/admin/users/{user_id}/privacy", response_model=UserPrivacySummary)
+    async def user_privacy(
+        user_id: str,
+        _: None = Depends(require_admin),
+    ) -> UserPrivacySummary:
+        user = resolved_repository.get_user_privacy_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
+
+    @app.get("/admin/users/{user_id}/support", response_model=UserSupportSummary)
+    async def user_support(
+        user_id: str,
+        _: None = Depends(require_admin),
+    ) -> UserSupportSummary:
+        user = resolved_repository.get_user_support_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
 
     @app.get("/admin/usage")
     async def usage(_: None = Depends(require_admin)) -> list[dict[str, object]]:
@@ -416,4 +473,3 @@ def create_app(
 
 
 app = create_app()
-

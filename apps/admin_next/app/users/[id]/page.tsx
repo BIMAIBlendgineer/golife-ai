@@ -1,12 +1,18 @@
 import { notFound } from "next/navigation";
 
 import { ErrorBanner } from "@/components/error-banner";
+import { DetailDrawer } from "@/components/premium/detail-drawer";
+import { KpiGrid } from "@/components/premium/kpi-grid";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
-import { Panel } from "@/components/panel";
 import { StatusPill } from "@/components/status-pill";
-import { getFeedback, getMissions, getUsage, getUser } from "@/lib/api";
-import { formatDateTime, formatFeedbackReason, formatPercent } from "@/lib/format";
+import {
+  getUserPrivacySummary,
+  getUserSummary,
+  getUserSupportSummary,
+  getUserUsageSummary,
+} from "@/lib/api";
+import { formatDateTime, formatLatency, formatPercent } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
 
 export default async function UserDetailPage({
@@ -17,24 +23,27 @@ export default async function UserDetailPage({
   const { locale, messages } = await getAdminMessages();
   const t = messages.pages.userDetail;
   const { id } = await params;
-  const [userResult, usageResult, missionResult, feedbackResult] =
+
+  const [summaryResult, usageResult, privacyResult, supportResult] =
     await Promise.all([
-      getUser(id),
-      getUsage(),
-      getMissions(),
-      getFeedback(),
+      getUserSummary(id),
+      getUserUsageSummary(id),
+      getUserPrivacySummary(id),
+      getUserSupportSummary(id),
     ]);
 
-  const user = userResult.data;
-  if (!user) {
+  const summary = summaryResult.data;
+  if (!summary) {
     notFound();
   }
 
-  const usage = (usageResult.data ?? []).find((item) => item.user_id === id) ?? null;
-  const missions = (missionResult.data ?? []).filter((item) => item.user_id === id);
-  const feedback = (feedbackResult.data ?? []).filter((item) => item.user_id === id);
   const error =
-    [userResult.error, usageResult.error, missionResult.error, feedbackResult.error]
+    [
+      summaryResult.error,
+      usageResult.data ? null : usageResult.error,
+      privacyResult.data ? null : privacyResult.error,
+      supportResult.data ? null : supportResult.error,
+    ]
       .filter(Boolean)
       .join(" | ") || null;
 
@@ -42,87 +51,80 @@ export default async function UserDetailPage({
     <>
       <PageHeader
         eyebrow={t.eyebrow}
-        title={user.email}
+        title={summary.display_name}
         description={t.description}
-        badge={user.user_id}
+        badge={summary.user_id}
       />
       <ErrorBanner error={error} />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <KpiGrid>
         <MetricCard
           label={t.planLabel}
-          value={user.plan}
+          value={summary.plan}
           note={t.planNote}
           tone="ink"
         />
         <MetricCard
           label={t.aiCallsLabel}
-          value={user.ai_calls.toString()}
+          value={(usageResult.data?.ai_calls_count ?? 0).toString()}
           note={t.aiCallsNote}
           tone="bronze"
         />
         <MetricCard
           label={t.usefulMissionsLabel}
-          value={user.useful_missions_completed.toString()}
+          value={(usageResult.data?.missions_completed ?? 0).toString()}
           note={t.usefulMissionsNote}
           tone="sage"
         />
         <MetricCard
           label={t.fallbackRateLabel}
-          value={usage ? formatPercent(usage.fallback_rate, locale) : "0%"}
+          value={formatPercent(usageResult.data?.fallback_rate ?? 0, locale)}
           note={t.fallbackRateNote}
           tone="clay"
         />
-      </div>
+      </KpiGrid>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Panel
-          eyebrow={t.accountEyebrow}
-          title={t.accountTitle}
-          note={t.accountNote}
-        >
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <DetailDrawer title={t.accountTitle} description={t.accountNote}>
           <div className="space-y-4 text-sm leading-6 text-[color:var(--ink-soft)]">
             <div className="flex flex-wrap gap-2">
-              <StatusPill tone={user.status === "active" ? "good" : "warn"}>
-                {user.status}
+              <StatusPill tone={summary.status === "active" ? "good" : "warn"}>
+                {summary.status}
               </StatusPill>
-              {user.weekly_active ? (
-                <StatusPill tone="info">{messages.shared.weeklyActive}</StatusPill>
-              ) : (
-                <StatusPill tone="warn">{messages.shared.dormantThisWeek}</StatusPill>
-              )}
-              {user.export_requested ? (
-                <StatusPill tone="warn">{messages.shared.exportRequested}</StatusPill>
-              ) : null}
-              {user.delete_requested ? (
-                <StatusPill tone="danger">{messages.shared.deleteRequested}</StatusPill>
-              ) : null}
+              <StatusPill tone="neutral">{summary.locale}</StatusPill>
+              <StatusPill tone="neutral">{summary.plan}</StatusPill>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
+              <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
                   {messages.shared.created}
                 </p>
                 <p className="mt-2 text-sm text-ink">
-                  {formatDateTime(user.created_at, locale)}
+                  {formatDateTime(summary.created_at, locale)}
                 </p>
               </div>
-              <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
+              <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
                   {messages.shared.lastSeen}
                 </p>
                 <p className="mt-2 text-sm text-ink">
-                  {formatDateTime(user.last_seen_at, locale)}
+                  {formatDateTime(summary.last_seen_at, locale)}
                 </p>
               </div>
             </div>
-            <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
+            <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+                {t.emailLabel}
+              </p>
+              <p className="mt-2 text-sm text-ink">{summary.email_masked}</p>
+            </div>
+            <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
                 {messages.shared.supportFlags}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {user.support_flags.length > 0 ? (
-                  user.support_flags.map((flag) => (
+                {summary.support_flags.length > 0 ? (
+                  summary.support_flags.map((flag) => (
                     <StatusPill key={flag} tone="info">
                       {flag}
                     </StatusPill>
@@ -133,72 +135,58 @@ export default async function UserDetailPage({
               </div>
             </div>
           </div>
-        </Panel>
+        </DetailDrawer>
 
-        <Panel
-          eyebrow={t.behaviorEyebrow}
-          title={t.behaviorTitle}
-          note={t.behaviorNote}
-        >
-          <div className="space-y-3">
-            {missions.map((mission) => (
-              <div
-                key={mission.mission_id}
-                className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-ink">{mission.title}</p>
-                    <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                      {messages.shared.domains}: {mission.domains.join(", ")}.{" "}
-                      {messages.shared.risks}:{" "}
-                      {mission.matched_risks.join(", ") || messages.shared.none}.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <StatusPill
-                      tone={
-                        mission.status === "completed"
-                          ? "good"
-                          : mission.status === "rejected"
-                            ? "danger"
-                            : "info"
-                      }
-                    >
-                      {mission.status}
-                    </StatusPill>
-                    <StatusPill tone="neutral">
-                      {messages.shared.score} {mission.final_score.toFixed(2)}
-                    </StatusPill>
-                  </div>
-                </div>
+        <DetailDrawer title={t.behaviorTitle} description={t.behaviorNote}>
+          <div className="space-y-4 text-sm leading-6 text-[color:var(--ink-soft)]">
+            {usageResult.data ? (
+              <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+                  {t.usageSummaryLabel}
+                </p>
+                <p className="mt-2">
+                  {usageResult.data.capture_events} capture events,{" "}
+                  {usageResult.data.missions_generated} missions generated,{" "}
+                  {usageResult.data.missions_completed} missions completed,{" "}
+                  {formatPercent(usageResult.data.fallback_rate, locale)} fallback,{" "}
+                  {formatLatency(
+                    usageResult.data.latency_ms_avg,
+                    locale,
+                    messages.shared.msUnit,
+                  )}
+                  .
+                </p>
               </div>
-            ))}
-            {feedback.map((item) => (
-              <div
-                key={item.feedback_id}
-                className="rounded-[18px] border border-[color:var(--line)] bg-[color:rgba(93,122,104,0.06)] p-4"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-ink">{item.status}</p>
-                    <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-                      {formatFeedbackReason(item.reason, messages)}
-                    </p>
-                  </div>
-                  <p className="text-sm text-[color:var(--ink-muted)]">
-                    {formatDateTime(item.created_at, locale)}
-                  </p>
-                </div>
+            ) : null}
+
+            {privacyResult.data ? (
+              <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+                  {t.privacySummaryLabel}
+                </p>
+                <p className="mt-2">
+                  {privacyResult.data.privacy_request_status}.{" "}
+                  {privacyResult.data.open_requests.length > 0
+                    ? privacyResult.data.open_requests.join(", ")
+                    : messages.shared.none}
+                  .
+                </p>
+                <p className="mt-2">{t.metadataOnlyLabel}</p>
               </div>
-            ))}
-            {missions.length === 0 && feedback.length === 0 ? (
-              <p className="text-sm leading-6 text-[color:var(--ink-soft)]">
-                {t.emptyBehavior}
-              </p>
+            ) : null}
+
+            {supportResult.data ? (
+              <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+                  {t.supportSummaryLabel}
+                </p>
+                <p className="mt-2">
+                  {supportResult.data.open_request_count} {t.openRequestsLabel}
+                </p>
+              </div>
             ) : null}
           </div>
-        </Panel>
+        </DetailDrawer>
       </div>
     </>
   );

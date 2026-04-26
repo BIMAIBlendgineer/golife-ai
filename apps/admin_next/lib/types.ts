@@ -35,6 +35,84 @@ export type AdminUser = {
   delete_requested: boolean;
 };
 
+export type PaginatedResponse<T> = {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+  next_offset: number | null;
+  fetched_at: string;
+};
+
+export type UserManagementRow = {
+  user_id: string;
+  display_name: string;
+  email_masked: string;
+  plan: "free" | "plus" | "internal";
+  status: "active" | "paused" | "trial";
+  locale: "en" | "es" | "pt-BR" | "ja" | "zh-Hans";
+  last_seen_at: string;
+  ai_calls_count: number;
+  useful_missions_count: number;
+  fallback_rate: number;
+  support_flags: string[];
+  privacy_request_status:
+    | "none"
+    | "export_open"
+    | "delete_open"
+    | "mixed_open"
+    | "completed";
+};
+
+export type UserSummary = {
+  user_id: string;
+  display_name: string;
+  email_masked: string;
+  plan: "free" | "plus" | "internal";
+  status: "active" | "paused" | "trial";
+  locale: "en" | "es" | "pt-BR" | "ja" | "zh-Hans";
+  created_at: string;
+  last_seen_at: string;
+  organization_id: string | null;
+  support_flags: string[];
+  privacy_request_status:
+    | "none"
+    | "export_open"
+    | "delete_open"
+    | "mixed_open"
+    | "completed";
+};
+
+export type UserUsageSummary = {
+  user_id: string;
+  capture_events: number;
+  missions_generated: number;
+  missions_completed: number;
+  ai_calls_count: number;
+  fallback_rate: number;
+  latency_ms_avg: number;
+};
+
+export type UserPrivacySummary = {
+  user_id: string;
+  privacy_request_status:
+    | "none"
+    | "export_open"
+    | "delete_open"
+    | "mixed_open"
+    | "completed";
+  open_requests: Array<"export" | "delete">;
+  encrypted_collections: string[];
+  sensitive_data_excluded: boolean;
+};
+
+export type UserSupportSummary = {
+  user_id: string;
+  support_flags: string[];
+  open_request_count: number;
+  requests: SupportRequest[];
+};
+
 export type UsageSnapshot = {
   user_id: string;
   capture_events: number;

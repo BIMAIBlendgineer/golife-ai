@@ -14,15 +14,18 @@ import {
   fallbackRoutingProfiles,
   fallbackSafety,
   fallbackSupportRequests,
+  fallbackUserManagement,
+  fallbackUserPrivacyById,
+  fallbackUserSummaryById,
+  fallbackUserSupportById,
+  fallbackUserUsageById,
   fallbackUsage,
-  fallbackUsers,
 } from "@/lib/fallback-data";
 import type {
   AICostSnapshot,
   AdminBackendHealth,
   AdminDataState,
   AdminFetchResult,
-  AdminUser,
   DashboardMetrics,
   FeatureFlag,
   FeedbackAuditRecord,
@@ -32,9 +35,15 @@ import type {
   ModelSelectionSnapshot,
   OpenRouterApiKeyRecord,
   OpenRouterKeyEventRecord,
+  PaginatedResponse,
   RoutingProfile,
   SafetyAuditRecord,
   SupportRequest,
+  UserManagementRow,
+  UserPrivacySummary,
+  UserSummary,
+  UserSupportSummary,
+  UserUsageSummary,
   UsageSnapshot,
 } from "@/lib/types";
 
@@ -174,19 +183,66 @@ export async function getDashboard(): Promise<AdminFetchResult<DashboardMetrics>
   });
 }
 
-export async function getUsers(): Promise<AdminFetchResult<AdminUser[]>> {
-  return adminRequest("/admin/users", {
-    fallbackData: fallbackUsers,
+export async function getUsers(params?: {
+  limit?: number;
+  offset?: number;
+  query?: string;
+  status?: string;
+  plan?: string;
+  locale?: string;
+}): Promise<AdminFetchResult<PaginatedResponse<UserManagementRow>>> {
+  const searchParams = new URLSearchParams();
+  if (params?.limit != null) searchParams.set("limit", String(params.limit));
+  if (params?.offset != null) searchParams.set("offset", String(params.offset));
+  if (params?.query) searchParams.set("query", params.query);
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.plan) searchParams.set("plan", params.plan);
+  if (params?.locale) searchParams.set("locale", params.locale);
+  const suffix = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return adminRequest(`/admin/users${suffix}`, {
+    fallbackData: fallbackUserManagement,
   });
 }
 
 export async function getUser(
   userId: string,
-): Promise<AdminFetchResult<AdminUser | null>> {
-  const result = await adminRequest<AdminUser | null>(`/admin/users/${userId}`, {
-    fallbackData: fallbackUsers.find((item) => item.user_id === userId) ?? null,
+): Promise<AdminFetchResult<UserSummary | null>> {
+  const result = await adminRequest<UserSummary | null>(`/admin/users/${userId}`, {
+    fallbackData: fallbackUserSummaryById[userId] ?? null,
   });
   return result;
+}
+
+export async function getUserSummary(
+  userId: string,
+): Promise<AdminFetchResult<UserSummary | null>> {
+  return adminRequest<UserSummary | null>(`/admin/users/${userId}/summary`, {
+    fallbackData: fallbackUserSummaryById[userId] ?? null,
+  });
+}
+
+export async function getUserUsageSummary(
+  userId: string,
+): Promise<AdminFetchResult<UserUsageSummary | null>> {
+  return adminRequest<UserUsageSummary | null>(`/admin/users/${userId}/usage`, {
+    fallbackData: fallbackUserUsageById[userId] ?? null,
+  });
+}
+
+export async function getUserPrivacySummary(
+  userId: string,
+): Promise<AdminFetchResult<UserPrivacySummary | null>> {
+  return adminRequest<UserPrivacySummary | null>(`/admin/users/${userId}/privacy`, {
+    fallbackData: fallbackUserPrivacyById[userId] ?? null,
+  });
+}
+
+export async function getUserSupportSummary(
+  userId: string,
+): Promise<AdminFetchResult<UserSupportSummary | null>> {
+  return adminRequest<UserSupportSummary | null>(`/admin/users/${userId}/support`, {
+    fallbackData: fallbackUserSupportById[userId] ?? null,
+  });
 }
 
 export async function getUsage(): Promise<AdminFetchResult<UsageSnapshot[]>> {

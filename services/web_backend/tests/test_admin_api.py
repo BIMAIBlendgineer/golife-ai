@@ -43,8 +43,12 @@ def test_dashboard_returns_operational_metrics(client):
 def test_users_and_detail_are_available(client):
     users_response = client.get("/admin/users", headers=_admin_headers())
     assert users_response.status_code == 200
-    users = users_response.json()
+    users_page = users_response.json()
+    users = users_page["items"]
+    assert users_page["total"] >= 1
+    assert users_page["limit"] == 25
     assert len(users) >= 1
+    assert users[0]["email_masked"].endswith("@golife.ai")
 
     detail_response = client.get(
         f"/admin/users/{users[0]['user_id']}",
@@ -52,6 +56,24 @@ def test_users_and_detail_are_available(client):
     )
     assert detail_response.status_code == 200
     assert detail_response.json()["user_id"] == users[0]["user_id"]
+    assert "email_masked" in detail_response.json()
+
+    usage_response = client.get(
+        f"/admin/users/{users[0]['user_id']}/usage",
+        headers=_admin_headers(),
+    )
+    privacy_response = client.get(
+        f"/admin/users/{users[0]['user_id']}/privacy",
+        headers=_admin_headers(),
+    )
+    support_response = client.get(
+        f"/admin/users/{users[0]['user_id']}/support",
+        headers=_admin_headers(),
+    )
+    assert usage_response.status_code == 200
+    assert privacy_response.status_code == 200
+    assert support_response.status_code == 200
+    assert privacy_response.json()["sensitive_data_excluded"] is True
 
 
 def test_feature_flag_can_be_updated(client):
@@ -305,7 +327,7 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
     assert dashboard.json()["wau"] == 1
     assert dashboard.json()["mission_completion_rate"] == 1.0
     assert users.status_code == 200
-    assert users.json()[0]["user_id"] == "live-user"
+    assert users.json()["items"][0]["user_id"] == "live-user"
     assert costs.status_code == 200
     assert costs.json()[0]["endpoint"] == "/v1/missions/daily"
     assert feedback.status_code == 200
