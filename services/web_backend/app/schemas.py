@@ -221,6 +221,58 @@ class PlanRow(BaseModel):
     support_level: str = Field(min_length=1)
 
 
+class OpenRouterByokKeyRecord(BaseModel):
+    key_id: str = Field(min_length=1)
+    organization_id: str = Field(min_length=1)
+    project_id: str | None = None
+    label: str = Field(min_length=1)
+    secret_last4: str = Field(min_length=4, max_length=4)
+    status: OpenRouterKeyStatus = "unknown"
+    created_at: datetime
+    last_used_at: datetime | None = None
+    disabled_at: datetime | None = None
+    scopes: list[str] = Field(default_factory=list)
+
+
+class OpenRouterByokKeyCreate(BaseModel):
+    organization_id: str = Field(min_length=1)
+    project_id: str | None = None
+    label: str = Field(min_length=1)
+    secret: str = Field(min_length=16)
+    scopes: list[str] = Field(default_factory=list)
+
+
+class OpenRouterByokKeyPatch(BaseModel):
+    label: str | None = Field(default=None, min_length=1)
+    secret: str | None = Field(default=None, min_length=16)
+    project_id: str | None = None
+    scopes: list[str] | None = None
+
+
+class AiUsageLedgerRow(BaseModel):
+    id: str = Field(min_length=1)
+    organization_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    ai_mode: Literal["xinsightai", "byok", "hybrid"]
+    provider: str = Field(min_length=1)
+    model: str | None = None
+    endpoint: str = Field(min_length=1)
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    platform_cost_usd: float = Field(ge=0.0)
+    customer_charge_usd: float = Field(ge=0.0)
+    xinsight_credits_debited: int = Field(ge=0)
+    byok_external_billing: bool = False
+    created_at: datetime
+
+
+class XInsightCreditSummary(BaseModel):
+    total_credits_debited: int = Field(ge=0)
+    total_customer_charge_usd: float = Field(ge=0.0)
+    total_platform_cost_usd: float = Field(ge=0.0)
+    byok_request_count: int = Field(ge=0)
+
+
 class AdminHealth(BaseModel):
     status: Literal["ok"]
     data_source: str = Field(min_length=1)

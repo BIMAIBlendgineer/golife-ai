@@ -120,6 +120,51 @@ def test_organizations_and_plans_routes_exist(client):
     assert len(plans.json()) >= 1
 
 
+def test_byok_keys_are_masked_and_disabled_keys_cannot_be_tested(client):
+    created = client.post(
+        "/admin/openrouter-byok",
+        headers=_admin_headers(),
+        json={
+          "organization_id": "org-household",
+          "project_id": None,
+          "label": "Customer key",
+          "secret": "sk-or-v1-abcdefghijklmnopqrstuvwxyz1234",
+          "scopes": ["missions", "parse"],
+        },
+    )
+    assert created.status_code == 200
+    body = created.json()
+    assert body["organization_id"] == "org-household"
+    assert body["secret_last4"] == "1234"
+    assert "secret" not in body
+
+    disabled = client.post(
+        f"/admin/openrouter-byok/{body['key_id']}/disable",
+        headers=_admin_headers(),
+    )
+    assert disabled.status_code == 200
+    assert disabled.json()["status"] == "disabled"
+
+    test_response = client.post(
+        f"/admin/openrouter-byok/{body['key_id']}/test",
+        headers=_admin_headers(),
+    )
+    assert test_response.status_code == 404
+
+
+def test_xinsight_and_byok_ledgers_stay_separate(client):
+    usage = client.get("/admin/xinsightai/usage", headers=_admin_headers())
+    credits = client.get("/admin/xinsightai/credits", headers=_admin_headers())
+
+    assert usage.status_code == 200
+    rows = usage.json()
+    assert any(row["ai_mode"] == "byok" and row["xinsight_credits_debited"] == 0 for row in rows)
+    assert any(row["ai_mode"] == "xinsightai" and row["xinsight_credits_debited"] > 0 for row in rows)
+
+    assert credits.status_code == 200
+    assert credits.json()["total_credits_debited"] > 0
+
+
 def test_openrouter_keys_are_masked_for_admin_and_decrypted_for_internal(client):
     created = client.post(
         "/admin/openrouter/keys",

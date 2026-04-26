@@ -139,6 +139,43 @@ export type PlanRow = {
   support_level: string;
 };
 
+export type OpenRouterByokKeyRecord = {
+  key_id: string;
+  organization_id: string;
+  project_id: string | null;
+  label: string;
+  secret_last4: string;
+  status: "healthy" | "degraded" | "disabled" | "unknown";
+  created_at: string;
+  last_used_at: string | null;
+  disabled_at: string | null;
+  scopes: string[];
+};
+
+export type AiUsageLedgerRow = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  ai_mode: "xinsightai" | "byok" | "hybrid";
+  provider: string;
+  model: string | null;
+  endpoint: string;
+  input_tokens: number;
+  output_tokens: number;
+  platform_cost_usd: number;
+  customer_charge_usd: number;
+  xinsight_credits_debited: number;
+  byok_external_billing: boolean;
+  created_at: string;
+};
+
+export type XInsightCreditSummary = {
+  total_credits_debited: number;
+  total_customer_charge_usd: number;
+  total_platform_cost_usd: number;
+  byok_request_count: number;
+};
+
 export type UsageSnapshot = {
   user_id: string;
   capture_events: number;

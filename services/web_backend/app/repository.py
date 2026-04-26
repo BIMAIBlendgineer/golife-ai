@@ -18,6 +18,7 @@ from app.schemas import (
     AIInvocationRecord,
     AdminHealth,
     AdminUser,
+    AiUsageLedgerRow,
     DashboardMetrics,
     FeatureFlag,
     FeedbackAuditRecord,
@@ -31,6 +32,9 @@ from app.schemas import (
     ModelSelectionSnapshot,
     OrganizationDetail,
     OrganizationRow,
+    OpenRouterByokKeyCreate,
+    OpenRouterByokKeyPatch,
+    OpenRouterByokKeyRecord,
     OpenRouterApiKeyCreate,
     OpenRouterApiKeyPatch,
     OpenRouterApiKeyRecord,
@@ -50,6 +54,7 @@ from app.schemas import (
     UserUsageSummary,
     UsageEventRecord,
     UsageSnapshot,
+    XInsightCreditSummary,
 )
 from app.routing import build_default_routing_profiles
 
@@ -314,6 +319,39 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_openrouter_keys_priority
                     ON openrouter_api_keys(enabled, priority, created_at);
+                CREATE TABLE IF NOT EXISTS openrouter_byok_keys (
+                    key_id TEXT PRIMARY KEY,
+                    organization_id TEXT NOT NULL,
+                    project_id TEXT,
+                    label TEXT NOT NULL,
+                    secret_ciphertext TEXT NOT NULL,
+                    secret_last4 TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    scopes_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    last_used_at TEXT,
+                    disabled_at TEXT
+                );
+                CREATE INDEX IF NOT EXISTS idx_openrouter_byok_org
+                    ON openrouter_byok_keys(organization_id, created_at);
+                CREATE TABLE IF NOT EXISTS ai_usage_ledger (
+                    id TEXT PRIMARY KEY,
+                    organization_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    ai_mode TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    model TEXT,
+                    endpoint TEXT NOT NULL,
+                    input_tokens INTEGER NOT NULL,
+                    output_tokens INTEGER NOT NULL,
+                    platform_cost_usd REAL NOT NULL,
+                    customer_charge_usd REAL NOT NULL,
+                    xinsight_credits_debited INTEGER NOT NULL,
+                    byok_external_billing INTEGER NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_ai_usage_ledger_org_time
+                    ON ai_usage_ledger(organization_id, created_at);
 
                 CREATE TABLE IF NOT EXISTS routing_profiles (
                     capability TEXT PRIMARY KEY,
@@ -650,6 +688,87 @@ class OperationalRepository:
                 48.9,
                 "xinsightai",
                 _to_iso(now - timedelta(days=140)),
+            ),
+        )
+        self._execute(
+            """
+            INSERT INTO openrouter_byok_keys(
+                key_id, organization_id, project_id, label, secret_ciphertext,
+                secret_last4, status, scopes_json, created_at, last_used_at, disabled_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(key_id) DO NOTHING
+            """,
+            (
+                "byok-001",
+                "org-household",
+                None,
+                "Household receipts parser",
+                "seeded-byok-ciphertext",
+                "9xyz",
+                "healthy",
+                _json_dumps(["missions", "parse", "routing"]),
+                _to_iso(now - timedelta(days=20)),
+                _to_iso(now - timedelta(hours=9)),
+                None,
+            ),
+        )
+        self._execute(
+            """
+            INSERT INTO ai_usage_ledger(
+                id, organization_id, user_id, ai_mode, provider, model, endpoint,
+                input_tokens, output_tokens, platform_cost_usd, customer_charge_usd,
+                xinsight_credits_debited, byok_external_billing, created_at
+            )
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO NOTHING
+            """,
+            (
+                "ledger-001",
+                "org-household",
+                "local-user",
+                "xinsightai",
+                "openrouter",
+                "openai/gpt-4.1-mini",
+                "/v1/missions/daily",
+                1640,
+                910,
+                0.82,
+                1.45,
+                24,
+                0,
+                _to_iso(now - timedelta(hours=8)),
+                "ledger-002",
+                "org-household",
+                "user-2",
+                "byok",
+                "openrouter",
+                "anthropic/claude-sonnet-4",
+                "/v1/missions/daily",
+                1820,
+                1030,
+                0.0,
+                0.22,
+                0,
+                1,
+                _to_iso(now - timedelta(hours=6)),
+                "ledger-003",
+                "org-internal",
+                "user-3",
+                "xinsightai",
+                "openrouter",
+                "google/gemini-2.5-flash",
+                "/v1/events/classify",
+                420,
+                120,
+                0.09,
+                0.31,
+                3,
+                0,
+                _to_iso(now - timedelta(hours=2)),
             ),
         )
 
@@ -1718,6 +1837,272 @@ class OperationalRepository:
                 support_level=row["support_level"],
             )
             for row in rows
+        ]
+
+    def list_openrouter_byok_keys(self) -> list[OpenRouterByokKeyRecord]:
+        rows = self._fetchall(
+            """
+            SELECT
+                key_id,
+                organization_id,
+                project_id,
+                label,
+                secret_last4,
+                status,
+                scopes_json,
+                created_at,
+                last_used_at,
+                disabled_at
+            FROM openrouter_byok_keys
+            ORDER BY created_at DESC
+            """
+        )
+        return [
+            OpenRouterByokKeyRecord(
+                key_id=row["key_id"],
+                organization_id=row["organization_id"],
+                project_id=row["project_id"],
+                label=row["label"],
+                secret_last4=row["secret_last4"],
+                status=row["status"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+                last_used_at=_from_iso(row["last_used_at"]),
+                disabled_at=_from_iso(row["disabled_at"]),
+                scopes=list(_json_loads(row["scopes_json"], default=[])),
+            )
+            for row in rows
+        ]
+
+    def create_openrouter_byok_key(
+        self,
+        payload: OpenRouterByokKeyCreate,
+        *,
+        secret_ciphertext: str,
+        secret_last4: str,
+        key_id: str,
+    ) -> OpenRouterByokKeyRecord:
+        now = _utcnow()
+        self._execute(
+            """
+            INSERT INTO openrouter_byok_keys(
+                key_id, organization_id, project_id, label, secret_ciphertext,
+                secret_last4, status, scopes_json, created_at, last_used_at, disabled_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                key_id,
+                payload.organization_id,
+                payload.project_id,
+                payload.label,
+                secret_ciphertext,
+                secret_last4,
+                "unknown",
+                _json_dumps(payload.scopes),
+                _to_iso(now),
+                None,
+                None,
+            ),
+        )
+        self._commit()
+        return OpenRouterByokKeyRecord(
+            key_id=key_id,
+            organization_id=payload.organization_id,
+            project_id=payload.project_id,
+            label=payload.label,
+            secret_last4=secret_last4,
+            status="unknown",
+            created_at=now,
+            last_used_at=None,
+            disabled_at=None,
+            scopes=payload.scopes,
+        )
+
+    def patch_openrouter_byok_key(
+        self,
+        key_id: str,
+        payload: OpenRouterByokKeyPatch,
+        *,
+        secret_ciphertext: str | None = None,
+        secret_last4: str | None = None,
+    ) -> OpenRouterByokKeyRecord | None:
+        existing = self._fetchone(
+            """
+            SELECT *
+            FROM openrouter_byok_keys
+            WHERE key_id = ?
+            """,
+            (key_id,),
+        )
+        if existing is None:
+            return None
+        next_label = payload.label or existing["label"]
+        next_project_id = (
+            existing["project_id"] if payload.project_id is None else payload.project_id
+        )
+        next_scopes = (
+            list(_json_loads(existing["scopes_json"], default=[]))
+            if payload.scopes is None
+            else payload.scopes
+        )
+        next_secret_last4 = secret_last4 or existing["secret_last4"]
+        if secret_ciphertext is None:
+            self._execute(
+                """
+                UPDATE openrouter_byok_keys
+                SET project_id = ?, label = ?, secret_last4 = ?, scopes_json = ?
+                WHERE key_id = ?
+                """,
+                (
+                    next_project_id,
+                    next_label,
+                    next_secret_last4,
+                    _json_dumps(next_scopes),
+                    key_id,
+                ),
+            )
+        else:
+            self._execute(
+                """
+                UPDATE openrouter_byok_keys
+                SET project_id = ?, label = ?, secret_ciphertext = ?, secret_last4 = ?, scopes_json = ?, status = 'unknown', disabled_at = NULL
+                WHERE key_id = ?
+                """,
+                (
+                    next_project_id,
+                    next_label,
+                    secret_ciphertext,
+                    next_secret_last4,
+                    _json_dumps(next_scopes),
+                    key_id,
+                ),
+            )
+        self._commit()
+        refreshed = self._fetchone(
+            """
+            SELECT key_id, organization_id, project_id, label, secret_last4, status, scopes_json, created_at, last_used_at, disabled_at
+            FROM openrouter_byok_keys
+            WHERE key_id = ?
+            """,
+            (key_id,),
+        )
+        if refreshed is None:
+            return None
+        return OpenRouterByokKeyRecord(
+            key_id=refreshed["key_id"],
+            organization_id=refreshed["organization_id"],
+            project_id=refreshed["project_id"],
+            label=refreshed["label"],
+            secret_last4=refreshed["secret_last4"],
+            status=refreshed["status"],
+            created_at=_from_iso(refreshed["created_at"]) or _utcnow(),
+            last_used_at=_from_iso(refreshed["last_used_at"]),
+            disabled_at=_from_iso(refreshed["disabled_at"]),
+            scopes=list(_json_loads(refreshed["scopes_json"], default=[])),
+        )
+
+    def disable_openrouter_byok_key(self, key_id: str) -> OpenRouterByokKeyRecord | None:
+        now = _utcnow()
+        self._execute(
+            """
+            UPDATE openrouter_byok_keys
+            SET status = 'disabled', disabled_at = ?
+            WHERE key_id = ?
+            """,
+            (_to_iso(now), key_id),
+        )
+        self._commit()
+        return next(
+            (item for item in self.list_openrouter_byok_keys() if item.key_id == key_id),
+            None,
+        )
+
+    def test_openrouter_byok_key(self, key_id: str) -> OpenRouterByokKeyRecord | None:
+        current = next(
+            (item for item in self.list_openrouter_byok_keys() if item.key_id == key_id),
+            None,
+        )
+        if current is None or current.status == "disabled":
+            return None
+        now = _utcnow()
+        self._execute(
+            """
+            UPDATE openrouter_byok_keys
+            SET status = 'healthy', last_used_at = ?, disabled_at = NULL
+            WHERE key_id = ?
+            """,
+            (_to_iso(now), key_id),
+        )
+        self._commit()
+        return next(
+            (item for item in self.list_openrouter_byok_keys() if item.key_id == key_id),
+            None,
+        )
+
+    def list_ai_usage_ledger(self) -> list[AiUsageLedgerRow]:
+        rows = self._fetchall(
+            """
+            SELECT
+                id,
+                organization_id,
+                user_id,
+                ai_mode,
+                provider,
+                model,
+                endpoint,
+                input_tokens,
+                output_tokens,
+                platform_cost_usd,
+                customer_charge_usd,
+                xinsight_credits_debited,
+                byok_external_billing,
+                created_at
+            FROM ai_usage_ledger
+            ORDER BY created_at DESC
+            """
+        )
+        return [
+            AiUsageLedgerRow(
+                id=row["id"],
+                organization_id=row["organization_id"],
+                user_id=row["user_id"],
+                ai_mode=row["ai_mode"],
+                provider=row["provider"],
+                model=row["model"],
+                endpoint=row["endpoint"],
+                input_tokens=int(row["input_tokens"]),
+                output_tokens=int(row["output_tokens"]),
+                platform_cost_usd=float(row["platform_cost_usd"]),
+                customer_charge_usd=float(row["customer_charge_usd"]),
+                xinsight_credits_debited=int(row["xinsight_credits_debited"]),
+                byok_external_billing=bool(row["byok_external_billing"]),
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def get_xinsight_credit_summary(self) -> XInsightCreditSummary:
+        rows = self.list_ai_usage_ledger()
+        xinsight_rows = [row for row in rows if row.ai_mode == "xinsightai"]
+        byok_rows = [row for row in rows if row.ai_mode == "byok"]
+        return XInsightCreditSummary(
+            total_credits_debited=sum(row.xinsight_credits_debited for row in xinsight_rows),
+            total_customer_charge_usd=round(
+                sum(row.customer_charge_usd for row in xinsight_rows),
+                2,
+            ),
+            total_platform_cost_usd=round(
+                sum(row.platform_cost_usd for row in xinsight_rows),
+                2,
+            ),
+            byok_request_count=len(byok_rows),
+        )
+
+    def list_xinsight_plan_rows(self) -> list[PlanRow]:
+        return [
+            plan
+            for plan in self.list_plans()
+            if plan.ai_credit_policy != "No bundled credits"
         ]
 
     def list_users(self) -> list[AdminUser]:

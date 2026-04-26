@@ -8,6 +8,7 @@ import type {
   ModelCatalogEntry,
   ModelSettingsSnapshot,
   ModelSelectionSnapshot,
+  OpenRouterByokKeyRecord,
   OrganizationDetail,
   OrganizationRow,
   OpenRouterApiKeyRecord,
@@ -17,12 +18,14 @@ import type {
   RoutingProfile,
   SafetyAuditRecord,
   SupportRequest,
+  AiUsageLedgerRow,
   UserManagementRow,
   UserPrivacySummary,
   UserSummary,
   UserSupportSummary,
   UserUsageSummary,
   UsageSnapshot,
+  XInsightCreditSummary,
 } from "@/lib/types";
 
 export const fallbackDashboard: DashboardMetrics = {
@@ -549,6 +552,79 @@ export const fallbackPlans: PlanRow[] = [
     support_level: "dedicated",
   },
 ];
+
+export const fallbackOpenRouterByokKeys: OpenRouterByokKeyRecord[] = [
+  {
+    key_id: "byok-001",
+    organization_id: "org-household",
+    project_id: null,
+    label: "Household receipts parser",
+    secret_last4: "9xyz",
+    status: "healthy",
+    created_at: "2026-04-04T09:00:00Z",
+    last_used_at: "2026-04-24T02:00:00Z",
+    disabled_at: null,
+    scopes: ["missions", "parse", "routing"],
+  },
+];
+
+export const fallbackXInsightUsage: AiUsageLedgerRow[] = [
+  {
+    id: "ledger-001",
+    organization_id: "org-household",
+    user_id: "local-user",
+    ai_mode: "xinsightai",
+    provider: "openrouter",
+    model: "openai/gpt-4.1-mini",
+    endpoint: "/v1/missions/daily",
+    input_tokens: 1640,
+    output_tokens: 910,
+    platform_cost_usd: 0.82,
+    customer_charge_usd: 1.45,
+    xinsight_credits_debited: 24,
+    byok_external_billing: false,
+    created_at: "2026-04-24T04:00:00Z",
+  },
+  {
+    id: "ledger-002",
+    organization_id: "org-household",
+    user_id: "user-2",
+    ai_mode: "byok",
+    provider: "openrouter",
+    model: "anthropic/claude-sonnet-4",
+    endpoint: "/v1/missions/daily",
+    input_tokens: 1820,
+    output_tokens: 1030,
+    platform_cost_usd: 0,
+    customer_charge_usd: 0.22,
+    xinsight_credits_debited: 0,
+    byok_external_billing: true,
+    created_at: "2026-04-24T06:00:00Z",
+  },
+  {
+    id: "ledger-003",
+    organization_id: "org-internal",
+    user_id: "user-3",
+    ai_mode: "xinsightai",
+    provider: "openrouter",
+    model: "google/gemini-2.5-flash",
+    endpoint: "/v1/events/classify",
+    input_tokens: 420,
+    output_tokens: 120,
+    platform_cost_usd: 0.09,
+    customer_charge_usd: 0.31,
+    xinsight_credits_debited: 3,
+    byok_external_billing: false,
+    created_at: "2026-04-24T10:00:00Z",
+  },
+];
+
+export const fallbackXInsightCredits: XInsightCreditSummary = {
+  total_credits_debited: 27,
+  total_customer_charge_usd: 1.76,
+  total_platform_cost_usd: 0.91,
+  byok_request_count: 1,
+};
 
 export const fallbackOpenRouterKeys: OpenRouterApiKeyRecord[] = [
   {

@@ -19,6 +19,7 @@ from app.routing import (
 from app.schemas import (
     AIInvocationRecord,
     AdminHealth,
+    AiUsageLedgerRow,
     DashboardMetrics,
     FeatureFlag,
     FeatureFlagPatch,
@@ -32,6 +33,9 @@ from app.schemas import (
     ModelSettingsUpsert,
     OrganizationDetail,
     OrganizationRow,
+    OpenRouterByokKeyCreate,
+    OpenRouterByokKeyPatch,
+    OpenRouterByokKeyRecord,
     OpenRouterApiKeyCreate,
     OpenRouterApiKeyPatch,
     OpenRouterApiKeyRecord,
@@ -49,6 +53,7 @@ from app.schemas import (
     UserSupportSummary,
     UserUsageSummary,
     UsageEventRecord,
+    XInsightCreditSummary,
 )
 from app.settings import Settings
 
@@ -260,6 +265,99 @@ def create_app(
     @app.get("/admin/plans", response_model=list[PlanRow])
     async def plans(_: None = Depends(require_admin)) -> list[PlanRow]:
         return resolved_repository.list_plans()
+
+    @app.get("/admin/openrouter-byok", response_model=list[OpenRouterByokKeyRecord])
+    async def list_openrouter_byok(
+        _: None = Depends(require_admin),
+    ) -> list[OpenRouterByokKeyRecord]:
+        return resolved_repository.list_openrouter_byok_keys()
+
+    @app.post("/admin/openrouter-byok", response_model=OpenRouterByokKeyRecord)
+    async def create_openrouter_byok(
+        payload: OpenRouterByokKeyCreate,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        return resolved_repository.create_openrouter_byok_key(
+            payload,
+            secret_ciphertext=secret_box.encrypt(payload.secret),
+            secret_last4=SecretBox.secret_last4(payload.secret),
+            key_id=f"byok-{uuid4()}",
+        )
+
+    @app.patch("/admin/openrouter-byok/{key_id}", response_model=OpenRouterByokKeyRecord)
+    async def patch_openrouter_byok(
+        key_id: str,
+        payload: OpenRouterByokKeyPatch,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        updated = resolved_repository.patch_openrouter_byok_key(
+            key_id,
+            payload,
+            secret_ciphertext=(
+                secret_box.encrypt(payload.secret) if payload.secret is not None else None
+            ),
+            secret_last4=(
+                SecretBox.secret_last4(payload.secret) if payload.secret is not None else None
+            ),
+        )
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found.")
+        return updated
+
+    @app.post("/admin/openrouter-byok/{key_id}/test", response_model=OpenRouterByokKeyRecord)
+    async def test_openrouter_byok(
+        key_id: str,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        updated = resolved_repository.test_openrouter_byok_key(key_id)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found or disabled.")
+        return updated
+
+    @app.post(
+        "/admin/openrouter-byok/{key_id}/disable",
+        response_model=OpenRouterByokKeyRecord,
+    )
+    async def disable_openrouter_byok(
+        key_id: str,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        updated = resolved_repository.disable_openrouter_byok_key(key_id)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found.")
+        return updated
+
+    @app.post("/admin/openrouter-byok/{key_id}/rotate", response_model=OpenRouterByokKeyRecord)
+    async def rotate_openrouter_byok(
+        key_id: str,
+        payload: OpenRouterByokKeyPatch,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        if payload.secret is None:
+            raise HTTPException(status_code=400, detail="secret is required for rotation.")
+        updated = resolved_repository.patch_openrouter_byok_key(
+            key_id,
+            payload,
+            secret_ciphertext=secret_box.encrypt(payload.secret),
+            secret_last4=SecretBox.secret_last4(payload.secret),
+        )
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found.")
+        return updated
+
+    @app.get("/admin/xinsightai/usage", response_model=list[AiUsageLedgerRow])
+    async def xinsight_usage(_: None = Depends(require_admin)) -> list[AiUsageLedgerRow]:
+        return resolved_repository.list_ai_usage_ledger()
+
+    @app.get("/admin/xinsightai/credits", response_model=XInsightCreditSummary)
+    async def xinsight_credits(
+        _: None = Depends(require_admin),
+    ) -> XInsightCreditSummary:
+        return resolved_repository.get_xinsight_credit_summary()
+
+    @app.get("/admin/xinsightai/plans", response_model=list[PlanRow])
+    async def xinsight_plans(_: None = Depends(require_admin)) -> list[PlanRow]:
+        return resolved_repository.list_xinsight_plan_rows()
 
     @app.get("/admin/usage")
     async def usage(_: None = Depends(require_admin)) -> list[dict[str, object]]:

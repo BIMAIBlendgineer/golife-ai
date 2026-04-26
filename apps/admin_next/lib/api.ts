@@ -9,6 +9,7 @@ import {
   fallbackModelSelections,
   fallbackMissions,
   fallbackModelSettings,
+  fallbackOpenRouterByokKeys,
   fallbackOrganizationDetails,
   fallbackOrganizations,
   fallbackOpenRouterKeyEvents,
@@ -23,12 +24,15 @@ import {
   fallbackUserSupportById,
   fallbackUserUsageById,
   fallbackUsage,
+  fallbackXInsightCredits,
+  fallbackXInsightUsage,
 } from "@/lib/fallback-data";
 import type {
   AICostSnapshot,
   AdminBackendHealth,
   AdminDataState,
   AdminFetchResult,
+  AiUsageLedgerRow,
   DashboardMetrics,
   FeatureFlag,
   FeedbackAuditRecord,
@@ -36,6 +40,7 @@ import type {
   MissionAuditRecord,
   ModelSettingsSnapshot,
   ModelSelectionSnapshot,
+  OpenRouterByokKeyRecord,
   OrganizationDetail,
   OrganizationRow,
   OpenRouterApiKeyRecord,
@@ -51,6 +56,7 @@ import type {
   UserSupportSummary,
   UserUsageSummary,
   UsageSnapshot,
+  XInsightCreditSummary,
 } from "@/lib/types";
 
 const ADMIN_API_BASE_URL =
@@ -276,6 +282,36 @@ export async function getOrganization(
 export async function getPlans(): Promise<AdminFetchResult<PlanRow[]>> {
   return adminRequest("/admin/plans", {
     fallbackData: fallbackPlans,
+  });
+}
+
+export async function getOpenRouterByokKeys(): Promise<
+  AdminFetchResult<OpenRouterByokKeyRecord[]>
+> {
+  return adminRequest("/admin/openrouter-byok", {
+    fallbackData: fallbackOpenRouterByokKeys,
+  });
+}
+
+export async function getXInsightUsage(): Promise<
+  AdminFetchResult<AiUsageLedgerRow[]>
+> {
+  return adminRequest("/admin/xinsightai/usage", {
+    fallbackData: fallbackXInsightUsage,
+  });
+}
+
+export async function getXInsightCredits(): Promise<
+  AdminFetchResult<XInsightCreditSummary>
+> {
+  return adminRequest("/admin/xinsightai/credits", {
+    fallbackData: fallbackXInsightCredits,
+  });
+}
+
+export async function getXInsightPlans(): Promise<AdminFetchResult<PlanRow[]>> {
+  return adminRequest("/admin/xinsightai/plans", {
+    fallbackData: fallbackPlans.filter((plan) => plan.ai_credit_policy !== "No bundled credits"),
   });
 }
 
