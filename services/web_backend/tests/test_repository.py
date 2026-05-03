@@ -48,6 +48,7 @@ def test_production_accepts_strong_tokens():
     settings = Settings(
         environment="production",
         admin_token="a" * 24,
+        admin_operator_secret="operator-secret",
         ingestion_token="b" * 24,
         internal_service_token="c" * 24,
         openrouter_keys_master_key="d" * 32,
