@@ -2,16 +2,35 @@ import { ErrorBanner } from "@/components/error-banner";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { Panel } from "@/components/panel";
+import { PaginationFooter } from "@/components/premium/pagination-footer";
 import { StatusPill } from "@/components/status-pill";
 import { getFeedback } from "@/lib/api";
 import { formatDateTime, formatFeedbackReason } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
+import { withSearchParams } from "@/lib/url";
 
-export default async function FeedbackPage() {
+export default async function FeedbackPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale, messages } = await getAdminMessages();
   const t = messages.pages.feedback;
-  const feedbackResult = await getFeedback();
-  const feedback = feedbackResult.data ?? [];
+  const params = await searchParams;
+  const limit = Math.min(
+    100,
+    Math.max(
+      10,
+      Number.parseInt(typeof params.limit === "string" ? params.limit : "25", 10) || 25,
+    ),
+  );
+  const offset = Math.max(
+    0,
+    Number.parseInt(typeof params.offset === "string" ? params.offset : "0", 10) || 0,
+  );
+  const feedbackResult = await getFeedback({ limit, offset });
+  const page = feedbackResult.data;
+  const feedback = page?.items ?? [];
   const usefulCount = feedback.filter((item) =>
     ["useful", "accepted", "completed"].includes(item.status),
   ).length;
@@ -90,6 +109,13 @@ export default async function FeedbackPage() {
           ))}
         </div>
       </Panel>
+      <PaginationFooter
+        summary={`${messages.shared.pageSummaryPrefix} ${feedback.length} ${messages.shared.pageSummaryMiddle} ${page?.total ?? feedback.length}`}
+        previousHref={offset > 0 ? withSearchParams({ limit, offset: Math.max(0, offset - limit) }) : null}
+        nextHref={page?.next_offset != null ? withSearchParams({ limit, offset: page.next_offset }) : null}
+        previousLabel={messages.shared.previousPage}
+        nextLabel={messages.shared.nextPage}
+      />
     </>
   );
 }

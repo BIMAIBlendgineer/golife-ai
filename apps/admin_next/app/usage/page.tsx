@@ -2,15 +2,34 @@ import { ErrorBanner } from "@/components/error-banner";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { Panel } from "@/components/panel";
+import { PaginationFooter } from "@/components/premium/pagination-footer";
 import { getUsage } from "@/lib/api";
 import { formatDateTime, formatLatency, formatPercent } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
+import { withSearchParams } from "@/lib/url";
 
-export default async function UsagePage() {
+export default async function UsagePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale, messages } = await getAdminMessages();
   const t = messages.pages.usage;
-  const usageResult = await getUsage();
-  const usage = usageResult.data ?? [];
+  const params = await searchParams;
+  const limit = Math.min(
+    100,
+    Math.max(
+      10,
+      Number.parseInt(typeof params.limit === "string" ? params.limit : "25", 10) || 25,
+    ),
+  );
+  const offset = Math.max(
+    0,
+    Number.parseInt(typeof params.offset === "string" ? params.offset : "0", 10) || 0,
+  );
+  const usageResult = await getUsage({ limit, offset });
+  const page = usageResult.data;
+  const usage = page?.items ?? [];
 
   const totalCaptureEvents = usage.reduce((sum, item) => sum + item.capture_events, 0);
   const totalGenerated = usage.reduce((sum, item) => sum + item.missions_generated, 0);
@@ -96,6 +115,13 @@ export default async function UsagePage() {
           </table>
         </div>
       </Panel>
+      <PaginationFooter
+        summary={`${messages.shared.pageSummaryPrefix} ${usage.length} ${messages.shared.pageSummaryMiddle} ${page?.total ?? usage.length}`}
+        previousHref={offset > 0 ? withSearchParams({ limit, offset: Math.max(0, offset - limit) }) : null}
+        nextHref={page?.next_offset != null ? withSearchParams({ limit, offset: page.next_offset }) : null}
+        previousLabel={messages.shared.previousPage}
+        nextLabel={messages.shared.nextPage}
+      />
     </>
   );
 }

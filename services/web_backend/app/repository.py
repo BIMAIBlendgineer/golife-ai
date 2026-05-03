@@ -4,6 +4,7 @@ import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import TypeVar
 from urllib.parse import urlsplit, urlunsplit
 
 try:
@@ -18,33 +19,61 @@ from app.schemas import (
     AIInvocationRecord,
     AdminHealth,
     AdminUser,
+    AdminAuthStatus,
+    AiUsageLedgerRow,
+    AuditLogRow,
+    BillingAccountRow,
     DashboardMetrics,
     FeatureFlag,
     FeedbackAuditRecord,
     FeedbackAuditUpsert,
+    HomeMemoryParserUsageRow,
+    HomeMemorySummary,
+    IncidentRow,
     MissionAuditRecord,
     MissionAuditUpsert,
+    PaginatedResponse,
     ModelSettingsSnapshot,
     ModelSettingsUpsert,
     ModelCatalogEntry,
     ModelSelectionSnapshot,
+    OrganizationDetail,
+    OrganizationRow,
+    OpenRouterByokKeyCreate,
+    OpenRouterByokKeyPatch,
+    OpenRouterByokKeyRecord,
     OpenRouterApiKeyCreate,
     OpenRouterApiKeyPatch,
     OpenRouterApiKeyRecord,
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
+    PlanRow,
+    PrivacyDataMap,
+    PrivacyRequestRow,
     RoutingCapability,
     RoutingProfile,
     RoutingProfilePatch,
     SafetyAuditRecord,
     SafetyAuditUpsert,
+    QualityBreakdownRow,
+    QualitySummary,
+    SecuritySummary,
     SupportRequest,
+    UserManagementRow,
+    UserPrivacySummary,
+    UserSummary,
+    UserSupportSummary,
+    UserUsageSummary,
     UsageEventRecord,
     UsageSnapshot,
+    StorageSummary,
+    StorageUsageRow,
+    XInsightCreditSummary,
 )
 from app.routing import build_default_routing_profiles
 
 REDACTED_FEEDBACK_REASON = "private_note_redacted"
+ItemT = TypeVar("ItemT")
 
 
 def _utcnow() -> datetime:
@@ -77,10 +106,38 @@ def _sanitize_feedback_reason(reason: str | None) -> str | None:
     return REDACTED_FEEDBACK_REASON
 
 
+def _mask_email(email: str) -> str:
+    local, _, domain = email.partition("@")
+    if not local or not domain:
+        return email
+    if len(local) <= 2:
+        return f"{local[0]}***@{domain}"
+    return f"{local[:2]}***@{domain}"
+
+
 def _sqlite_in_placeholders(values: tuple[object, ...]) -> str:
     if not values:
         raise ValueError("values must not be empty")
     return ", ".join("?" for _ in values)
+
+
+def _paginate_sequence(
+    items: list[ItemT],
+    *,
+    limit: int,
+    offset: int,
+) -> PaginatedResponse[ItemT]:
+    safe_limit = max(limit, 1)
+    safe_offset = max(offset, 0)
+    next_offset = safe_offset + safe_limit if safe_offset + safe_limit < len(items) else None
+    return PaginatedResponse[ItemT](
+        items=items[safe_offset : safe_offset + safe_limit],
+        total=len(items),
+        limit=safe_limit,
+        offset=safe_offset,
+        next_offset=next_offset,
+        fetched_at=_utcnow(),
+    )
 
 
 class OperationalRepository:
@@ -152,6 +209,37 @@ class OperationalRepository:
                     export_requested INTEGER NOT NULL DEFAULT 0,
                     delete_requested INTEGER NOT NULL DEFAULT 0
                 );
+                CREATE TABLE IF NOT EXISTS user_profiles (
+                    user_id TEXT PRIMARY KEY,
+                    display_name TEXT NOT NULL,
+                    locale TEXT NOT NULL DEFAULT 'en',
+                    organization_id TEXT
+                );
+                CREATE INDEX IF NOT EXISTS idx_user_profiles_locale
+                    ON user_profiles(locale);
+                CREATE TABLE IF NOT EXISTS plans (
+                    plan_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    price_label TEXT NOT NULL,
+                    user_limit INTEGER NOT NULL,
+                    storage_limit_gb REAL NOT NULL,
+                    ai_credit_policy TEXT NOT NULL,
+                    byok_allowed INTEGER NOT NULL,
+                    support_level TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS organizations (
+                    organization_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    plan_id TEXT NOT NULL,
+                    storage_used_gb REAL NOT NULL DEFAULT 0,
+                    ai_mode_default TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_organizations_status
+                    ON organizations(status);
+                CREATE INDEX IF NOT EXISTS idx_organizations_plan
+                    ON organizations(plan_id);
 
                 CREATE TABLE IF NOT EXISTS usage_events (
                     event_id TEXT PRIMARY KEY,
@@ -165,6 +253,10 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_usage_events_user_time
                     ON usage_events(user_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_usage_events_time
+                    ON usage_events(created_at);
+                CREATE INDEX IF NOT EXISTS idx_usage_events_endpoint
+                    ON usage_events(endpoint);
 
                 CREATE TABLE IF NOT EXISTS ai_invocations (
                     invocation_id TEXT PRIMARY KEY,
@@ -185,6 +277,8 @@ class OperationalRepository:
                     ON ai_invocations(user_id, created_at);
                 CREATE INDEX IF NOT EXISTS idx_ai_invocations_endpoint_time
                     ON ai_invocations(endpoint, created_at);
+                CREATE INDEX IF NOT EXISTS idx_ai_invocations_model
+                    ON ai_invocations(model);
 
                 CREATE TABLE IF NOT EXISTS mission_audit_records (
                     mission_id TEXT PRIMARY KEY,
@@ -211,6 +305,8 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_feedback_user_time
                     ON feedback_audit_records(user_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_feedback_time
+                    ON feedback_audit_records(created_at);
 
                 CREATE TABLE IF NOT EXISTS safety_events (
                     event_id TEXT PRIMARY KEY,
@@ -223,6 +319,8 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_safety_user_time
                     ON safety_events(user_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_safety_time
+                    ON safety_events(created_at);
 
                 CREATE TABLE IF NOT EXISTS feature_flags (
                     key TEXT PRIMARY KEY,
@@ -238,6 +336,20 @@ class OperationalRepository:
                     status TEXT NOT NULL,
                     requested_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS admin_audit_log (
+                    audit_id TEXT PRIMARY KEY,
+                    actor_id TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    target_type TEXT NOT NULL,
+                    target_id TEXT NOT NULL,
+                    safe_diff_json TEXT NOT NULL,
+                    correlation_id TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_admin_audit_time
+                    ON admin_audit_log(created_at);
+                CREATE INDEX IF NOT EXISTS idx_admin_audit_actor_action
+                    ON admin_audit_log(actor_id, action, created_at);
 
                 CREATE TABLE IF NOT EXISTS model_settings (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -265,6 +377,39 @@ class OperationalRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_openrouter_keys_priority
                     ON openrouter_api_keys(enabled, priority, created_at);
+                CREATE TABLE IF NOT EXISTS openrouter_byok_keys (
+                    key_id TEXT PRIMARY KEY,
+                    organization_id TEXT NOT NULL,
+                    project_id TEXT,
+                    label TEXT NOT NULL,
+                    secret_ciphertext TEXT NOT NULL,
+                    secret_last4 TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    scopes_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    last_used_at TEXT,
+                    disabled_at TEXT
+                );
+                CREATE INDEX IF NOT EXISTS idx_openrouter_byok_org
+                    ON openrouter_byok_keys(organization_id, created_at);
+                CREATE TABLE IF NOT EXISTS ai_usage_ledger (
+                    id TEXT PRIMARY KEY,
+                    organization_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    ai_mode TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    model TEXT,
+                    endpoint TEXT NOT NULL,
+                    input_tokens INTEGER NOT NULL,
+                    output_tokens INTEGER NOT NULL,
+                    platform_cost_usd REAL NOT NULL,
+                    customer_charge_usd REAL NOT NULL,
+                    xinsight_credits_debited INTEGER NOT NULL,
+                    byok_external_billing INTEGER NOT NULL,
+                    created_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_ai_usage_ledger_org_time
+                    ON ai_usage_ledger(organization_id, created_at);
 
                 CREATE TABLE IF NOT EXISTS routing_profiles (
                     capability TEXT PRIMARY KEY,
@@ -513,6 +658,183 @@ class OperationalRepository:
         ]
         for user in demo_users:
             self.upsert_user(user)
+        self.upsert_user_profile(
+            user_id="local-user",
+            display_name="Local User",
+            locale="en",
+            organization_id="org-household",
+        )
+        self.upsert_user_profile(
+            user_id="user-2",
+            display_name="Marta L",
+            locale="es",
+            organization_id="org-household",
+        )
+        self.upsert_user_profile(
+            user_id="user-3",
+            display_name="Ops Internal",
+            locale="ja",
+            organization_id="org-internal",
+        )
+        self._execute(
+            """
+            INSERT INTO plans(
+                plan_id, name, price_label, user_limit, storage_limit_gb,
+                ai_credit_policy, byok_allowed, support_level
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(plan_id) DO NOTHING
+            """,
+            (
+                "free",
+                "Free",
+                "$0",
+                1,
+                1.0,
+                "No bundled credits",
+                0,
+                "community",
+                "pro",
+                "Pro",
+                "$19 / month",
+                1,
+                20.0,
+                "Bundled xInsightAI credits",
+                1,
+                "standard",
+                "family",
+                "Family",
+                "$29 / month",
+                5,
+                50.0,
+                "Shared household credits",
+                1,
+                "priority",
+                "team",
+                "Team",
+                "$79 / month",
+                25,
+                250.0,
+                "Seat pool + org ledger",
+                1,
+                "priority",
+                "enterprise",
+                "Enterprise",
+                "Custom",
+                500,
+                5000.0,
+                "Contracted credit policy",
+                1,
+                "dedicated",
+            ),
+        )
+        self._execute(
+            """
+            INSERT INTO organizations(
+                organization_id, name, status, plan_id, storage_used_gb,
+                ai_mode_default, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(organization_id) DO NOTHING
+            """,
+            (
+                "org-household",
+                "Household Alpha",
+                "active",
+                "family",
+                12.4,
+                "hybrid",
+                _to_iso(now - timedelta(days=60)),
+                "org-internal",
+                "GoLife Internal Ops",
+                "active",
+                "enterprise",
+                48.9,
+                "xinsightai",
+                _to_iso(now - timedelta(days=140)),
+            ),
+        )
+        self._execute(
+            """
+            INSERT INTO openrouter_byok_keys(
+                key_id, organization_id, project_id, label, secret_ciphertext,
+                secret_last4, status, scopes_json, created_at, last_used_at, disabled_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(key_id) DO NOTHING
+            """,
+            (
+                "byok-001",
+                "org-household",
+                None,
+                "Household receipts parser",
+                "seeded-byok-ciphertext",
+                "9xyz",
+                "healthy",
+                _json_dumps(["missions", "parse", "routing"]),
+                _to_iso(now - timedelta(days=20)),
+                _to_iso(now - timedelta(hours=9)),
+                None,
+            ),
+        )
+        self._execute(
+            """
+            INSERT INTO ai_usage_ledger(
+                id, organization_id, user_id, ai_mode, provider, model, endpoint,
+                input_tokens, output_tokens, platform_cost_usd, customer_charge_usd,
+                xinsight_credits_debited, byok_external_billing, created_at
+            )
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO NOTHING
+            """,
+            (
+                "ledger-001",
+                "org-household",
+                "local-user",
+                "xinsightai",
+                "openrouter",
+                "openai/gpt-4.1-mini",
+                "/v1/missions/daily",
+                1640,
+                910,
+                0.82,
+                1.45,
+                24,
+                0,
+                _to_iso(now - timedelta(hours=8)),
+                "ledger-002",
+                "org-household",
+                "user-2",
+                "byok",
+                "openrouter",
+                "anthropic/claude-sonnet-4",
+                "/v1/missions/daily",
+                1820,
+                1030,
+                0.0,
+                0.22,
+                0,
+                1,
+                _to_iso(now - timedelta(hours=6)),
+                "ledger-003",
+                "org-internal",
+                "user-3",
+                "xinsightai",
+                "openrouter",
+                "google/gemini-2.5-flash",
+                "/v1/events/classify",
+                420,
+                120,
+                0.09,
+                0.31,
+                3,
+                0,
+                _to_iso(now - timedelta(hours=2)),
+            ),
+        )
 
         usage_events = [
             UsageEventRecord(
@@ -790,6 +1112,27 @@ class OperationalRepository:
                 int(user.export_requested),
                 int(user.delete_requested),
             ),
+        )
+        self._commit()
+
+    def upsert_user_profile(
+        self,
+        *,
+        user_id: str,
+        display_name: str,
+        locale: str = "en",
+        organization_id: str | None = None,
+    ) -> None:
+        self._execute(
+            """
+            INSERT INTO user_profiles(user_id, display_name, locale, organization_id)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                display_name = excluded.display_name,
+                locale = excluded.locale,
+                organization_id = excluded.organization_id
+            """,
+            (user_id, display_name, locale, organization_id),
         )
         self._commit()
 
@@ -1173,6 +1516,1201 @@ class OperationalRepository:
               disabled_key_count=disabled_key_count,
               routing_snapshot_age_seconds=snapshot_age_seconds,
           )
+
+    @staticmethod
+    def _privacy_status_from_counts(
+        *,
+        open_export_count: int,
+        open_delete_count: int,
+    ) -> str:
+        if open_export_count and open_delete_count:
+            return "mixed_open"
+        if open_export_count:
+            return "export_open"
+        if open_delete_count:
+            return "delete_open"
+        return "none"
+
+    def list_user_management(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        query: str | None = None,
+        status: str | None = None,
+        plan: str | None = None,
+        locale: str | None = None,
+    ) -> PaginatedResponse[UserManagementRow]:
+        filters: list[str] = []
+        args: list[object] = []
+        if query:
+            like = f"%{query.strip()}%"
+            filters.append(
+                "(u.user_id LIKE ? OR u.email LIKE ? OR COALESCE(p.display_name, u.user_id) LIKE ?)"
+            )
+            args.extend([like, like, like])
+        if status:
+            filters.append("u.status = ?")
+            args.append(status)
+        if plan:
+            filters.append("u.plan = ?")
+            args.append(plan)
+        if locale:
+            filters.append("COALESCE(p.locale, 'en') = ?")
+            args.append(locale)
+
+        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        total = int(
+            self._scalar(
+                f"""
+                SELECT COUNT(*)
+                FROM admin_users u
+                LEFT JOIN user_profiles p ON p.user_id = u.user_id
+                {where_sql}
+                """,
+                tuple(args),
+            )
+        )
+        rows = self._fetchall(
+            f"""
+            SELECT
+                u.user_id,
+                u.email,
+                u.plan,
+                u.status,
+                u.last_seen_at,
+                u.support_flags_json,
+                COALESCE(p.display_name, u.user_id) AS display_name,
+                COALESCE(p.locale, 'en') AS locale,
+                (
+                    SELECT COUNT(*)
+                    FROM ai_invocations ai
+                    WHERE ai.user_id = u.user_id
+                ) AS ai_calls_count,
+                (
+                    SELECT COUNT(*)
+                    FROM feedback_audit_records fb
+                    WHERE fb.user_id = u.user_id
+                      AND fb.status IN ('useful', 'accepted', 'completed')
+                ) AS useful_missions_count,
+                (
+                    SELECT COALESCE(AVG(CAST(ai.fallback AS REAL)), 0)
+                    FROM ai_invocations ai
+                    WHERE ai.user_id = u.user_id
+                ) AS fallback_rate,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'export'
+                ) AS open_export_count,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'delete'
+                ) AS open_delete_count
+            FROM admin_users u
+            LEFT JOIN user_profiles p ON p.user_id = u.user_id
+            {where_sql}
+            ORDER BY u.last_seen_at DESC, u.created_at DESC
+            LIMIT ? OFFSET ?
+            """,
+            tuple([*args, limit, offset]),
+        )
+        items = [
+            UserManagementRow(
+                user_id=row["user_id"],
+                display_name=row["display_name"],
+                email_masked=_mask_email(row["email"]),
+                plan=row["plan"],
+                status=row["status"],
+                locale=row["locale"],
+                last_seen_at=_from_iso(row["last_seen_at"]) or _utcnow(),
+                ai_calls_count=int(row["ai_calls_count"]),
+                useful_missions_count=int(row["useful_missions_count"]),
+                fallback_rate=round(float(row["fallback_rate"]), 4),
+                support_flags=list(_json_loads(row["support_flags_json"], default=[])),
+                privacy_request_status=self._privacy_status_from_counts(
+                    open_export_count=int(row["open_export_count"]),
+                    open_delete_count=int(row["open_delete_count"]),
+                ),
+            )
+            for row in rows
+        ]
+        next_offset = offset + limit if offset + limit < total else None
+        return PaginatedResponse[UserManagementRow](
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+            next_offset=next_offset,
+            fetched_at=_utcnow(),
+        )
+
+    def get_user_summary(self, user_id: str) -> UserSummary | None:
+        row = self._fetchone(
+            """
+            SELECT
+                u.user_id,
+                u.email,
+                u.plan,
+                u.status,
+                u.created_at,
+                u.last_seen_at,
+                u.support_flags_json,
+                COALESCE(p.display_name, u.user_id) AS display_name,
+                COALESCE(p.locale, 'en') AS locale,
+                p.organization_id,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'export'
+                ) AS open_export_count,
+                (
+                    SELECT COUNT(*)
+                    FROM support_requests sr
+                    WHERE sr.user_id = u.user_id
+                      AND sr.status = 'open'
+                      AND sr.request_type = 'delete'
+                ) AS open_delete_count
+            FROM admin_users u
+            LEFT JOIN user_profiles p ON p.user_id = u.user_id
+            WHERE u.user_id = ?
+            """,
+            (user_id,),
+        )
+        if row is None:
+            return None
+        return UserSummary(
+            user_id=row["user_id"],
+            display_name=row["display_name"],
+            email_masked=_mask_email(row["email"]),
+            plan=row["plan"],
+            status=row["status"],
+            locale=row["locale"],
+            created_at=_from_iso(row["created_at"]) or _utcnow(),
+            last_seen_at=_from_iso(row["last_seen_at"]) or _utcnow(),
+            organization_id=row["organization_id"],
+            support_flags=list(_json_loads(row["support_flags_json"], default=[])),
+            privacy_request_status=self._privacy_status_from_counts(
+                open_export_count=int(row["open_export_count"]),
+                open_delete_count=int(row["open_delete_count"]),
+            ),
+        )
+
+    def get_user_usage_summary(self, user_id: str) -> UserUsageSummary | None:
+        user = self.get_user_summary(user_id)
+        if user is None:
+            return None
+        fallback_rate = float(
+            self._scalar(
+                """
+                SELECT COALESCE(AVG(CAST(fallback AS REAL)), 0)
+                FROM ai_invocations
+                WHERE user_id = ?
+                """,
+                (user_id,),
+            )
+        )
+        latency = float(
+            self._scalar(
+                "SELECT COALESCE(AVG(latency_ms), 0) FROM ai_invocations WHERE user_id = ?",
+                (user_id,),
+            )
+        )
+        return UserUsageSummary(
+            user_id=user_id,
+            capture_events=int(
+                self._scalar(
+                    """
+                    SELECT COALESCE(SUM(quantity), 0)
+                    FROM usage_events
+                    WHERE user_id = ? AND event_type = 'capture_classification_requested'
+                    """,
+                    (user_id,),
+                )
+            ),
+            missions_generated=int(
+                self._scalar(
+                    "SELECT COUNT(*) FROM mission_audit_records WHERE user_id = ?",
+                    (user_id,),
+                )
+            ),
+            missions_completed=int(
+                self._scalar(
+                    """
+                    SELECT COUNT(*)
+                    FROM feedback_audit_records
+                    WHERE user_id = ? AND status = 'completed'
+                    """,
+                    (user_id,),
+                )
+            ),
+            ai_calls_count=int(
+                self._scalar(
+                    "SELECT COUNT(*) FROM ai_invocations WHERE user_id = ?",
+                    (user_id,),
+                )
+            ),
+            fallback_rate=round(fallback_rate, 4),
+            latency_ms_avg=round(latency, 2),
+        )
+
+    def get_user_privacy_summary(self, user_id: str) -> UserPrivacySummary | None:
+        user = self.get_user_summary(user_id)
+        if user is None:
+            return None
+        open_requests = [
+            request.request_type
+            for request in self.list_support_requests()
+            if request.user_id == user_id and request.status == "open"
+        ]
+        return UserPrivacySummary(
+            user_id=user_id,
+            privacy_request_status=user.privacy_request_status,
+            open_requests=sorted(set(open_requests)),
+            encrypted_collections=[
+                "expenses",
+                "journal_entries",
+                "quick_notes",
+            ],
+            sensitive_data_excluded=True,
+        )
+
+    def get_user_support_summary(self, user_id: str) -> UserSupportSummary | None:
+        user = self.get_user_summary(user_id)
+        if user is None:
+            return None
+        requests = [
+            request
+            for request in self.list_support_requests()
+            if request.user_id == user_id
+        ]
+        return UserSupportSummary(
+            user_id=user_id,
+            support_flags=user.support_flags,
+            open_request_count=sum(1 for request in requests if request.status == "open"),
+            requests=requests,
+        )
+
+    def list_organizations(self) -> list[OrganizationRow]:
+        rows = self._fetchall(
+            """
+            SELECT
+                o.organization_id,
+                o.name,
+                o.status,
+                o.plan_id,
+                o.storage_used_gb,
+                o.ai_mode_default,
+                o.created_at,
+                (
+                    SELECT COUNT(*)
+                    FROM user_profiles p
+                    WHERE p.organization_id = o.organization_id
+                ) AS user_count
+            FROM organizations o
+            ORDER BY o.created_at DESC, o.name ASC
+            """
+        )
+        return [
+            OrganizationRow(
+                organization_id=row["organization_id"],
+                name=row["name"],
+                status=row["status"],
+                plan=row["plan_id"],
+                user_count=int(row["user_count"]),
+                storage_used_gb=float(row["storage_used_gb"]),
+                ai_mode_default=row["ai_mode_default"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def get_organization(self, organization_id: str) -> OrganizationDetail | None:
+        base = self._fetchone(
+            """
+            SELECT organization_id, name, status, plan_id, storage_used_gb, ai_mode_default, created_at
+            FROM organizations
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        )
+        if base is None:
+            return None
+        member_rows = self._fetchall(
+            """
+            SELECT u.user_id
+            FROM admin_users u
+            JOIN user_profiles p ON p.user_id = u.user_id
+            WHERE p.organization_id = ?
+            ORDER BY u.last_seen_at DESC
+            """,
+            (organization_id,),
+        )
+        members = [
+            summary
+            for summary in (
+                self.get_user_summary(row["user_id"])
+                for row in member_rows
+            )
+            if summary is not None
+        ]
+        return OrganizationDetail(
+            organization_id=base["organization_id"],
+            name=base["name"],
+            status=base["status"],
+            plan=base["plan_id"],
+            user_count=len(members),
+            storage_used_gb=float(base["storage_used_gb"]),
+            ai_mode_default=base["ai_mode_default"],
+            created_at=_from_iso(base["created_at"]) or _utcnow(),
+            members=members,
+        )
+
+    def list_plans(self) -> list[PlanRow]:
+        rows = self._fetchall(
+            """
+            SELECT
+                plan_id,
+                name,
+                price_label,
+                user_limit,
+                storage_limit_gb,
+                ai_credit_policy,
+                byok_allowed,
+                support_level
+            FROM plans
+            ORDER BY user_limit ASC
+            """
+        )
+        return [
+            PlanRow(
+                plan_id=row["plan_id"],
+                name=row["name"],
+                price_label=row["price_label"],
+                user_limit=int(row["user_limit"]),
+                storage_limit_gb=float(row["storage_limit_gb"]),
+                ai_credit_policy=row["ai_credit_policy"],
+                byok_allowed=bool(row["byok_allowed"]),
+                support_level=row["support_level"],
+            )
+            for row in rows
+        ]
+
+    def list_openrouter_byok_keys(self) -> list[OpenRouterByokKeyRecord]:
+        rows = self._fetchall(
+            """
+            SELECT
+                key_id,
+                organization_id,
+                project_id,
+                label,
+                secret_last4,
+                status,
+                scopes_json,
+                created_at,
+                last_used_at,
+                disabled_at
+            FROM openrouter_byok_keys
+            ORDER BY created_at DESC
+            """
+        )
+        return [
+            OpenRouterByokKeyRecord(
+                key_id=row["key_id"],
+                organization_id=row["organization_id"],
+                project_id=row["project_id"],
+                label=row["label"],
+                secret_last4=row["secret_last4"],
+                status=row["status"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+                last_used_at=_from_iso(row["last_used_at"]),
+                disabled_at=_from_iso(row["disabled_at"]),
+                scopes=list(_json_loads(row["scopes_json"], default=[])),
+            )
+            for row in rows
+        ]
+
+    def create_openrouter_byok_key(
+        self,
+        payload: OpenRouterByokKeyCreate,
+        *,
+        secret_ciphertext: str,
+        secret_last4: str,
+        key_id: str,
+    ) -> OpenRouterByokKeyRecord:
+        now = _utcnow()
+        self._execute(
+            """
+            INSERT INTO openrouter_byok_keys(
+                key_id, organization_id, project_id, label, secret_ciphertext,
+                secret_last4, status, scopes_json, created_at, last_used_at, disabled_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                key_id,
+                payload.organization_id,
+                payload.project_id,
+                payload.label,
+                secret_ciphertext,
+                secret_last4,
+                "unknown",
+                _json_dumps(payload.scopes),
+                _to_iso(now),
+                None,
+                None,
+            ),
+        )
+        self._commit()
+        return OpenRouterByokKeyRecord(
+            key_id=key_id,
+            organization_id=payload.organization_id,
+            project_id=payload.project_id,
+            label=payload.label,
+            secret_last4=secret_last4,
+            status="unknown",
+            created_at=now,
+            last_used_at=None,
+            disabled_at=None,
+            scopes=payload.scopes,
+        )
+
+    def patch_openrouter_byok_key(
+        self,
+        key_id: str,
+        payload: OpenRouterByokKeyPatch,
+        *,
+        secret_ciphertext: str | None = None,
+        secret_last4: str | None = None,
+    ) -> OpenRouterByokKeyRecord | None:
+        existing = self._fetchone(
+            """
+            SELECT *
+            FROM openrouter_byok_keys
+            WHERE key_id = ?
+            """,
+            (key_id,),
+        )
+        if existing is None:
+            return None
+        next_label = payload.label or existing["label"]
+        next_project_id = (
+            existing["project_id"] if payload.project_id is None else payload.project_id
+        )
+        next_scopes = (
+            list(_json_loads(existing["scopes_json"], default=[]))
+            if payload.scopes is None
+            else payload.scopes
+        )
+        next_secret_last4 = secret_last4 or existing["secret_last4"]
+        if secret_ciphertext is None:
+            self._execute(
+                """
+                UPDATE openrouter_byok_keys
+                SET project_id = ?, label = ?, secret_last4 = ?, scopes_json = ?
+                WHERE key_id = ?
+                """,
+                (
+                    next_project_id,
+                    next_label,
+                    next_secret_last4,
+                    _json_dumps(next_scopes),
+                    key_id,
+                ),
+            )
+        else:
+            self._execute(
+                """
+                UPDATE openrouter_byok_keys
+                SET project_id = ?, label = ?, secret_ciphertext = ?, secret_last4 = ?, scopes_json = ?, status = 'unknown', disabled_at = NULL
+                WHERE key_id = ?
+                """,
+                (
+                    next_project_id,
+                    next_label,
+                    secret_ciphertext,
+                    next_secret_last4,
+                    _json_dumps(next_scopes),
+                    key_id,
+                ),
+            )
+        self._commit()
+        refreshed = self._fetchone(
+            """
+            SELECT key_id, organization_id, project_id, label, secret_last4, status, scopes_json, created_at, last_used_at, disabled_at
+            FROM openrouter_byok_keys
+            WHERE key_id = ?
+            """,
+            (key_id,),
+        )
+        if refreshed is None:
+            return None
+        return OpenRouterByokKeyRecord(
+            key_id=refreshed["key_id"],
+            organization_id=refreshed["organization_id"],
+            project_id=refreshed["project_id"],
+            label=refreshed["label"],
+            secret_last4=refreshed["secret_last4"],
+            status=refreshed["status"],
+            created_at=_from_iso(refreshed["created_at"]) or _utcnow(),
+            last_used_at=_from_iso(refreshed["last_used_at"]),
+            disabled_at=_from_iso(refreshed["disabled_at"]),
+            scopes=list(_json_loads(refreshed["scopes_json"], default=[])),
+        )
+
+    def disable_openrouter_byok_key(self, key_id: str) -> OpenRouterByokKeyRecord | None:
+        now = _utcnow()
+        self._execute(
+            """
+            UPDATE openrouter_byok_keys
+            SET status = 'disabled', disabled_at = ?
+            WHERE key_id = ?
+            """,
+            (_to_iso(now), key_id),
+        )
+        self._commit()
+        return next(
+            (item for item in self.list_openrouter_byok_keys() if item.key_id == key_id),
+            None,
+        )
+
+    def test_openrouter_byok_key(self, key_id: str) -> OpenRouterByokKeyRecord | None:
+        current = next(
+            (item for item in self.list_openrouter_byok_keys() if item.key_id == key_id),
+            None,
+        )
+        if current is None or current.status == "disabled":
+            return None
+        now = _utcnow()
+        self._execute(
+            """
+            UPDATE openrouter_byok_keys
+            SET status = 'healthy', last_used_at = ?, disabled_at = NULL
+            WHERE key_id = ?
+            """,
+            (_to_iso(now), key_id),
+        )
+        self._commit()
+        return next(
+            (item for item in self.list_openrouter_byok_keys() if item.key_id == key_id),
+            None,
+        )
+
+    def list_ai_usage_ledger(self) -> list[AiUsageLedgerRow]:
+        rows = self._fetchall(
+            """
+            SELECT
+                id,
+                organization_id,
+                user_id,
+                ai_mode,
+                provider,
+                model,
+                endpoint,
+                input_tokens,
+                output_tokens,
+                platform_cost_usd,
+                customer_charge_usd,
+                xinsight_credits_debited,
+                byok_external_billing,
+                created_at
+            FROM ai_usage_ledger
+            ORDER BY created_at DESC
+            """
+        )
+        return [
+            AiUsageLedgerRow(
+                id=row["id"],
+                organization_id=row["organization_id"],
+                user_id=row["user_id"],
+                ai_mode=row["ai_mode"],
+                provider=row["provider"],
+                model=row["model"],
+                endpoint=row["endpoint"],
+                input_tokens=int(row["input_tokens"]),
+                output_tokens=int(row["output_tokens"]),
+                platform_cost_usd=float(row["platform_cost_usd"]),
+                customer_charge_usd=float(row["customer_charge_usd"]),
+                xinsight_credits_debited=int(row["xinsight_credits_debited"]),
+                byok_external_billing=bool(row["byok_external_billing"]),
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+
+    def get_xinsight_credit_summary(self) -> XInsightCreditSummary:
+        rows = self.list_ai_usage_ledger()
+        xinsight_rows = [row for row in rows if row.ai_mode == "xinsightai"]
+        byok_rows = [row for row in rows if row.ai_mode == "byok"]
+        return XInsightCreditSummary(
+            total_credits_debited=sum(row.xinsight_credits_debited for row in xinsight_rows),
+            total_customer_charge_usd=round(
+                sum(row.customer_charge_usd for row in xinsight_rows),
+                2,
+            ),
+            total_platform_cost_usd=round(
+                sum(row.platform_cost_usd for row in xinsight_rows),
+                2,
+            ),
+            byok_request_count=len(byok_rows),
+        )
+
+    def list_xinsight_plan_rows(self) -> list[PlanRow]:
+        return [
+            plan
+            for plan in self.list_plans()
+            if plan.ai_credit_policy != "No bundled credits"
+        ]
+
+    def list_billing_accounts(self) -> list[BillingAccountRow]:
+        byok_keys = self.list_openrouter_byok_keys()
+        ledger = self.list_ai_usage_ledger()
+        accounts: list[BillingAccountRow] = []
+        for organization in self.list_organizations():
+            org_rows = [row for row in ledger if row.organization_id == organization.organization_id]
+            accounts.append(
+                BillingAccountRow(
+                    organization_id=organization.organization_id,
+                    organization_name=organization.name,
+                    plan=organization.plan,
+                    subscription_status=organization.status,
+                    storage_charge_usd=round(organization.storage_used_gb * 0.18, 2),
+                    xinsight_charge_usd=round(
+                        sum(row.customer_charge_usd for row in org_rows if row.ai_mode == "xinsightai"),
+                        2,
+                    ),
+                    byok_key_count=sum(
+                        1
+                        for key in byok_keys
+                        if key.organization_id == organization.organization_id and key.disabled_at is None
+                    ),
+                    invoice_placeholder=f"placeholder-{organization.organization_id}",
+                )
+            )
+        return accounts
+
+    def get_storage_summary(self) -> StorageSummary:
+        organizations = self.list_organizations()
+        total_gb = round(sum(item.storage_used_gb for item in organizations), 2)
+        return StorageSummary(
+            total_gb=total_gb,
+            billable_gb=total_gb,
+            local_only_gb=round(total_gb * 0.42, 2),
+            cloud_gb=round(total_gb * 0.58, 2),
+            export_bundle_gb=round(total_gb * 0.06, 2),
+            homememory_metadata_count=0,
+            retention_risk_count=sum(1 for item in organizations if item.storage_used_gb > 40),
+        )
+
+    def list_storage_usage(self) -> list[StorageUsageRow]:
+        return [
+            StorageUsageRow(
+                organization_id=organization.organization_id,
+                organization_name=organization.name,
+                plan=organization.plan,
+                storage_used_gb=organization.storage_used_gb,
+                encrypted_collections=["expenses", "journal_entries", "quick_notes"],
+                retention_risk=organization.storage_used_gb > 40,
+            )
+            for organization in self.list_organizations()
+        ]
+
+    def list_privacy_requests(self) -> list[PrivacyRequestRow]:
+        return [
+            PrivacyRequestRow(
+                request_id=request.request_id,
+                user_id=request.user_id,
+                request_type=request.request_type,
+                status=request.status,
+                requested_at=request.requested_at,
+            )
+            for request in self.list_support_requests()
+        ]
+
+    def get_privacy_data_map(self) -> PrivacyDataMap:
+        return PrivacyDataMap(
+            encrypted_collections=["expenses", "journal_entries", "quick_notes"],
+            sensitive_data_excluded=True,
+            retention_notes=[
+                "Support exports generate temporary bundles.",
+                "HomeMemory personal objects stay excluded until aggregate-only admin telemetry is available.",
+            ],
+        )
+
+    def record_admin_audit(
+        self,
+        *,
+        audit_id: str,
+        actor_id: str,
+        action: str,
+        target_type: str,
+        target_id: str,
+        safe_diff: dict[str, object],
+        correlation_id: str,
+        created_at: datetime | None = None,
+    ) -> None:
+        at = created_at or _utcnow()
+        self._execute(
+            """
+            INSERT INTO admin_audit_log(
+                audit_id, actor_id, action, target_type, target_id,
+                safe_diff_json, correlation_id, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                audit_id,
+                actor_id,
+                action,
+                target_type,
+                target_id,
+                _json_dumps(safe_diff),
+                correlation_id,
+                _to_iso(at),
+            ),
+        )
+        self._commit()
+
+    def list_admin_audit(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        actor: str | None = None,
+        action: str | None = None,
+    ) -> PaginatedResponse[AuditLogRow]:
+        filters: list[str] = []
+        args: list[object] = []
+        if actor:
+            filters.append("actor_id = ?")
+            args.append(actor)
+        if action:
+            filters.append("action = ?")
+            args.append(action)
+        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        total = int(
+            self._scalar(
+                f"SELECT COUNT(*) FROM admin_audit_log {where_sql}",
+                tuple(args),
+            )
+        )
+        rows = self._fetchall(
+            f"""
+            SELECT audit_id, actor_id, action, target_type, target_id, safe_diff_json, correlation_id, created_at
+            FROM admin_audit_log
+            {where_sql}
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+            """,
+            tuple([*args, limit, offset]),
+        )
+        items = [
+            AuditLogRow(
+                audit_id=row["audit_id"],
+                actor_id=row["actor_id"],
+                action=row["action"],
+                target_type=row["target_type"],
+                target_id=row["target_id"],
+                safe_diff=dict(_json_loads(row["safe_diff_json"], default={})),
+                correlation_id=row["correlation_id"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+        next_offset = offset + limit if offset + limit < total else None
+        return PaginatedResponse[AuditLogRow](
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+            next_offset=next_offset,
+            fetched_at=_utcnow(),
+        )
+
+    def latest_admin_audit_at(self) -> datetime | None:
+        value = self._scalar("SELECT MAX(created_at) FROM admin_audit_log")
+        return _from_iso(value) if isinstance(value, str) else None
+
+    def list_privacy_requests_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[PrivacyRequestRow]:
+        return _paginate_sequence(
+            sorted(
+                self.list_privacy_requests(),
+                key=lambda item: item.requested_at,
+                reverse=True,
+            ),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_organizations_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        query: str | None = None,
+        status: str | None = None,
+        plan: str | None = None,
+    ) -> PaginatedResponse[OrganizationRow]:
+        filters: list[str] = []
+        args: list[object] = []
+        if query:
+            filters.append("(LOWER(name) LIKE ? OR LOWER(organization_id) LIKE ?)")
+            like = f"%{query.strip().lower()}%"
+            args.extend([like, like])
+        if status:
+            filters.append("status = ?")
+            args.append(status)
+        if plan:
+            filters.append("plan_id = ?")
+            args.append(plan)
+        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        total = int(
+            self._scalar(
+                f"SELECT COUNT(*) FROM organizations {where_sql}",
+                tuple(args),
+            )
+        )
+        rows = self._fetchall(
+            f"""
+            SELECT organization_id, name, status, plan_id, storage_used_gb, ai_mode_default, created_at
+            FROM organizations
+            {where_sql}
+            ORDER BY created_at DESC, organization_id ASC
+            LIMIT ? OFFSET ?
+            """,
+            tuple([*args, limit, offset]),
+        )
+        items = [
+            OrganizationRow(
+                organization_id=row["organization_id"],
+                name=row["name"],
+                status=row["status"],
+                plan=row["plan_id"],
+                user_count=int(
+                    self._scalar(
+                        "SELECT COUNT(*) FROM user_profiles WHERE organization_id = ?",
+                        (row["organization_id"],),
+                    )
+                ),
+                storage_used_gb=float(row["storage_used_gb"]),
+                ai_mode_default=row["ai_mode_default"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+            )
+            for row in rows
+        ]
+        next_offset = offset + limit if offset + limit < total else None
+        return PaginatedResponse[OrganizationRow](
+            items=items,
+            total=total,
+            limit=limit,
+            offset=offset,
+            next_offset=next_offset,
+            fetched_at=_utcnow(),
+        )
+
+    def list_usage_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[UsageSnapshot]:
+        return _paginate_sequence(
+            self.list_usage(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_ai_costs_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[AICostSnapshot]:
+        return _paginate_sequence(
+            self.list_ai_costs(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_feedback_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[FeedbackAuditRecord]:
+        return _paginate_sequence(
+            self.list_feedback(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_safety_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[SafetyAuditRecord]:
+        return _paginate_sequence(
+            self.list_safety(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_billing_accounts_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[BillingAccountRow]:
+        return _paginate_sequence(
+            self.list_billing_accounts(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def list_storage_usage_paginated(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[StorageUsageRow]:
+        return _paginate_sequence(
+            self.list_storage_usage(),
+            limit=limit,
+            offset=offset,
+        )
+
+    def get_homememory_summary(self) -> HomeMemorySummary:
+        rows = self._fetchall(
+            """
+            SELECT metadata_json, fallback, status
+            FROM ai_invocations
+            WHERE endpoint = '/v1/proofs/parse'
+            """
+        )
+        total = len(rows)
+        success_count = sum(1 for row in rows if row["status"] == "success")
+        fallback_count = sum(1 for row in rows if bool(row["fallback"]))
+        locale_distribution: dict[str, int] = {}
+        for row in rows:
+            metadata = dict(_json_loads(row["metadata_json"], default={}))
+            locale = str(metadata.get("locale") or "en")
+            locale_distribution[locale] = locale_distribution.get(locale, 0) + 1
+        parser_events = self._fetchall(
+            """
+            SELECT event_type
+            FROM usage_events
+            WHERE endpoint = '/v1/proofs/parse'
+               OR event_type IN (
+                    'warranty_reminder_created',
+                    'claim_draft_created',
+                    'evidence_attachment_added'
+               )
+            """
+        )
+        reminder_count = sum(
+            1 for row in parser_events if row["event_type"] == "warranty_reminder_created"
+        )
+        claim_count = sum(
+            1 for row in parser_events if row["event_type"] == "claim_draft_created"
+        )
+        evidence_count = sum(
+            1 for row in parser_events if row["event_type"] == "evidence_attachment_added"
+        )
+        return HomeMemorySummary(
+            proof_parse_count=total,
+            warranty_reminder_count=reminder_count,
+            claim_draft_count=claim_count,
+            evidence_attachment_count=evidence_count,
+            parser_success_rate=(success_count / total) if total else 0.0,
+            fallback_rate=(fallback_count / total) if total else 0.0,
+            locale_distribution=locale_distribution,
+            encrypted_collections=[],
+            storage_impact_estimate=round(evidence_count * 0.0025, 4),
+            sensitive_data_excluded=True,
+        )
+
+    def list_homememory_parser_usage(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+    ) -> PaginatedResponse[HomeMemoryParserUsageRow]:
+        rows = self._fetchall(
+            """
+            SELECT metadata_json, fallback, status
+            FROM ai_invocations
+            WHERE endpoint = '/v1/proofs/parse'
+            """
+        )
+        buckets: dict[tuple[str, str], dict[str, float]] = {}
+        for row in rows:
+            metadata = dict(_json_loads(row["metadata_json"], default={}))
+            locale = str(metadata.get("locale") or "en")
+            parser_name = str(metadata.get("parser") or "deterministic")
+            key = (locale, parser_name)
+            bucket = buckets.setdefault(
+                key,
+                {"requests": 0, "success": 0, "fallback": 0},
+            )
+            bucket["requests"] += 1
+            if row["status"] == "success":
+                bucket["success"] += 1
+            if bool(row["fallback"]):
+                bucket["fallback"] += 1
+        items = [
+            HomeMemoryParserUsageRow(
+                locale=locale,
+                parser=parser_name if parser_name in {"deterministic", "semantic", "fallback"} else "deterministic",
+                requests=int(values["requests"]),
+                success_rate=(values["success"] / values["requests"]) if values["requests"] else 0.0,
+                fallback_rate=(values["fallback"] / values["requests"]) if values["requests"] else 0.0,
+            )
+            for (locale, parser_name), values in sorted(buckets.items())
+        ]
+        return _paginate_sequence(items, limit=limit, offset=offset)
+
+    def get_quality_summary(self) -> QualitySummary:
+        dashboard = self.dashboard()
+        homememory = self.get_homememory_summary()
+        support_escalations = sum(
+            1
+            for request in self.list_support_requests()
+            if request.status == "open"
+        )
+        ai_cost_rows = self.list_ai_costs()
+        high_cost_anomalies = sum(
+            1 for row in ai_cost_rows if row.estimated_cost_usd >= 1.0 or row.fallback_rate >= 0.2
+        )
+        return QualitySummary(
+            mission_usefulness_rate=dashboard.recommendation_usefulness_rate,
+            mission_completion_rate=dashboard.mission_completion_rate,
+            rejection_rate=dashboard.rejection_rate,
+            fallback_rate=dashboard.fallback_rate,
+            proof_parser_success_rate=homememory.parser_success_rate,
+            safety_interventions=int(len(self.list_safety())),
+            high_cost_anomalies=high_cost_anomalies,
+            support_escalations=support_escalations,
+        )
+
+    def list_quality_breakdown(self) -> list[QualityBreakdownRow]:
+        dashboard = self.dashboard()
+        homememory = self.get_homememory_summary()
+        return [
+            QualityBreakdownRow(
+                dimension="missions",
+                label="Mission usefulness",
+                value=dashboard.recommendation_usefulness_rate,
+                unit="ratio",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="missions",
+                label="Mission completion",
+                value=dashboard.mission_completion_rate,
+                unit="ratio",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="trust",
+                label="Fallback rate",
+                value=dashboard.fallback_rate,
+                unit="ratio",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="cost",
+                label="AI cost per active user",
+                value=dashboard.ai_cost_per_active_user_usd,
+                unit="usd",
+                source="live",
+            ),
+            QualityBreakdownRow(
+                dimension="homememory",
+                label="Proof parser success",
+                value=homememory.parser_success_rate,
+                unit="ratio",
+                source="derived",
+            ),
+            QualityBreakdownRow(
+                dimension="safety",
+                label="Safety interventions",
+                value=float(len(self.list_safety())),
+                unit="count",
+                source="live",
+            ),
+        ]
+
+    def list_incidents(
+        self,
+        *,
+        limit: int = 25,
+        offset: int = 0,
+        severity: str | None = None,
+        status: str | None = None,
+    ) -> PaginatedResponse[IncidentRow]:
+        items: list[IncidentRow] = []
+        for event in self.list_safety():
+            items.append(
+                IncidentRow(
+                    incident_id=f"safety-{event.event_id}",
+                    type="safety_intervention",
+                    severity=event.severity,
+                    source="ai_gateway",
+                    status="open" if event.severity == "high" else "monitoring",
+                    created_at=event.created_at,
+                    resolved_at=None,
+                    safe_summary=f"Safety rule {event.rule} flagged category {event.category}.",
+                )
+            )
+        for event in self.list_openrouter_key_events():
+            if event.event_type not in {"failure", "disabled"}:
+                continue
+            items.append(
+                IncidentRow(
+                    incident_id=f"routing-{event.event_id}",
+                    type="routing_key_issue",
+                    severity="high" if event.event_type == "disabled" else "medium",
+                    source="web_backend",
+                    status="open" if event.event_type == "disabled" else "monitoring",
+                    created_at=event.created_at,
+                    resolved_at=None,
+                    safe_summary=f"Routing key event {event.event_type} affected endpoint {event.endpoint or 'unknown'}.",
+                )
+            )
+        for request in self.list_support_requests():
+            if request.status != "open":
+                continue
+            items.append(
+                IncidentRow(
+                    incident_id=f"support-{request.request_id}",
+                    type="privacy_request_backlog",
+                    severity="medium",
+                    source="support",
+                    status="open",
+                    created_at=request.requested_at,
+                    resolved_at=None,
+                    safe_summary=f"{request.request_type.title()} request waiting for operator action.",
+                )
+            )
+        if severity:
+            items = [item for item in items if item.severity == severity]
+        if status:
+            items = [item for item in items if item.status == status]
+        items.sort(key=lambda item: item.created_at, reverse=True)
+        return _paginate_sequence(items, limit=limit, offset=offset)
 
     def list_users(self) -> list[AdminUser]:
         rows = self._fetchall(
