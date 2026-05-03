@@ -17,12 +17,21 @@ from app.routing import (
     utcnow,
 )
 from app.schemas import (
+    AICostSnapshot,
     AIInvocationRecord,
     AdminHealth,
+    AdminAuthStatus,
+    AiUsageLedgerRow,
+    AuditLogRow,
+    BillingAccountRow,
     DashboardMetrics,
     FeatureFlag,
     FeatureFlagPatch,
+    FeedbackAuditRecord,
     FeedbackAuditUpsert,
+    HomeMemoryParserUsageRow,
+    HomeMemorySummary,
+    IncidentRow,
     InternalRoutingConfig,
     MissionAuditUpsert,
     MobileRuntimeConfig,
@@ -30,16 +39,38 @@ from app.schemas import (
     ModelSelectionSnapshot,
     ModelSettingsSnapshot,
     ModelSettingsUpsert,
+    OrganizationDetail,
+    OrganizationRow,
+    OpenRouterByokKeyCreate,
+    OpenRouterByokKeyPatch,
+    OpenRouterByokKeyRecord,
     OpenRouterApiKeyCreate,
     OpenRouterApiKeyPatch,
     OpenRouterApiKeyRecord,
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
+    PaginatedResponse,
+    PlanRow,
+    PrivacyDataMap,
+    PrivacyRequestRow,
+    QualityBreakdownRow,
+    QualitySummary,
     RoutingCapability,
     RoutingProfile,
     RoutingProfilePatch,
+    SafetyAuditRecord,
     SafetyAuditUpsert,
+    SecuritySummary,
+    UserManagementRow,
+    UserPrivacySummary,
+    UserSummary,
+    UserSupportSummary,
+    UserUsageSummary,
+    UsageSnapshot,
     UsageEventRecord,
+    StorageSummary,
+    StorageUsageRow,
+    XInsightCreditSummary,
 )
 from app.settings import Settings
 
@@ -84,6 +115,68 @@ def create_app(
     ) -> None:
         if x_internal_service_token != resolved_settings.internal_service_token:
             raise HTTPException(status_code=401, detail="Invalid internal service token.")
+
+    def admin_actor_id() -> str:
+        return "admin-operator"
+
+    def record_admin_audit(
+        *,
+        action: str,
+        target_type: str,
+        target_id: str,
+        safe_diff: dict[str, object],
+    ) -> None:
+        resolved_repository.record_admin_audit(
+            audit_id=f"audit-{uuid4()}",
+            actor_id=admin_actor_id(),
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            safe_diff=safe_diff,
+            correlation_id=f"corr-{uuid4()}",
+            created_at=utcnow(),
+        )
+
+    def production_ready() -> bool:
+        return (
+            resolved_settings.admin_token != "golife-admin-dev"
+            and resolved_settings.ingestion_token != "golife-ingest-dev"
+            and resolved_settings.internal_service_token != "golife-internal-dev"
+            and resolved_settings.openrouter_keys_master_key
+            != "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+            and len(resolved_settings.admin_token) >= 24
+            and len(resolved_settings.ingestion_token) >= 24
+            and len(resolved_settings.internal_service_token) >= 24
+            and len(resolved_settings.openrouter_keys_master_key) >= 32
+        )
+
+    def build_security_summary() -> SecuritySummary:
+        return SecuritySummary(
+            environment=resolved_settings.environment,
+            admin_token_configured=resolved_settings.admin_token != "golife-admin-dev",
+            ingestion_token_configured=resolved_settings.ingestion_token != "golife-ingest-dev",
+            internal_service_token_configured=(
+                resolved_settings.internal_service_token != "golife-internal-dev"
+            ),
+            production_ready=production_ready(),
+            openrouter_key_count=len(resolved_repository.list_openrouter_keys()),
+            byok_key_count=len(resolved_repository.list_openrouter_byok_keys()),
+            latest_audit_at=resolved_repository.latest_admin_audit_at(),
+            dependency_scan_status="ci_required",
+            failed_auth_placeholder=0,
+        )
+
+    def build_auth_status() -> AdminAuthStatus:
+        return AdminAuthStatus(
+            auth_mode="token_only_scaffold",
+            environment=resolved_settings.environment,
+            admin_token_configured=resolved_settings.admin_token != "golife-admin-dev",
+            production_ready=production_ready(),
+            enterprise_ready=False,
+            warning=(
+                "Token-only admin access is a scaffold. Use SSO or managed identity before enterprise production."
+            ),
+        )
 
     def feature_flags_map() -> dict[str, bool]:
         return {
@@ -172,36 +265,402 @@ def create_app(
     async def dashboard(_: None = Depends(require_admin)) -> DashboardMetrics:
         return resolved_repository.dashboard()
 
-    @app.get("/admin/users")
-    async def users(_: None = Depends(require_admin)) -> list[dict[str, object]]:
-        return [item.model_dump(mode="json") for item in resolved_repository.list_users()]
+    @app.get("/admin/users", response_model=PaginatedResponse[UserManagementRow])
+    async def users(
+        limit: int = 25,
+        offset: int = 0,
+        query: str | None = None,
+        status: str | None = None,
+        plan: str | None = None,
+        locale: str | None = None,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[UserManagementRow]:
+        capped_limit = min(max(limit, 1), 100)
+        safe_offset = max(offset, 0)
+        return resolved_repository.list_user_management(
+            limit=capped_limit,
+            offset=safe_offset,
+            query=query,
+            status=status,
+            plan=plan,
+            locale=locale,
+        )
 
-    @app.get("/admin/users/{user_id}")
-    async def user_detail(user_id: str, _: None = Depends(require_admin)) -> dict[str, object]:
-        user = resolved_repository.get_user(user_id)
+    @app.get("/admin/users/{user_id}", response_model=UserSummary)
+    async def user_detail(user_id: str, _: None = Depends(require_admin)) -> UserSummary:
+        user = resolved_repository.get_user_summary(user_id)
         if user is None:
             raise HTTPException(status_code=404, detail="User not found.")
-        return user.model_dump(mode="json")
+        return user
 
-    @app.get("/admin/usage")
-    async def usage(_: None = Depends(require_admin)) -> list[dict[str, object]]:
-        return [item.model_dump(mode="json") for item in resolved_repository.list_usage()]
+    @app.get("/admin/users/{user_id}/summary", response_model=UserSummary)
+    async def user_summary(user_id: str, _: None = Depends(require_admin)) -> UserSummary:
+        user = resolved_repository.get_user_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
 
-    @app.get("/admin/ai-costs")
-    async def ai_costs(_: None = Depends(require_admin)) -> list[dict[str, object]]:
-        return [item.model_dump(mode="json") for item in resolved_repository.list_ai_costs()]
+    @app.get("/admin/users/{user_id}/usage", response_model=UserUsageSummary)
+    async def user_usage(user_id: str, _: None = Depends(require_admin)) -> UserUsageSummary:
+        user = resolved_repository.get_user_usage_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
+
+    @app.get("/admin/users/{user_id}/privacy", response_model=UserPrivacySummary)
+    async def user_privacy(
+        user_id: str,
+        _: None = Depends(require_admin),
+    ) -> UserPrivacySummary:
+        user = resolved_repository.get_user_privacy_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
+
+    @app.get("/admin/users/{user_id}/support", response_model=UserSupportSummary)
+    async def user_support(
+        user_id: str,
+        _: None = Depends(require_admin),
+    ) -> UserSupportSummary:
+        user = resolved_repository.get_user_support_summary(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found.")
+        return user
+
+    @app.get("/admin/organizations", response_model=PaginatedResponse[OrganizationRow])
+    async def organizations(
+        limit: int = 25,
+        offset: int = 0,
+        query: str | None = None,
+        status: str | None = None,
+        plan: str | None = None,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[OrganizationRow]:
+        return resolved_repository.list_organizations_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+            query=query,
+            status=status,
+            plan=plan,
+        )
+
+    @app.get("/admin/organizations/{organization_id}", response_model=OrganizationDetail)
+    async def organization_detail(
+        organization_id: str,
+        _: None = Depends(require_admin),
+    ) -> OrganizationDetail:
+        organization = resolved_repository.get_organization(organization_id)
+        if organization is None:
+            raise HTTPException(status_code=404, detail="Organization not found.")
+        return organization
+
+    @app.get("/admin/plans", response_model=list[PlanRow])
+    async def plans(_: None = Depends(require_admin)) -> list[PlanRow]:
+        return resolved_repository.list_plans()
+
+    @app.get("/admin/openrouter-byok", response_model=list[OpenRouterByokKeyRecord])
+    async def list_openrouter_byok(
+        _: None = Depends(require_admin),
+    ) -> list[OpenRouterByokKeyRecord]:
+        return resolved_repository.list_openrouter_byok_keys()
+
+    @app.post("/admin/openrouter-byok", response_model=OpenRouterByokKeyRecord)
+    async def create_openrouter_byok(
+        payload: OpenRouterByokKeyCreate,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        created = resolved_repository.create_openrouter_byok_key(
+            payload,
+            secret_ciphertext=secret_box.encrypt(payload.secret),
+            secret_last4=SecretBox.secret_last4(payload.secret),
+            key_id=f"byok-{uuid4()}",
+        )
+        record_admin_audit(
+            action="create_byok_key",
+            target_type="openrouter_byok_key",
+            target_id=created.key_id,
+            safe_diff={
+                "organization_id": created.organization_id,
+                "project_id": created.project_id,
+                "label": created.label,
+                "secret_last4": created.secret_last4,
+                "status": created.status,
+                "scopes": created.scopes,
+            },
+        )
+        return created
+
+    @app.patch("/admin/openrouter-byok/{key_id}", response_model=OpenRouterByokKeyRecord)
+    async def patch_openrouter_byok(
+        key_id: str,
+        payload: OpenRouterByokKeyPatch,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        updated = resolved_repository.patch_openrouter_byok_key(
+            key_id,
+            payload,
+            secret_ciphertext=(
+                secret_box.encrypt(payload.secret) if payload.secret is not None else None
+            ),
+            secret_last4=(
+                SecretBox.secret_last4(payload.secret) if payload.secret is not None else None
+            ),
+        )
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found.")
+        record_admin_audit(
+            action="patch_byok_key",
+            target_type="openrouter_byok_key",
+            target_id=updated.key_id,
+            safe_diff={
+                "label": updated.label,
+                "project_id": updated.project_id,
+                "scopes": updated.scopes,
+                "secret_rotated": payload.secret is not None,
+                "secret_last4": updated.secret_last4 if payload.secret is not None else None,
+            },
+        )
+        return updated
+
+    @app.post("/admin/openrouter-byok/{key_id}/test", response_model=OpenRouterByokKeyRecord)
+    async def test_openrouter_byok(
+        key_id: str,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        updated = resolved_repository.test_openrouter_byok_key(key_id)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found or disabled.")
+        record_admin_audit(
+            action="test_byok_key",
+            target_type="openrouter_byok_key",
+            target_id=updated.key_id,
+            safe_diff={
+                "status": updated.status,
+                "last_used_at": updated.last_used_at.isoformat() if updated.last_used_at else None,
+            },
+        )
+        return updated
+
+    @app.post(
+        "/admin/openrouter-byok/{key_id}/disable",
+        response_model=OpenRouterByokKeyRecord,
+    )
+    async def disable_openrouter_byok(
+        key_id: str,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        updated = resolved_repository.disable_openrouter_byok_key(key_id)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found.")
+        record_admin_audit(
+            action="disable_byok_key",
+            target_type="openrouter_byok_key",
+            target_id=updated.key_id,
+            safe_diff={
+                "status": updated.status,
+                "disabled_at": updated.disabled_at.isoformat() if updated.disabled_at else None,
+            },
+        )
+        return updated
+
+    @app.post("/admin/openrouter-byok/{key_id}/rotate", response_model=OpenRouterByokKeyRecord)
+    async def rotate_openrouter_byok(
+        key_id: str,
+        payload: OpenRouterByokKeyPatch,
+        _: None = Depends(require_admin),
+    ) -> OpenRouterByokKeyRecord:
+        if payload.secret is None:
+            raise HTTPException(status_code=400, detail="secret is required for rotation.")
+        updated = resolved_repository.patch_openrouter_byok_key(
+            key_id,
+            payload,
+            secret_ciphertext=secret_box.encrypt(payload.secret),
+            secret_last4=SecretBox.secret_last4(payload.secret),
+        )
+        if updated is None:
+            raise HTTPException(status_code=404, detail="BYOK key not found.")
+        record_admin_audit(
+            action="rotate_byok_key",
+            target_type="openrouter_byok_key",
+            target_id=updated.key_id,
+            safe_diff={
+                "secret_rotated": True,
+                "secret_last4": updated.secret_last4,
+                "status": updated.status,
+            },
+        )
+        return updated
+
+    @app.get("/admin/xinsightai/usage", response_model=list[AiUsageLedgerRow])
+    async def xinsight_usage(_: None = Depends(require_admin)) -> list[AiUsageLedgerRow]:
+        return resolved_repository.list_ai_usage_ledger()
+
+    @app.get("/admin/xinsightai/credits", response_model=XInsightCreditSummary)
+    async def xinsight_credits(
+        _: None = Depends(require_admin),
+    ) -> XInsightCreditSummary:
+        return resolved_repository.get_xinsight_credit_summary()
+
+    @app.get("/admin/xinsightai/plans", response_model=list[PlanRow])
+    async def xinsight_plans(_: None = Depends(require_admin)) -> list[PlanRow]:
+        return resolved_repository.list_xinsight_plan_rows()
+
+    @app.get("/admin/billing/accounts", response_model=PaginatedResponse[BillingAccountRow])
+    async def billing_accounts(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[BillingAccountRow]:
+        return resolved_repository.list_billing_accounts_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
+
+    @app.get("/admin/billing/plans", response_model=list[PlanRow])
+    async def billing_plans(_: None = Depends(require_admin)) -> list[PlanRow]:
+        return resolved_repository.list_plans()
+
+    @app.get("/admin/storage/summary", response_model=StorageSummary)
+    async def storage_summary(_: None = Depends(require_admin)) -> StorageSummary:
+        return resolved_repository.get_storage_summary()
+
+    @app.get("/admin/storage/usage", response_model=PaginatedResponse[StorageUsageRow])
+    async def storage_usage(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[StorageUsageRow]:
+        return resolved_repository.list_storage_usage_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
+
+    @app.get("/admin/privacy/requests", response_model=PaginatedResponse[PrivacyRequestRow])
+    async def privacy_requests(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[PrivacyRequestRow]:
+        return resolved_repository.list_privacy_requests_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
+
+    @app.get("/admin/privacy/data-map", response_model=PrivacyDataMap)
+    async def privacy_data_map(_: None = Depends(require_admin)) -> PrivacyDataMap:
+        return resolved_repository.get_privacy_data_map()
+
+    @app.get("/admin/security/summary", response_model=SecuritySummary)
+    async def security_summary(_: None = Depends(require_admin)) -> SecuritySummary:
+        return build_security_summary()
+
+    @app.get("/admin/audit", response_model=PaginatedResponse[AuditLogRow])
+    async def audit_log(
+        limit: int = 25,
+        offset: int = 0,
+        actor: str | None = None,
+        action: str | None = None,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[AuditLogRow]:
+        return resolved_repository.list_admin_audit(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+            actor=actor,
+            action=action,
+        )
+
+    @app.get("/admin/homememory/summary", response_model=HomeMemorySummary)
+    async def homememory_summary(_: None = Depends(require_admin)) -> HomeMemorySummary:
+        return resolved_repository.get_homememory_summary()
+
+    @app.get(
+        "/admin/homememory/parser-usage",
+        response_model=PaginatedResponse[HomeMemoryParserUsageRow],
+    )
+    async def homememory_parser_usage(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[HomeMemoryParserUsageRow]:
+        return resolved_repository.list_homememory_parser_usage(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
+
+    @app.get("/admin/quality/summary", response_model=QualitySummary)
+    async def quality_summary(_: None = Depends(require_admin)) -> QualitySummary:
+        return resolved_repository.get_quality_summary()
+
+    @app.get("/admin/quality/breakdown", response_model=list[QualityBreakdownRow])
+    async def quality_breakdown(_: None = Depends(require_admin)) -> list[QualityBreakdownRow]:
+        return resolved_repository.list_quality_breakdown()
+
+    @app.get("/admin/incidents", response_model=PaginatedResponse[IncidentRow])
+    async def incidents(
+        limit: int = 25,
+        offset: int = 0,
+        severity: str | None = None,
+        status: str | None = None,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[IncidentRow]:
+        return resolved_repository.list_incidents(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+            severity=severity,
+            status=status,
+        )
+
+    @app.get("/admin/auth/status", response_model=AdminAuthStatus)
+    async def auth_status(_: None = Depends(require_admin)) -> AdminAuthStatus:
+        return build_auth_status()
+
+    @app.get("/admin/usage", response_model=PaginatedResponse[UsageSnapshot])
+    async def usage(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[UsageSnapshot]:
+        return resolved_repository.list_usage_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
+
+    @app.get("/admin/ai-costs", response_model=PaginatedResponse[AICostSnapshot])
+    async def ai_costs(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[AICostSnapshot]:
+        return resolved_repository.list_ai_costs_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
 
     @app.get("/admin/missions")
     async def missions(_: None = Depends(require_admin)) -> list[dict[str, object]]:
         return [item.model_dump(mode="json") for item in resolved_repository.list_missions()]
 
-    @app.get("/admin/feedback")
-    async def feedback(_: None = Depends(require_admin)) -> list[dict[str, object]]:
-        return [item.model_dump(mode="json") for item in resolved_repository.list_feedback()]
+    @app.get("/admin/feedback", response_model=PaginatedResponse[FeedbackAuditRecord])
+    async def feedback(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[FeedbackAuditRecord]:
+        return resolved_repository.list_feedback_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
 
-    @app.get("/admin/safety")
-    async def safety(_: None = Depends(require_admin)) -> list[dict[str, object]]:
-        return [item.model_dump(mode="json") for item in resolved_repository.list_safety()]
+    @app.get("/admin/safety", response_model=PaginatedResponse[SafetyAuditRecord])
+    async def safety(
+        limit: int = 25,
+        offset: int = 0,
+        _: None = Depends(require_admin),
+    ) -> PaginatedResponse[SafetyAuditRecord]:
+        return resolved_repository.list_safety_paginated(
+            limit=min(max(limit, 1), 100),
+            offset=max(offset, 0),
+        )
 
     @app.get("/admin/feature-flags", response_model=list[FeatureFlag])
     async def feature_flags(_: None = Depends(require_admin)) -> list[FeatureFlag]:
@@ -216,6 +675,12 @@ def create_app(
         updated = resolved_repository.update_feature_flag(flag_key, payload.enabled)
         if updated is None:
             raise HTTPException(status_code=404, detail="Feature flag not found.")
+        record_admin_audit(
+            action="patch_feature_flag",
+            target_type="feature_flag",
+            target_id=updated.key,
+            safe_diff={"enabled": updated.enabled},
+        )
         return updated
 
     @app.get("/admin/models", response_model=ModelSettingsSnapshot)
@@ -255,6 +720,18 @@ def create_app(
                 created_at=utcnow(),
             )
         )
+        record_admin_audit(
+            action="create_openrouter_key",
+            target_type="openrouter_key",
+            target_id=created.key_id,
+            safe_diff={
+                "label": created.label,
+                "secret_last4": created.secret_last4,
+                "priority": created.priority,
+                "enabled": created.enabled,
+                "status": created.status,
+            },
+        )
         return created
 
     @app.patch("/admin/openrouter/keys/{key_id}", response_model=OpenRouterApiKeyRecord)
@@ -276,6 +753,19 @@ def create_app(
         if updated is None:
             raise HTTPException(status_code=404, detail="OpenRouter key not found.")
         refresh_selection_snapshots()
+        record_admin_audit(
+            action="patch_openrouter_key",
+            target_type="openrouter_key",
+            target_id=updated.key_id,
+            safe_diff={
+                "label": updated.label,
+                "priority": updated.priority,
+                "enabled": updated.enabled,
+                "status": updated.status,
+                "secret_rotated": payload.secret is not None,
+                "secret_last4": updated.secret_last4 if payload.secret is not None else None,
+            },
+        )
         return updated
 
     @app.post("/admin/openrouter/keys/{key_id}/disable", response_model=OpenRouterApiKeyRecord)
@@ -297,6 +787,12 @@ def create_app(
             )
         )
         refresh_selection_snapshots()
+        record_admin_audit(
+            action="disable_openrouter_key",
+            target_type="openrouter_key",
+            target_id=updated.key_id,
+            safe_diff={"enabled": updated.enabled, "status": updated.status},
+        )
         return updated
 
     @app.get("/admin/openrouter/key-events", response_model=list[OpenRouterKeyEventRecord])
@@ -319,6 +815,16 @@ def create_app(
         if updated is None:
             raise HTTPException(status_code=404, detail="Routing profile not found.")
         refresh_selection_snapshots()
+        record_admin_audit(
+            action="patch_routing_profile",
+            target_type="routing_profile",
+            target_id=updated.capability,
+            safe_diff={
+                "preferred_max_latency_seconds": updated.preferred_max_latency_seconds,
+                "preferred_min_throughput_tokens_per_second": updated.preferred_min_throughput_tokens_per_second,
+                "enabled": updated.enabled,
+            },
+        )
         return updated
 
     @app.get("/admin/model-catalog", response_model=list[ModelCatalogEntry])
@@ -330,6 +836,12 @@ def create_app(
         entries = await fetch_openrouter_model_catalog(resolved_settings.openrouter_base_url)
         resolved_repository.replace_model_catalog(entries)
         refresh_selection_snapshots()
+        record_admin_audit(
+            action="refresh_model_catalog",
+            target_type="model_catalog",
+            target_id="openrouter",
+            safe_diff={"entry_count": len(entries)},
+        )
         return resolved_repository.list_model_catalog()
 
     @app.get("/admin/model-selections", response_model=list[ModelSelectionSnapshot])
@@ -416,4 +928,3 @@ def create_app(
 
 
 app = create_app()
-

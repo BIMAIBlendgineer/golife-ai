@@ -71,6 +71,24 @@ class SemanticClassificationProvider(LLMProvider):
         model: str | None = None,
         temperature: float = 0.0,
     ):
+        if user_payload.get("intent") == "proof_parse":
+            return {
+                "product_name": "Dyson V8",
+                "brand": "Dyson",
+                "model": "V8",
+                "merchant_name": "Amazon",
+                "purchase_date": "2026-04-10",
+                "total_amount": 249.99,
+                "currency": "USD",
+                "warranty_months": 24,
+                "confidence": 0.88,
+                "rationale": "Extracted structured proof fields.",
+                "disclaimer": "Verify warranty with seller or manufacturer.",
+                "_provider_meta": {
+                    "provider": self.provider_name,
+                    "model": "openai/gpt-4.1-mini",
+                },
+            }
         if user_payload.get("multi_item"):
             return {
                 "items": [
@@ -108,7 +126,7 @@ class SemanticClassificationProvider(LLMProvider):
         }
 
     async def runtime_flags(self) -> dict[str, bool]:
-        return {"semantic_classifier": True}
+        return {"semantic_classifier": True, "proof_parser": True}
 
 
 class BrokenSemanticParseProvider(LLMProvider):
@@ -126,7 +144,7 @@ class BrokenSemanticParseProvider(LLMProvider):
         return {"items": []}
 
     async def runtime_flags(self) -> dict[str, bool]:
-        return {"semantic_classifier": True}
+        return {"semantic_classifier": True, "proof_parser": True}
 
 
 def test_health_reports_mock_mode(client):
@@ -485,6 +503,214 @@ def test_event_parse_supports_japanese_and_chinese_pantry_terms(client):
     assert chinese_response.status_code == 200
     assert japanese_response.json()["items"][0]["domain"] == "pantry"
     assert chinese_response.json()["items"][0]["domain"] == "pantry"
+
+
+def test_proof_parse_endpoint_extracts_spanish_fields(tmp_path):
+    app = create_app(
+        settings=Settings(
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        operational_client=FakeOperationalClient(),
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "es",
+                "region": "es",
+                "text": "Compre cafetera Philips en MediaMarkt el 2026-03-12 por 89.99 EUR con garantia de 24 meses.",
+                "privacy_settings": {"ai_enabled": False},
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["product_name"] == "cafetera Philips"
+    assert data["brand"] == "Philips"
+    assert data["merchant_name"] == "MediaMarkt"
+    assert data["purchase_date"] == "2026-03-12"
+    assert data["total_amount"] == 89.99
+    assert data["currency"] == "EUR"
+    assert data["warranty_months"] == 24
+    assert data["trace"]["parser"] == "deterministic_proof_parser"
+
+
+def test_proof_parse_supports_english(tmp_path):
+    app = create_app(
+        settings=Settings(
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        operational_client=FakeOperationalClient(),
+    )
+    with TestClient(app) as client:
+        english = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "Bought Dyson V8 from Amazon on 2026-04-10 for 249.99 USD with 24 month warranty.",
+                "privacy_settings": {"ai_enabled": False},
+            },
+        )
+
+    assert english.status_code == 200
+    assert english.json()["brand"] == "Dyson"
+    assert english.json()["merchant_name"] == "Amazon"
+
+
+def test_proof_parse_supports_portuguese(tmp_path):
+    app = create_app(
+        settings=Settings(
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        operational_client=FakeOperationalClient(),
+    )
+    with TestClient(app) as client:
+        portuguese = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "pt-BR",
+                "text": "Comprei air fryer Mondial na Amazon em 2026-02-05 por 399,90 BRL com garantia de 12 meses.",
+                "privacy_settings": {"ai_enabled": False},
+            },
+        )
+
+    assert portuguese.status_code == 200
+    assert portuguese.json()["brand"] == "Mondial"
+    assert portuguese.json()["currency"] == "BRL"
+    assert portuguese.json()["warranty_months"] == 12
+
+
+def test_proof_parse_supports_japanese_and_chinese_terms(tmp_path):
+    app = create_app(
+        settings=Settings(
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        operational_client=FakeOperationalClient(),
+    )
+    with TestClient(app) as client:
+        japanese = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "ja",
+                "text": "2026-01-20にビックカメラで象印 加湿器を12800円で購入。保証12か月。",
+                "privacy_settings": {"ai_enabled": False},
+            },
+        )
+        chinese = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "zh-Hans",
+                "text": "2026-02-11 在京东购买 小米空气净化器，价格 899 元，保修 24 个月。",
+                "privacy_settings": {"ai_enabled": False},
+            },
+        )
+
+    assert japanese.status_code == 200
+    assert chinese.status_code == 200
+    assert japanese.json()["merchant_name"] == "ビックカメラ"
+    assert japanese.json()["currency"] == "JPY"
+    assert chinese.json()["merchant_name"] == "京东"
+    assert chinese.json()["currency"] == "CNY"
+
+
+def test_proof_parse_uses_semantic_provider_when_flag_enabled(tmp_path):
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            routing_control_enabled=False,
+            openrouter_api_key="test-key",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=SemanticClassificationProvider(),
+        operational_client=FakeOperationalClient(),
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "Bought Dyson V8 from Amazon on 2026-04-10 for 249.99 USD with 24 month warranty.",
+                "privacy_settings": {"ai_enabled": True},
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["product_name"] == "Dyson V8"
+    assert data["trace"]["parser"] == "semantic_openrouter"
+
+
+def test_proof_parse_falls_back_when_semantic_provider_returns_invalid_payload(tmp_path):
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            routing_control_enabled=False,
+            openrouter_api_key="test-key",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=BrokenSemanticParseProvider(),
+        operational_client=FakeOperationalClient(),
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "Bought Dyson V8 from Amazon on 2026-04-10 for 249.99 USD with 24 month warranty.",
+                "privacy_settings": {"ai_enabled": True},
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["merchant_name"] == "Amazon"
+    assert data["trace"]["parser"] == "deterministic_proof_parser"
+
+
+def test_proof_parse_reports_metadata_only_operational_audit(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        operational_client=operational_client,
+    )
+    proof_text = "Bought Dyson V8 from Amazon on 2026-04-10 for 249.99 USD with 24 month warranty."
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "fr",
+                "region": "us",
+                "text": proof_text,
+                "privacy_settings": {"ai_enabled": False},
+            },
+        )
+
+    assert response.status_code == 200
+    assert operational_client.usage_events[0]["endpoint"] == "/v1/proofs/parse"
+    assert operational_client.invocations[0]["endpoint"] == "/v1/proofs/parse"
+    assert operational_client.usage_events[0]["metadata"]["locale"] == "en"
+    assert operational_client.usage_events[0]["metadata"]["region"] == "us"
+    assert operational_client.usage_events[0]["metadata"]["has_amount"] is True
+    assert operational_client.usage_events[0]["metadata"]["has_warranty_hint"] is True
+    dumped = json.dumps(
+        {
+            "usage_events": operational_client.usage_events,
+            "invocations": operational_client.invocations,
+        }
+    )
+    assert proof_text not in dumped
 
 
 def test_feedback_store_persists_items(tmp_path):

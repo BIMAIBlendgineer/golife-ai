@@ -83,6 +83,10 @@ extension LocalizedGoLifeController on GoLifeController {
       l10n.collectionFinanceRecords,
       l10n.collectionJournalEntries,
       l10n.collectionQuickNotes,
+      l10n.collectionOwnedItems,
+      l10n.collectionPurchaseProofs,
+      l10n.collectionClaimDrafts,
+      l10n.collectionEvidenceAttachments,
     ];
   }
 
@@ -91,6 +95,10 @@ extension LocalizedGoLifeController on GoLifeController {
       l10n.collectionPrivacySettings,
       l10n.collectionJournalEntries,
       l10n.collectionQuickNotes,
+      l10n.collectionOwnedItems,
+      l10n.collectionPurchaseProofs,
+      l10n.collectionClaimDrafts,
+      l10n.collectionEvidenceAttachments,
       l10n.collectionRuntimeConfigCache,
       l10n.collectionDeviceEncryptionKey,
     ];

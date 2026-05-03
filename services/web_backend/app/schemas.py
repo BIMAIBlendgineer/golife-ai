@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,13 @@ SafetySeverity = Literal["low", "medium", "high"]
 RequestType = Literal["export", "delete"]
 DataMode = Literal["live", "seeded"]
 InvocationStatus = Literal["success", "error"]
+PrivacyRequestStatus = Literal[
+    "none",
+    "export_open",
+    "delete_open",
+    "mixed_open",
+    "completed",
+]
 RoutingCapability = Literal[
     "daily_plan",
     "task_rewrite",
@@ -19,6 +26,8 @@ RoutingCapability = Literal[
 RoutingConfigSource = Literal["live", "cached", "fallback"]
 OpenRouterKeyStatus = Literal["healthy", "degraded", "disabled", "unknown"]
 OpenRouterKeyEventType = Literal["success", "failure", "disabled", "enabled", "created"]
+AdminLocale = Literal["en", "es", "pt-BR", "ja", "zh-Hans"]
+T = TypeVar("T")
 
 
 class DashboardMetrics(BaseModel):
@@ -54,6 +63,53 @@ class AdminUser(BaseModel):
     support_flags: list[str] = Field(default_factory=list)
     export_requested: bool = False
     delete_requested: bool = False
+
+
+class UserManagementRow(BaseModel):
+    user_id: str = Field(min_length=1)
+    display_name: str = Field(min_length=1)
+    email_masked: str = Field(min_length=3)
+    plan: UserPlan
+    status: UserStatus
+    locale: AdminLocale = "en"
+    last_seen_at: datetime
+    ai_calls_count: int = Field(ge=0)
+    useful_missions_count: int = Field(ge=0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    support_flags: list[str] = Field(default_factory=list)
+    privacy_request_status: PrivacyRequestStatus = "none"
+
+
+class UserSummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    display_name: str = Field(min_length=1)
+    email_masked: str = Field(min_length=3)
+    plan: UserPlan
+    status: UserStatus
+    locale: AdminLocale = "en"
+    created_at: datetime
+    last_seen_at: datetime
+    organization_id: str | None = None
+    support_flags: list[str] = Field(default_factory=list)
+    privacy_request_status: PrivacyRequestStatus = "none"
+
+
+class UserUsageSummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    capture_events: int = Field(ge=0)
+    missions_generated: int = Field(ge=0)
+    missions_completed: int = Field(ge=0)
+    ai_calls_count: int = Field(ge=0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    latency_ms_avg: float = Field(ge=0.0)
+
+
+class UserPrivacySummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    privacy_request_status: PrivacyRequestStatus = "none"
+    open_requests: list[RequestType] = Field(default_factory=list)
+    encrypted_collections: list[str] = Field(default_factory=list)
+    sensitive_data_excluded: bool = True
 
 
 class UsageSnapshot(BaseModel):
@@ -132,12 +188,234 @@ class SupportRequest(BaseModel):
     requested_at: datetime
 
 
+class UserSupportSummary(BaseModel):
+    user_id: str = Field(min_length=1)
+    support_flags: list[str] = Field(default_factory=list)
+    open_request_count: int = Field(ge=0)
+    requests: list[SupportRequest] = Field(default_factory=list)
+
+
+class OrganizationRow(BaseModel):
+    organization_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    status: Literal["active", "trial", "paused"]
+    plan: str = Field(min_length=1)
+    user_count: int = Field(ge=0)
+    storage_used_gb: float = Field(ge=0.0)
+    ai_mode_default: Literal["xinsightai", "byok", "hybrid"]
+    created_at: datetime
+
+
+class OrganizationDetail(OrganizationRow):
+    members: list[UserSummary] = Field(default_factory=list)
+
+
+class PlanRow(BaseModel):
+    plan_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    price_label: str = Field(min_length=1)
+    user_limit: int = Field(ge=1)
+    storage_limit_gb: float = Field(ge=0.0)
+    ai_credit_policy: str = Field(min_length=1)
+    byok_allowed: bool = False
+    support_level: str = Field(min_length=1)
+
+
+class OpenRouterByokKeyRecord(BaseModel):
+    key_id: str = Field(min_length=1)
+    organization_id: str = Field(min_length=1)
+    project_id: str | None = None
+    label: str = Field(min_length=1)
+    secret_last4: str = Field(min_length=4, max_length=4)
+    status: OpenRouterKeyStatus = "unknown"
+    created_at: datetime
+    last_used_at: datetime | None = None
+    disabled_at: datetime | None = None
+    scopes: list[str] = Field(default_factory=list)
+
+
+class OpenRouterByokKeyCreate(BaseModel):
+    organization_id: str = Field(min_length=1)
+    project_id: str | None = None
+    label: str = Field(min_length=1)
+    secret: str = Field(min_length=16)
+    scopes: list[str] = Field(default_factory=list)
+
+
+class OpenRouterByokKeyPatch(BaseModel):
+    label: str | None = Field(default=None, min_length=1)
+    secret: str | None = Field(default=None, min_length=16)
+    project_id: str | None = None
+    scopes: list[str] | None = None
+
+
+class AiUsageLedgerRow(BaseModel):
+    id: str = Field(min_length=1)
+    organization_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    ai_mode: Literal["xinsightai", "byok", "hybrid"]
+    provider: str = Field(min_length=1)
+    model: str | None = None
+    endpoint: str = Field(min_length=1)
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
+    platform_cost_usd: float = Field(ge=0.0)
+    customer_charge_usd: float = Field(ge=0.0)
+    xinsight_credits_debited: int = Field(ge=0)
+    byok_external_billing: bool = False
+    created_at: datetime
+
+
+class XInsightCreditSummary(BaseModel):
+    total_credits_debited: int = Field(ge=0)
+    total_customer_charge_usd: float = Field(ge=0.0)
+    total_platform_cost_usd: float = Field(ge=0.0)
+    byok_request_count: int = Field(ge=0)
+
+
+class BillingAccountRow(BaseModel):
+    organization_id: str = Field(min_length=1)
+    organization_name: str = Field(min_length=1)
+    plan: str = Field(min_length=1)
+    subscription_status: Literal["active", "trial", "paused"]
+    storage_charge_usd: float = Field(ge=0.0)
+    xinsight_charge_usd: float = Field(ge=0.0)
+    byok_key_count: int = Field(ge=0)
+    invoice_placeholder: str = Field(min_length=1)
+
+
+class StorageSummary(BaseModel):
+    total_gb: float = Field(ge=0.0)
+    billable_gb: float = Field(ge=0.0)
+    local_only_gb: float = Field(ge=0.0)
+    cloud_gb: float = Field(ge=0.0)
+    export_bundle_gb: float = Field(ge=0.0)
+    homememory_metadata_count: int = Field(ge=0)
+    retention_risk_count: int = Field(ge=0)
+
+
+class StorageUsageRow(BaseModel):
+    organization_id: str = Field(min_length=1)
+    organization_name: str = Field(min_length=1)
+    plan: str = Field(min_length=1)
+    storage_used_gb: float = Field(ge=0.0)
+    encrypted_collections: list[str] = Field(default_factory=list)
+    retention_risk: bool = False
+
+
+class PrivacyRequestRow(BaseModel):
+    request_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    request_type: RequestType
+    status: Literal["open", "done"]
+    requested_at: datetime
+
+
+class PrivacyDataMap(BaseModel):
+    encrypted_collections: list[str] = Field(default_factory=list)
+    sensitive_data_excluded: bool = True
+    retention_notes: list[str] = Field(default_factory=list)
+
+
+class SecuritySummary(BaseModel):
+    environment: str = Field(min_length=1)
+    admin_token_configured: bool
+    ingestion_token_configured: bool
+    internal_service_token_configured: bool
+    production_ready: bool
+    openrouter_key_count: int = Field(ge=0)
+    byok_key_count: int = Field(ge=0)
+    latest_audit_at: datetime | None = None
+    dependency_scan_status: str = Field(min_length=1)
+    failed_auth_placeholder: int = Field(ge=0)
+
+
+class AuditLogRow(BaseModel):
+    audit_id: str = Field(min_length=1)
+    actor_id: str = Field(min_length=1)
+    action: str = Field(min_length=1)
+    target_type: str = Field(min_length=1)
+    target_id: str = Field(min_length=1)
+    safe_diff: dict[str, Any] = Field(default_factory=dict)
+    correlation_id: str = Field(min_length=1)
+    created_at: datetime
+
+
+class HomeMemorySummary(BaseModel):
+    proof_parse_count: int = Field(ge=0)
+    warranty_reminder_count: int = Field(ge=0)
+    claim_draft_count: int = Field(ge=0)
+    evidence_attachment_count: int = Field(ge=0)
+    parser_success_rate: float = Field(ge=0.0, le=1.0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    locale_distribution: dict[str, int] = Field(default_factory=dict)
+    encrypted_collections: list[str] = Field(default_factory=list)
+    storage_impact_estimate: float = Field(ge=0.0)
+    sensitive_data_excluded: bool = True
+
+
+class HomeMemoryParserUsageRow(BaseModel):
+    locale: str = Field(min_length=1)
+    parser: Literal["deterministic", "semantic", "fallback"]
+    requests: int = Field(ge=0)
+    success_rate: float = Field(ge=0.0, le=1.0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+
+
+class QualitySummary(BaseModel):
+    mission_usefulness_rate: float = Field(ge=0.0, le=1.0)
+    mission_completion_rate: float = Field(ge=0.0, le=1.0)
+    rejection_rate: float = Field(ge=0.0, le=1.0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+    proof_parser_success_rate: float = Field(ge=0.0, le=1.0)
+    safety_interventions: int = Field(ge=0)
+    high_cost_anomalies: int = Field(ge=0)
+    support_escalations: int = Field(ge=0)
+
+
+class QualityBreakdownRow(BaseModel):
+    dimension: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    value: float = Field(ge=0.0)
+    unit: Literal["ratio", "count", "usd", "ms"]
+    source: Literal["live", "fallback", "derived"]
+
+
+class IncidentRow(BaseModel):
+    incident_id: str = Field(min_length=1)
+    type: str = Field(min_length=1)
+    severity: Literal["low", "medium", "high"]
+    source: str = Field(min_length=1)
+    status: Literal["open", "resolved", "monitoring"]
+    created_at: datetime
+    resolved_at: datetime | None = None
+    safe_summary: str = Field(min_length=1)
+
+
+class AdminAuthStatus(BaseModel):
+    auth_mode: Literal["token_only_scaffold"]
+    environment: str = Field(min_length=1)
+    admin_token_configured: bool
+    production_ready: bool
+    enterprise_ready: bool = False
+    warning: str = Field(min_length=1)
+
+
 class AdminHealth(BaseModel):
     status: Literal["ok"]
     data_source: str = Field(min_length=1)
     mode: DataMode
     storage_path: str = Field(min_length=1)
     last_ingestion_at: datetime | None = None
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: list[T] = Field(default_factory=list)
+    total: int = Field(ge=0)
+    limit: int = Field(ge=1)
+    offset: int = Field(ge=0)
+    next_offset: int | None = Field(default=None, ge=0)
+    fetched_at: datetime
 
 
 class UsageEventRecord(BaseModel):
@@ -337,4 +615,3 @@ class MobileRuntimeConfig(BaseModel):
     friendly_copy: dict[str, str] = Field(default_factory=dict)
     ai_status: dict[str, Any] = Field(default_factory=dict)
     generated_at: datetime
-

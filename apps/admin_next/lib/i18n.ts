@@ -92,9 +92,27 @@ export async function getAdminMessages(): Promise<{
 }> {
   const locale = await getAdminLocale();
   const localized = localeMap[locale];
+  const merged = mergeMessages(en, localized);
+  const hasFullNavParity =
+    merged.nav.sections.length === en.nav.sections.length &&
+    merged.nav.sections.every((section, index) => {
+      const baseSection = en.nav.sections[index];
+      return (
+        section.items.length === baseSection.items.length &&
+        section.items.every((item, itemIndex) => item.href === baseSection.items[itemIndex]?.href)
+      );
+    });
   return {
     locale,
-    messages: mergeMessages(en, localized),
+    messages: hasFullNavParity
+      ? merged
+      : {
+          ...merged,
+          nav: {
+            ...merged.nav,
+            sections: en.nav.sections,
+          },
+        },
   };
 }
 

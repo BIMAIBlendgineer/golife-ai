@@ -30,7 +30,7 @@ export default async function DashboardPage() {
 
   const dashboard = dashboardResult.data!;
   const flags = flagsResult.data ?? [];
-  const safety = safetyResult.data ?? [];
+  const safety = safetyResult.data?.items ?? [];
   const supportRequests = supportResult.data ?? [];
   const error =
     [

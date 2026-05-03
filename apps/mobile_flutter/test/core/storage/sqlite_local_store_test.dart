@@ -1,7 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/lifegraph/life_event.dart';
 import 'package:golife_flutter/core/storage/sqlite_local_store.dart';
+import 'package:golife_flutter/domains/pantry/pantry_item.dart';
+import 'package:golife_flutter/domains/tasks/go_task.dart';
 import 'package:golife_flutter/domains/finance/expense_record.dart';
+import 'package:golife_flutter/domains/homememory/claim_draft.dart';
+import 'package:golife_flutter/domains/homememory/evidence_attachment.dart';
+import 'package:golife_flutter/domains/homememory/maintenance_reminder.dart';
+import 'package:golife_flutter/domains/homememory/owned_item.dart';
+import 'package:golife_flutter/domains/homememory/purchase_proof.dart';
+import 'package:golife_flutter/domains/homememory/warranty_record.dart';
 import 'package:golife_flutter/domains/calendar/calendar_item.dart';
 import 'package:golife_flutter/domains/journal/journal_entry.dart';
 import 'package:golife_flutter/domains/journal/quick_note.dart';
@@ -234,6 +242,204 @@ void main() {
     expect(migratedExpenseBlob, isNot(contains('Lunch near office')));
     await migratedDb.close();
 
+    await deleteDatabase(databasePath);
+  });
+
+  test('persists homememory entities and encrypts sensitive blobs', () async {
+    final databaseName =
+        'golife_homememory_${DateTime.now().microsecondsSinceEpoch}.db';
+    final store = SqliteLocalStore(
+      databaseName: databaseName,
+      encryptionSecretOverride: 'test-secret',
+    );
+
+    await store.upsertOwnedItem(
+      const OwnedItem(
+        id: 'item-1',
+        userId: 'local-user',
+        name: 'Dyson V8',
+        brand: 'Dyson',
+        model: 'V8',
+        category: 'appliance',
+        purchaseDate: '2026-04-10',
+        purchasePrice: 249.99,
+        currency: 'USD',
+        store: 'Amazon',
+        warrantyUntil: '2028-04-10',
+        warrantySource: WarrantySource.explicit,
+        notes: 'Keep receipt local.',
+        privacyLevel: 'local_only',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:00:00Z',
+      ),
+    );
+    await store.upsertPurchaseProof(
+      const PurchaseProof(
+        id: 'proof-1',
+        userId: 'local-user',
+        ownedItemId: 'item-1',
+        sourceType: PurchaseProofSourceType.manualEntry,
+        merchantName: 'Amazon',
+        purchaseDate: '2026-04-10',
+        totalAmount: 249.99,
+        currency: 'USD',
+        rawText: 'Bought Dyson V8 from Amazon on 2026-04-10 for 249.99 USD.',
+        fileRef: 'proofs/receipt-1.txt',
+        extractedFields: <String, Object?>{'product_name': 'Dyson V8'},
+        privacyLevel: 'local_only',
+        createdAt: '2026-04-10T10:00:00Z',
+      ),
+    );
+    await store.upsertWarrantyRecord(
+      const WarrantyRecord(
+        id: 'warranty-1',
+        userId: 'local-user',
+        ownedItemId: 'item-1',
+        warrantyUntil: '2028-04-10',
+        warrantySource: WarrantySource.explicit,
+        warrantyMonths: 24,
+        disclaimer: 'Verify with seller.',
+        createdAt: '2026-04-10T10:00:00Z',
+      ),
+    );
+    await store.upsertMaintenanceReminder(
+      const MaintenanceReminder(
+        id: 'reminder-1',
+        userId: 'local-user',
+        ownedItemId: 'item-1',
+        title: 'Review warranty before expiration',
+        dueDate: '2028-03-27',
+        recurrence: 'none',
+        status: MaintenanceReminderStatus.scheduled,
+        createdAt: '2026-04-10T10:00:00Z',
+      ),
+    );
+    await store.upsertClaimDraft(
+      const ClaimDraft(
+        id: 'claim-1',
+        userId: 'local-user',
+        ownedItemId: 'item-1',
+        title: 'Warranty claim for Dyson V8',
+        issueDescription: 'Battery stopped charging.',
+        generatedMessage: 'Hello, I need support with my Dyson V8.',
+        recipientHint: 'Amazon support',
+        status: ClaimDraftStatus.draft,
+        disclaimer: 'No legal advice.',
+        privacyLevel: 'local_only',
+        createdAt: '2026-04-10T10:00:00Z',
+      ),
+    );
+    await store.upsertEvidenceAttachment(
+      const EvidenceAttachment(
+        id: 'evidence-1',
+        userId: 'local-user',
+        ownedItemId: 'item-1',
+        proofId: 'proof-1',
+        type: EvidenceAttachmentType.receipt,
+        fileRef: 'files/receipt-1.jpg',
+        description: 'Front receipt photo',
+        privacyLevel: 'local_only',
+        createdAt: '2026-04-10T10:00:00Z',
+      ),
+    );
+
+    expect(await store.loadOwnedItems(), hasLength(1));
+    expect(await store.loadPurchaseProofs(), hasLength(1));
+    expect(await store.loadWarrantyRecords(), hasLength(1));
+    expect(await store.loadMaintenanceReminders(), hasLength(1));
+    expect(await store.loadClaimDrafts(), hasLength(1));
+    expect(await store.loadEvidenceAttachments(), hasLength(1));
+
+    final databasePath = path.join(await getDatabasesPath(), databaseName);
+    final db = await openDatabase(databasePath, singleInstance: false);
+    final ownedItemBlob =
+        (await db.query('owned_items', columns: const ['json_blob'], limit: 1))
+            .first['json_blob']
+            .toString();
+    final proofBlob = (await db.query(
+      'purchase_proofs',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final claimBlob =
+        (await db.query('claim_drafts', columns: const ['json_blob'], limit: 1))
+            .first['json_blob']
+            .toString();
+    final evidenceBlob = (await db.query(
+      'evidence_attachments',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+
+    expect(ownedItemBlob, isNot(contains('Keep receipt local.')));
+    expect(proofBlob, isNot(contains('Bought Dyson V8 from Amazon')));
+    expect(claimBlob, isNot(contains('Battery stopped charging.')));
+    expect(evidenceBlob, isNot(contains('Front receipt photo')));
+
+    await db.close();
+    await store.deleteAllData();
+    expect(await store.loadOwnedItems(), isEmpty);
+    expect(await store.loadPurchaseProofs(), isEmpty);
+    expect(await store.loadClaimDrafts(), isEmpty);
+    expect(await store.loadEvidenceAttachments(), isEmpty);
+
+    await deleteDatabase(databasePath);
+  });
+
+  test('deletes individual entities without clearing unrelated tables',
+      () async {
+    final databaseName =
+        'golife_delete_${DateTime.now().microsecondsSinceEpoch}.db';
+    final store = SqliteLocalStore(
+      databaseName: databaseName,
+      encryptionSecretOverride: 'test-secret',
+    );
+
+    await store.upsertTask(
+      const GoTask(
+        id: 'task-1',
+        title: 'Prepare receipts',
+        priority: TaskPriority.standard,
+        status: TaskStatus.inbox,
+        estimatedMinutes: 20,
+      ),
+    );
+    await store.upsertExpense(
+      const ExpenseRecord(
+        id: 'expense-1',
+        label: 'Groceries',
+        amount: 21.3,
+        category: 'food',
+      ),
+    );
+    await store.upsertPantryItem(
+      const PantryItem(
+        id: 'pantry-1',
+        name: 'Spinach',
+        quantityLabel: '1 bag',
+        rescueHint: 'Use tonight.',
+      ),
+    );
+
+    expect(await store.loadTasks(), hasLength(1));
+    expect(await store.loadExpenses(), hasLength(1));
+    expect(await store.loadPantryItems(), hasLength(1));
+
+    await store.deleteTask('task-1');
+    await store.deleteExpense('expense-1');
+
+    expect(await store.loadTasks(), isEmpty);
+    expect(await store.loadExpenses(), isEmpty);
+    expect(await store.loadPantryItems(), hasLength(1));
+
+    await store.deletePantryItem('pantry-1');
+    expect(await store.loadPantryItems(), isEmpty);
+
+    final databasePath = path.join(await getDatabasesPath(), databaseName);
     await deleteDatabase(databasePath);
   });
 }

@@ -4,21 +4,32 @@
 
 :root {
   color-scheme: light;
-  --paper: #f6eee7;
-  --paper-strong: #fff8f2;
-  --paper-soft: rgba(255, 248, 242, 0.82);
-  --ink: #171412;
-  --ink-soft: rgba(23, 20, 18, 0.68);
-  --ink-muted: rgba(23, 20, 18, 0.5);
-  --line: rgba(23, 20, 18, 0.12);
-  --line-strong: rgba(23, 20, 18, 0.22);
-  --sage: #5d7a68;
-  --clay: #d06447;
-  --bronze: #8a6c2f;
-  --sky: #4e708a;
-  --danger-soft: rgba(208, 100, 71, 0.14);
-  --sage-soft: rgba(93, 122, 104, 0.14);
-  --bronze-soft: rgba(138, 108, 47, 0.14);
+  --canvas: #eef1ef;
+  --surface: #fbfcfb;
+  --surface-2: #f4f6f5;
+  --surface-raised: #ffffff;
+  --paper: var(--canvas);
+  --paper-strong: var(--surface-raised);
+  --paper-soft: var(--surface);
+  --ink: #131817;
+  --ink-soft: rgba(19, 24, 23, 0.72);
+  --ink-muted: rgba(19, 24, 23, 0.52);
+  --line: rgba(19, 24, 23, 0.1);
+  --line-strong: rgba(19, 24, 23, 0.18);
+  --moss: #487660;
+  --sage: var(--moss);
+  --copper: #ad5135;
+  --clay: var(--copper);
+  --amber: #8d6b2d;
+  --bronze: var(--amber);
+  --steel: #46657a;
+  --sky: var(--steel);
+  --danger-soft: rgba(173, 81, 53, 0.12);
+  --moss-soft: rgba(72, 118, 96, 0.12);
+  --sage-soft: var(--moss-soft);
+  --amber-soft: rgba(141, 107, 45, 0.12);
+  --bronze-soft: var(--amber-soft);
+  --steel-soft: rgba(70, 101, 122, 0.1);
 }
 
 * {
@@ -30,22 +41,22 @@ html {
 }
 
 body {
-  @apply bg-sand text-ink antialiased;
+  @apply text-ink antialiased;
   min-height: 100vh;
-  background-image:
-    radial-gradient(circle at top left, rgba(208, 100, 71, 0.14), transparent 32%),
-    radial-gradient(circle at top right, rgba(93, 122, 104, 0.16), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 30%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
+    linear-gradient(120deg, rgba(70, 101, 122, 0.02), rgba(72, 118, 96, 0.04));
+  background-color: var(--canvas);
   color: var(--ink);
   font-family: "IBM Plex Sans", "Aptos", "Segoe UI", sans-serif;
 }
 
 a {
-  @apply text-moss;
+  color: var(--moss);
 }
 
 ::selection {
-  background: rgba(93, 122, 104, 0.24);
+  background: rgba(72, 118, 96, 0.2);
 }
 
 .font-mono {

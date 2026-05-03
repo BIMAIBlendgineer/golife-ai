@@ -71,6 +71,10 @@
   "collectionFinanceRecords": "Finance records",
   "collectionJournalEntries": "Journal entries",
   "collectionQuickNotes": "Quick notes",
+  "collectionOwnedItems": "Owned items",
+  "collectionPurchaseProofs": "Purchase proofs",
+  "collectionClaimDrafts": "Claim drafts",
+  "collectionEvidenceAttachments": "Evidence attachments",
   "collectionPrivacySettings": "Privacy settings",
   "collectionRuntimeConfigCache": "Runtime config cache",
   "collectionDeviceEncryptionKey": "Device encryption key",
@@ -247,6 +251,82 @@
   "navJournal": "Journal",
   "navCalendar": "Calendar",
   "navRecipes": "Recipes",
+  "homeMemoryEyebrow": "RecallBox",
+  "homeMemoryTitle": "HomeMemory",
+  "homeMemorySubtitle": "Things, receipts, warranties, and reminders.",
+  "homeMemoryDisclosureTitle": "Local purchase memory",
+  "homeMemoryDisclosureBody": "Receipts, draft claims, and evidence stay local-first in this MVP. GoLife turns them into reminders and next actions without promising legal review.",
+  "homeMemoryWarrantySoonTitle": "Warranty ending soon",
+  "homeMemoryWarrantySoonEmpty": "No active warranty close to expiration.",
+  "homeMemoryRecentProofsTitle": "Recent proofs",
+  "homeMemoryRecentProofsEmpty": "No proofs captured yet.",
+  "homeMemoryRemindersTitle": "Maintenance reminders",
+  "homeMemoryRemindersEmpty": "No reminders scheduled.",
+  "homeMemoryClaimsTitle": "Claim drafts",
+  "homeMemoryClaimsEmpty": "No draft claims yet.",
+  "homeMemoryActionAddItem": "Add item manually",
+  "homeMemoryActionAddProof": "Add proof",
+  "homeMemoryActionCreateReminder": "Create reminder",
+  "homeMemoryActionDraftClaim": "Draft claim",
+  "homeMemoryActionOpen": "Open HomeMemory",
+  "homeMemoryItemsTitle": "Owned items",
+  "homeMemoryItemsEmpty": "No owned items stored yet.",
+  "homeMemoryWarrantyUntilLabel": "Warranty until {date}",
+  "@homeMemoryWarrantyUntilLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "homeMemoryItemNoMeta": "No purchase metadata yet.",
+  "homeMemorySectionItem": "Item",
+  "homeMemorySectionProofs": "Proofs",
+  "homeMemorySectionWarranty": "Warranty",
+  "homeMemorySectionReminders": "Reminders",
+  "homeMemorySectionClaims": "Claim drafts",
+  "homeMemorySectionEvidence": "Evidence",
+  "homeMemoryFieldProductName": "Product name",
+  "homeMemoryFieldBrand": "Brand",
+  "homeMemoryFieldModel": "Model",
+  "homeMemoryFieldSerialNumber": "Serial number",
+  "homeMemoryFieldStore": "Store",
+  "homeMemoryFieldPurchaseDate": "Purchase date",
+  "homeMemoryFieldPrice": "Price",
+  "homeMemoryFieldCurrency": "Currency",
+  "homeMemoryFieldWarrantyMonths": "Warranty months",
+  "homeMemoryFieldWarrantyUntil": "Warranty until",
+  "homeMemoryFieldDueDate": "Due date",
+  "homeMemoryFieldRecurrence": "Recurrence",
+  "homeMemoryFieldIssueDescription": "Issue description",
+  "homeMemoryFieldRecipientHint": "Recipient hint",
+  "homeMemoryCreateWarrantyReminder": "Create a reminder before warranty expiration",
+  "homeMemoryDefaultReminderTitle": "Review warranty before expiration",
+  "homeMemorySelectItem": "Select item",
+  "homeMemoryClaimDisclaimer": "No legal advice. Verify warranty and seller policies. Send outside the app.",
+  "homeMemoryNoNotes": "No notes",
+  "homeMemoryUnknownMerchant": "Unknown merchant",
+  "homeMemoryUnknownDate": "Unknown date",
+  "homeMemoryUnknownValue": "Unknown",
+  "homeMemoryNoProofs": "No proofs attached yet.",
+  "homeMemoryWarrantyUnknown": "Warranty unknown.",
+  "homeMemoryNoReminders": "No reminders yet.",
+  "homeMemoryNoClaims": "No claim drafts yet.",
+  "homeMemoryNoEvidence": "No evidence attached yet.",
+  "homeMemoryEvidencePresent": "Evidence attachment available.",
+  "homeMemoryWarrantyStatusUnknown": "unknown",
+  "homeMemoryWarrantyStatusExpired": "expired",
+  "homeMemoryWarrantyStatusActive": "active warranty",
+  "homeMemoryEverydaySubtitle": "{itemCount} items | {warrantyCount} warranties ending soon",
+  "@homeMemoryEverydaySubtitle": {
+    "placeholders": {
+      "itemCount": {
+        "type": "int"
+      },
+      "warrantyCount": {
+        "type": "int"
+      }
+    }
+  },
+  "homeMemoryEverydayBody": "Keep receipts, owned items, warranties, reminders, and draft claims in one local memory surface.",
   "entityTask": "task",
   "entityHabit": "habit",
   "entityExpense": "expense",
@@ -269,6 +349,7 @@
       "entity": {}
     }
   },
+  "actionDelete": "Delete",
   "actionComplete": "Complete",
   "actionDone": "Done",
   "actionCheckIn": "Check in",
@@ -379,6 +460,12 @@
   "messageRecipeUpdated": "Recipe rescue updated.",
   "messageEntitySaved": "{entity} saved.",
   "@messageEntitySaved": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "messageEntityDeleted": "{entity} deleted.",
+  "@messageEntityDeleted": {
     "placeholders": {
       "entity": {}
     }

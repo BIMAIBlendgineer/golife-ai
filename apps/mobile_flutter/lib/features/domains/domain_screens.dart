@@ -557,6 +557,16 @@ class EverydayScreen extends StatelessWidget {
             actionLabel: l10n.actionOpenRecipes,
             onTap: () => context.go('/recipes'),
           ),
+          _NavigationCard(
+            title: l10n.homeMemoryTitle,
+            subtitle: l10n.homeMemoryEverydaySubtitle(
+              controller.ownedItems.length,
+              controller.warrantyEndingSoonItems.length,
+            ),
+            body: l10n.homeMemoryEverydayBody,
+            actionLabel: l10n.homeMemoryActionOpen,
+            onTap: () => context.go('/homememory'),
+          ),
         ],
       ),
     );
@@ -883,6 +893,13 @@ Future<void> _showTaskEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityTask);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteTaskById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityTask);
+          },
   );
 }
 
@@ -932,6 +949,13 @@ Future<void> _showHabitEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityHabit);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteHabitById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityHabit);
+          },
   );
 }
 
@@ -979,6 +1003,13 @@ Future<void> _showExpenseEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityExpense);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteExpenseById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityExpense);
+          },
   );
 }
 
@@ -1025,6 +1056,13 @@ Future<void> _showPantryEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityPantryItem);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deletePantryItemById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityPantryItem);
+          },
   );
 }
 
@@ -1061,6 +1099,13 @@ Future<void> _showClosetEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityPurchaseIntention);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deletePurchaseIntentionById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityPurchaseIntention);
+          },
   );
 }
 
@@ -1099,6 +1144,13 @@ Future<void> _showWeekEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityWeekPlan);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteWeekPlanById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityWeekPlan);
+          },
   );
 }
 
@@ -1142,6 +1194,13 @@ Future<void> _showJournalEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityJournalEntry);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteJournalEntryById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityJournalEntry);
+          },
   );
 }
 
@@ -1172,6 +1231,13 @@ Future<void> _showQuickNoteEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityQuickNote);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteQuickNoteById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityQuickNote);
+          },
   );
 }
 
@@ -1230,6 +1296,13 @@ Future<void> _showCalendarEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityCalendarItem);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteCalendarItemById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityCalendarItem);
+          },
   );
 }
 
@@ -1292,6 +1365,13 @@ Future<void> _showRecipeEditor(
       );
       return message ?? l10n.messageEntitySaved(l10n.entityRecipeRescue);
     },
+    deleteLabel: existing == null ? null : l10n.actionDelete,
+    onDelete: existing == null
+        ? null
+        : () async {
+            await controller.deleteRecipeRescueById(existing.id);
+            return l10n.messageEntityDeleted(l10n.entityRecipeRescue);
+          },
   );
 }
 
@@ -1301,6 +1381,8 @@ Future<void> _showEditorDialog(
   required List<Widget> Function(void Function(VoidCallback fn) setState)
       builder,
   required Future<String> Function() onSave,
+  String? deleteLabel,
+  Future<String> Function()? onDelete,
 }) {
   final l10n = AppLocalizations.of(context)!;
   return showDialog<void>(
@@ -1321,6 +1403,25 @@ Future<void> _showEditorDialog(
               ),
             ),
             actions: [
+              if (deleteLabel != null && onDelete != null)
+                TextButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          setState(() => saving = true);
+                          final message = await onDelete();
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
+                          }
+                        },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(dialogContext).colorScheme.error,
+                  ),
+                  child: Text(deleteLabel),
+                ),
               TextButton(
                 onPressed:
                     saving ? null : () => Navigator.of(dialogContext).pop(),

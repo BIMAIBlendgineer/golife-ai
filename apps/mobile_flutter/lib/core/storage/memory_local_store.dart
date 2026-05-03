@@ -1,6 +1,12 @@
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/homememory/claim_draft.dart';
+import '../../domains/homememory/evidence_attachment.dart';
+import '../../domains/homememory/maintenance_reminder.dart';
+import '../../domains/homememory/owned_item.dart';
+import '../../domains/homememory/purchase_proof.dart';
+import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/calendar/calendar_item.dart';
@@ -34,6 +40,13 @@ class MemoryLocalStore implements LocalStore {
   final List<QuickNote> _quickNotes = <QuickNote>[];
   final List<CalendarItem> _calendarItems = <CalendarItem>[];
   final List<RecipeRescue> _recipeRescues = <RecipeRescue>[];
+  final List<OwnedItem> _ownedItems = <OwnedItem>[];
+  final List<PurchaseProof> _purchaseProofs = <PurchaseProof>[];
+  final List<WarrantyRecord> _warrantyRecords = <WarrantyRecord>[];
+  final List<MaintenanceReminder> _maintenanceReminders =
+      <MaintenanceReminder>[];
+  final List<ClaimDraft> _claimDrafts = <ClaimDraft>[];
+  final List<EvidenceAttachment> _evidenceAttachments = <EvidenceAttachment>[];
   AppRuntimeConfig? _runtimeConfig;
 
   @override
@@ -180,6 +193,36 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<OwnedItem>> loadOwnedItems() async {
+    return List<OwnedItem>.unmodifiable(_ownedItems);
+  }
+
+  @override
+  Future<List<PurchaseProof>> loadPurchaseProofs() async {
+    return List<PurchaseProof>.unmodifiable(_purchaseProofs);
+  }
+
+  @override
+  Future<List<WarrantyRecord>> loadWarrantyRecords() async {
+    return List<WarrantyRecord>.unmodifiable(_warrantyRecords);
+  }
+
+  @override
+  Future<List<MaintenanceReminder>> loadMaintenanceReminders() async {
+    return List<MaintenanceReminder>.unmodifiable(_maintenanceReminders);
+  }
+
+  @override
+  Future<List<ClaimDraft>> loadClaimDrafts() async {
+    return List<ClaimDraft>.unmodifiable(_claimDrafts);
+  }
+
+  @override
+  Future<List<EvidenceAttachment>> loadEvidenceAttachments() async {
+    return List<EvidenceAttachment>.unmodifiable(_evidenceAttachments);
+  }
+
+  @override
   Future<void> upsertTask(GoTask task) async {
     _replaceById(_tasks, task, (item) => item.id);
   }
@@ -236,6 +279,94 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> upsertOwnedItem(OwnedItem ownedItem) async {
+    _replaceById(_ownedItems, ownedItem, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertPurchaseProof(PurchaseProof purchaseProof) async {
+    _replaceById(_purchaseProofs, purchaseProof, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertWarrantyRecord(WarrantyRecord warrantyRecord) async {
+    _replaceById(_warrantyRecords, warrantyRecord, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertMaintenanceReminder(
+    MaintenanceReminder maintenanceReminder,
+  ) async {
+    _replaceById(
+      _maintenanceReminders,
+      maintenanceReminder,
+      (item) => item.id,
+    );
+  }
+
+  @override
+  Future<void> upsertClaimDraft(ClaimDraft claimDraft) async {
+    _replaceById(_claimDrafts, claimDraft, (item) => item.id);
+  }
+
+  @override
+  Future<void> upsertEvidenceAttachment(
+    EvidenceAttachment evidenceAttachment,
+  ) async {
+    _replaceById(_evidenceAttachments, evidenceAttachment, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteTask(String id) async {
+    _removeById(_tasks, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteHabit(String id) async {
+    _removeById(_habits, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteExpense(String id) async {
+    _removeById(_expenses, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deletePantryItem(String id) async {
+    _removeById(_pantryItems, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deletePurchaseIntention(String id) async {
+    _removeById(_purchaseIntentions, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteWeekPlan(String id) async {
+    _removeById(_weekPlans, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteJournalEntry(String id) async {
+    _removeById(_journalEntries, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteQuickNote(String id) async {
+    _removeById(_quickNotes, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteCalendarItem(String id) async {
+    _removeById(_calendarItems, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteRecipeRescue(String id) async {
+    _removeById(_recipeRescues, id, (item) => item.id);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     _settings = PrivacySettings.defaults();
     _localePreference = null;
@@ -254,6 +385,12 @@ class MemoryLocalStore implements LocalStore {
     _quickNotes.clear();
     _calendarItems.clear();
     _recipeRescues.clear();
+    _ownedItems.clear();
+    _purchaseProofs.clear();
+    _warrantyRecords.clear();
+    _maintenanceReminders.clear();
+    _claimDrafts.clear();
+    _evidenceAttachments.clear();
     _runtimeConfig = null;
   }
 }
@@ -269,4 +406,12 @@ void _replaceById<T>(
     return;
   }
   items.add(next);
+}
+
+void _removeById<T>(
+  List<T> items,
+  String id,
+  String Function(T value) idOf,
+) {
+  items.removeWhere((item) => idOf(item) == id);
 }

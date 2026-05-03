@@ -5,6 +5,7 @@ import '../../features/capture/capture_screen.dart';
 import '../../features/copilot/copilot_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/domains/domain_screens.dart';
+import '../../features/homememory/homememory_screen.dart';
 import '../../features/settings/privacy_screen.dart';
 import '../shell/app_shell_scaffold.dart';
 
@@ -69,6 +70,11 @@ GoRouter buildAppRouter(GoLifeController controller) {
           GoRoute(
             path: '/recipes',
             builder: (context, state) => RecipesScreen(controller: controller),
+          ),
+          GoRoute(
+            path: '/homememory',
+            builder: (context, state) =>
+                HomeMemoryScreen(controller: controller),
           ),
           GoRoute(
             path: '/copilot',

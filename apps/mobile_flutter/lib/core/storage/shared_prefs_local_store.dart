@@ -4,6 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/homememory/claim_draft.dart';
+import '../../domains/homememory/evidence_attachment.dart';
+import '../../domains/homememory/maintenance_reminder.dart';
+import '../../domains/homememory/owned_item.dart';
+import '../../domains/homememory/purchase_proof.dart';
+import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/calendar/calendar_item.dart';
@@ -39,6 +45,12 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _quickNotesKey = 'golife.quick_notes';
   static const _calendarItemsKey = 'golife.calendar_items';
   static const _recipeRescuesKey = 'golife.recipe_rescues';
+  static const _ownedItemsKey = 'golife.owned_items';
+  static const _purchaseProofsKey = 'golife.purchase_proofs';
+  static const _warrantyRecordsKey = 'golife.warranty_records';
+  static const _maintenanceRemindersKey = 'golife.maintenance_reminders';
+  static const _claimDraftsKey = 'golife.claim_drafts';
+  static const _evidenceAttachmentsKey = 'golife.evidence_attachments';
   static const _runtimeConfigKey = 'golife.runtime_config';
   static const _demoSeedEnabledKey = 'golife.demo_seed_enabled';
 
@@ -258,6 +270,54 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<OwnedItem>> loadOwnedItems() async {
+    return _loadList(
+      _ownedItemsKey,
+      (item) => OwnedItem.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<PurchaseProof>> loadPurchaseProofs() async {
+    return _loadList(
+      _purchaseProofsKey,
+      (item) => PurchaseProof.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<WarrantyRecord>> loadWarrantyRecords() async {
+    return _loadList(
+      _warrantyRecordsKey,
+      (item) => WarrantyRecord.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<MaintenanceReminder>> loadMaintenanceReminders() async {
+    return _loadList(
+      _maintenanceRemindersKey,
+      (item) => MaintenanceReminder.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<ClaimDraft>> loadClaimDrafts() async {
+    return _loadList(
+      _claimDraftsKey,
+      (item) => ClaimDraft.fromJson(item),
+    );
+  }
+
+  @override
+  Future<List<EvidenceAttachment>> loadEvidenceAttachments() async {
+    return _loadList(
+      _evidenceAttachmentsKey,
+      (item) => EvidenceAttachment.fromJson(item),
+    );
+  }
+
+  @override
   Future<void> upsertTask(GoTask task) async {
     await _upsertEntity(_tasksKey, task.id, task.toJson());
   }
@@ -326,6 +386,106 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> upsertOwnedItem(OwnedItem ownedItem) async {
+    await _upsertEntity(_ownedItemsKey, ownedItem.id, ownedItem.toJson());
+  }
+
+  @override
+  Future<void> upsertPurchaseProof(PurchaseProof purchaseProof) async {
+    await _upsertEntity(
+      _purchaseProofsKey,
+      purchaseProof.id,
+      purchaseProof.toJson(),
+    );
+  }
+
+  @override
+  Future<void> upsertWarrantyRecord(WarrantyRecord warrantyRecord) async {
+    await _upsertEntity(
+      _warrantyRecordsKey,
+      warrantyRecord.id,
+      warrantyRecord.toJson(),
+    );
+  }
+
+  @override
+  Future<void> upsertMaintenanceReminder(
+    MaintenanceReminder maintenanceReminder,
+  ) async {
+    await _upsertEntity(
+      _maintenanceRemindersKey,
+      maintenanceReminder.id,
+      maintenanceReminder.toJson(),
+    );
+  }
+
+  @override
+  Future<void> upsertClaimDraft(ClaimDraft claimDraft) async {
+    await _upsertEntity(_claimDraftsKey, claimDraft.id, claimDraft.toJson());
+  }
+
+  @override
+  Future<void> upsertEvidenceAttachment(
+    EvidenceAttachment evidenceAttachment,
+  ) async {
+    await _upsertEntity(
+      _evidenceAttachmentsKey,
+      evidenceAttachment.id,
+      evidenceAttachment.toJson(),
+    );
+  }
+
+  @override
+  Future<void> deleteTask(String id) async {
+    await _deleteEntity(_tasksKey, id);
+  }
+
+  @override
+  Future<void> deleteHabit(String id) async {
+    await _deleteEntity(_habitsKey, id);
+  }
+
+  @override
+  Future<void> deleteExpense(String id) async {
+    await _deleteEntity(_expensesKey, id);
+  }
+
+  @override
+  Future<void> deletePantryItem(String id) async {
+    await _deleteEntity(_pantryItemsKey, id);
+  }
+
+  @override
+  Future<void> deletePurchaseIntention(String id) async {
+    await _deleteEntity(_purchaseIntentionsKey, id);
+  }
+
+  @override
+  Future<void> deleteWeekPlan(String id) async {
+    await _deleteEntity(_weekPlansKey, id);
+  }
+
+  @override
+  Future<void> deleteJournalEntry(String id) async {
+    await _deleteEntity(_journalEntriesKey, id);
+  }
+
+  @override
+  Future<void> deleteQuickNote(String id) async {
+    await _deleteEntity(_quickNotesKey, id);
+  }
+
+  @override
+  Future<void> deleteCalendarItem(String id) async {
+    await _deleteEntity(_calendarItemsKey, id);
+  }
+
+  @override
+  Future<void> deleteRecipeRescue(String id) async {
+    await _deleteEntity(_recipeRescuesKey, id);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_privacyKey);
@@ -344,6 +504,12 @@ class SharedPrefsLocalStore implements LocalStore {
     await prefs.remove(_quickNotesKey);
     await prefs.remove(_calendarItemsKey);
     await prefs.remove(_recipeRescuesKey);
+    await prefs.remove(_ownedItemsKey);
+    await prefs.remove(_purchaseProofsKey);
+    await prefs.remove(_warrantyRecordsKey);
+    await prefs.remove(_maintenanceRemindersKey);
+    await prefs.remove(_claimDraftsKey);
+    await prefs.remove(_evidenceAttachmentsKey);
     await prefs.remove(_runtimeConfigKey);
     await prefs.setBool(_demoSeedEnabledKey, false);
   }
@@ -396,5 +562,17 @@ class SharedPrefsLocalStore implements LocalStore {
           .map((item) => Map<String, Object?>.from(item))
           .toList(growable: false),
     );
+  }
+
+  Future<void> _deleteEntity(String key, String id) async {
+    final existing = await _loadList<Map<String, dynamic>>(
+      key,
+      (item) => item,
+    );
+    final filtered = existing
+        .where((item) => item['id']?.toString() != id)
+        .map((item) => Map<String, Object?>.from(item))
+        .toList(growable: false);
+    await _saveList(key, filtered);
   }
 }

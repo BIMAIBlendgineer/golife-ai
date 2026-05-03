@@ -3,6 +3,12 @@ import 'package:flutter/foundation.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/homememory/claim_draft.dart';
+import '../../domains/homememory/evidence_attachment.dart';
+import '../../domains/homememory/maintenance_reminder.dart';
+import '../../domains/homememory/owned_item.dart';
+import '../../domains/homememory/purchase_proof.dart';
+import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/missions/daily_mission.dart';
@@ -155,7 +161,32 @@ class ResilientLocalStore implements LocalStore {
       _run((store) => store.loadRecipeRescues());
 
   @override
-  Future<void> upsertTask(GoTask task) => _run((store) => store.upsertTask(task));
+  Future<List<OwnedItem>> loadOwnedItems() =>
+      _run((store) => store.loadOwnedItems());
+
+  @override
+  Future<List<PurchaseProof>> loadPurchaseProofs() =>
+      _run((store) => store.loadPurchaseProofs());
+
+  @override
+  Future<List<WarrantyRecord>> loadWarrantyRecords() =>
+      _run((store) => store.loadWarrantyRecords());
+
+  @override
+  Future<List<MaintenanceReminder>> loadMaintenanceReminders() =>
+      _run((store) => store.loadMaintenanceReminders());
+
+  @override
+  Future<List<ClaimDraft>> loadClaimDrafts() =>
+      _run((store) => store.loadClaimDrafts());
+
+  @override
+  Future<List<EvidenceAttachment>> loadEvidenceAttachments() =>
+      _run((store) => store.loadEvidenceAttachments());
+
+  @override
+  Future<void> upsertTask(GoTask task) =>
+      _run((store) => store.upsertTask(task));
 
   @override
   Future<void> upsertHabit(Habit habit) =>
@@ -172,7 +203,8 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> upsertPurchaseIntention(
     PurchaseIntention purchaseIntention,
-  ) => _run((store) => store.upsertPurchaseIntention(purchaseIntention));
+  ) =>
+      _run((store) => store.upsertPurchaseIntention(purchaseIntention));
 
   @override
   Future<void> upsertWeekPlan(WeekPlan weekPlan) =>
@@ -193,6 +225,72 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> upsertRecipeRescue(RecipeRescue recipeRescue) =>
       _run((store) => store.upsertRecipeRescue(recipeRescue));
+
+  @override
+  Future<void> upsertOwnedItem(OwnedItem ownedItem) =>
+      _run((store) => store.upsertOwnedItem(ownedItem));
+
+  @override
+  Future<void> upsertPurchaseProof(PurchaseProof purchaseProof) =>
+      _run((store) => store.upsertPurchaseProof(purchaseProof));
+
+  @override
+  Future<void> upsertWarrantyRecord(WarrantyRecord warrantyRecord) =>
+      _run((store) => store.upsertWarrantyRecord(warrantyRecord));
+
+  @override
+  Future<void> upsertMaintenanceReminder(
+    MaintenanceReminder maintenanceReminder,
+  ) =>
+      _run((store) => store.upsertMaintenanceReminder(maintenanceReminder));
+
+  @override
+  Future<void> upsertClaimDraft(ClaimDraft claimDraft) =>
+      _run((store) => store.upsertClaimDraft(claimDraft));
+
+  @override
+  Future<void> upsertEvidenceAttachment(
+    EvidenceAttachment evidenceAttachment,
+  ) =>
+      _run((store) => store.upsertEvidenceAttachment(evidenceAttachment));
+
+  @override
+  Future<void> deleteTask(String id) => _run((store) => store.deleteTask(id));
+
+  @override
+  Future<void> deleteHabit(String id) => _run((store) => store.deleteHabit(id));
+
+  @override
+  Future<void> deleteExpense(String id) =>
+      _run((store) => store.deleteExpense(id));
+
+  @override
+  Future<void> deletePantryItem(String id) =>
+      _run((store) => store.deletePantryItem(id));
+
+  @override
+  Future<void> deletePurchaseIntention(String id) =>
+      _run((store) => store.deletePurchaseIntention(id));
+
+  @override
+  Future<void> deleteWeekPlan(String id) =>
+      _run((store) => store.deleteWeekPlan(id));
+
+  @override
+  Future<void> deleteJournalEntry(String id) =>
+      _run((store) => store.deleteJournalEntry(id));
+
+  @override
+  Future<void> deleteQuickNote(String id) =>
+      _run((store) => store.deleteQuickNote(id));
+
+  @override
+  Future<void> deleteCalendarItem(String id) =>
+      _run((store) => store.deleteCalendarItem(id));
+
+  @override
+  Future<void> deleteRecipeRescue(String id) =>
+      _run((store) => store.deleteRecipeRescue(id));
 
   @override
   Future<void> deleteAllData() => _run((store) => store.deleteAllData());

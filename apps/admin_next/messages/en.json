@@ -14,7 +14,9 @@
     "stateBackendOffline": "BACKEND OFFLINE",
     "apiLabel": "API",
     "tokenSet": "Admin token set",
-    "tokenMissing": "Token missing"
+    "tokenMissing": "Token missing",
+    "commandPaletteLabel": "Jump to page",
+    "commandPalettePlaceholder": "Search routes, systems, and tools"
   },
   "nav": {
     "badge": "Operations Desk",
@@ -33,6 +35,16 @@
             "href": "/users",
             "title": "Users",
             "note": "Account state and support signals."
+          },
+          {
+            "href": "/organizations",
+            "title": "Organizations",
+            "note": "Family, team, and enterprise grouping."
+          },
+          {
+            "href": "/plans",
+            "title": "Plans",
+            "note": "Commercial tiers and operational limits."
           },
           {
             "href": "/usage",
@@ -70,9 +82,69 @@
             "note": "Blocked outputs and trust incidents."
           },
           {
+            "href": "/quality",
+            "title": "Quality",
+            "note": "Usefulness, fallback, parser confidence."
+          },
+          {
+            "href": "/incidents",
+            "title": "Incidents",
+            "note": "Operational issues with safe summaries only."
+          },
+          {
             "href": "/routing-snapshots",
             "title": "Routing Snapshots",
             "note": "Current top-3 models per capability."
+          }
+        ]
+      },
+      {
+        "label": "Commerce",
+        "items": [
+          {
+            "href": "/billing",
+            "title": "Billing",
+            "note": "Plan mix, storage charges, xInsightAI posture."
+          },
+          {
+            "href": "/storage",
+            "title": "Storage",
+            "note": "Footprint, retention pressure, encrypted sets."
+          },
+          {
+            "href": "/openrouter-byok",
+            "title": "OpenRouter BYOK",
+            "note": "Customer-managed keys and health metadata."
+          },
+          {
+            "href": "/xinsightai",
+            "title": "xInsightAI",
+            "note": "Internal AI usage, credits, and margin."
+          }
+        ]
+      },
+      {
+        "label": "Governance",
+        "items": [
+          {
+            "href": "/privacy",
+            "title": "Privacy",
+            "note": "Requests, data map, and encrypted collections."
+          },
+          {
+            "href": "/security",
+            "title": "Security",
+            "note": "Guardrails, token posture, production readiness."
+          },
+          {
+            "href": "/audit",
+            "title": "Audit",
+            "note": "Metadata-only write history for admin actions."
+          },
+          {
+            "href": "/support/export-delete",
+            "title": "Support Queue",
+            "note": "Export and delete requests."
           }
         ]
       },
@@ -100,9 +172,29 @@
             "note": "OpenRouter catalog cache and eligibility."
           },
           {
-            "href": "/support/export-delete",
-            "title": "Support Queue",
-            "note": "Export and delete requests."
+            "href": "/homememory",
+            "title": "HomeMemory",
+            "note": "Aggregate proof and warranty health only."
+          },
+          {
+            "href": "/settings/security",
+            "title": "Security Settings",
+            "note": "Auth mode, session scaffold, token posture."
+          }
+        ]
+      },
+      {
+        "label": "Access",
+        "items": [
+          {
+            "href": "/login",
+            "title": "Login",
+            "note": "Operator scaffold access for internal use."
+          },
+          {
+            "href": "/logout",
+            "title": "Logout",
+            "note": "Clear the scaffold operator session."
           }
         ]
       }
@@ -143,7 +235,11 @@
     "domains": "Domains",
     "risks": "Risks",
     "score": "Score",
-    "msUnit": "ms"
+    "msUnit": "ms",
+    "previousPage": "Previous",
+    "nextPage": "Next",
+    "pageSummaryPrefix": "Showing",
+    "pageSummaryMiddle": "of"
   },
   "pages": {
     "dashboard": {
@@ -226,16 +322,45 @@
       "weeklyActiveNote": "Users who are still inside the weekly mission loop.",
       "supportQueueLabel": "Support queue",
       "supportQueueNote": "Export or delete requests that need manual action.",
+      "privacyRequestsLabel": "Privacy requests",
+      "privacyRequestsNote": "Open export/delete requests visible without raw personal data.",
       "panelEyebrow": "Roster",
       "panelTitle": "Users",
       "panelNote": "The detail page combines account profile, usage footprint, mission history, and feedback journal.",
+      "filterQuery": "Search",
+      "filterQueryPlaceholder": "Search by user, masked email, or display name",
+      "filterPlan": "Plan",
+      "filterStatus": "Status",
+      "filterLocale": "Locale",
+      "applyFilters": "Apply filters",
+      "resetFilters": "Reset",
       "tableUser": "User",
+      "tableLocale": "Locale",
       "tablePlan": "Plan",
       "tableStatus": "Status",
       "tableAiCalls": "AI calls",
       "tableUsefulMissions": "Useful missions",
+      "tableFallback": "Fallback",
       "tableLastSeen": "Last seen",
-      "tableSupport": "Support"
+      "tableSupport": "Support",
+      "tablePrivacy": "Privacy",
+      "emptyTitle": "No users match these filters",
+      "emptyBody": "Adjust the search, plan, status, or locale filters and try again.",
+      "detailEmptyTitle": "No user selected",
+      "detailEmptyBody": "Pick a row to inspect usage, privacy, and support metadata.",
+      "pageSummaryPrefix": "Showing",
+      "pageSummaryMiddle": "of",
+      "previousPage": "Previous",
+      "nextPage": "Next",
+      "drawerPlan": "Plan",
+      "drawerLocale": "Locale",
+      "drawerCreated": "Created",
+      "drawerLastSeen": "Last seen",
+      "drawerUsage": "Usage summary",
+      "drawerPrivacy": "Privacy summary",
+      "drawerSensitiveExcluded": "Sensitive content is excluded from this operator surface.",
+      "drawerSupport": "Support summary",
+      "drawerOpenRequests": "open support requests"
     },
     "userDetail": {
       "eyebrow": "User File",
@@ -253,8 +378,14 @@
       "accountNote": "Support flags are early warning markers for trust, monetization, or product learning.",
       "behaviorEyebrow": "Behavior",
       "behaviorTitle": "Mission and feedback journal",
-      "behaviorNote": "Mission outcomes stay visible here. Private feedback notes are redacted before they reach admin.",
-      "emptyBehavior": "No mission or feedback records found for this user yet."
+      "behaviorNote": "This page keeps only safe usage, privacy, and support metadata in the operator view.",
+      "emptyBehavior": "No mission or feedback records found for this user yet.",
+      "emailLabel": "Masked email",
+      "usageSummaryLabel": "Usage summary",
+      "privacySummaryLabel": "Privacy summary",
+      "supportSummaryLabel": "Support summary",
+      "metadataOnlyLabel": "Sensitive content is excluded from this admin view.",
+      "openRequestsLabel": "open requests"
     },
     "featureFlags": {
       "eyebrow": "Rollout",
@@ -328,6 +459,135 @@
       "statusRejected": "Rejected",
       "statusShown": "Shown",
       "scoreLabel": "Score"
+    },
+    "organizations": {
+      "eyebrow": "Organizations",
+      "title": "Group operations and entitlement defaults",
+      "description": "Family, Team, and Enterprise operations sit here so billing, storage, and AI policy can be managed above the single-user level.",
+      "badge": "Org ops",
+      "totalOrganizationsLabel": "Organizations",
+      "totalOrganizationsNote": "Tracked org accounts in the current control plane.",
+      "totalUsersLabel": "Members",
+      "totalUsersNote": "Users attached to the currently filtered organizations.",
+      "totalStorageLabel": "Tracked storage",
+      "totalStorageNote": "Storage footprint across the filtered organizations.",
+      "filterQuery": "Search",
+      "filterStatus": "Status",
+      "filterPlan": "Plan",
+      "applyFilters": "Apply filters",
+      "tableOrganization": "Organization",
+      "tableStatus": "Status",
+      "tablePlan": "Plan",
+      "tableUsers": "Users",
+      "tableStorage": "Storage",
+      "tableAiMode": "AI mode",
+      "tableCreated": "Created",
+      "emptyTitle": "No organizations match these filters",
+      "emptyBody": "Adjust the current filters to inspect another organization slice.",
+      "detailEmptyTitle": "No organization selected",
+      "detailEmptyBody": "Select an organization to inspect its current members and defaults.",
+      "detailUsersLabel": "users",
+      "detailMembers": "Members"
+    },
+    "plans": {
+      "eyebrow": "Plans",
+      "title": "Commercial plans and entitlement limits",
+      "description": "Plans define seat caps, storage policy, AI credit posture, and whether BYOK is available.",
+      "badge": "Plan mix",
+      "totalPlansLabel": "Plans",
+      "totalPlansNote": "Commercial plan definitions visible to operations.",
+      "byokPlansLabel": "BYOK-ready plans",
+      "byokPlansNote": "Plans that allow customers to bring their own OpenRouter key.",
+      "maxStorageLabel": "Highest storage tier",
+      "maxStorageNote": "Largest storage allowance currently defined in the plan catalog.",
+      "tablePlan": "Plan",
+      "tablePrice": "Price",
+      "tableUsers": "User limit",
+      "tableStorage": "Storage",
+      "tableByok": "BYOK",
+      "tableSupport": "Support"
+    },
+    "openrouterByok": {
+      "eyebrow": "Customer Keys",
+      "title": "OpenRouter BYOK",
+      "description": "Customer-owned OpenRouter keys are managed separately from platform keys. This surface only exposes masked metadata and health state.",
+      "badge": "BYOK",
+      "disclaimerTitle": "BYOK billing",
+      "disclaimerBody": "BYOK usage is billed by OpenRouter directly. GoLife charges platform and storage only.",
+      "totalKeysLabel": "BYOK keys",
+      "totalKeysNote": "Customer-managed keys tracked by the platform.",
+      "healthyKeysLabel": "Healthy keys",
+      "healthyKeysNote": "Keys currently available for customer-routed traffic.",
+      "disabledKeysLabel": "Disabled keys",
+      "disabledKeysNote": "Keys removed from active use by operators or health rules.",
+      "tableLabel": "Label",
+      "tableOrganization": "Organization",
+      "tableSecret": "Secret",
+      "tableStatus": "Status",
+      "tableLastUsed": "Last used"
+    },
+    "xinsightai": {
+      "eyebrow": "Internal AI Billing",
+      "title": "xInsightAI credits and margin",
+      "description": "Track internally billed AI traffic separately from BYOK usage. The ledger keeps token flow, customer charge, platform cost, and debited credits visible.",
+      "badge": "xInsightAI",
+      "totalCreditsLabel": "Credits debited",
+      "totalCreditsNote": "Only xInsightAI traffic should debit credits.",
+      "customerChargeLabel": "Customer charge",
+      "customerChargeNote": "What the platform charged for xInsightAI traffic in this slice.",
+      "platformCostLabel": "Platform cost",
+      "platformCostNote": "Underlying provider cost borne by GoLife on xInsightAI traffic.",
+      "byokTrafficLabel": "BYOK requests",
+      "byokTrafficNote": "Requests present in the ledger but excluded from xInsightAI credit debit.",
+      "tableMode": "Mode",
+      "tableEndpoint": "Endpoint",
+      "tableTokens": "Tokens",
+      "tableCustomerCharge": "Customer charge",
+      "tableCredits": "Credits",
+      "tableCreated": "Created"
+    },
+    "billing": {
+      "eyebrow": "Billing",
+      "title": "Plans, charges, and account posture",
+      "description": "This surface explains plan mix, storage charges, xInsightAI charges, and BYOK participation without pretending a real payment processor is already wired.",
+      "badge": "Billing ops",
+      "accountsLabel": "Billing accounts",
+      "accountsNote": "Organizations currently visible to operations billing.",
+      "storageRevenueLabel": "Storage charges",
+      "storageRevenueNote": "Estimated storage charge based on tracked org footprint.",
+      "aiRevenueLabel": "xInsightAI charges",
+      "aiRevenueNote": "Customer charge attributable to internally billed AI traffic.",
+      "planCountLabel": "Plan count",
+      "planCountNote": "Plan catalog visible to billing operations.",
+      "tableOrganization": "Organization",
+      "tablePlan": "Plan",
+      "tableStatus": "Status",
+      "tableStorageCharge": "Storage charge",
+      "tableAiCharge": "AI charge",
+      "tableByokKeys": "BYOK keys"
+    },
+    "storage": {
+      "eyebrow": "Storage",
+      "title": "Storage footprint and encryption posture",
+      "description": "Operators need to see storage growth, billable footprint, encrypted collections, and where retention pressure is building.",
+      "badge": "Storage ops",
+      "disclaimerTitle": "Storage visibility",
+      "disclaimerBody": "HomeMemory personal content is excluded from admin. Only aggregate storage metadata and encrypted collection names are shown here.",
+      "totalStorageLabel": "Total storage",
+      "totalStorageNote": "Tracked operational footprint across organizations.",
+      "cloudStorageLabel": "Cloud storage",
+      "cloudStorageNote": "Estimated cloud-hosted share of the billable footprint.",
+      "exportBundlesLabel": "Export bundles",
+      "exportBundlesNote": "Estimated temporary bundle volume used by privacy exports.",
+      "retentionRiskLabel": "Retention risk",
+      "retentionRiskNote": "Organizations whose storage posture suggests retention review.",
+      "tableOrganization": "Organization",
+      "tablePlan": "Plan",
+      "tableUsage": "Usage",
+      "tableEncrypted": "Encrypted collections",
+      "tableRetentionRisk": "Retention risk",
+      "riskOpen": "review",
+      "riskClear": "clear"
     },
     "modelCatalog": {
       "eyebrow": "Catalog Cache",
@@ -443,6 +703,180 @@
       "fallbackModelLabel": "Fallback model",
       "classificationModelLabel": "Classification model",
       "weeklySummaryModelLabel": "Weekly summary model"
+    },
+    "privacy": {
+      "eyebrow": "Privacy",
+      "title": "Requests, encrypted collections, and retention posture",
+      "description": "Operators should see privacy operations and data boundaries without exposing private content.",
+      "badge": "Metadata only",
+      "dataMapTitle": "Data map visibility",
+      "dataMapBody": "The admin surface shows request status, encrypted collection names, and retention notes. It does not render journal, reflection, receipt, or claim content.",
+      "openRequestsLabel": "Open requests",
+      "openRequestsNote": "Pending export or delete actions waiting on operators.",
+      "encryptedLabel": "Encrypted collections",
+      "encryptedNote": "Collections currently protected at rest on device.",
+      "retentionLabel": "Retention notes",
+      "retentionNote": "Operational reminders about exports and aggregate exclusions.",
+      "exportCountLabel": "Export requests in slice",
+      "tableRequest": "Request",
+      "tableUser": "User",
+      "tableType": "Type",
+      "tableStatus": "Status",
+      "tableRequestedAt": "Requested",
+      "encryptedCollectionsLabel": "Encrypted collections",
+      "retentionNotesLabel": "Retention notes",
+      "emptyTitle": "No privacy requests",
+      "emptyBody": "There are no export or delete requests in this slice."
+    },
+    "security": {
+      "eyebrow": "Security",
+      "title": "Token posture, guardrails, and admin readiness",
+      "description": "This page keeps production blocking rules visible without pretending the current scaffold is enterprise auth.",
+      "badge": "Guardrails",
+      "productionTitle": "Production readiness warning",
+      "productionBody": "Token-only access is enough for internal development but not a complete enterprise admin security model.",
+      "guardrailLabel": "Production ready",
+      "guardrailNote": "Configuration posture if this environment were promoted today.",
+      "keyCountLabel": "Platform keys",
+      "keyCountNote": "Server-side OpenRouter keys known to operations.",
+      "byokLabel": "BYOK keys",
+      "byokNote": "Customer-managed keys tracked separately from platform billing.",
+      "auditLabel": "Latest audit",
+      "auditNote": "Most recent metadata-only admin write captured by backend.",
+      "tableCheck": "Guardrail",
+      "tableState": "Token state",
+      "tableDetail": "Dependency scan",
+      "adminTokenCheck": "Admin access posture",
+      "tokenDetail": "Secrets never render in the browser. This surface only shows whether server-side config exists.",
+      "failedAuthLabel": "Failed auth placeholder",
+      "settingsCardTitle": "Auth scaffold",
+      "settingsCardBody": "Login/logout and operator identity are scaffolded for internal use. Enterprise auth must be added before production exposure.",
+      "settingsLink": "Open security settings"
+    },
+    "audit": {
+      "eyebrow": "Audit",
+      "title": "Metadata-only write history",
+      "description": "Track who changed operational settings, what target changed, and the safe diff that was recorded.",
+      "badge": "Safe diff",
+      "eventsLabel": "Audit events",
+      "eventsNote": "Admin write events recorded without secrets or private content.",
+      "writesLabel": "Rows in slice",
+      "writesNote": "Current page size after actor/action filters.",
+      "actorsLabel": "Actors in slice",
+      "actorsNote": "Unique operator identifiers represented in the current result.",
+      "filterActor": "Actor",
+      "filterAction": "Action",
+      "applyFilters": "Apply filters",
+      "tableTime": "Time",
+      "tableActor": "Actor",
+      "tableAction": "Action",
+      "tableTarget": "Target",
+      "tableCorrelation": "Correlation",
+      "detailTitle": "No audit row selected",
+      "detailBody": "Adjust the filters or load a slice with recorded admin writes.",
+      "emptyTitle": "No audit rows",
+      "emptyBody": "No admin writes match the current filters."
+    },
+    "homememory": {
+      "eyebrow": "HomeMemory",
+      "title": "Aggregate proof and warranty health",
+      "description": "This surface reports parser volume, reminder pressure, and encryption status without showing item names, receipt text, or claim bodies.",
+      "badge": "Aggregate only",
+      "disclaimerTitle": "Sensitive data excluded",
+      "disclaimerBody": "HomeMemory admin views are aggregate-only. Personal object names, receipt text, claim drafts, serial numbers, and file references are excluded.",
+      "proofParsesLabel": "Proof parses",
+      "proofParsesNote": "Parsed receipt or proof attempts recorded by telemetry.",
+      "warrantyLabel": "Warranty reminders",
+      "warrantyNote": "Reminder creation events tied to warranty workflows.",
+      "claimsLabel": "Claim drafts",
+      "claimsNote": "Claim draft creation count without body visibility.",
+      "fallbackLabel": "Fallback rate",
+      "fallbackNote": "How often proof parsing falls back from the preferred path.",
+      "localeTitle": "Locale distribution",
+      "encryptionTitle": "Encryption posture",
+      "encryptionBody": "Encrypted HomeMemory collections are only listed when the mobile schema exposing them has reached main.",
+      "tableLocale": "Locale",
+      "tableParser": "Parser",
+      "tableRequests": "Requests",
+      "tableSuccess": "Success",
+      "tableFallback": "Fallback",
+      "emptyTitle": "No HomeMemory parser data",
+      "emptyBody": "Proof parsing telemetry is not available in this environment yet."
+    },
+    "quality": {
+      "eyebrow": "Quality",
+      "title": "Mission, parser, safety, and cost quality",
+      "description": "This board keeps product usefulness and operator risk visible so the team can tell whether GoLife is actually working.",
+      "badge": "Product health",
+      "usefulnessLabel": "Mission usefulness",
+      "usefulnessNote": "Primary signal for whether ranked output is helping users.",
+      "completionLabel": "Mission completion",
+      "completionNote": "Recommendation-to-action conversion at the product level.",
+      "rejectionLabel": "Rejection rate",
+      "rejectionNote": "Early warning for repetitive or weak guidance.",
+      "parserLabel": "Proof parser success",
+      "parserNote": "HomeMemory parser quality when telemetry is available.",
+      "fallbackLabel": "Fallback rate",
+      "fallbackNote": "Rate of gateway or model fallback across current traffic.",
+      "safetyLabel": "Safety interventions",
+      "safetyNote": "How often safety rails stepped in during the current slice.",
+      "costLabel": "High-cost anomalies",
+      "costNote": "Endpoints with cost or fallback posture outside desired range.",
+      "supportLabel": "Support escalations",
+      "supportNote": "Open privacy/support workload requiring human review.",
+      "tableDimension": "Dimension",
+      "tableMetric": "Metric",
+      "tableValue": "Value",
+      "tableSource": "Source"
+    },
+    "incidents": {
+      "eyebrow": "Incidents",
+      "title": "Operational incidents and watch items",
+      "description": "Safe summaries consolidate safety events, routing issues, and privacy backlogs without copying sensitive user data into admin.",
+      "badge": "Incident view",
+      "openLabel": "Open",
+      "openNote": "Items requiring operator action.",
+      "monitoringLabel": "Monitoring",
+      "monitoringNote": "Issues being watched but not yet resolved.",
+      "highSeverityLabel": "High severity",
+      "highSeverityNote": "Most urgent incidents in the current slice.",
+      "filterSeverity": "Severity",
+      "filterStatus": "Status",
+      "applyFilters": "Apply filters",
+      "tableType": "Type",
+      "tableSeverity": "Severity",
+      "tableSource": "Source",
+      "tableStatus": "Status",
+      "tableCreated": "Created",
+      "tableSummary": "Safe summary",
+      "emptyTitle": "No incidents match this slice",
+      "emptyBody": "Adjust the filters or wait for new operational events."
+    },
+    "login": {
+      "eyebrow": "Login",
+      "title": "Operator sign-in scaffold",
+      "description": "This login flow sets an internal operator cookie for admin UI continuity. It does not replace real enterprise authentication.",
+      "badge": "Scaffold",
+      "modeTitle": "Auth mode",
+      "modeBody": "Admin access still relies on server-side tokens. This form only establishes an operator session label in the web UI.",
+      "operatorLabel": "Operator",
+      "operatorPlaceholder": "Ops desk",
+      "submitLabel": "Start operator session",
+      "warningTitle": "Not enterprise auth",
+      "warningBody": "Do not present this token-only scaffold as SSO, RBAC, or managed enterprise authentication."
+    },
+    "settingsSecurity": {
+      "eyebrow": "Security Settings",
+      "title": "Auth scaffold and token posture",
+      "description": "A compact status page for auth mode, operator cookie presence, and whether the environment is close to production-safe defaults.",
+      "badge": "Auth",
+      "warningTitle": "Token-only warning",
+      "warningBody": "Real admin authentication is still pending. Use this scaffold only for internal development and controlled operations.",
+      "authModeLabel": "Auth mode",
+      "authModeNote": "Current admin access uses backend tokens and a UI operator cookie scaffold.",
+      "operatorLabel": "Operator session",
+      "operatorNote": "This cookie is for UI continuity only and must not be treated as authorization.",
+      "tokensLabel": "Configured server tokens"
     }
   },
   "localeSwitcher": {

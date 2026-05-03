@@ -269,6 +269,7 @@
       "entity": {}
     }
   },
+  "actionDelete": "Borrar",
   "actionComplete": "Completar",
   "actionDone": "Hecha",
   "actionCheckIn": "Registrar",
@@ -379,6 +380,12 @@
   "messageRecipeUpdated": "Receta de rescate actualizada.",
   "messageEntitySaved": "Se guardo {entity}.",
   "@messageEntitySaved": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "messageEntityDeleted": "Se borro {entity}.",
+  "@messageEntityDeleted": {
     "placeholders": {
       "entity": {}
     }
