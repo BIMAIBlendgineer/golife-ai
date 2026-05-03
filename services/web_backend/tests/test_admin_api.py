@@ -222,10 +222,43 @@ def test_homememory_admin_routes_are_aggregate_only(client):
 
     assert summary.status_code == 200
     payload = summary.json()
+    expected_summary_fields = {
+        "proof_parse_count",
+        "warranty_reminder_count",
+        "claim_draft_count",
+        "evidence_attachment_count",
+        "parser_success_rate",
+        "fallback_rate",
+        "locale_distribution",
+        "encrypted_collections",
+        "storage_impact_estimate",
+        "sensitive_data_excluded",
+    }
+    assert set(payload) == expected_summary_fields
     assert payload["sensitive_data_excluded"] is True
     assert payload["encrypted_collections"] == []
+    payload_text = str(payload).lower()
+    for forbidden_fragment in (
+        "rawtext",
+        "fileref",
+        "merchant",
+        "serial",
+        "issue_description",
+        "generated_message",
+        "recipient_hint",
+    ):
+        assert forbidden_fragment not in payload_text
     assert parser_usage.status_code == 200
-    assert "items" in parser_usage.json()
+    usage_payload = parser_usage.json()
+    assert "items" in usage_payload
+    if usage_payload["items"]:
+        assert set(usage_payload["items"][0]) == {
+            "locale",
+            "parser",
+            "requests",
+            "success_rate",
+            "fallback_rate",
+        }
 
 
 def test_openrouter_keys_are_masked_for_admin_and_decrypted_for_internal(client):
@@ -357,110 +390,109 @@ def test_internal_ingestion_populates_live_metrics(tmp_path):
     )
     from fastapi.testclient import TestClient
 
-    client = TestClient(app)
-
-    usage_response = client.post(
-        "/internal/usage-events",
-        headers=_ingestion_headers(),
-        json={
-            "event_id": "usage-live-1",
-            "user_id": "live-user",
-            "event_type": "capture_classification_requested",
-            "endpoint": "/v1/events/classify",
-            "domain": "finance",
-            "quantity": 1,
-            "created_at": "2026-04-24T12:00:00Z",
-            "metadata": {"source": "test"},
-        },
-    )
-    invocation_response = client.post(
-        "/internal/ai-invocations",
-        headers=_ingestion_headers(),
-        json={
-            "invocation_id": "invoke-live-1",
-            "user_id": "live-user",
-            "endpoint": "/v1/missions/daily",
-            "provider": "mock",
-            "model": "mock",
-            "latency_ms": 245.0,
-            "fallback": True,
-            "suggestions_count": 3,
-            "estimated_cost_usd": 0.0,
-            "schema_valid": True,
-            "status": "success",
-            "created_at": "2026-04-24T12:00:01Z",
-            "metadata": {"intent": "daily_mission"},
-        },
-    )
-    mission_response = client.post(
-        "/internal/mission-audits",
-        headers=_ingestion_headers(),
-        json=[
-            {
-                "mission_id": "mission-live-1",
+    with TestClient(app) as client:
+        usage_response = client.post(
+            "/internal/usage-events",
+            headers=_ingestion_headers(),
+            json={
+                "event_id": "usage-live-1",
                 "user_id": "live-user",
-                "title": "Use pantry first",
-                "status": "generated",
-                "usefulness": None,
-                "domains": ["finance", "pantry"],
-                "matched_risks": ["food_spend_overlap"],
-                "final_score": 0.81,
-                "created_at": "2026-04-24T12:00:02Z",
-            }
-        ],
-    )
-    feedback_response = client.post(
-        "/internal/feedback-audits",
-        headers=_ingestion_headers(),
-        json={
-            "feedback_id": "feedback-live-1",
-            "user_id": "live-user",
-            "suggestion_id": "mission-live-1",
-            "status": "completed",
-            "reason": "Useful plan.",
-            "domains": ["finance", "pantry"],
-            "created_at": "2026-04-24T12:05:00Z",
-        },
-    )
-    safety_response = client.post(
-        "/internal/safety-events",
-        headers=_ingestion_headers(),
-        json=[
-            {
-                "event_id": "safety-live-1",
+                "event_type": "capture_classification_requested",
+                "endpoint": "/v1/events/classify",
+                "domain": "finance",
+                "quantity": 1,
+                "created_at": "2026-04-24T12:00:00Z",
+                "metadata": {"source": "test"},
+            },
+        )
+        invocation_response = client.post(
+            "/internal/ai-invocations",
+            headers=_ingestion_headers(),
+            json={
+                "invocation_id": "invoke-live-1",
                 "user_id": "live-user",
-                "category": "finance",
-                "rule": "regulated_advice",
-                "severity": "medium",
                 "endpoint": "/v1/missions/daily",
-                "created_at": "2026-04-24T12:00:03Z",
-            }
-        ],
-    )
+                "provider": "mock",
+                "model": "mock",
+                "latency_ms": 245.0,
+                "fallback": True,
+                "suggestions_count": 3,
+                "estimated_cost_usd": 0.0,
+                "schema_valid": True,
+                "status": "success",
+                "created_at": "2026-04-24T12:00:01Z",
+                "metadata": {"intent": "daily_mission"},
+            },
+        )
+        mission_response = client.post(
+            "/internal/mission-audits",
+            headers=_ingestion_headers(),
+            json=[
+                {
+                    "mission_id": "mission-live-1",
+                    "user_id": "live-user",
+                    "title": "Use pantry first",
+                    "status": "generated",
+                    "usefulness": None,
+                    "domains": ["finance", "pantry"],
+                    "matched_risks": ["food_spend_overlap"],
+                    "final_score": 0.81,
+                    "created_at": "2026-04-24T12:00:02Z",
+                }
+            ],
+        )
+        feedback_response = client.post(
+            "/internal/feedback-audits",
+            headers=_ingestion_headers(),
+            json={
+                "feedback_id": "feedback-live-1",
+                "user_id": "live-user",
+                "suggestion_id": "mission-live-1",
+                "status": "completed",
+                "reason": "Useful plan.",
+                "domains": ["finance", "pantry"],
+                "created_at": "2026-04-24T12:05:00Z",
+            },
+        )
+        safety_response = client.post(
+            "/internal/safety-events",
+            headers=_ingestion_headers(),
+            json=[
+                {
+                    "event_id": "safety-live-1",
+                    "user_id": "live-user",
+                    "category": "finance",
+                    "rule": "regulated_advice",
+                    "severity": "medium",
+                    "endpoint": "/v1/missions/daily",
+                    "created_at": "2026-04-24T12:00:03Z",
+                }
+            ],
+        )
 
-    assert usage_response.status_code == 202
-    assert invocation_response.status_code == 202
-    assert mission_response.status_code == 202
-    assert feedback_response.status_code == 202
-    assert safety_response.status_code == 202
+        assert usage_response.status_code == 202
+        assert invocation_response.status_code == 202
+        assert mission_response.status_code == 202
+        assert feedback_response.status_code == 202
+        assert safety_response.status_code == 202
 
-    dashboard = client.get("/admin/dashboard", headers=_admin_headers())
-    users = client.get("/admin/users", headers=_admin_headers())
-    costs = client.get("/admin/ai-costs", headers=_admin_headers())
-    feedback = client.get("/admin/feedback", headers=_admin_headers())
-    health = client.get("/health")
+        dashboard = client.get("/admin/dashboard", headers=_admin_headers())
+        users = client.get("/admin/users", headers=_admin_headers())
+        costs = client.get("/admin/ai-costs", headers=_admin_headers())
+        feedback = client.get("/admin/feedback", headers=_admin_headers())
+        health = client.get("/health")
 
-    assert dashboard.status_code == 200
-    assert dashboard.json()["wau"] == 1
-    assert dashboard.json()["mission_completion_rate"] == 1.0
-    assert users.status_code == 200
-    assert users.json()["items"][0]["user_id"] == "live-user"
-    assert costs.status_code == 200
-    assert costs.json()["items"][0]["endpoint"] == "/v1/missions/daily"
-    assert feedback.status_code == 200
-    assert feedback.json()["items"][0]["reason"] == "private_note_redacted"
-    assert health.json()["mode"] == "live"
-    assert health.json()["last_ingestion_at"] is not None
+        assert dashboard.status_code == 200
+        assert dashboard.json()["wau"] == 1
+        assert dashboard.json()["mission_completion_rate"] == 1.0
+        assert users.status_code == 200
+        assert users.json()["items"][0]["user_id"] == "live-user"
+        assert costs.status_code == 200
+        assert costs.json()["items"][0]["endpoint"] == "/v1/missions/daily"
+        assert feedback.status_code == 200
+        assert feedback.json()["items"][0]["reason"] == "private_note_redacted"
+        assert health.json()["mode"] == "live"
+        assert health.json()["last_ingestion_at"] is not None
 
 
 def test_production_rejects_default_tokens():

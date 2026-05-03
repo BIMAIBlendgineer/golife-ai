@@ -6,20 +6,6 @@
 - Main baseline: `8db185fbe0abc5c0a75f3cdbfd8f775e2e7813f8`
 - Scope: post-merge hardening only, no new features
 
-## Product and route guardrails
-
-- [x] no `/control`
-- [x] no `/admin`
-- [x] no `/studio`
-- [x] existing admin routes improved without forbidden route families
-- [x] users scalable
-- [x] organizations and plans present
-- [x] BYOK management present
-- [x] xInsightAI distinction visible
-- [x] billing visible
-- [x] storage visible
-- [x] privacy, security, and audit surfaces visible
-
 ## Validation status
 
 - [x] mobile validation
