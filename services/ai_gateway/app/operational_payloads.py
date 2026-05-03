@@ -33,6 +33,16 @@ def _feedback_reason_marker(note: str | None) -> str | None:
     return "private_note_redacted"
 
 
+def _metadata_with_correlation_id(
+    metadata: dict[str, Any],
+    correlation_id: str,
+) -> dict[str, Any]:
+    return {
+        **metadata,
+        "correlation_id": correlation_id,
+    }
+
+
 def estimate_cost_usd(
     *,
     endpoint: str,
@@ -79,6 +89,7 @@ def build_suggestion_operation_payloads(
     request: SuggestionRequest,
     response: SuggestionResponse,
     latency_ms: float,
+    correlation_id: str,
 ) -> dict[str, Any]:
     provider_meta = response.trace.get("provider_meta", {}) or {}
     provider_name = str(response.trace.get("active_provider", provider_meta.get("provider", "unknown")))
@@ -135,11 +146,14 @@ def build_suggestion_operation_payloads(
             "domain": None,
             "quantity": 1,
             "created_at": created_at,
-            "metadata": {
-                "scope": request.scope,
-                "suggestions_count": len(response.suggestions),
-                "locale": normalize_locale(request.locale),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "scope": request.scope,
+                    "suggestions_count": len(response.suggestions),
+                    "locale": normalize_locale(request.locale),
+                },
+                correlation_id,
+            ),
         },
         "ai_invocation": {
             "invocation_id": invocation_id,
@@ -158,18 +172,21 @@ def build_suggestion_operation_payloads(
             "schema_valid": True,
             "status": "success",
             "created_at": created_at,
-            "metadata": {
-                "intent": endpoint,
-                "locale": normalize_locale(request.locale),
-                "filtered_events_count": response.trace.get("validate_consent", {}).get(
-                    "filtered_events_count",
-                    0,
-                ),
-                "routing_mode": provider_meta.get("routing_mode"),
-                "config_source": provider_meta.get("config_source"),
-                "key_label": provider_meta.get("key_label"),
-                "requested_models": provider_meta.get("requested_models", []),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "intent": endpoint,
+                    "locale": normalize_locale(request.locale),
+                    "filtered_events_count": response.trace.get("validate_consent", {}).get(
+                        "filtered_events_count",
+                        0,
+                    ),
+                    "routing_mode": provider_meta.get("routing_mode"),
+                    "config_source": provider_meta.get("config_source"),
+                    "key_label": provider_meta.get("key_label"),
+                    "requested_models": provider_meta.get("requested_models", []),
+                },
+                correlation_id,
+            ),
         },
         "mission_audits": mission_audits,
         "safety_events": safety_events,
@@ -181,6 +198,7 @@ def build_classification_operation_payloads(
     request: EventClassificationRequest,
     response: EventClassificationResponse,
     latency_ms: float,
+    correlation_id: str,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
     return {
@@ -192,11 +210,14 @@ def build_classification_operation_payloads(
             "domain": response.domain,
             "quantity": 1,
             "created_at": created_at,
-            "metadata": {
-                "event_type": response.event_type,
-                "classifier": response.trace.get("classifier"),
-                "locale": normalize_locale(request.locale),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "event_type": response.event_type,
+                    "classifier": response.trace.get("classifier"),
+                    "locale": normalize_locale(request.locale),
+                },
+                correlation_id,
+            ),
         },
         "ai_invocation": {
             "invocation_id": f"invoke-{uuid4()}",
@@ -215,11 +236,14 @@ def build_classification_operation_payloads(
             "schema_valid": True,
             "status": "success",
             "created_at": created_at,
-            "metadata": {
-                "domain": response.domain,
-                "confidence": response.confidence,
-                "locale": normalize_locale(request.locale),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "domain": response.domain,
+                    "confidence": response.confidence,
+                    "locale": normalize_locale(request.locale),
+                },
+                correlation_id,
+            ),
         },
     }
 
@@ -229,6 +253,7 @@ def build_parse_operation_payloads(
     request: EventParseRequest,
     response: EventParseResponse,
     latency_ms: float,
+    correlation_id: str,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
     classifier = response.trace.get("parser", "deterministic_capture_parser")
@@ -242,11 +267,14 @@ def build_parse_operation_payloads(
             "domain": response.items[0].domain if response.items else None,
             "quantity": max(1, len(response.items)),
             "created_at": created_at,
-            "metadata": {
-                "item_count": len(response.items),
-                "parser": classifier,
-                "locale": normalize_locale(request.locale),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "item_count": len(response.items),
+                    "parser": classifier,
+                    "locale": normalize_locale(request.locale),
+                },
+                correlation_id,
+            ),
         },
         "ai_invocation": {
             "invocation_id": f"invoke-{uuid4()}",
@@ -265,10 +293,13 @@ def build_parse_operation_payloads(
             "schema_valid": True,
             "status": "success",
             "created_at": created_at,
-            "metadata": {
-                "item_count": len(response.items),
-                "locale": normalize_locale(request.locale),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "item_count": len(response.items),
+                    "locale": normalize_locale(request.locale),
+                },
+                correlation_id,
+            ),
         },
     }
 
@@ -277,6 +308,7 @@ def build_feedback_operation_payloads(
     *,
     request: MissionFeedbackRequest,
     feedback_id: str,
+    correlation_id: str,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
     note_text = (request.notes or "").strip()
@@ -289,13 +321,16 @@ def build_feedback_operation_payloads(
             "domain": request.domain_targets[0] if request.domain_targets else None,
             "quantity": 1,
             "created_at": created_at,
-            "metadata": {
-                "status": request.status,
-                "suggestion_id": request.suggestion_id,
-                "notes_present": bool(note_text),
-                "notes_char_count": len(note_text),
-                "locale": normalize_locale(request.locale),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "status": request.status,
+                    "suggestion_id": request.suggestion_id,
+                    "notes_present": bool(note_text),
+                    "notes_char_count": len(note_text),
+                    "locale": normalize_locale(request.locale),
+                },
+                correlation_id,
+            ),
         },
         "feedback_audit": {
             "feedback_id": feedback_id,
@@ -314,6 +349,7 @@ def build_proof_parse_operation_payloads(
     request: ProofParseRequest,
     response: ProofParseResponse,
     latency_ms: float,
+    correlation_id: str,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
     parser = str(response.trace.get("parser", "deterministic_proof_parser"))
@@ -328,16 +364,19 @@ def build_proof_parse_operation_payloads(
             "domain": "system",
             "quantity": 1,
             "created_at": created_at,
-            "metadata": {
-                "locale": normalized_locale,
-                "region": request.region,
-                "parser": parser,
-                "confidence": response.confidence,
-                "has_amount": response.total_amount is not None,
-                "has_date": bool(response.purchase_date),
-                "has_warranty_hint": response.warranty_months is not None,
-                "item_count": 1,
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "locale": normalized_locale,
+                    "region": request.region,
+                    "parser": parser,
+                    "confidence": response.confidence,
+                    "has_amount": response.total_amount is not None,
+                    "has_date": bool(response.purchase_date),
+                    "has_warranty_hint": response.warranty_months is not None,
+                    "item_count": 1,
+                },
+                correlation_id,
+            ),
         },
         "ai_invocation": {
             "invocation_id": f"invoke-{uuid4()}",
@@ -356,16 +395,19 @@ def build_proof_parse_operation_payloads(
             "schema_valid": True,
             "status": "success",
             "created_at": created_at,
-            "metadata": {
-                "locale": normalized_locale,
-                "region": request.region,
-                "parser": parser,
-                "confidence": response.confidence,
-                "has_amount": response.total_amount is not None,
-                "has_date": bool(response.purchase_date),
-                "has_warranty_hint": response.warranty_months is not None,
-                "item_count": 1,
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "locale": normalized_locale,
+                    "region": request.region,
+                    "parser": parser,
+                    "confidence": response.confidence,
+                    "has_amount": response.total_amount is not None,
+                    "has_date": bool(response.purchase_date),
+                    "has_warranty_hint": response.warranty_months is not None,
+                    "item_count": 1,
+                },
+                correlation_id,
+            ),
         },
     }
 
@@ -374,6 +416,7 @@ def build_reflection_safety_operation_payloads(
     *,
     request: ReflectionSafetyRequest,
     response: ReflectionSafetyResponse,
+    correlation_id: str,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
     return {
@@ -385,12 +428,15 @@ def build_reflection_safety_operation_payloads(
             "domain": "system",
             "quantity": 1,
             "created_at": created_at,
-            "metadata": {
-                "category": response.category,
-                "safe": response.safe,
-                "locale": normalize_locale(request.locale),
-                "region": response.trace.get("region"),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "category": response.category,
+                    "safe": response.safe,
+                    "locale": normalize_locale(request.locale),
+                    "region": response.trace.get("region"),
+                },
+                correlation_id,
+            ),
         },
         "safety_events": (
             [
@@ -416,6 +462,7 @@ def build_task_rewrite_operation_payloads(
     response: TaskRewriteResponse | None,
     latency_ms: float,
     status: str,
+    correlation_id: str,
     error_detail: str | None = None,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
@@ -435,11 +482,14 @@ def build_task_rewrite_operation_payloads(
             "domain": "task",
             "quantity": 1,
             "created_at": created_at,
-            "metadata": {
-                "rewrite_count": rewrite_count,
-                "status": status,
-                "locale": normalize_locale(request.locale),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "rewrite_count": rewrite_count,
+                    "status": status,
+                    "locale": normalize_locale(request.locale),
+                },
+                correlation_id,
+            ),
         },
         "ai_invocation": {
             "invocation_id": f"invoke-{uuid4()}",
@@ -463,14 +513,17 @@ def build_task_rewrite_operation_payloads(
             "schema_valid": response is not None,
             "status": status,
             "created_at": created_at,
-            "metadata": {
-                "error": error_detail,
-                "locale": normalize_locale(request.locale),
-                "routing_mode": provider_meta.get("routing_mode"),
-                "config_source": provider_meta.get("config_source"),
-                "key_label": provider_meta.get("key_label"),
-                "requested_models": provider_meta.get("requested_models", []),
-            },
+            "metadata": _metadata_with_correlation_id(
+                {
+                    "error": error_detail,
+                    "locale": normalize_locale(request.locale),
+                    "routing_mode": provider_meta.get("routing_mode"),
+                    "config_source": provider_meta.get("config_source"),
+                    "key_label": provider_meta.get("key_label"),
+                    "requested_models": provider_meta.get("requested_models", []),
+                },
+                correlation_id,
+            ),
         },
         "safety_events": (
             [
@@ -496,6 +549,7 @@ def build_ai_unavailable_operation_payload(
     user_id: str,
     latency_ms: float,
     provider_name: str,
+    correlation_id: str,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
     return {
@@ -507,7 +561,10 @@ def build_ai_unavailable_operation_payload(
             "domain": None,
             "quantity": 1,
             "created_at": created_at,
-            "metadata": {"provider": provider_name},
+            "metadata": _metadata_with_correlation_id(
+                {"provider": provider_name},
+                correlation_id,
+            ),
         },
         "ai_invocation": {
             "invocation_id": f"invoke-{uuid4()}",
@@ -522,6 +579,9 @@ def build_ai_unavailable_operation_payload(
             "schema_valid": False,
             "status": "error",
             "created_at": created_at,
-            "metadata": {"error_code": "ai_temporarily_unavailable"},
+            "metadata": _metadata_with_correlation_id(
+                {"error_code": "ai_temporarily_unavailable"},
+                correlation_id,
+            ),
         },
     }

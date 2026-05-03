@@ -853,13 +853,23 @@ def test_daily_mission_reports_operational_events(tmp_path):
                 _event("evt-2", "pantry", "ai_allowed"),
             ],
         },
+        headers={"x-correlation-id": "corr-daily-123"},
     )
 
     assert response.status_code == 200
+    assert response.headers["x-correlation-id"] == "corr-daily-123"
     assert len(operational_client.usage_events) == 1
     assert operational_client.usage_events[0]["event_type"] == "daily_plan_requested"
+    assert (
+        operational_client.usage_events[0]["metadata"]["correlation_id"]
+        == "corr-daily-123"
+    )
     assert len(operational_client.invocations) == 1
     assert operational_client.invocations[0]["endpoint"] == "/v1/missions/daily"
+    assert (
+        operational_client.invocations[0]["metadata"]["correlation_id"]
+        == "corr-daily-123"
+    )
     assert len(operational_client.mission_batches) == 1
     assert len(operational_client.mission_batches[0]) == 3
     assert len(operational_client.model_settings) == 1
@@ -924,6 +934,26 @@ def test_classification_and_feedback_report_operational_audits(tmp_path):
     assert operational_client.usage_events[0]["metadata"]["locale"] == "pt-BR"
     assert operational_client.usage_events[1]["metadata"]["locale"] == "pt-BR"
     assert operational_client.usage_events[2]["metadata"]["locale"] == "ja"
+    assert (
+        operational_client.usage_events[0]["metadata"]["correlation_id"]
+        == classify_response.headers["x-correlation-id"]
+    )
+    assert (
+        operational_client.invocations[0]["metadata"]["correlation_id"]
+        == classify_response.headers["x-correlation-id"]
+    )
+    assert (
+        operational_client.usage_events[1]["metadata"]["correlation_id"]
+        == feedback_response.headers["x-correlation-id"]
+    )
+    assert (
+        operational_client.usage_events[2]["metadata"]["correlation_id"]
+        == parse_response.headers["x-correlation-id"]
+    )
+    assert (
+        operational_client.invocations[1]["metadata"]["correlation_id"]
+        == parse_response.headers["x-correlation-id"]
+    )
     assert len(operational_client.feedback_items) == 1
     assert operational_client.feedback_items[0]["status"] == "completed"
     assert operational_client.feedback_items[0]["reason"] == "private_note_redacted"
@@ -1152,12 +1182,18 @@ def test_reflection_check_reports_metadata_only_operational_audit(tmp_path):
             "text": "I want to kill myself tonight.",
             "privacy_level": "local_only",
         },
+        headers={"x-correlation-id": "corr-reflection-123"},
     )
 
     assert response.status_code == 200
+    assert response.headers["x-correlation-id"] == "corr-reflection-123"
     assert len(operational_client.usage_events) == 1
     assert operational_client.usage_events[0]["event_type"] == "reflection_safety_checked"
     assert operational_client.usage_events[0]["metadata"]["locale"] == "zh-Hans"
+    assert (
+        operational_client.usage_events[0]["metadata"]["correlation_id"]
+        == "corr-reflection-123"
+    )
     assert len(operational_client.safety_batches) == 1
     serialized = json.dumps(
         {
@@ -1266,3 +1302,18 @@ def test_assess_reflection_safety_detects_chinese_crisis_language():
     assert response.category == "crisis"
     assert "GoLife 可以帮助你整理沉重的感受" in response.message
     assert response.trace["locale"] == "zh-Hans"
+
+
+def test_assess_reflection_safety_detects_hyphenated_crisis_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "I am worried I may self-harm tonight.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "crisis"
