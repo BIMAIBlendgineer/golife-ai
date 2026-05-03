@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -87,7 +88,14 @@ def create_app(
     )
     secret_box = SecretBox(resolved_settings.openrouter_keys_master_key)
 
-    app = FastAPI(title="GoLife Web Backend", version="0.2.0")
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        try:
+            yield
+        finally:
+            resolved_repository.close()
+
+    app = FastAPI(title="GoLife Web Backend", version="0.2.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.state.repository = resolved_repository
     app.state.secret_box = secret_box
@@ -97,11 +105,6 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    async def shutdown_repository() -> None:
-        resolved_repository.close()
-
-    app.add_event_handler("shutdown", shutdown_repository)
 
     def require_admin(
         x_admin_token: str | None = Header(default=None),

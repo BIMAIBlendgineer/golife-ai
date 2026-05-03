@@ -121,6 +121,14 @@ def _sqlite_in_placeholders(values: tuple[object, ...]) -> str:
     return ", ".join("?" for _ in values)
 
 
+def _sql_where_clause(filters: list[str]) -> str:
+    return f"WHERE {' AND '.join(filters)}" if filters else ""
+
+
+def _join_sql_lines(*lines: str) -> str:
+    return "\n".join(line for line in lines if line)
+
+
 def _paginate_sequence(
     items: list[ItemT],
     *,
@@ -1566,65 +1574,67 @@ class OperationalRepository:
             filters.append("COALESCE(p.locale, 'en') = ?")
             args.append(locale)
 
-        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        where_sql = _sql_where_clause(filters)
+        count_sql = _join_sql_lines(
+            "SELECT COUNT(*)",
+            "FROM admin_users u",
+            "LEFT JOIN user_profiles p ON p.user_id = u.user_id",
+            where_sql,
+        )
         total = int(
             self._scalar(
-                f"""
-                SELECT COUNT(*)
-                FROM admin_users u
-                LEFT JOIN user_profiles p ON p.user_id = u.user_id
-                {where_sql}
-                """,
+                count_sql,
                 tuple(args),
             )
         )
+        list_sql = _join_sql_lines(
+            "SELECT",
+            "    u.user_id,",
+            "    u.email,",
+            "    u.plan,",
+            "    u.status,",
+            "    u.last_seen_at,",
+            "    u.support_flags_json,",
+            "    COALESCE(p.display_name, u.user_id) AS display_name,",
+            "    COALESCE(p.locale, 'en') AS locale,",
+            "    (",
+            "        SELECT COUNT(*)",
+            "        FROM ai_invocations ai",
+            "        WHERE ai.user_id = u.user_id",
+            "    ) AS ai_calls_count,",
+            "    (",
+            "        SELECT COUNT(*)",
+            "        FROM feedback_audit_records fb",
+            "        WHERE fb.user_id = u.user_id",
+            "          AND fb.status IN ('useful', 'accepted', 'completed')",
+            "    ) AS useful_missions_count,",
+            "    (",
+            "        SELECT COALESCE(AVG(CAST(ai.fallback AS REAL)), 0)",
+            "        FROM ai_invocations ai",
+            "        WHERE ai.user_id = u.user_id",
+            "    ) AS fallback_rate,",
+            "    (",
+            "        SELECT COUNT(*)",
+            "        FROM support_requests sr",
+            "        WHERE sr.user_id = u.user_id",
+            "          AND sr.status = 'open'",
+            "          AND sr.request_type = 'export'",
+            "    ) AS open_export_count,",
+            "    (",
+            "        SELECT COUNT(*)",
+            "        FROM support_requests sr",
+            "        WHERE sr.user_id = u.user_id",
+            "          AND sr.status = 'open'",
+            "          AND sr.request_type = 'delete'",
+            "    ) AS open_delete_count",
+            "FROM admin_users u",
+            "LEFT JOIN user_profiles p ON p.user_id = u.user_id",
+            where_sql,
+            "ORDER BY u.last_seen_at DESC, u.created_at DESC",
+            "LIMIT ? OFFSET ?",
+        )
         rows = self._fetchall(
-            f"""
-            SELECT
-                u.user_id,
-                u.email,
-                u.plan,
-                u.status,
-                u.last_seen_at,
-                u.support_flags_json,
-                COALESCE(p.display_name, u.user_id) AS display_name,
-                COALESCE(p.locale, 'en') AS locale,
-                (
-                    SELECT COUNT(*)
-                    FROM ai_invocations ai
-                    WHERE ai.user_id = u.user_id
-                ) AS ai_calls_count,
-                (
-                    SELECT COUNT(*)
-                    FROM feedback_audit_records fb
-                    WHERE fb.user_id = u.user_id
-                      AND fb.status IN ('useful', 'accepted', 'completed')
-                ) AS useful_missions_count,
-                (
-                    SELECT COALESCE(AVG(CAST(ai.fallback AS REAL)), 0)
-                    FROM ai_invocations ai
-                    WHERE ai.user_id = u.user_id
-                ) AS fallback_rate,
-                (
-                    SELECT COUNT(*)
-                    FROM support_requests sr
-                    WHERE sr.user_id = u.user_id
-                      AND sr.status = 'open'
-                      AND sr.request_type = 'export'
-                ) AS open_export_count,
-                (
-                    SELECT COUNT(*)
-                    FROM support_requests sr
-                    WHERE sr.user_id = u.user_id
-                      AND sr.status = 'open'
-                      AND sr.request_type = 'delete'
-                ) AS open_delete_count
-            FROM admin_users u
-            LEFT JOIN user_profiles p ON p.user_id = u.user_id
-            {where_sql}
-            ORDER BY u.last_seen_at DESC, u.created_at DESC
-            LIMIT ? OFFSET ?
-            """,
+            list_sql,
             tuple([*args, limit, offset]),
         )
         items = [
@@ -2301,21 +2311,26 @@ class OperationalRepository:
         if action:
             filters.append("action = ?")
             args.append(action)
-        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        where_sql = _sql_where_clause(filters)
+        count_sql = _join_sql_lines(
+            "SELECT COUNT(*) FROM admin_audit_log",
+            where_sql,
+        )
         total = int(
             self._scalar(
-                f"SELECT COUNT(*) FROM admin_audit_log {where_sql}",
+                count_sql,
                 tuple(args),
             )
         )
+        list_sql = _join_sql_lines(
+            "SELECT audit_id, actor_id, action, target_type, target_id, safe_diff_json, correlation_id, created_at",
+            "FROM admin_audit_log",
+            where_sql,
+            "ORDER BY created_at DESC",
+            "LIMIT ? OFFSET ?",
+        )
         rows = self._fetchall(
-            f"""
-            SELECT audit_id, actor_id, action, target_type, target_id, safe_diff_json, correlation_id, created_at
-            FROM admin_audit_log
-            {where_sql}
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-            """,
+            list_sql,
             tuple([*args, limit, offset]),
         )
         items = [
@@ -2382,21 +2397,26 @@ class OperationalRepository:
         if plan:
             filters.append("plan_id = ?")
             args.append(plan)
-        where_sql = f"WHERE {' AND '.join(filters)}" if filters else ""
+        where_sql = _sql_where_clause(filters)
+        count_sql = _join_sql_lines(
+            "SELECT COUNT(*) FROM organizations",
+            where_sql,
+        )
         total = int(
             self._scalar(
-                f"SELECT COUNT(*) FROM organizations {where_sql}",
+                count_sql,
                 tuple(args),
             )
         )
+        list_sql = _join_sql_lines(
+            "SELECT organization_id, name, status, plan_id, storage_used_gb, ai_mode_default, created_at",
+            "FROM organizations",
+            where_sql,
+            "ORDER BY created_at DESC, organization_id ASC",
+            "LIMIT ? OFFSET ?",
+        )
         rows = self._fetchall(
-            f"""
-            SELECT organization_id, name, status, plan_id, storage_used_gb, ai_mode_default, created_at
-            FROM organizations
-            {where_sql}
-            ORDER BY created_at DESC, organization_id ASC
-            LIMIT ? OFFSET ?
-            """,
+            list_sql,
             tuple([*args, limit, offset]),
         )
         items = [

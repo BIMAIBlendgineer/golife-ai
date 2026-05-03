@@ -51,7 +51,9 @@ All AI endpoints share the same core envelope:
 ## Schema inventory
 
 Static schema snapshots live in `schemas/`.
-The runtime source of truth lives in `ai-gateway-skeleton/app/schemas.py`.
+This package is archival reference material only.
+The active runtime source of truth lives in `services/ai_gateway/app/schemas.py`.
+Shared contract snapshots for the current monorepo live in `packages/contracts/`.
 
 ## Client rule
 
