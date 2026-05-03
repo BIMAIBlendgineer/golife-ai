@@ -98,6 +98,11 @@ def create_app(
         allow_headers=["*"],
     )
 
+    async def shutdown_repository() -> None:
+        resolved_repository.close()
+
+    app.add_event_handler("shutdown", shutdown_repository)
+
     def require_admin(
         x_admin_token: str | None = Header(default=None),
     ) -> None:

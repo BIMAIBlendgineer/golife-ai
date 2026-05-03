@@ -21,4 +21,5 @@ def client(tmp_path) -> TestClient:
             seed_demo_data=True,
         ),
     )
-    return TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client

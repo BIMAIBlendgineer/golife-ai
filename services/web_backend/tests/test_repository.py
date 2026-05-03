@@ -20,6 +20,9 @@ def test_postgres_connection_uses_dict_row(monkeypatch):
         def commit(self):
             return None
 
+        def close(self):
+            return None
+
     class FakePsycopg:
         @staticmethod
         def connect(dsn, *, autocommit, row_factory):
@@ -33,7 +36,8 @@ def test_postgres_connection_uses_dict_row(monkeypatch):
     monkeypatch.setattr(OperationalRepository, "_create_schema", lambda self: None)
     monkeypatch.setattr(OperationalRepository, "_ensure_defaults", lambda self: None)
 
-    OperationalRepository("postgresql://localhost/golife_ops", seed_demo_data=False)
+    repository = OperationalRepository("postgresql://localhost/golife_ops", seed_demo_data=False)
+    repository.close()
 
     assert captured["dsn"] == "postgresql://localhost/golife_ops"
     assert captured["autocommit"] is False
@@ -65,3 +69,4 @@ def test_scalar_supports_postgres_dict_rows(monkeypatch):
     )
 
     assert repository._scalar("SELECT COUNT(*) FROM anything") == 7
+    repository.close()

@@ -167,6 +167,7 @@ class OperationalRepository:
         else:
             self._connection = sqlite3.connect(db_path, check_same_thread=False)
             self._connection.row_factory = sqlite3.Row
+        self._closed = False
         self._create_schema()
         self._ensure_defaults()
         if seed_demo_data:
@@ -189,6 +190,12 @@ class OperationalRepository:
 
     def _commit(self) -> None:
         self._connection.commit()
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._connection.close()
+        self._closed = True
 
     def _display_storage_path(self) -> str:
         if self._dialect != "postgres":
