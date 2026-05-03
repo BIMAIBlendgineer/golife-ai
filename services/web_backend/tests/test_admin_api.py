@@ -1,5 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
+from fastapi.testclient import TestClient
+
 import app.main as main_module
 from app.main import create_app
 from app.repository import OperationalRepository
@@ -214,6 +216,29 @@ def test_privacy_security_audit_and_quality_routes_exist(client):
     assert "items" in incidents.json()
     assert auth_status.status_code == 200
     assert auth_status.json()["auth_mode"] == "token_only_scaffold"
+
+
+def test_auth_status_reports_operator_secret_mode(tmp_path):
+    app = create_app(
+        settings=Settings(
+            admin_token="test-admin-token",
+            admin_operator_secret="super-secret-operator",
+            ingestion_token="test-ingestion-token",
+            internal_service_token="test-internal-token",
+            operational_database_path=str(tmp_path / "web_backend.db"),
+            seed_demo_data=True,
+        ),
+        repository=OperationalRepository(
+            str(tmp_path / "web_backend.db"),
+            seed_demo_data=True,
+        ),
+    )
+    with TestClient(app) as secret_client:
+        auth_status = secret_client.get("/admin/auth/status", headers=_admin_headers())
+
+    assert auth_status.status_code == 200
+    assert auth_status.json()["auth_mode"] == "token_plus_operator_secret"
+    assert auth_status.json()["production_ready"] is False
 
 
 def test_homememory_admin_routes_are_aggregate_only(client):

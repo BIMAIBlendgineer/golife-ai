@@ -861,6 +861,9 @@
       "modeBody": "Admin access still relies on server-side tokens. This form only establishes an operator session label in the web UI.",
       "operatorLabel": "Operator",
       "operatorPlaceholder": "Ops desk",
+      "secretLabel": "Operator secret",
+      "secretPlaceholder": "Enter the configured secret",
+      "invalidSecretBody": "The operator secret did not match the configured admin web secret.",
       "submitLabel": "Start operator session",
       "warningTitle": "Not enterprise auth",
       "warningBody": "Do not present this token-only scaffold as SSO, RBAC, or managed enterprise authentication."

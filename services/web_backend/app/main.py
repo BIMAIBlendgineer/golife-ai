@@ -148,6 +148,7 @@ def create_app(
     def production_ready() -> bool:
         return (
             resolved_settings.admin_token != "golife-admin-dev"
+            and len(resolved_settings.admin_operator_secret) >= 12
             and resolved_settings.ingestion_token != "golife-ingest-dev"
             and resolved_settings.internal_service_token != "golife-internal-dev"
             and resolved_settings.openrouter_keys_master_key
@@ -175,14 +176,23 @@ def create_app(
         )
 
     def build_auth_status() -> AdminAuthStatus:
+        operator_secret_configured = len(resolved_settings.admin_operator_secret) >= 12
         return AdminAuthStatus(
-            auth_mode="token_only_scaffold",
+            auth_mode=(
+                "token_plus_operator_secret"
+                if operator_secret_configured
+                else "token_only_scaffold"
+            ),
             environment=resolved_settings.environment,
             admin_token_configured=resolved_settings.admin_token != "golife-admin-dev",
             production_ready=production_ready(),
             enterprise_ready=False,
             warning=(
-                "Token-only admin access is a scaffold. Use SSO or managed identity before enterprise production."
+                (
+                    "Operator secret gate is enabled for the admin web. This is stronger than the scaffold, but SSO or managed identity is still required before enterprise production."
+                )
+                if operator_secret_configured
+                else "Token-only admin access is a scaffold. Use SSO or managed identity before enterprise production."
             ),
         )
 
