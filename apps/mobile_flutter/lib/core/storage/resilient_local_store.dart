@@ -195,5 +195,44 @@ class ResilientLocalStore implements LocalStore {
       _run((store) => store.upsertRecipeRescue(recipeRescue));
 
   @override
+  Future<void> deleteTask(String id) => _run((store) => store.deleteTask(id));
+
+  @override
+  Future<void> deleteHabit(String id) =>
+      _run((store) => store.deleteHabit(id));
+
+  @override
+  Future<void> deleteExpense(String id) =>
+      _run((store) => store.deleteExpense(id));
+
+  @override
+  Future<void> deletePantryItem(String id) =>
+      _run((store) => store.deletePantryItem(id));
+
+  @override
+  Future<void> deletePurchaseIntention(String id) =>
+      _run((store) => store.deletePurchaseIntention(id));
+
+  @override
+  Future<void> deleteWeekPlan(String id) =>
+      _run((store) => store.deleteWeekPlan(id));
+
+  @override
+  Future<void> deleteJournalEntry(String id) =>
+      _run((store) => store.deleteJournalEntry(id));
+
+  @override
+  Future<void> deleteQuickNote(String id) =>
+      _run((store) => store.deleteQuickNote(id));
+
+  @override
+  Future<void> deleteCalendarItem(String id) =>
+      _run((store) => store.deleteCalendarItem(id));
+
+  @override
+  Future<void> deleteRecipeRescue(String id) =>
+      _run((store) => store.deleteRecipeRescue(id));
+
+  @override
   Future<void> deleteAllData() => _run((store) => store.deleteAllData());
 }

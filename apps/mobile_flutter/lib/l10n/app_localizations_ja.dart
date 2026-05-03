@@ -580,6 +580,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get actionDelete => '削除';
+
+  @override
   String get actionComplete => 'Complete';
 
   @override
@@ -922,6 +925,11 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String messageEntitySaved(Object entity) {
     return '$entity saved.';
+  }
+
+  @override
+  String messageEntityDeleted(Object entity) {
+    return '$entityを削除しました。';
   }
 
   @override

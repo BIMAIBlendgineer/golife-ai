@@ -236,6 +236,56 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> deleteTask(String id) async {
+    _removeById(_tasks, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteHabit(String id) async {
+    _removeById(_habits, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteExpense(String id) async {
+    _removeById(_expenses, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deletePantryItem(String id) async {
+    _removeById(_pantryItems, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deletePurchaseIntention(String id) async {
+    _removeById(_purchaseIntentions, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteWeekPlan(String id) async {
+    _removeById(_weekPlans, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteJournalEntry(String id) async {
+    _removeById(_journalEntries, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteQuickNote(String id) async {
+    _removeById(_quickNotes, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteCalendarItem(String id) async {
+    _removeById(_calendarItems, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteRecipeRescue(String id) async {
+    _removeById(_recipeRescues, id, (item) => item.id);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     _settings = PrivacySettings.defaults();
     _localePreference = null;
@@ -269,4 +319,12 @@ void _replaceById<T>(
     return;
   }
   items.add(next);
+}
+
+void _removeById<T>(
+  List<T> items,
+  String id,
+  String Function(T value) idOf,
+) {
+  items.removeWhere((item) => idOf(item) == id);
 }

@@ -5,6 +5,7 @@ import 'package:golife_flutter/core/ai_client/ai_gateway_client.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
+import 'package:golife_flutter/domains/tasks/go_task.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
 
 void main() {
@@ -120,6 +121,78 @@ void main() {
         controller.blockedFromAiEvents.any((event) => event.domain == 'system'),
         isTrue,
       );
+    });
+
+    test('deletes individual entities without wiping the full local state',
+        () async {
+      await controller.saveTask(
+        title: 'Archive travel receipts',
+        priority: TaskPriority.standard,
+        estimatedMinutes: 20,
+      );
+      await controller.saveExpense(
+        label: 'Train ticket',
+        amount: 14.2,
+        category: 'transport',
+      );
+      await controller.savePantryItem(
+        name: 'Spinach',
+        quantityLabel: '1 bag',
+        rescueHint: 'Use tonight.',
+      );
+      await controller.saveJournalEntry(
+        title: 'Evening note',
+        body: 'Keep the reset small.',
+        mood: 'steady',
+      );
+      await controller.saveCalendarItem(
+        title: 'Admin block',
+        startIso: '2026-04-25T13:00:00Z',
+        endIso: '2026-04-25T14:00:00Z',
+      );
+      await controller.saveRecipeRescue(
+        title: 'Spinach rice bowl',
+        summary: 'Use the oldest greens first.',
+        ingredientNames: const <String>['spinach', 'rice'],
+        estimatedMinutes: 15,
+      );
+
+      final taskId = controller.tasks.first.id;
+      final expenseId = controller.expenses.first.id;
+      final pantryId = controller.pantryItems.first.id;
+      final journalId = controller.journalEntries.first.id;
+      final calendarId = controller.calendarItems.first.id;
+      final recipeId = controller.recipeRescues.first.id;
+
+      await controller.deleteTaskById(taskId);
+      await controller.deleteExpenseById(expenseId);
+      await controller.deletePantryItemById(pantryId);
+      await controller.deleteJournalEntryById(journalId);
+      await controller.deleteCalendarItemById(calendarId);
+      await controller.deleteRecipeRescueById(recipeId);
+
+      expect(controller.tasks.any((task) => task.id == taskId), isFalse);
+      expect(
+        controller.expenses.any((expense) => expense.id == expenseId),
+        isFalse,
+      );
+      expect(
+        controller.pantryItems.any((item) => item.id == pantryId),
+        isFalse,
+      );
+      expect(
+        controller.journalEntries.any((entry) => entry.id == journalId),
+        isFalse,
+      );
+      expect(
+        controller.calendarItems.any((item) => item.id == calendarId),
+        isFalse,
+      );
+      expect(
+        controller.recipeRescues.any((recipe) => recipe.id == recipeId),
+        isFalse,
+      );
+      expect(controller.totalEventCount, greaterThan(0));
     });
   });
 }

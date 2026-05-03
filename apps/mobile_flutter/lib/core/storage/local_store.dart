@@ -66,6 +66,16 @@ abstract class LocalStore {
   Future<void> upsertQuickNote(QuickNote quickNote) async {}
   Future<void> upsertCalendarItem(CalendarItem calendarItem) async {}
   Future<void> upsertRecipeRescue(RecipeRescue recipeRescue) async {}
+  Future<void> deleteTask(String id) async {}
+  Future<void> deleteHabit(String id) async {}
+  Future<void> deleteExpense(String id) async {}
+  Future<void> deletePantryItem(String id) async {}
+  Future<void> deletePurchaseIntention(String id) async {}
+  Future<void> deleteWeekPlan(String id) async {}
+  Future<void> deleteJournalEntry(String id) async {}
+  Future<void> deleteQuickNote(String id) async {}
+  Future<void> deleteCalendarItem(String id) async {}
+  Future<void> deleteRecipeRescue(String id) async {}
 
   Future<void> deleteAllData() async {}
 }

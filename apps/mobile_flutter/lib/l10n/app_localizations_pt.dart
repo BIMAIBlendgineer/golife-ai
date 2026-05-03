@@ -591,6 +591,9 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get actionDelete => 'Apagar';
+
+  @override
   String get actionComplete => 'Complete';
 
   @override
@@ -933,6 +936,11 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String messageEntitySaved(Object entity) {
     return '$entity saved.';
+  }
+
+  @override
+  String messageEntityDeleted(Object entity) {
+    return '$entity apagada.';
   }
 
   @override
@@ -1583,6 +1591,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String get actionDelete => 'Apagar';
+
+  @override
   String get actionComplete => 'Concluir';
 
   @override
@@ -1927,6 +1938,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String messageEntitySaved(Object entity) {
     return '$entity salva.';
+  }
+
+  @override
+  String messageEntityDeleted(Object entity) {
+    return '$entity apagada.';
   }
 
   @override

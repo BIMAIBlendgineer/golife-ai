@@ -1145,6 +1145,12 @@ abstract class AppLocalizations {
   /// **'Edit {entity}'**
   String actionEditEntity(Object entity);
 
+  /// No description provided for @actionDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get actionDelete;
+
   /// No description provided for @actionComplete.
   ///
   /// In en, this message translates to:
@@ -1798,6 +1804,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{entity} saved.'**
   String messageEntitySaved(Object entity);
+
+  /// No description provided for @messageEntityDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{entity} deleted.'**
+  String messageEntityDeleted(Object entity);
 
   /// No description provided for @taskTimeboxFirstBlock.
   ///
