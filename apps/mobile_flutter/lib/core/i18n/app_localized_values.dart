@@ -80,7 +80,11 @@ extension LocalizedMissionFeedbackStatus on MissionFeedbackStatus {
 extension LocalizedGoLifeController on GoLifeController {
   List<String> localizedEncryptedCollectionLabels(AppLocalizations l10n) {
     return <String>[
+      'Life events',
+      'Daily missions',
+      'Daily risks',
       l10n.collectionFinanceRecords,
+      'Calendar items',
       l10n.collectionJournalEntries,
       l10n.collectionQuickNotes,
       l10n.collectionOwnedItems,

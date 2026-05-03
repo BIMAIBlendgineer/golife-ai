@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     environment: str = "dev"
     admin_token: str = "golife-admin-dev"
+    admin_operator_secret: str = ""
     ingestion_token: str = "golife-ingest-dev"
     internal_service_token: str = "golife-internal-dev"
     openrouter_keys_master_key: str = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
@@ -45,6 +46,8 @@ class Settings(BaseSettings):
 
         if len(self.admin_token) < 24 or len(self.ingestion_token) < 24:
             raise ValueError("Production admin and ingestion tokens must be at least 24 characters long.")
+        if len(self.admin_operator_secret) < 12:
+            raise ValueError("ADMIN_OPERATOR_SECRET must be configured in production.")
         if len(self.internal_service_token) < 24:
             raise ValueError("INTERNAL_SERVICE_TOKEN must be at least 24 characters long in production.")
         if len(self.openrouter_keys_master_key) < 32:

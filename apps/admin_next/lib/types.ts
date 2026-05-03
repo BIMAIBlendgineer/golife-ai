@@ -296,7 +296,7 @@ export type IncidentRow = {
 };
 
 export type AdminAuthStatus = {
-  auth_mode: "token_only_scaffold";
+  auth_mode: "token_only_scaffold" | "token_plus_operator_secret";
   environment: string;
   admin_token_configured: boolean;
   production_ready: boolean;

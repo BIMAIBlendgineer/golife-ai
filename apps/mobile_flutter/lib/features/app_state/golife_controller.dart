@@ -176,7 +176,11 @@ class GoLifeController extends ChangeNotifier {
       ? normalizeLocaleTag(_deviceLocaleTag)
       : _localePreference.storageKey;
   List<String> get encryptedCollectionLabels => const <String>[
+        'Life events',
+        'Daily missions',
+        'Daily risks',
         'Finance records',
+        'Calendar items',
         'Journal entries',
         'Quick notes',
         'Owned items',
@@ -1674,7 +1678,11 @@ class GoLifeController extends ChangeNotifier {
       'storage_security': {
         'sensitive_local_encryption': _sensitiveLocalEncryptionEnabled,
         'encrypted_collections': const <String>[
+          'life_events',
+          'missions',
+          'daily_risks',
           'expenses',
+          'calendar_items',
           'journal_entries',
           'quick_notes',
           'owned_items',

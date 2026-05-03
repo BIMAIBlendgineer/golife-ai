@@ -2,8 +2,8 @@
 
 ## Baseline
 
-- Branch: `hardening/post-merge-release-readiness`
-- Main baseline: `8db185fbe0abc5c0a75f3cdbfd8f775e2e7813f8`
+- Branch: `hardening/traceability-safety-pass`
+- Main baseline: `77f4b7c7ca780aca54bf78a1e2caed7875c7329e`
 - Supporting evidence:
   - `docs/operations/npm-audit-admin-next.json`
   - `docs/operations/I18N_RELEASE_GAP_REPORT.md`
@@ -77,7 +77,26 @@
 - Follow-up:
   - revisit after upstream FastAPI and `langchain_core` releases land with Python 3.14+/3.16-safe internals
 
-## RR-004 - HomeMemory admin privacy regression risk
+## RR-004 - AI Gateway concurrent smoke instability on local Python 3.14
+
+- Area: `services/ai_gateway`
+- Severity: medium release-operations risk
+- Origin: the repo load smoke script timed out locally under Windows + Python 3.14 while the same surface remained functionally healthy for isolated requests
+- Evidence:
+  - `python scripts/performance/ai_gateway_load_smoke.py --base-url http://127.0.0.1:8003 --requests 60 --concurrency 10 --max-p95-ms 2000 --max-error-rate 0.0`
+  - `docs/operations/F04_18_PERFORMANCE_BASELINE.md`
+- Working evidence:
+  - a single local `POST /v1/missions/daily` probe returned `200` in `97.17 ms`
+  - the normal PR CI workflow passed for `ai-gateway` on Python 3.12
+- Decision: accepted temporarily as an environment-specific release-operations limitation
+- Mitigation:
+  - treat GitHub Actions Python 3.12 as the authoritative broad gate for the branch
+  - keep the manual `ai-gateway-load-smoke` workflow available for future controlled runs
+  - avoid claiming local Windows + Python 3.14 load parity with Linux CI
+- Follow-up:
+  - re-run the smoke from a Python 3.12 or Linux-like environment before a stricter performance sign-off
+
+## RR-005 - HomeMemory admin privacy regression risk
 
 - Area: admin UI + backend operational APIs
 - Severity: high if regressed
@@ -102,14 +121,15 @@
 - Follow-up:
   - keep HomeMemory admin aggregate-only until a separately reviewed privacy ADR authorizes any deeper visibility
 
-## RR-005 - Release decision
+## RR-006 - Release decision
 
 - Decision: conditional go for a premium release candidate
 - Not a blocker for this hardening branch:
   - RR-001 accepted temporarily
   - RR-002 accepted temporarily with documented fallback
   - RR-003 accepted temporarily for upstream-only warnings
-  - RR-004 verified safe
+  - RR-004 accepted temporarily for local environment-specific performance smoke instability
+  - RR-005 verified safe
 - Would block release:
   - failing tests or build
   - `gitleaks` findings

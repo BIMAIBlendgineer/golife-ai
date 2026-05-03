@@ -393,7 +393,7 @@ class IncidentRow(BaseModel):
 
 
 class AdminAuthStatus(BaseModel):
-    auth_mode: Literal["token_only_scaffold"]
+    auth_mode: Literal["token_only_scaffold", "token_plus_operator_secret"]
     environment: str = Field(min_length=1)
     admin_token_configured: bool
     production_ready: bool

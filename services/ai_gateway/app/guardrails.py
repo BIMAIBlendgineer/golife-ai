@@ -88,7 +88,11 @@ def _normalize_text(value: str) -> str:
     ascii_only = "".join(
         character for character in normalized if not unicodedata.combining(character)
     )
-    return " ".join(ascii_only.lower().split())
+    tokenized = "".join(
+        character.lower() if character.isalnum() else " "
+        for character in ascii_only
+    )
+    return " ".join(tokenized.split())
 
 
 def filter_ai_events(request: SuggestionRequest) -> tuple[list[LifeEvent], list[dict[str, str]]]:

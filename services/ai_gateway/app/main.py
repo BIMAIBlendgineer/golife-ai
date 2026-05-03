@@ -1,4 +1,5 @@
 from time import perf_counter
+from uuid import uuid4
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 
@@ -76,6 +77,14 @@ def create_app(
     app.state.feedback_store = MissionFeedbackStore(
         resolved_settings.feedback_store_path
     )
+
+    @app.middleware("http")
+    async def correlation_id_middleware(request: Request, call_next):
+        correlation_id = _resolve_correlation_id(request)
+        request.state.correlation_id = correlation_id
+        response = await call_next(request)
+        response.headers["x-correlation-id"] = correlation_id
+        return response
 
     @app.get("/health")
     async def health() -> dict[str, object]:
@@ -191,6 +200,7 @@ def create_app(
             request=payload,
             response=response,
             latency_ms=(perf_counter() - started_at) * 1000,
+            correlation_id=_request_correlation_id(request),
         )
         background_tasks.add_task(
             request.app.state.operational_client.record_usage_event,
@@ -232,6 +242,7 @@ def create_app(
             request=payload,
             response=response,
             latency_ms=(perf_counter() - started_at) * 1000,
+            correlation_id=_request_correlation_id(request),
         )
         background_tasks.add_task(
             request.app.state.operational_client.record_usage_event,
@@ -273,6 +284,7 @@ def create_app(
             request=payload,
             response=response,
             latency_ms=(perf_counter() - started_at) * 1000,
+            correlation_id=_request_correlation_id(request),
         )
         background_tasks.add_task(
             request.app.state.operational_client.record_usage_event,
@@ -310,6 +322,7 @@ def create_app(
                 response=None,
                 latency_ms=(perf_counter() - started_at) * 1000,
                 status="error",
+                correlation_id=_request_correlation_id(request),
                 error_detail=str(exc.detail),
             )
             await request.app.state.operational_client.record_usage_event(
@@ -329,6 +342,7 @@ def create_app(
                 user_id=payload.user_id,
                 latency_ms=(perf_counter() - started_at) * 1000,
                 provider_name=request.app.state.provider.provider_name,
+                correlation_id=_request_correlation_id(request),
             )
             await request.app.state.operational_client.record_usage_event(
                 telemetry["usage_event"]
@@ -349,6 +363,7 @@ def create_app(
             response=response,
             latency_ms=(perf_counter() - started_at) * 1000,
             status="success",
+            correlation_id=_request_correlation_id(request),
         )
         background_tasks.add_task(
             request.app.state.operational_client.record_usage_event,
@@ -500,6 +515,7 @@ def create_app(
         telemetry = build_feedback_operation_payloads(
             request=payload,
             feedback_id=feedback_id,
+            correlation_id=_request_correlation_id(request),
         )
         background_tasks.add_task(
             request.app.state.operational_client.record_usage_event,
@@ -532,6 +548,7 @@ def create_app(
         telemetry = build_reflection_safety_operation_payloads(
             request=payload,
             response=response,
+            correlation_id=_request_correlation_id(request),
         )
         background_tasks.add_task(
             request.app.state.operational_client.record_usage_event,
@@ -561,6 +578,7 @@ def _schedule_suggestion_reporting(
         request=payload,
         response=response,
         latency_ms=latency_ms,
+        correlation_id=_request_correlation_id(request),
     )
     background_tasks.add_task(
         request.app.state.operational_client.record_usage_event,
@@ -602,6 +620,7 @@ def _schedule_ai_unavailable_reporting(
         user_id=user_id,
         latency_ms=latency_ms,
         provider_name=request.app.state.provider.provider_name,
+        correlation_id=_request_correlation_id(request),
     )
     background_tasks.add_task(
         request.app.state.operational_client.record_usage_event,
@@ -611,6 +630,18 @@ def _schedule_ai_unavailable_reporting(
         request.app.state.operational_client.record_ai_invocation,
         telemetry["ai_invocation"],
     )
+
+
+def _resolve_correlation_id(request: Request) -> str:
+    for header_name in ("x-correlation-id", "x-request-id"):
+        candidate = (request.headers.get(header_name) or "").strip()
+        if candidate:
+            return candidate
+    return f"corr-{uuid4()}"
+
+
+def _request_correlation_id(request: Request) -> str:
+    return getattr(request.state, "correlation_id", _resolve_correlation_id(request))
 
 
 app = create_app()

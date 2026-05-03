@@ -13,6 +13,8 @@ import 'package:golife_flutter/domains/homememory/warranty_record.dart';
 import 'package:golife_flutter/domains/calendar/calendar_item.dart';
 import 'package:golife_flutter/domains/journal/journal_entry.dart';
 import 'package:golife_flutter/domains/journal/quick_note.dart';
+import 'package:golife_flutter/domains/missions/daily_mission.dart';
+import 'package:golife_flutter/domains/missions/daily_risk.dart';
 import 'package:golife_flutter/domains/recipes/recipe_rescue.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -47,8 +49,37 @@ void main() {
         ),
       ],
     );
+    await store.saveDailyMissions(
+      const <DailyMission>[
+        DailyMission(
+          id: 'mission-1',
+          title: 'Protect one focus block',
+          body: 'Block 30 minutes for the next critical task.',
+          evidence: <String>['Calendar is fragmented'],
+          uncertainty: 'Review final timing before starting.',
+          requiresConfirmation: true,
+          domainTargets: <String>['task'],
+          recommendationType: 'mission',
+          confidence: 0.88,
+          trace: <String, Object?>{'provider': 'mock'},
+        ),
+      ],
+    );
+    await store.saveDailyRisks(
+      const <DailyRisk>[
+        DailyRisk(
+          id: 'risk-1',
+          title: 'Calendar overload',
+          summary: 'Too many context switches are scheduled this afternoon.',
+          severity: 'medium',
+          domainTargets: <String>['week'],
+        ),
+      ],
+    );
 
     expect(await store.loadLifeEvents(), hasLength(1));
+    expect(await store.loadDailyMissions(), hasLength(1));
+    expect(await store.loadDailyRisks(), hasLength(1));
     expect(await store.loadDemoSeedEnabled(), isTrue);
 
     await store.upsertJournalEntry(
@@ -125,14 +156,48 @@ void main() {
     ))
         .first['json_blob']
         .toString();
+    final eventBlob = (await db.query(
+      'life_events',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final missionBlob = (await db.query(
+      'missions',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final riskBlob = (await db.query(
+      'daily_risks',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final calendarBlob = (await db.query(
+      'calendar_items',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
     expect(journalBlob, isNot(contains('Today felt heavy')));
     expect(noteBlob, isNot(contains('Call landlord tomorrow morning')));
     expect(expenseBlob, isNot(contains('Coffee before commute')));
+    expect(eventBlob, isNot(contains('task_captured')));
+    expect(missionBlob, isNot(contains('Protect one focus block')));
+    expect(riskBlob, isNot(contains('Calendar overload')));
+    expect(calendarBlob, isNot(contains('Focus block')));
     await db.close();
 
     await store.deleteAllData();
 
     expect(await store.loadLifeEvents(), isEmpty);
+    expect(await store.loadDailyMissions(), isEmpty);
+    expect(await store.loadDailyRisks(), isEmpty);
     expect(await store.loadMissionFeedback(), isEmpty);
     expect(await store.loadJournalEntries(), isEmpty);
     expect(await store.loadCalendarItems(), isEmpty);
@@ -159,10 +224,22 @@ void main() {
           'CREATE TABLE IF NOT EXISTS expenses (id TEXT PRIMARY KEY, amount REAL NOT NULL, category TEXT NOT NULL, json_blob TEXT NOT NULL)',
         );
         await db.execute(
+          'CREATE TABLE IF NOT EXISTS life_events (event_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, domain TEXT NOT NULL, event_type TEXT NOT NULL, timestamp_iso TEXT NOT NULL, privacy_level TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS missions (id TEXT PRIMARY KEY, rank_index INTEGER NOT NULL, confidence REAL NOT NULL, recommendation_type TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS daily_risks (id TEXT PRIMARY KEY, rank_index INTEGER NOT NULL, severity TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+        await db.execute(
           'CREATE TABLE IF NOT EXISTS journal_entries (id TEXT PRIMARY KEY, created_at_iso TEXT NOT NULL, privacy_level TEXT NOT NULL, json_blob TEXT NOT NULL)',
         );
         await db.execute(
           'CREATE TABLE IF NOT EXISTS quick_notes (id TEXT PRIMARY KEY, created_at_iso TEXT NOT NULL, privacy_level TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS calendar_items (id TEXT PRIMARY KEY, start_iso TEXT NOT NULL, end_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
         );
       },
     );
@@ -175,6 +252,40 @@ void main() {
         'category': 'food',
         'json_blob':
             '{"id":"expense-legacy","label":"Lunch near office","amount":18.2,"category":"food"}',
+      },
+    );
+    await legacyDb.insert(
+      'life_events',
+      <String, Object?>{
+        'event_id': 'event-legacy',
+        'user_id': 'local-user',
+        'domain': 'task',
+        'event_type': 'task_captured',
+        'timestamp_iso': '2026-04-25T08:00:00Z',
+        'privacy_level': 'local_only',
+        'json_blob':
+            '{"event_id":"event-legacy","user_id":"local-user","domain":"task","event_type":"task_captured","timestamp_iso":"2026-04-25T08:00:00Z","payload":{"summary":"Legacy event"},"source":"manual","privacy_level":"local_only"}',
+      },
+    );
+    await legacyDb.insert(
+      'missions',
+      <String, Object?>{
+        'id': 'mission-legacy',
+        'rank_index': 0,
+        'confidence': 0.85,
+        'recommendation_type': 'mission',
+        'json_blob':
+            '{"id":"mission-legacy","title":"Legacy mission","body":"Legacy mission body","evidence":["Legacy evidence"],"uncertainty":"Legacy uncertainty","requires_confirmation":true,"domain_targets":["task"],"recommendation_type":"mission","confidence":0.85,"trace":{"provider":"mock"}}',
+      },
+    );
+    await legacyDb.insert(
+      'daily_risks',
+      <String, Object?>{
+        'id': 'risk-legacy',
+        'rank_index': 0,
+        'severity': 'medium',
+        'json_blob':
+            '{"id":"risk-legacy","title":"Legacy risk","summary":"Legacy risk summary","severity":"medium","domain_targets":["week"]}',
       },
     );
     await legacyDb.insert(
@@ -197,6 +308,16 @@ void main() {
             '{"id":"note-legacy","text":"Legacy quick note","created_at_iso":"2026-04-25T09:15:00Z","privacy_level":"local_only"}',
       },
     );
+    await legacyDb.insert(
+      'calendar_items',
+      <String, Object?>{
+        'id': 'calendar-legacy',
+        'start_iso': '2026-04-25T11:00:00Z',
+        'end_iso': '2026-04-25T12:00:00Z',
+        'json_blob':
+            '{"id":"calendar-legacy","title":"Legacy calendar block","start_iso":"2026-04-25T11:00:00Z","end_iso":"2026-04-25T12:00:00Z","notes":"Legacy calendar note"}',
+      },
+    );
     await legacyDb.close();
 
     final store = SqliteLocalStore(
@@ -204,17 +325,46 @@ void main() {
       encryptionSecretOverride: 'test-secret',
     );
 
+    final lifeEvents = await store.loadLifeEvents();
+    final missions = await store.loadDailyMissions();
+    final risks = await store.loadDailyRisks();
     final journalEntries = await store.loadJournalEntries();
     final quickNotes = await store.loadQuickNotes();
     final expenses = await store.loadExpenses();
+    final calendarItems = await store.loadCalendarItems();
+    expect(lifeEvents.single.payload['summary'], 'Legacy event');
+    expect(missions.single.title, 'Legacy mission');
+    expect(risks.single.summary, 'Legacy risk summary');
     expect(journalEntries.single.body, 'This should become encrypted.');
     expect(quickNotes.single.text, 'Legacy quick note');
     expect(expenses.single.label, 'Lunch near office');
+    expect(calendarItems.single.title, 'Legacy calendar block');
 
     final migratedDb = await openDatabase(
       databasePath,
       singleInstance: false,
     );
+    final migratedEventBlob = (await migratedDb.query(
+      'life_events',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final migratedMissionBlob = (await migratedDb.query(
+      'missions',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final migratedRiskBlob = (await migratedDb.query(
+      'daily_risks',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
     final migratedJournalBlob = (await migratedDb.query(
       'journal_entries',
       columns: const ['json_blob'],
@@ -236,10 +386,21 @@ void main() {
     ))
         .first['json_blob']
         .toString();
+    final migratedCalendarBlob = (await migratedDb.query(
+      'calendar_items',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    expect(migratedEventBlob, isNot(contains('Legacy event')));
+    expect(migratedMissionBlob, isNot(contains('Legacy mission body')));
+    expect(migratedRiskBlob, isNot(contains('Legacy risk summary')));
     expect(
         migratedJournalBlob, isNot(contains('This should become encrypted.')));
     expect(migratedNoteBlob, isNot(contains('Legacy quick note')));
     expect(migratedExpenseBlob, isNot(contains('Lunch near office')));
+    expect(migratedCalendarBlob, isNot(contains('Legacy calendar block')));
     await migratedDb.close();
 
     await deleteDatabase(databasePath);

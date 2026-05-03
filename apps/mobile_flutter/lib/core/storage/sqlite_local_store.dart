@@ -229,7 +229,11 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'timestamp_iso ASC',
     );
     return rows
-        .map((row) => LifeEvent.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map(
+          (row) => LifeEvent.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -248,7 +252,7 @@ class SqliteLocalStore implements LocalStore {
             'event_type': event.eventType,
             'timestamp_iso': event.timestampIso,
             'privacy_level': event.privacyLevel,
-            'json_blob': jsonEncode(event.toJson()),
+            'json_blob': _encodeSensitiveJsonBlob(event.toJson()),
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -299,7 +303,11 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'rank_index ASC',
     );
     return rows
-        .map((row) => DailyMission.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map(
+          (row) => DailyMission.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -317,7 +325,7 @@ class SqliteLocalStore implements LocalStore {
             'rank_index': index,
             'confidence': mission.confidence,
             'recommendation_type': mission.recommendationType,
-            'json_blob': jsonEncode(mission.toJson()),
+            'json_blob': _encodeSensitiveJsonBlob(mission.toJson()),
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -333,7 +341,11 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'rank_index ASC',
     );
     return rows
-        .map((row) => DailyRisk.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map(
+          (row) => DailyRisk.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -350,7 +362,7 @@ class SqliteLocalStore implements LocalStore {
             'id': risk.id,
             'rank_index': index,
             'severity': risk.severity,
-            'json_blob': jsonEncode(risk.toJson()),
+            'json_blob': _encodeSensitiveJsonBlob(risk.toJson()),
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -591,7 +603,7 @@ class SqliteLocalStore implements LocalStore {
         'id': calendarItem.id,
         'start_iso': calendarItem.startIso,
         'end_iso': calendarItem.endIso,
-        'json_blob': jsonEncode(calendarItem.toJson()),
+        'json_blob': _encodeSensitiveJsonBlob(calendarItem.toJson()),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -605,7 +617,11 @@ class SqliteLocalStore implements LocalStore {
       orderBy: 'start_iso ASC',
     );
     return rows
-        .map((row) => CalendarItem.fromJson(_decodeJsonRow(row['json_blob'])))
+        .map(
+          (row) => CalendarItem.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -1055,9 +1071,13 @@ class SqliteLocalStore implements LocalStore {
   }
 
   Future<void> _migrateSensitiveRows(Database db) async {
+    await _migrateSensitiveTable(db, 'life_events', 'event_id');
+    await _migrateSensitiveTable(db, 'missions', 'id');
+    await _migrateSensitiveTable(db, 'daily_risks', 'id');
     await _migrateSensitiveTable(db, 'expenses', 'id');
     await _migrateSensitiveTable(db, 'journal_entries', 'id');
     await _migrateSensitiveTable(db, 'quick_notes', 'id');
+    await _migrateSensitiveTable(db, 'calendar_items', 'id');
   }
 
   Future<void> _migrateSensitiveTable(
