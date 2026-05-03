@@ -16,6 +16,12 @@ import '../../core/storage/local_store.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/homememory/claim_draft.dart';
+import '../../domains/homememory/evidence_attachment.dart';
+import '../../domains/homememory/maintenance_reminder.dart';
+import '../../domains/homememory/owned_item.dart';
+import '../../domains/homememory/purchase_proof.dart';
+import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/missions/daily_mission.dart';
@@ -61,6 +67,12 @@ class GoLifeController extends ChangeNotifier {
   List<QuickNote> _quickNotes = <QuickNote>[];
   List<CalendarItem> _calendarItems = <CalendarItem>[];
   List<RecipeRescue> _recipeRescues = <RecipeRescue>[];
+  List<OwnedItem> _ownedItems = <OwnedItem>[];
+  List<PurchaseProof> _purchaseProofs = <PurchaseProof>[];
+  List<WarrantyRecord> _warrantyRecords = <WarrantyRecord>[];
+  List<MaintenanceReminder> _maintenanceReminders = <MaintenanceReminder>[];
+  List<ClaimDraft> _claimDrafts = <ClaimDraft>[];
+  List<EvidenceAttachment> _evidenceAttachments = <EvidenceAttachment>[];
   bool _sensitiveLocalEncryptionEnabled = false;
   AppLocalePreference _localePreference = AppLocalePreference.system;
   String _deviceLocaleTag = 'en';
@@ -146,6 +158,17 @@ class GoLifeController extends ChangeNotifier {
       List<CalendarItem>.unmodifiable(_calendarItems);
   List<RecipeRescue> get recipeRescues =>
       List<RecipeRescue>.unmodifiable(_recipeRescues);
+  List<OwnedItem> get ownedItems => List<OwnedItem>.unmodifiable(_ownedItems);
+  List<PurchaseProof> get purchaseProofs =>
+      List<PurchaseProof>.unmodifiable(_purchaseProofs);
+  List<WarrantyRecord> get warrantyRecords =>
+      List<WarrantyRecord>.unmodifiable(_warrantyRecords);
+  List<MaintenanceReminder> get maintenanceReminders =>
+      List<MaintenanceReminder>.unmodifiable(_maintenanceReminders);
+  List<ClaimDraft> get claimDrafts =>
+      List<ClaimDraft>.unmodifiable(_claimDrafts);
+  List<EvidenceAttachment> get evidenceAttachments =>
+      List<EvidenceAttachment>.unmodifiable(_evidenceAttachments);
   bool get sensitiveLocalEncryptionEnabled => _sensitiveLocalEncryptionEnabled;
   AppLocalePreference get localePreference => _localePreference;
   Locale? get preferredLocale => _localePreference.locale;
@@ -156,11 +179,19 @@ class GoLifeController extends ChangeNotifier {
         'Finance records',
         'Journal entries',
         'Quick notes',
+        'Owned items',
+        'Purchase proofs',
+        'Claim drafts',
+        'Evidence attachments',
       ];
   List<String> get alwaysLocalCollectionLabels => const <String>[
         'Privacy settings',
         'Journal entries',
         'Quick notes',
+        'Owned items',
+        'Purchase proofs',
+        'Claim drafts',
+        'Evidence attachments',
         'Runtime config cache',
         'Device encryption key',
       ];
@@ -186,6 +217,41 @@ class GoLifeController extends ChangeNotifier {
             ),
       );
   bool get hasOverloadedCalendarDay => _calendarItems.length >= 4;
+  List<OwnedItem> get warrantyEndingSoonItems {
+    final now = DateTime.now().toUtc();
+    final soon = now.add(const Duration(days: 45));
+    final items = _ownedItems.where((item) {
+      final warrantyDate = _tryParseDate(item.warrantyUntil);
+      if (warrantyDate == null) {
+        return false;
+      }
+      return !warrantyDate.isBefore(now) && !warrantyDate.isAfter(soon);
+    }).toList(growable: false);
+    items.sort((left, right) {
+      final leftDate = _tryParseDate(left.warrantyUntil) ?? DateTime(2100);
+      final rightDate = _tryParseDate(right.warrantyUntil) ?? DateTime(2100);
+      return leftDate.compareTo(rightDate);
+    });
+    return List<OwnedItem>.unmodifiable(items);
+  }
+
+  List<PurchaseProof> get recentPurchaseProofs {
+    final items = List<PurchaseProof>.from(_purchaseProofs);
+    items.sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    return List<PurchaseProof>.unmodifiable(items.take(5).toList());
+  }
+
+  List<MaintenanceReminder> get upcomingMaintenanceReminders {
+    final items = List<MaintenanceReminder>.from(_maintenanceReminders);
+    items.sort((left, right) => left.dueDate.compareTo(right.dueDate));
+    return List<MaintenanceReminder>.unmodifiable(items.take(5).toList());
+  }
+
+  List<ClaimDraft> get activeClaimDrafts {
+    return List<ClaimDraft>.unmodifiable(
+      _claimDrafts.where((item) => item.status == ClaimDraftStatus.draft),
+    );
+  }
 
   MissionFeedback? get latestMissionFeedback {
     final mission = dailyMission;
@@ -277,6 +343,12 @@ class GoLifeController extends ChangeNotifier {
     _quickNotes = await _localStore.loadQuickNotes();
     _calendarItems = await _localStore.loadCalendarItems();
     _recipeRescues = await _localStore.loadRecipeRescues();
+    _ownedItems = await _localStore.loadOwnedItems();
+    _purchaseProofs = await _localStore.loadPurchaseProofs();
+    _warrantyRecords = await _localStore.loadWarrantyRecords();
+    _maintenanceReminders = await _localStore.loadMaintenanceReminders();
+    _claimDrafts = await _localStore.loadClaimDrafts();
+    _evidenceAttachments = await _localStore.loadEvidenceAttachments();
     await _seedDomainEntitiesIfNeeded();
     await _refreshMissionPlan();
     await refreshRuntimeConfig(refreshMissionPlan: true, notify: false);
@@ -942,6 +1014,573 @@ class GoLifeController extends ChangeNotifier {
     return _controllerText('recipe_rescue_cooked', {'title': updated.title});
   }
 
+  OwnedItem? ownedItemById(String id) {
+    for (final item in _ownedItems) {
+      if (item.id == id) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  List<PurchaseProof> purchaseProofsForItem(String ownedItemId) {
+    final items = _purchaseProofs
+        .where((item) => item.ownedItemId == ownedItemId)
+        .toList(growable: false);
+    items.sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    return items;
+  }
+
+  WarrantyRecord? warrantyRecordForItem(String ownedItemId) {
+    for (final item in _warrantyRecords.reversed) {
+      if (item.ownedItemId == ownedItemId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  List<MaintenanceReminder> maintenanceRemindersForItem(String ownedItemId) {
+    final items = _maintenanceReminders
+        .where((item) => item.ownedItemId == ownedItemId)
+        .toList(growable: false);
+    items.sort((left, right) => left.dueDate.compareTo(right.dueDate));
+    return items;
+  }
+
+  List<ClaimDraft> claimDraftsForItem(String ownedItemId) {
+    final items = _claimDrafts
+        .where((item) => item.ownedItemId == ownedItemId)
+        .toList(growable: false);
+    items.sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    return items;
+  }
+
+  List<EvidenceAttachment> evidenceAttachmentsForItem(String ownedItemId) {
+    final items = _evidenceAttachments
+        .where((item) => item.ownedItemId == ownedItemId)
+        .toList(growable: false);
+    items.sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    return items;
+  }
+
+  Future<String?> saveOwnedItemManual({
+    String? id,
+    required String name,
+    String brand = '',
+    String model = '',
+    String serialNumber = '',
+    String category = 'general',
+    String? purchaseDate,
+    double? purchasePrice,
+    String currency = 'EUR',
+    String store = '',
+    int? warrantyMonths,
+    String notes = '',
+    String privacyLevel = 'local_only',
+    bool createWarrantyReminder = false,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final nowIso = now.toIso8601String();
+    final itemId = id ?? _entityId('owned-item');
+    final warrantyUntil = warrantyMonths == null || purchaseDate == null
+        ? null
+        : _addMonthsToIso(purchaseDate, warrantyMonths);
+    String? reminderId;
+    if (createWarrantyReminder && warrantyUntil != null) {
+      reminderId = _entityId('maintenance');
+    }
+
+    final ownedItem = OwnedItem(
+      id: itemId,
+      userId: 'local-user',
+      name: name.trim(),
+      brand: brand.trim(),
+      model: model.trim(),
+      serialNumber: serialNumber.trim(),
+      category: category.trim().isEmpty ? 'general' : category.trim(),
+      purchaseDate: purchaseDate,
+      purchasePrice: purchasePrice,
+      currency: currency.trim().isEmpty ? 'EUR' : currency.trim(),
+      store: store.trim(),
+      warrantyUntil: warrantyUntil,
+      warrantySource: warrantyMonths == null
+          ? WarrantySource.unknown
+          : WarrantySource.explicit,
+      maintenanceReminderIds:
+          reminderId == null ? const <String>[] : <String>[reminderId],
+      notes: notes.trim(),
+      privacyLevel: privacyLevel,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    );
+
+    await _upsertOwnedItem(ownedItem);
+
+    WarrantyRecord? warrantyRecord;
+    if (warrantyMonths != null) {
+      warrantyRecord = WarrantyRecord(
+        id: _entityId('warranty'),
+        userId: 'local-user',
+        ownedItemId: itemId,
+        warrantyUntil: warrantyUntil,
+        warrantySource: WarrantySource.explicit,
+        warrantyMonths: warrantyMonths,
+        disclaimer: _controllerText('warranty_verify_disclaimer'),
+        createdAt: nowIso,
+      );
+      await _upsertWarrantyRecord(warrantyRecord);
+    }
+
+    MaintenanceReminder? reminder;
+    if (reminderId != null && warrantyUntil != null) {
+      reminder = MaintenanceReminder(
+        id: reminderId,
+        userId: 'local-user',
+        ownedItemId: itemId,
+        title: _controllerText('review_warranty_before_expiration'),
+        dueDate: _daysBeforeIso(warrantyUntil, 14),
+        recurrence: 'none',
+        status: MaintenanceReminderStatus.scheduled,
+        createdAt: nowIso,
+      );
+      await _upsertMaintenanceReminder(reminder);
+    }
+
+    await _recordEvent(
+      event: _homeMemoryEvent(
+        type: 'owned_item_created',
+        summary: ownedItem.displayName,
+        privacyLevel: privacyLevel,
+        payload: {
+          'ownedItemId': itemId,
+          'category': ownedItem.category,
+          'store': ownedItem.store,
+        },
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+
+    if (warrantyRecord != null) {
+      await _recordEvent(
+        event: _homeMemoryEvent(
+          type: 'warranty_detected',
+          summary: ownedItem.displayName,
+          privacyLevel: privacyLevel,
+          payload: {
+            'ownedItemId': itemId,
+            'warrantyUntil': warrantyRecord.warrantyUntil,
+            'warrantySource': warrantyRecord.warrantySource,
+          },
+        ),
+        refreshPlan: false,
+        notifyAfter: false,
+      );
+    }
+
+    if (reminder != null) {
+      await _recordEvent(
+        event: _homeMemoryEvent(
+          type: 'maintenance_scheduled',
+          summary: reminder.title,
+          privacyLevel: privacyLevel,
+          payload: {
+            'ownedItemId': itemId,
+            'maintenanceReminderId': reminder.id,
+            'dueDate': reminder.dueDate,
+          },
+        ),
+        refreshPlan: false,
+        notifyAfter: false,
+      );
+    }
+
+    await _refreshMissionPlan();
+    notifyListeners();
+    return _controllerText(
+      id == null ? 'owned_item_saved' : 'owned_item_updated',
+    );
+  }
+
+  Future<String?> saveManualPurchaseProof({
+    required String productName,
+    String brand = '',
+    String model = '',
+    String serialNumber = '',
+    String category = 'general',
+    String store = '',
+    String? purchaseDate,
+    double? price,
+    String currency = 'EUR',
+    int? warrantyMonths,
+    String notes = '',
+    String privacyLevel = 'local_only',
+    bool createWarrantyReminder = true,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final nowIso = now.toIso8601String();
+    final ownedItemId = _entityId('owned-item');
+    final proofId = _entityId('proof');
+    final warrantyUntil = warrantyMonths == null || purchaseDate == null
+        ? null
+        : _addMonthsToIso(purchaseDate, warrantyMonths);
+    String? reminderId;
+    if (createWarrantyReminder && warrantyUntil != null) {
+      reminderId = _entityId('maintenance');
+    }
+
+    final ownedItem = OwnedItem(
+      id: ownedItemId,
+      userId: 'local-user',
+      name: productName.trim(),
+      brand: brand.trim(),
+      model: model.trim(),
+      serialNumber: serialNumber.trim(),
+      category: category.trim().isEmpty ? 'general' : category.trim(),
+      purchaseDate: purchaseDate,
+      purchasePrice: price,
+      currency: currency.trim().isEmpty ? 'EUR' : currency.trim(),
+      store: store.trim(),
+      warrantyUntil: warrantyUntil,
+      warrantySource: warrantyMonths == null
+          ? WarrantySource.unknown
+          : WarrantySource.explicit,
+      proofIds: <String>[proofId],
+      maintenanceReminderIds:
+          reminderId == null ? const <String>[] : <String>[reminderId],
+      notes: notes.trim(),
+      privacyLevel: privacyLevel,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    );
+
+    final purchaseProof = PurchaseProof(
+      id: proofId,
+      userId: 'local-user',
+      ownedItemId: ownedItemId,
+      sourceType: PurchaseProofSourceType.manualEntry,
+      merchantName: store.trim(),
+      purchaseDate: purchaseDate,
+      totalAmount: price,
+      currency: currency.trim().isEmpty ? 'EUR' : currency.trim(),
+      rawText: _buildManualProofText(
+        productName: productName.trim(),
+        brand: brand.trim(),
+        model: model.trim(),
+        store: store.trim(),
+        purchaseDate: purchaseDate,
+        price: price,
+        currency: currency.trim().isEmpty ? 'EUR' : currency.trim(),
+        warrantyMonths: warrantyMonths,
+        notes: notes.trim(),
+      ),
+      extractedFields: {
+        'product_name': productName.trim(),
+        'brand': brand.trim(),
+        'model': model.trim(),
+        'merchant_name': store.trim(),
+        'purchase_date': purchaseDate,
+        'total_amount': price,
+        'currency': currency.trim().isEmpty ? 'EUR' : currency.trim(),
+        'warranty_months': warrantyMonths,
+      },
+      privacyLevel: privacyLevel,
+      createdAt: nowIso,
+    );
+
+    await _upsertOwnedItem(ownedItem);
+    await _upsertPurchaseProof(purchaseProof);
+
+    WarrantyRecord? warrantyRecord;
+    if (warrantyMonths != null) {
+      warrantyRecord = WarrantyRecord(
+        id: _entityId('warranty'),
+        userId: 'local-user',
+        ownedItemId: ownedItemId,
+        warrantyUntil: warrantyUntil,
+        warrantySource: WarrantySource.explicit,
+        warrantyMonths: warrantyMonths,
+        disclaimer: _controllerText('warranty_verify_disclaimer'),
+        createdAt: nowIso,
+      );
+      await _upsertWarrantyRecord(warrantyRecord);
+    }
+
+    MaintenanceReminder? reminder;
+    if (reminderId != null && warrantyUntil != null) {
+      reminder = MaintenanceReminder(
+        id: reminderId,
+        userId: 'local-user',
+        ownedItemId: ownedItemId,
+        title: _controllerText('review_warranty_before_expiration'),
+        dueDate: _daysBeforeIso(warrantyUntil, 14),
+        recurrence: 'none',
+        status: MaintenanceReminderStatus.scheduled,
+        createdAt: nowIso,
+      );
+      await _upsertMaintenanceReminder(reminder);
+    }
+
+    await _recordEvent(
+      event: _homeMemoryEvent(
+        type: 'purchase_proof_added',
+        summary: ownedItem.displayName,
+        privacyLevel: privacyLevel,
+        payload: {
+          'ownedItemId': ownedItemId,
+          'purchaseProofId': proofId,
+          'merchantName': purchaseProof.merchantName,
+          'hasAmount': purchaseProof.totalAmount != null,
+        },
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    await _recordEvent(
+      event: _homeMemoryEvent(
+        type: 'owned_item_created',
+        summary: ownedItem.displayName,
+        privacyLevel: privacyLevel,
+        payload: {
+          'ownedItemId': ownedItemId,
+          'category': ownedItem.category,
+          'store': ownedItem.store,
+        },
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+
+    if (warrantyRecord != null) {
+      await _recordEvent(
+        event: _homeMemoryEvent(
+          type: 'warranty_detected',
+          summary: ownedItem.displayName,
+          privacyLevel: privacyLevel,
+          payload: {
+            'ownedItemId': ownedItemId,
+            'warrantyUntil': warrantyRecord.warrantyUntil,
+            'warrantySource': warrantyRecord.warrantySource,
+          },
+        ),
+        refreshPlan: false,
+        notifyAfter: false,
+      );
+    }
+
+    if (reminder != null) {
+      await _recordEvent(
+        event: _homeMemoryEvent(
+          type: 'maintenance_scheduled',
+          summary: reminder.title,
+          privacyLevel: privacyLevel,
+          payload: {
+            'ownedItemId': ownedItemId,
+            'maintenanceReminderId': reminder.id,
+            'dueDate': reminder.dueDate,
+          },
+        ),
+        refreshPlan: false,
+        notifyAfter: false,
+      );
+    }
+
+    await _refreshMissionPlan();
+    notifyListeners();
+    return _controllerText('purchase_proof_saved');
+  }
+
+  Future<String?> saveMaintenanceReminder({
+    String? id,
+    required String ownedItemId,
+    required String title,
+    required String dueDate,
+    String recurrence = 'none',
+    String status = MaintenanceReminderStatus.scheduled,
+  }) async {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    final reminder = MaintenanceReminder(
+      id: id ?? _entityId('maintenance'),
+      userId: 'local-user',
+      ownedItemId: ownedItemId,
+      title: title.trim(),
+      dueDate: dueDate.trim(),
+      recurrence: recurrence.trim().isEmpty ? 'none' : recurrence.trim(),
+      status: MaintenanceReminderStatus.normalize(status),
+      createdAt: nowIso,
+    );
+    await _upsertMaintenanceReminder(reminder);
+
+    final target = ownedItemById(ownedItemId);
+    if (target != null &&
+        !target.maintenanceReminderIds.contains(reminder.id)) {
+      await _upsertOwnedItem(
+        OwnedItem(
+          id: target.id,
+          userId: target.userId,
+          name: target.name,
+          brand: target.brand,
+          model: target.model,
+          serialNumber: target.serialNumber,
+          category: target.category,
+          purchaseDate: target.purchaseDate,
+          purchasePrice: target.purchasePrice,
+          currency: target.currency,
+          store: target.store,
+          warrantyUntil: target.warrantyUntil,
+          warrantySource: target.warrantySource,
+          proofIds: target.proofIds,
+          maintenanceReminderIds: <String>[
+            ...target.maintenanceReminderIds,
+            reminder.id,
+          ],
+          claimDraftIds: target.claimDraftIds,
+          notes: target.notes,
+          privacyLevel: target.privacyLevel,
+          createdAt: target.createdAt,
+          updatedAt: nowIso,
+        ),
+      );
+    }
+
+    await _recordEvent(
+      event: _homeMemoryEvent(
+        type: 'maintenance_scheduled',
+        summary: reminder.title,
+        privacyLevel: target?.privacyLevel ??
+            _privacySettings
+                .permissionForWireDomain(
+                  'system',
+                )
+                .storageKey,
+        payload: {
+          'ownedItemId': ownedItemId,
+          'maintenanceReminderId': reminder.id,
+          'dueDate': reminder.dueDate,
+        },
+      ),
+    );
+    return _controllerText(id == null
+        ? 'maintenance_reminder_saved'
+        : 'maintenance_reminder_updated');
+  }
+
+  Future<String?> saveClaimDraft({
+    String? id,
+    required String ownedItemId,
+    required String issueDescription,
+    String recipientHint = '',
+  }) async {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    final item = ownedItemById(ownedItemId);
+    final title = item == null
+        ? _controllerText('claim_draft_default_title')
+        : _controllerText('claim_draft_title_for_item', {
+            'item': item.displayName,
+          });
+    final claimDraft = ClaimDraft(
+      id: id ?? _entityId('claim'),
+      userId: 'local-user',
+      ownedItemId: ownedItemId,
+      title: title,
+      issueDescription: issueDescription.trim(),
+      generatedMessage: _buildLocalClaimMessage(
+        item: item,
+        issueDescription: issueDescription.trim(),
+        recipientHint: recipientHint.trim(),
+      ),
+      recipientHint: recipientHint.trim(),
+      status: ClaimDraftStatus.draft,
+      disclaimer: _controllerText('claim_disclaimer'),
+      privacyLevel: item?.privacyLevel ?? 'local_only',
+      createdAt: nowIso,
+    );
+    await _upsertClaimDraft(claimDraft);
+
+    if (item != null && !item.claimDraftIds.contains(claimDraft.id)) {
+      await _upsertOwnedItem(
+        OwnedItem(
+          id: item.id,
+          userId: item.userId,
+          name: item.name,
+          brand: item.brand,
+          model: item.model,
+          serialNumber: item.serialNumber,
+          category: item.category,
+          purchaseDate: item.purchaseDate,
+          purchasePrice: item.purchasePrice,
+          currency: item.currency,
+          store: item.store,
+          warrantyUntil: item.warrantyUntil,
+          warrantySource: item.warrantySource,
+          proofIds: item.proofIds,
+          maintenanceReminderIds: item.maintenanceReminderIds,
+          claimDraftIds: <String>[...item.claimDraftIds, claimDraft.id],
+          notes: item.notes,
+          privacyLevel: item.privacyLevel,
+          createdAt: item.createdAt,
+          updatedAt: nowIso,
+        ),
+      );
+    }
+
+    await _recordEvent(
+      event: _homeMemoryEvent(
+        type: 'claim_draft_created',
+        summary: claimDraft.title,
+        privacyLevel: claimDraft.privacyLevel,
+        payload: {
+          'ownedItemId': ownedItemId,
+          'claimDraftId': claimDraft.id,
+          'recipientHint': claimDraft.recipientHint,
+        },
+      ),
+    );
+    return _controllerText(
+      id == null ? 'claim_draft_saved' : 'claim_draft_updated',
+    );
+  }
+
+  Future<String?> saveEvidenceAttachment({
+    String? id,
+    required String ownedItemId,
+    String? proofId,
+    required String type,
+    String? fileRef,
+    String description = '',
+    String privacyLevel = 'local_only',
+  }) async {
+    final attachment = EvidenceAttachment(
+      id: id ?? _entityId('evidence'),
+      userId: 'local-user',
+      ownedItemId: ownedItemId,
+      proofId: proofId,
+      type: EvidenceAttachmentType.normalize(type),
+      fileRef: fileRef,
+      description: description.trim(),
+      privacyLevel: privacyLevel,
+      createdAt: DateTime.now().toUtc().toIso8601String(),
+    );
+    await _upsertEvidenceAttachment(attachment);
+    await _recordEvent(
+      event: _homeMemoryEvent(
+        type: 'evidence_attachment_added',
+        summary: description.trim().isEmpty ? attachment.type : description,
+        privacyLevel: privacyLevel,
+        payload: {
+          'ownedItemId': ownedItemId,
+          'evidenceAttachmentId': attachment.id,
+          'proofId': proofId,
+          'type': attachment.type,
+        },
+      ),
+    );
+    return _controllerText(
+      id == null ? 'evidence_attachment_saved' : 'evidence_attachment_updated',
+    );
+  }
+
   Future<String> exportLocalDataJson() async {
     final snapshot = <String, Object?>{
       'exported_at': DateTime.now().toUtc().toIso8601String(),
@@ -954,6 +1593,10 @@ class GoLifeController extends ChangeNotifier {
           'expenses',
           'journal_entries',
           'quick_notes',
+          'owned_items',
+          'purchase_proofs',
+          'claim_drafts',
+          'evidence_attachments',
         ],
       },
       'life_events':
@@ -984,6 +1627,20 @@ class GoLifeController extends ChangeNotifier {
           _calendarItems.map((item) => item.toJson()).toList(growable: false),
       'recipe_rescues':
           _recipeRescues.map((item) => item.toJson()).toList(growable: false),
+      'owned_items':
+          _ownedItems.map((item) => item.toJson()).toList(growable: false),
+      'purchase_proofs':
+          _purchaseProofs.map((item) => item.toJson()).toList(growable: false),
+      'warranty_records':
+          _warrantyRecords.map((item) => item.toJson()).toList(growable: false),
+      'maintenance_reminders': _maintenanceReminders
+          .map((item) => item.toJson())
+          .toList(growable: false),
+      'claim_drafts':
+          _claimDrafts.map((item) => item.toJson()).toList(growable: false),
+      'evidence_attachments': _evidenceAttachments
+          .map((item) => item.toJson())
+          .toList(growable: false),
     };
     return const JsonEncoder.withIndent('  ').convert(snapshot);
   }
@@ -1008,6 +1665,12 @@ class GoLifeController extends ChangeNotifier {
     _quickNotes = <QuickNote>[];
     _calendarItems = <CalendarItem>[];
     _recipeRescues = <RecipeRescue>[];
+    _ownedItems = <OwnedItem>[];
+    _purchaseProofs = <PurchaseProof>[];
+    _warrantyRecords = <WarrantyRecord>[];
+    _maintenanceReminders = <MaintenanceReminder>[];
+    _claimDrafts = <ClaimDraft>[];
+    _evidenceAttachments = <EvidenceAttachment>[];
     notifyListeners();
   }
 
@@ -1570,12 +2233,157 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.upsertRecipeRescue(recipeRescue);
   }
 
+  Future<void> _upsertOwnedItem(OwnedItem ownedItem) async {
+    _ownedItems = _upsertById(_ownedItems, ownedItem, (item) => item.id);
+    await _localStore.upsertOwnedItem(ownedItem);
+  }
+
+  Future<void> _upsertPurchaseProof(PurchaseProof purchaseProof) async {
+    _purchaseProofs =
+        _upsertById(_purchaseProofs, purchaseProof, (item) => item.id);
+    await _localStore.upsertPurchaseProof(purchaseProof);
+  }
+
+  Future<void> _upsertWarrantyRecord(WarrantyRecord warrantyRecord) async {
+    _warrantyRecords =
+        _upsertById(_warrantyRecords, warrantyRecord, (item) => item.id);
+    await _localStore.upsertWarrantyRecord(warrantyRecord);
+  }
+
+  Future<void> _upsertMaintenanceReminder(
+    MaintenanceReminder maintenanceReminder,
+  ) async {
+    _maintenanceReminders = _upsertById(
+      _maintenanceReminders,
+      maintenanceReminder,
+      (item) => item.id,
+    );
+    await _localStore.upsertMaintenanceReminder(maintenanceReminder);
+  }
+
+  Future<void> _upsertClaimDraft(ClaimDraft claimDraft) async {
+    _claimDrafts = _upsertById(_claimDrafts, claimDraft, (item) => item.id);
+    await _localStore.upsertClaimDraft(claimDraft);
+  }
+
+  Future<void> _upsertEvidenceAttachment(
+    EvidenceAttachment evidenceAttachment,
+  ) async {
+    _evidenceAttachments = _upsertById(
+      _evidenceAttachments,
+      evidenceAttachment,
+      (item) => item.id,
+    );
+    await _localStore.upsertEvidenceAttachment(evidenceAttachment);
+  }
+
   String _taskNotesFromHints(Map<String, Object?> hints) {
     final dueHint = hints['time_hint']?.toString();
     if (dueHint == null || dueHint.isEmpty) {
       return _controllerText('captured_from_quick_capture');
     }
     return _controllerText('captured_due_hint', {'due': dueHint});
+  }
+
+  LifeEvent _homeMemoryEvent({
+    required String type,
+    required String summary,
+    required String privacyLevel,
+    Map<String, Object?> payload = const <String, Object?>{},
+  }) {
+    return LifeEventFactory.create(
+      domain: 'system',
+      type: type,
+      summary: summary,
+      privacyLevel: privacyLevel,
+      payload: <String, Object?>{
+        ...payload,
+        'module': 'homememory',
+      },
+    );
+  }
+
+  String _buildManualProofText({
+    required String productName,
+    required String brand,
+    required String model,
+    required String store,
+    required String? purchaseDate,
+    required double? price,
+    required String currency,
+    required int? warrantyMonths,
+    required String notes,
+  }) {
+    final lines = <String>[
+      'Product: $productName',
+      if (brand.isNotEmpty) 'Brand: $brand',
+      if (model.isNotEmpty) 'Model: $model',
+      if (store.isNotEmpty) 'Merchant: $store',
+      if (purchaseDate != null && purchaseDate.isNotEmpty)
+        'Purchase date: $purchaseDate',
+      if (price != null) 'Amount: ${price.toStringAsFixed(2)} $currency',
+      if (warrantyMonths != null) 'Warranty months: $warrantyMonths',
+      if (notes.isNotEmpty) 'Notes: $notes',
+    ];
+    return lines.join('\n');
+  }
+
+  String _buildLocalClaimMessage({
+    required OwnedItem? item,
+    required String issueDescription,
+    required String recipientHint,
+  }) {
+    final itemName = item?.displayName ?? _controllerText('claim_item_generic');
+    final seller =
+        item == null || item.store.trim().isEmpty ? '' : item.store.trim();
+    return _controllerText(
+      'claim_draft_template',
+      {
+        'item': itemName,
+        'seller':
+            seller.isEmpty ? _controllerText('claim_seller_generic') : seller,
+        'issue': issueDescription,
+        'recipient': recipientHint.isEmpty
+            ? _controllerText('claim_recipient_generic')
+            : recipientHint,
+      },
+    );
+  }
+
+  String? _addMonthsToIso(String rawDate, int months) {
+    final date = _tryParseDate(rawDate);
+    if (date == null) {
+      return null;
+    }
+    final monthIndex = date.month + months;
+    final year = date.year + ((monthIndex - 1) ~/ 12);
+    final month = ((monthIndex - 1) % 12) + 1;
+    final day = date.day > _daysInMonth(year, month)
+        ? _daysInMonth(year, month)
+        : date.day;
+    return DateTime.utc(year, month, day).toIso8601String();
+  }
+
+  String _daysBeforeIso(String rawDate, int days) {
+    final date = _tryParseDate(rawDate);
+    if (date == null) {
+      return rawDate;
+    }
+    return date.subtract(Duration(days: days)).toUtc().toIso8601String();
+  }
+
+  DateTime? _tryParseDate(String? rawDate) {
+    if (rawDate == null || rawDate.trim().isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(rawDate)?.toUtc();
+  }
+
+  int _daysInMonth(int year, int month) {
+    final nextMonth = month == 12
+        ? DateTime.utc(year + 1, 1, 1)
+        : DateTime.utc(year, month + 1, 1);
+    return nextMonth.subtract(const Duration(days: 1)).day;
   }
 
   String _controllerText(
@@ -1792,6 +2600,135 @@ class GoLifeController extends ChangeNotifier {
           ptBr: 'Resgate de receita atualizado.',
           ja: 'レシピ救済を更新しました。',
           zhHans: '食谱救援已更新。',
+        ),
+      'owned_item_saved' => _localizedControllerString(
+          en: 'Item saved.',
+          es: 'Objeto guardado.',
+          ptBr: 'Item salvo.',
+          ja: 'アイテムを保存しました。',
+          zhHans: '物品已保存。',
+        ),
+      'owned_item_updated' => _localizedControllerString(
+          en: 'Item updated.',
+          es: 'Objeto actualizado.',
+          ptBr: 'Item atualizado.',
+          ja: 'アイテムを更新しました。',
+          zhHans: '物品已更新。',
+        ),
+      'purchase_proof_saved' => _localizedControllerString(
+          en: 'Proof and item saved.',
+          es: 'Comprobante y objeto guardados.',
+          ptBr: 'Comprovante e item salvos.',
+          ja: '証憑とアイテムを保存しました。',
+          zhHans: '凭证和物品已保存。',
+        ),
+      'maintenance_reminder_saved' => _localizedControllerString(
+          en: 'Maintenance reminder saved.',
+          es: 'Recordatorio guardado.',
+          ptBr: 'Lembrete salvo.',
+          ja: 'メンテナンスのリマインダーを保存しました。',
+          zhHans: '维护提醒已保存。',
+        ),
+      'maintenance_reminder_updated' => _localizedControllerString(
+          en: 'Maintenance reminder updated.',
+          es: 'Recordatorio actualizado.',
+          ptBr: 'Lembrete atualizado.',
+          ja: 'メンテナンスのリマインダーを更新しました。',
+          zhHans: '维护提醒已更新。',
+        ),
+      'claim_draft_saved' => _localizedControllerString(
+          en: 'Claim draft saved.',
+          es: 'Borrador de reclamacion guardado.',
+          ptBr: 'Rascunho de reclamacao salvo.',
+          ja: '申し立て下書きを保存しました。',
+          zhHans: '申诉草稿已保存。',
+        ),
+      'claim_draft_updated' => _localizedControllerString(
+          en: 'Claim draft updated.',
+          es: 'Borrador de reclamacion actualizado.',
+          ptBr: 'Rascunho de reclamacao atualizado.',
+          ja: '申し立て下書きを更新しました。',
+          zhHans: '申诉草稿已更新。',
+        ),
+      'evidence_attachment_saved' => _localizedControllerString(
+          en: 'Evidence saved.',
+          es: 'Evidencia guardada.',
+          ptBr: 'Evidencia salva.',
+          ja: '証拠を保存しました。',
+          zhHans: '证据已保存。',
+        ),
+      'evidence_attachment_updated' => _localizedControllerString(
+          en: 'Evidence updated.',
+          es: 'Evidencia actualizada.',
+          ptBr: 'Evidencia atualizada.',
+          ja: '証拠を更新しました。',
+          zhHans: '证据已更新。',
+        ),
+      'warranty_verify_disclaimer' => _localizedControllerString(
+          en: 'Estimated warranty. Verify with seller or manufacturer.',
+          es: 'Garantia estimada. Verificala con el vendedor o fabricante.',
+          ptBr: 'Garantia estimada. Verifique com o vendedor ou fabricante.',
+          ja: '推定保証です。販売者またはメーカーで確認してください。',
+          zhHans: '这是估算保修。请向商家或厂商核实。',
+        ),
+      'review_warranty_before_expiration' => _localizedControllerString(
+          en: 'Review warranty before expiration',
+          es: 'Revisar garantia antes del vencimiento',
+          ptBr: 'Revisar garantia antes do vencimento',
+          ja: '保証期限前に確認する',
+          zhHans: '在保修到期前检查',
+        ),
+      'claim_draft_default_title' => _localizedControllerString(
+          en: 'Draft claim',
+          es: 'Borrador de reclamacion',
+          ptBr: 'Rascunho de reclamacao',
+          ja: '申し立て下書き',
+          zhHans: '申诉草稿',
+        ),
+      'claim_draft_title_for_item' => _localizedControllerString(
+          en: 'Claim draft for {item}',
+          es: 'Borrador de reclamacion para {item}',
+          ptBr: 'Rascunho de reclamacao para {item}',
+          ja: '{item} の申し立て下書き',
+          zhHans: '{item} 的申诉草稿',
+        ),
+      'claim_disclaimer' => _localizedControllerString(
+          en: 'No legal advice. Verify warranty and seller policies. Send outside the app.',
+          es: 'No es asesoria legal. Verifica la garantia y las politicas del vendedor. Envia fuera de la app.',
+          ptBr:
+              'Isto nao e aconselhamento juridico. Verifique a garantia e as politicas do vendedor. Envie fora do app.',
+          ja: '法律アドバイスではありません。保証と販売者の方針を確認し、アプリ外で送信してください。',
+          zhHans: '不构成法律建议。请核实保修和商家政策，并在应用外发送。',
+        ),
+      'claim_item_generic' => _localizedControllerString(
+          en: 'the item',
+          es: 'el objeto',
+          ptBr: 'o item',
+          ja: 'このアイテム',
+          zhHans: '该物品',
+        ),
+      'claim_seller_generic' => _localizedControllerString(
+          en: 'the seller',
+          es: 'el vendedor',
+          ptBr: 'o vendedor',
+          ja: '販売者',
+          zhHans: '商家',
+        ),
+      'claim_recipient_generic' => _localizedControllerString(
+          en: 'support team',
+          es: 'equipo de soporte',
+          ptBr: 'equipe de suporte',
+          ja: 'サポートチーム',
+          zhHans: '支持团队',
+        ),
+      'claim_draft_template' => _localizedControllerString(
+          en: 'Hello {recipient},\n\nI am contacting you about {item}. The issue is: {issue}.\n\nI would like to review the available warranty or return options. Please let me know the next steps.\n\nThank you.',
+          es: 'Hola {recipient},\n\nTe escribo por {item}. El problema es: {issue}.\n\nQuiero revisar las opciones disponibles de garantia o devolucion. Por favor, indicame los siguientes pasos.\n\nGracias.',
+          ptBr:
+              'Ola {recipient},\n\nEstou entrando em contato sobre {item}. O problema e: {issue}.\n\nGostaria de revisar as opcoes disponiveis de garantia ou devolucao. Por favor, informe os proximos passos.\n\nObrigado.',
+          ja: '{recipient} 様\n\n{item} についてご連絡しています。問題は次のとおりです: {issue}。\n\n利用可能な保証または返品の選択肢を確認したいです。次の手順をお知らせください。\n\nよろしくお願いします。',
+          zhHans:
+              '{recipient} 你好，\n\n我就 {item} 与你联系。问题是：{issue}。\n\n我希望了解可用的保修或退货选项。请告知下一步该如何处理。\n\n谢谢。',
         ),
       'recipe_rescue_cooked' => _localizedControllerString(
           en: 'Recipe rescue marked cooked: {title}.',

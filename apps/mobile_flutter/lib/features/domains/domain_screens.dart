@@ -557,6 +557,16 @@ class EverydayScreen extends StatelessWidget {
             actionLabel: l10n.actionOpenRecipes,
             onTap: () => context.go('/recipes'),
           ),
+          _NavigationCard(
+            title: l10n.homeMemoryTitle,
+            subtitle: l10n.homeMemoryEverydaySubtitle(
+              controller.ownedItems.length,
+              controller.warrantyEndingSoonItems.length,
+            ),
+            body: l10n.homeMemoryEverydayBody,
+            actionLabel: l10n.homeMemoryActionOpen,
+            onTap: () => context.go('/homememory'),
+          ),
         ],
       ),
     );

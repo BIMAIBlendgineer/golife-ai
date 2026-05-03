@@ -10,6 +10,8 @@ from app.schemas import (
     EventParseRequest,
     EventParseResponse,
     MissionFeedbackRequest,
+    ProofParseRequest,
+    ProofParseResponse,
     ReflectionSafetyRequest,
     ReflectionSafetyResponse,
     SuggestionRequest,
@@ -49,6 +51,7 @@ def estimate_cost_usd(
         "/v1/tasks/rewrite": 0.012,
         "/v1/events/classify": 0.001,
         "/v1/events/parse": 0.002,
+        "/v1/proofs/parse": 0.003,
     }
     base = base_costs.get(endpoint, 0.008)
     multiplier = 1.0 + max(0, suggestions_count - 1) * 0.2
@@ -302,6 +305,67 @@ def build_feedback_operation_payloads(
             "reason": _feedback_reason_marker(note_text),
             "domains": request.domain_targets,
             "created_at": created_at,
+        },
+    }
+
+
+def build_proof_parse_operation_payloads(
+    *,
+    request: ProofParseRequest,
+    response: ProofParseResponse,
+    latency_ms: float,
+) -> dict[str, Any]:
+    created_at = _utcnow_iso()
+    parser = str(response.trace.get("parser", "deterministic_proof_parser"))
+    provider_name = "semantic_parser" if parser == "semantic_openrouter" else "deterministic_parser"
+    normalized_locale = normalize_locale(request.locale)
+    return {
+        "usage_event": {
+            "event_id": f"usage-{uuid4()}",
+            "user_id": request.user_id,
+            "event_type": "proof_parse_requested",
+            "endpoint": "/v1/proofs/parse",
+            "domain": "system",
+            "quantity": 1,
+            "created_at": created_at,
+            "metadata": {
+                "locale": normalized_locale,
+                "region": request.region,
+                "parser": parser,
+                "confidence": response.confidence,
+                "has_amount": response.total_amount is not None,
+                "has_date": bool(response.purchase_date),
+                "has_warranty_hint": response.warranty_months is not None,
+                "item_count": 1,
+            },
+        },
+        "ai_invocation": {
+            "invocation_id": f"invoke-{uuid4()}",
+            "user_id": request.user_id,
+            "endpoint": "/v1/proofs/parse",
+            "provider": provider_name,
+            "model": response.trace.get("provider_meta", {}).get("model"),
+            "latency_ms": round(latency_ms, 2),
+            "fallback": parser != "semantic_openrouter",
+            "suggestions_count": 1,
+            "estimated_cost_usd": estimate_cost_usd(
+                endpoint="/v1/proofs/parse",
+                provider=provider_name,
+                suggestions_count=1,
+            ),
+            "schema_valid": True,
+            "status": "success",
+            "created_at": created_at,
+            "metadata": {
+                "locale": normalized_locale,
+                "region": request.region,
+                "parser": parser,
+                "confidence": response.confidence,
+                "has_amount": response.total_amount is not None,
+                "has_date": bool(response.purchase_date),
+                "has_warranty_hint": response.warranty_months is not None,
+                "item_count": 1,
+            },
         },
     }
 

@@ -6,6 +6,12 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
+import '../../domains/homememory/claim_draft.dart';
+import '../../domains/homememory/evidence_attachment.dart';
+import '../../domains/homememory/maintenance_reminder.dart';
+import '../../domains/homememory/owned_item.dart';
+import '../../domains/homememory/purchase_proof.dart';
+import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/calendar/calendar_item.dart';
@@ -33,7 +39,7 @@ class SqliteLocalStore implements LocalStore {
         );
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 3;
+  static const _databaseVersion = 4;
   static const _privacyKey = 'privacy_settings';
   static const _localePreferenceKey = 'locale_preference';
   static const _runtimeConfigKey = 'runtime_config';
@@ -66,6 +72,9 @@ class SqliteLocalStore implements LocalStore {
         }
         if (oldVersion < 3) {
           await _migrateSensitiveRows(db);
+        }
+        if (oldVersion < 4) {
+          await _createHomeMemorySchema(db);
         }
       },
     );
@@ -628,6 +637,206 @@ class SqliteLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> upsertOwnedItem(OwnedItem ownedItem) async {
+    final db = await _db;
+    await db.insert(
+      'owned_items',
+      {
+        'id': ownedItem.id,
+        'user_id': ownedItem.userId,
+        'category': ownedItem.category,
+        'warranty_until': ownedItem.warrantyUntil,
+        'privacy_level': ownedItem.privacyLevel,
+        'updated_at_iso': ownedItem.updatedAt,
+        'json_blob': _encodeSensitiveJsonBlob(ownedItem.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<OwnedItem>> loadOwnedItems() async {
+    final db = await _db;
+    final rows = await db.query(
+      'owned_items',
+      orderBy: 'updated_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => OwnedItem.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertPurchaseProof(PurchaseProof purchaseProof) async {
+    final db = await _db;
+    await db.insert(
+      'purchase_proofs',
+      {
+        'id': purchaseProof.id,
+        'user_id': purchaseProof.userId,
+        'owned_item_id': purchaseProof.ownedItemId,
+        'merchant_name': purchaseProof.merchantName,
+        'purchase_date': purchaseProof.purchaseDate,
+        'privacy_level': purchaseProof.privacyLevel,
+        'created_at_iso': purchaseProof.createdAt,
+        'json_blob': _encodeSensitiveJsonBlob(purchaseProof.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<PurchaseProof>> loadPurchaseProofs() async {
+    final db = await _db;
+    final rows = await db.query(
+      'purchase_proofs',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => PurchaseProof.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertWarrantyRecord(WarrantyRecord warrantyRecord) async {
+    final db = await _db;
+    await db.insert(
+      'warranty_records',
+      {
+        'id': warrantyRecord.id,
+        'user_id': warrantyRecord.userId,
+        'owned_item_id': warrantyRecord.ownedItemId,
+        'warranty_until': warrantyRecord.warrantyUntil,
+        'json_blob': jsonEncode(warrantyRecord.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<WarrantyRecord>> loadWarrantyRecords() async {
+    final db = await _db;
+    final rows = await db.query(
+      'warranty_records',
+      orderBy: 'warranty_until ASC',
+    );
+    return rows
+        .map((row) => WarrantyRecord.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertMaintenanceReminder(
+    MaintenanceReminder maintenanceReminder,
+  ) async {
+    final db = await _db;
+    await db.insert(
+      'maintenance_reminders',
+      {
+        'id': maintenanceReminder.id,
+        'user_id': maintenanceReminder.userId,
+        'owned_item_id': maintenanceReminder.ownedItemId,
+        'due_date': maintenanceReminder.dueDate,
+        'status': maintenanceReminder.status,
+        'json_blob': jsonEncode(maintenanceReminder.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<MaintenanceReminder>> loadMaintenanceReminders() async {
+    final db = await _db;
+    final rows = await db.query(
+      'maintenance_reminders',
+      orderBy: 'due_date ASC',
+    );
+    return rows
+        .map((row) =>
+            MaintenanceReminder.fromJson(_decodeJsonRow(row['json_blob'])))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertClaimDraft(ClaimDraft claimDraft) async {
+    final db = await _db;
+    await db.insert(
+      'claim_drafts',
+      {
+        'id': claimDraft.id,
+        'user_id': claimDraft.userId,
+        'owned_item_id': claimDraft.ownedItemId,
+        'status': claimDraft.status,
+        'privacy_level': claimDraft.privacyLevel,
+        'created_at_iso': claimDraft.createdAt,
+        'json_blob': _encodeSensitiveJsonBlob(claimDraft.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<ClaimDraft>> loadClaimDrafts() async {
+    final db = await _db;
+    final rows = await db.query(
+      'claim_drafts',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => ClaimDraft.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> upsertEvidenceAttachment(
+    EvidenceAttachment evidenceAttachment,
+  ) async {
+    final db = await _db;
+    await db.insert(
+      'evidence_attachments',
+      {
+        'id': evidenceAttachment.id,
+        'user_id': evidenceAttachment.userId,
+        'owned_item_id': evidenceAttachment.ownedItemId,
+        'proof_id': evidenceAttachment.proofId,
+        'type': evidenceAttachment.type,
+        'privacy_level': evidenceAttachment.privacyLevel,
+        'created_at_iso': evidenceAttachment.createdAt,
+        'json_blob': _encodeSensitiveJsonBlob(evidenceAttachment.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<EvidenceAttachment>> loadEvidenceAttachments() async {
+    final db = await _db;
+    final rows = await db.query(
+      'evidence_attachments',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => EvidenceAttachment.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -646,6 +855,12 @@ class SqliteLocalStore implements LocalStore {
       await txn.delete('quick_notes');
       await txn.delete('calendar_items');
       await txn.delete('recipe_rescues');
+      await txn.delete('owned_items');
+      await txn.delete('purchase_proofs');
+      await txn.delete('warranty_records');
+      await txn.delete('maintenance_reminders');
+      await txn.delete('claim_drafts');
+      await txn.delete('evidence_attachments');
       await txn.insert(
         'key_value',
         {
@@ -727,6 +942,55 @@ class SqliteLocalStore implements LocalStore {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_recipe_status ON recipe_rescues(status)',
+    );
+    await _createHomeMemorySchema(db);
+  }
+
+  Future<void> _createHomeMemorySchema(Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS owned_items (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, category TEXT NOT NULL, warranty_until TEXT, privacy_level TEXT NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_owned_items_user ON owned_items(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_owned_items_category ON owned_items(category)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_owned_items_warranty_until ON owned_items(warranty_until)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS purchase_proofs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, owned_item_id TEXT NOT NULL, merchant_name TEXT NOT NULL, purchase_date TEXT, privacy_level TEXT NOT NULL, created_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_purchase_proofs_user ON purchase_proofs(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_purchase_proofs_item ON purchase_proofs(owned_item_id)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS warranty_records (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, owned_item_id TEXT NOT NULL, warranty_until TEXT, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_warranty_records_until ON warranty_records(warranty_until)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS maintenance_reminders (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, owned_item_id TEXT NOT NULL, due_date TEXT NOT NULL, status TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_maintenance_reminders_due ON maintenance_reminders(due_date)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS claim_drafts (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, owned_item_id TEXT NOT NULL, status TEXT NOT NULL, privacy_level TEXT NOT NULL, created_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_claim_drafts_status ON claim_drafts(status)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS evidence_attachments (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, owned_item_id TEXT NOT NULL, proof_id TEXT, type TEXT NOT NULL, privacy_level TEXT NOT NULL, created_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_evidence_attachments_item ON evidence_attachments(owned_item_id)',
     );
   }
 

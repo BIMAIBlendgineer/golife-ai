@@ -472,6 +472,30 @@ abstract class AppLocalizations {
   /// **'Quick notes'**
   String get collectionQuickNotes;
 
+  /// No description provided for @collectionOwnedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Owned items'**
+  String get collectionOwnedItems;
+
+  /// No description provided for @collectionPurchaseProofs.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase proofs'**
+  String get collectionPurchaseProofs;
+
+  /// No description provided for @collectionClaimDrafts.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim drafts'**
+  String get collectionClaimDrafts;
+
+  /// No description provided for @collectionEvidenceAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence attachments'**
+  String get collectionEvidenceAttachments;
+
   /// No description provided for @collectionPrivacySettings.
   ///
   /// In en, this message translates to:
@@ -1072,6 +1096,372 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recipes'**
   String get navRecipes;
+
+  /// No description provided for @homeMemoryEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'RecallBox'**
+  String get homeMemoryEyebrow;
+
+  /// No description provided for @homeMemoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HomeMemory'**
+  String get homeMemoryTitle;
+
+  /// No description provided for @homeMemorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Things, receipts, warranties, and reminders.'**
+  String get homeMemorySubtitle;
+
+  /// No description provided for @homeMemoryDisclosureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local purchase memory'**
+  String get homeMemoryDisclosureTitle;
+
+  /// No description provided for @homeMemoryDisclosureBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipts, draft claims, and evidence stay local-first in this MVP. GoLife turns them into reminders and next actions without promising legal review.'**
+  String get homeMemoryDisclosureBody;
+
+  /// No description provided for @homeMemoryWarrantySoonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty ending soon'**
+  String get homeMemoryWarrantySoonTitle;
+
+  /// No description provided for @homeMemoryWarrantySoonEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active warranty close to expiration.'**
+  String get homeMemoryWarrantySoonEmpty;
+
+  /// No description provided for @homeMemoryRecentProofsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent proofs'**
+  String get homeMemoryRecentProofsTitle;
+
+  /// No description provided for @homeMemoryRecentProofsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No proofs captured yet.'**
+  String get homeMemoryRecentProofsEmpty;
+
+  /// No description provided for @homeMemoryRemindersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance reminders'**
+  String get homeMemoryRemindersTitle;
+
+  /// No description provided for @homeMemoryRemindersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No reminders scheduled.'**
+  String get homeMemoryRemindersEmpty;
+
+  /// No description provided for @homeMemoryClaimsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim drafts'**
+  String get homeMemoryClaimsTitle;
+
+  /// No description provided for @homeMemoryClaimsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No draft claims yet.'**
+  String get homeMemoryClaimsEmpty;
+
+  /// No description provided for @homeMemoryActionAddItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Add item manually'**
+  String get homeMemoryActionAddItem;
+
+  /// No description provided for @homeMemoryActionAddProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Add proof'**
+  String get homeMemoryActionAddProof;
+
+  /// No description provided for @homeMemoryActionCreateReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create reminder'**
+  String get homeMemoryActionCreateReminder;
+
+  /// No description provided for @homeMemoryActionDraftClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft claim'**
+  String get homeMemoryActionDraftClaim;
+
+  /// No description provided for @homeMemoryActionOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open HomeMemory'**
+  String get homeMemoryActionOpen;
+
+  /// No description provided for @homeMemoryItemsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Owned items'**
+  String get homeMemoryItemsTitle;
+
+  /// No description provided for @homeMemoryItemsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No owned items stored yet.'**
+  String get homeMemoryItemsEmpty;
+
+  /// No description provided for @homeMemoryWarrantyUntilLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty until {date}'**
+  String homeMemoryWarrantyUntilLabel(Object date);
+
+  /// No description provided for @homeMemoryItemNoMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchase metadata yet.'**
+  String get homeMemoryItemNoMeta;
+
+  /// No description provided for @homeMemorySectionItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Item'**
+  String get homeMemorySectionItem;
+
+  /// No description provided for @homeMemorySectionProofs.
+  ///
+  /// In en, this message translates to:
+  /// **'Proofs'**
+  String get homeMemorySectionProofs;
+
+  /// No description provided for @homeMemorySectionWarranty.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty'**
+  String get homeMemorySectionWarranty;
+
+  /// No description provided for @homeMemorySectionReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get homeMemorySectionReminders;
+
+  /// No description provided for @homeMemorySectionClaims.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim drafts'**
+  String get homeMemorySectionClaims;
+
+  /// No description provided for @homeMemorySectionEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence'**
+  String get homeMemorySectionEvidence;
+
+  /// No description provided for @homeMemoryFieldProductName.
+  ///
+  /// In en, this message translates to:
+  /// **'Product name'**
+  String get homeMemoryFieldProductName;
+
+  /// No description provided for @homeMemoryFieldBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get homeMemoryFieldBrand;
+
+  /// No description provided for @homeMemoryFieldModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get homeMemoryFieldModel;
+
+  /// No description provided for @homeMemoryFieldSerialNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Serial number'**
+  String get homeMemoryFieldSerialNumber;
+
+  /// No description provided for @homeMemoryFieldStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Store'**
+  String get homeMemoryFieldStore;
+
+  /// No description provided for @homeMemoryFieldPurchaseDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase date'**
+  String get homeMemoryFieldPurchaseDate;
+
+  /// No description provided for @homeMemoryFieldPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get homeMemoryFieldPrice;
+
+  /// No description provided for @homeMemoryFieldCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get homeMemoryFieldCurrency;
+
+  /// No description provided for @homeMemoryFieldWarrantyMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty months'**
+  String get homeMemoryFieldWarrantyMonths;
+
+  /// No description provided for @homeMemoryFieldWarrantyUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty until'**
+  String get homeMemoryFieldWarrantyUntil;
+
+  /// No description provided for @homeMemoryFieldDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get homeMemoryFieldDueDate;
+
+  /// No description provided for @homeMemoryFieldRecurrence.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurrence'**
+  String get homeMemoryFieldRecurrence;
+
+  /// No description provided for @homeMemoryFieldIssueDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue description'**
+  String get homeMemoryFieldIssueDescription;
+
+  /// No description provided for @homeMemoryFieldRecipientHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient hint'**
+  String get homeMemoryFieldRecipientHint;
+
+  /// No description provided for @homeMemoryCreateWarrantyReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a reminder before warranty expiration'**
+  String get homeMemoryCreateWarrantyReminder;
+
+  /// No description provided for @homeMemoryDefaultReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review warranty before expiration'**
+  String get homeMemoryDefaultReminderTitle;
+
+  /// No description provided for @homeMemorySelectItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Select item'**
+  String get homeMemorySelectItem;
+
+  /// No description provided for @homeMemoryClaimDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'No legal advice. Verify warranty and seller policies. Send outside the app.'**
+  String get homeMemoryClaimDisclaimer;
+
+  /// No description provided for @homeMemoryNoNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'No notes'**
+  String get homeMemoryNoNotes;
+
+  /// No description provided for @homeMemoryUnknownMerchant.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown merchant'**
+  String get homeMemoryUnknownMerchant;
+
+  /// No description provided for @homeMemoryUnknownDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown date'**
+  String get homeMemoryUnknownDate;
+
+  /// No description provided for @homeMemoryUnknownValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get homeMemoryUnknownValue;
+
+  /// No description provided for @homeMemoryNoProofs.
+  ///
+  /// In en, this message translates to:
+  /// **'No proofs attached yet.'**
+  String get homeMemoryNoProofs;
+
+  /// No description provided for @homeMemoryWarrantyUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty unknown.'**
+  String get homeMemoryWarrantyUnknown;
+
+  /// No description provided for @homeMemoryNoReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'No reminders yet.'**
+  String get homeMemoryNoReminders;
+
+  /// No description provided for @homeMemoryNoClaims.
+  ///
+  /// In en, this message translates to:
+  /// **'No claim drafts yet.'**
+  String get homeMemoryNoClaims;
+
+  /// No description provided for @homeMemoryNoEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'No evidence attached yet.'**
+  String get homeMemoryNoEvidence;
+
+  /// No description provided for @homeMemoryEvidencePresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence attachment available.'**
+  String get homeMemoryEvidencePresent;
+
+  /// No description provided for @homeMemoryWarrantyStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get homeMemoryWarrantyStatusUnknown;
+
+  /// No description provided for @homeMemoryWarrantyStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'expired'**
+  String get homeMemoryWarrantyStatusExpired;
+
+  /// No description provided for @homeMemoryWarrantyStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'active warranty'**
+  String get homeMemoryWarrantyStatusActive;
+
+  /// No description provided for @homeMemoryEverydaySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{itemCount} items | {warrantyCount} warranties ending soon'**
+  String homeMemoryEverydaySubtitle(int itemCount, int warrantyCount);
+
+  /// No description provided for @homeMemoryEverydayBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep receipts, owned items, warranties, reminders, and draft claims in one local memory surface.'**
+  String get homeMemoryEverydayBody;
 
   /// No description provided for @entityTask.
   ///

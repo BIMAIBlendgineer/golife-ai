@@ -76,6 +76,7 @@ def test_models_support_and_runtime_config_routes_exist(client):
     assert models.json()["active_provider"] == "openrouter"
     assert len(support.json()) >= 1
     assert runtime_config.json()["gateway_base_url"] == "http://127.0.0.1:8000"
+    assert "proof_parser" in runtime_config.json()["feature_flags"]
     assert "openrouter_keys" not in runtime_config.json()
 
 
