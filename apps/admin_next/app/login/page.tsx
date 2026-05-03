@@ -20,12 +20,15 @@ export default async function LoginPage({
   const authResult = await getAuthStatus();
   const auth = authResult.data;
   const params = await searchParams;
+  const invalidSecret = params.error === "invalid_secret";
   const localOperatorSecretConfigured = Boolean(
     process.env.ADMIN_OPERATOR_SECRET?.trim() ??
       process.env.GOLIFE_ADMIN_OPERATOR_SECRET?.trim(),
   );
   const secretRequired =
     auth?.auth_mode === "token_plus_operator_secret" || localOperatorSecretConfigured;
+  const modeBodyId = "login-mode-body";
+  const secretErrorId = "login-secret-error";
   const cookieStore = await cookies();
   if (cookieStore.get(adminOperatorCookieName)?.value) {
     redirect("/dashboard");
@@ -48,12 +51,19 @@ export default async function LoginPage({
           <div className="space-y-4">
             <div>
               <p className="text-sm font-semibold text-ink">{t.modeTitle}</p>
-              <p className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]">
+              <p
+                id={modeBodyId}
+                className="mt-2 text-sm leading-6 text-[color:var(--ink-soft)]"
+              >
                 {auth?.warning ?? t.modeBody}
               </p>
             </div>
-            {params.error === "invalid_secret" ? (
-              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {invalidSecret ? (
+              <p
+                id={secretErrorId}
+                role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+              >
                 {t.invalidSecretBody}
               </p>
             ) : null}
@@ -65,6 +75,8 @@ export default async function LoginPage({
                 name="operator"
                 type="text"
                 placeholder={t.operatorPlaceholder}
+                required
+                aria-describedby={modeBodyId}
                 className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] px-3 py-2 text-sm text-ink"
               />
             </label>
@@ -78,6 +90,9 @@ export default async function LoginPage({
                   type="password"
                   autoComplete="current-password"
                   placeholder={t.secretPlaceholder}
+                  required
+                  aria-invalid={invalidSecret}
+                  aria-describedby={invalidSecret ? `${modeBodyId} ${secretErrorId}` : modeBodyId}
                   className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] px-3 py-2 text-sm text-ink"
                 />
               </label>
