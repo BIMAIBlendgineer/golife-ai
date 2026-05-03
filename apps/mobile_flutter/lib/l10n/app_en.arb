@@ -349,6 +349,7 @@
       "entity": {}
     }
   },
+  "actionDelete": "Delete",
   "actionComplete": "Complete",
   "actionDone": "Done",
   "actionCheckIn": "Check in",
@@ -459,6 +460,12 @@
   "messageRecipeUpdated": "Recipe rescue updated.",
   "messageEntitySaved": "{entity} saved.",
   "@messageEntitySaved": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "messageEntityDeleted": "{entity} deleted.",
+  "@messageEntityDeleted": {
     "placeholders": {
       "entity": {}
     }

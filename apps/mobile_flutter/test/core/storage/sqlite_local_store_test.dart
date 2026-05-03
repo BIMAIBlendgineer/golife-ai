@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/lifegraph/life_event.dart';
 import 'package:golife_flutter/core/storage/sqlite_local_store.dart';
+import 'package:golife_flutter/domains/pantry/pantry_item.dart';
+import 'package:golife_flutter/domains/tasks/go_task.dart';
 import 'package:golife_flutter/domains/finance/expense_record.dart';
 import 'package:golife_flutter/domains/homememory/claim_draft.dart';
 import 'package:golife_flutter/domains/homememory/evidence_attachment.dart';
@@ -385,6 +387,59 @@ void main() {
     expect(await store.loadClaimDrafts(), isEmpty);
     expect(await store.loadEvidenceAttachments(), isEmpty);
 
+    await deleteDatabase(databasePath);
+  });
+
+  test('deletes individual entities without clearing unrelated tables',
+      () async {
+    final databaseName =
+        'golife_delete_${DateTime.now().microsecondsSinceEpoch}.db';
+    final store = SqliteLocalStore(
+      databaseName: databaseName,
+      encryptionSecretOverride: 'test-secret',
+    );
+
+    await store.upsertTask(
+      const GoTask(
+        id: 'task-1',
+        title: 'Prepare receipts',
+        priority: TaskPriority.standard,
+        status: TaskStatus.inbox,
+        estimatedMinutes: 20,
+      ),
+    );
+    await store.upsertExpense(
+      const ExpenseRecord(
+        id: 'expense-1',
+        label: 'Groceries',
+        amount: 21.3,
+        category: 'food',
+      ),
+    );
+    await store.upsertPantryItem(
+      const PantryItem(
+        id: 'pantry-1',
+        name: 'Spinach',
+        quantityLabel: '1 bag',
+        rescueHint: 'Use tonight.',
+      ),
+    );
+
+    expect(await store.loadTasks(), hasLength(1));
+    expect(await store.loadExpenses(), hasLength(1));
+    expect(await store.loadPantryItems(), hasLength(1));
+
+    await store.deleteTask('task-1');
+    await store.deleteExpense('expense-1');
+
+    expect(await store.loadTasks(), isEmpty);
+    expect(await store.loadExpenses(), isEmpty);
+    expect(await store.loadPantryItems(), hasLength(1));
+
+    await store.deletePantryItem('pantry-1');
+    expect(await store.loadPantryItems(), isEmpty);
+
+    final databasePath = path.join(await getDatabasesPath(), databaseName);
     await deleteDatabase(databasePath);
   });
 }

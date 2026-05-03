@@ -92,6 +92,16 @@ abstract class LocalStore {
   Future<void> upsertEvidenceAttachment(
     EvidenceAttachment evidenceAttachment,
   ) async {}
+  Future<void> deleteTask(String id) async {}
+  Future<void> deleteHabit(String id) async {}
+  Future<void> deleteExpense(String id) async {}
+  Future<void> deletePantryItem(String id) async {}
+  Future<void> deletePurchaseIntention(String id) async {}
+  Future<void> deleteWeekPlan(String id) async {}
+  Future<void> deleteJournalEntry(String id) async {}
+  Future<void> deleteQuickNote(String id) async {}
+  Future<void> deleteCalendarItem(String id) async {}
+  Future<void> deleteRecipeRescue(String id) async {}
 
   Future<void> deleteAllData() async {}
 }

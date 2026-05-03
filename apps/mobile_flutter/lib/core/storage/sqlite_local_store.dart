@@ -837,6 +837,42 @@ class SqliteLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> deleteTask(String id) => _deleteEntityRow('tasks', id);
+
+  @override
+  Future<void> deleteHabit(String id) => _deleteEntityRow('habits', id);
+
+  @override
+  Future<void> deleteExpense(String id) => _deleteEntityRow('expenses', id);
+
+  @override
+  Future<void> deletePantryItem(String id) =>
+      _deleteEntityRow('pantry_items', id);
+
+  @override
+  Future<void> deletePurchaseIntention(String id) =>
+      _deleteEntityRow('purchase_intentions', id);
+
+  @override
+  Future<void> deleteWeekPlan(String id) => _deleteEntityRow('week_plans', id);
+
+  @override
+  Future<void> deleteJournalEntry(String id) =>
+      _deleteEntityRow('journal_entries', id);
+
+  @override
+  Future<void> deleteQuickNote(String id) =>
+      _deleteEntityRow('quick_notes', id);
+
+  @override
+  Future<void> deleteCalendarItem(String id) =>
+      _deleteEntityRow('calendar_items', id);
+
+  @override
+  Future<void> deleteRecipeRescue(String id) =>
+      _deleteEntityRow('recipe_rescues', id);
+
+  @override
   Future<void> deleteAllData() async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -1007,6 +1043,15 @@ class SqliteLocalStore implements LocalStore {
 
   String _encodeSensitiveJsonBlob(Map<String, Object?> value) {
     return _sensitiveDataCipher.encryptJsonMap(value);
+  }
+
+  Future<void> _deleteEntityRow(String table, String id) async {
+    final db = await _db;
+    await db.delete(
+      table,
+      where: 'id = ?',
+      whereArgs: <Object?>[id],
+    );
   }
 
   Future<void> _migrateSensitiveRows(Database db) async {

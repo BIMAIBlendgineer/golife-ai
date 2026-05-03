@@ -271,5 +271,12 @@
     }
   },
   "mockPantrySummaryTitle": "Use um ingrediente que ja esta em casa",
-  "mockPantrySummaryBody": "Comece pelo ingrediente mais antigo antes de abrir um novo ciclo de compra."
+  "mockPantrySummaryBody": "Comece pelo ingrediente mais antigo antes de abrir um novo ciclo de compra.",
+  "actionDelete": "Apagar",
+  "messageEntityDeleted": "{entity} apagada.",
+  "@messageEntityDeleted": {
+    "placeholders": {
+      "entity": {}
+    }
+  }
 }

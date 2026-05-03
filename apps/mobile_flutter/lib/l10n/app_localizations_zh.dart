@@ -779,6 +779,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get actionDelete => '删除';
+
+  @override
   String get actionComplete => 'Complete';
 
   @override
@@ -1121,6 +1124,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String messageEntitySaved(Object entity) {
     return '$entity saved.';
+  }
+
+  @override
+  String messageEntityDeleted(Object entity) {
+    return '已删除$entity。';
   }
 
   @override
@@ -1703,8 +1711,16 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get copilotNoTrace => '还没有加载任务。';
 
   @override
+  String get actionDelete => '删除';
+
+  @override
   String get everydayContextBody =>
       '????????????? Today ?????????????????????????';
+
+  @override
+  String messageEntityDeleted(Object entity) {
+    return '已删除$entity。';
+  }
 
   @override
   String get labelToday => '??';

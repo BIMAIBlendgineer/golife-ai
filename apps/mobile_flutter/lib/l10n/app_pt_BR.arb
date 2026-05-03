@@ -269,6 +269,7 @@
       "entity": {}
     }
   },
+  "actionDelete": "Apagar",
   "actionComplete": "Concluir",
   "actionDone": "Feita",
   "actionCheckIn": "Registrar",
@@ -379,6 +380,12 @@
   "messageRecipeUpdated": "Receita de resgate atualizada.",
   "messageEntitySaved": "{entity} salva.",
   "@messageEntitySaved": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "messageEntityDeleted": "{entity} apagada.",
+  "@messageEntityDeleted": {
     "placeholders": {
       "entity": {}
     }

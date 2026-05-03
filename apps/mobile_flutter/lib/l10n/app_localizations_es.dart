@@ -796,6 +796,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get actionDelete => 'Borrar';
+
+  @override
   String get actionComplete => 'Completar';
 
   @override
@@ -1141,6 +1144,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String messageEntitySaved(Object entity) {
     return 'Se guardo $entity.';
+  }
+
+  @override
+  String messageEntityDeleted(Object entity) {
+    return 'Se borro $entity.';
   }
 
   @override

@@ -436,6 +436,56 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> deleteTask(String id) async {
+    await _deleteEntity(_tasksKey, id);
+  }
+
+  @override
+  Future<void> deleteHabit(String id) async {
+    await _deleteEntity(_habitsKey, id);
+  }
+
+  @override
+  Future<void> deleteExpense(String id) async {
+    await _deleteEntity(_expensesKey, id);
+  }
+
+  @override
+  Future<void> deletePantryItem(String id) async {
+    await _deleteEntity(_pantryItemsKey, id);
+  }
+
+  @override
+  Future<void> deletePurchaseIntention(String id) async {
+    await _deleteEntity(_purchaseIntentionsKey, id);
+  }
+
+  @override
+  Future<void> deleteWeekPlan(String id) async {
+    await _deleteEntity(_weekPlansKey, id);
+  }
+
+  @override
+  Future<void> deleteJournalEntry(String id) async {
+    await _deleteEntity(_journalEntriesKey, id);
+  }
+
+  @override
+  Future<void> deleteQuickNote(String id) async {
+    await _deleteEntity(_quickNotesKey, id);
+  }
+
+  @override
+  Future<void> deleteCalendarItem(String id) async {
+    await _deleteEntity(_calendarItemsKey, id);
+  }
+
+  @override
+  Future<void> deleteRecipeRescue(String id) async {
+    await _deleteEntity(_recipeRescuesKey, id);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_privacyKey);
@@ -512,5 +562,17 @@ class SharedPrefsLocalStore implements LocalStore {
           .map((item) => Map<String, Object?>.from(item))
           .toList(growable: false),
     );
+  }
+
+  Future<void> _deleteEntity(String key, String id) async {
+    final existing = await _loadList<Map<String, dynamic>>(
+      key,
+      (item) => item,
+    );
+    final filtered = existing
+        .where((item) => item['id']?.toString() != id)
+        .map((item) => Map<String, Object?>.from(item))
+        .toList(growable: false);
+    await _saveList(key, filtered);
   }
 }

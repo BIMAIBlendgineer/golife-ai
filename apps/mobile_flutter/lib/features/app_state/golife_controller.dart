@@ -985,6 +985,90 @@ class GoLifeController extends ChangeNotifier {
     );
   }
 
+  Future<void> deleteTaskById(String id) => _deleteEntity<GoTask>(
+        id: id,
+        current: _tasks,
+        idOf: (item) => item.id,
+        assign: (next) => _tasks = next,
+        deleteFromStore: _localStore.deleteTask,
+      );
+
+  Future<void> deleteHabitById(String id) => _deleteEntity<Habit>(
+        id: id,
+        current: _habits,
+        idOf: (item) => item.id,
+        assign: (next) => _habits = next,
+        deleteFromStore: _localStore.deleteHabit,
+      );
+
+  Future<void> deleteExpenseById(String id) => _deleteEntity<ExpenseRecord>(
+        id: id,
+        current: _expenses,
+        idOf: (item) => item.id,
+        assign: (next) => _expenses = next,
+        deleteFromStore: _localStore.deleteExpense,
+      );
+
+  Future<void> deletePantryItemById(String id) => _deleteEntity<PantryItem>(
+        id: id,
+        current: _pantryItems,
+        idOf: (item) => item.id,
+        assign: (next) => _pantryItems = next,
+        deleteFromStore: _localStore.deletePantryItem,
+      );
+
+  Future<void> deletePurchaseIntentionById(String id) =>
+      _deleteEntity<PurchaseIntention>(
+        id: id,
+        current: _purchaseIntentions,
+        idOf: (item) => item.id,
+        assign: (next) => _purchaseIntentions = next,
+        deleteFromStore: _localStore.deletePurchaseIntention,
+      );
+
+  Future<void> deleteWeekPlanById(String id) => _deleteEntity<WeekPlan>(
+        id: id,
+        current: _weekPlans,
+        idOf: (item) => item.id,
+        assign: (next) => _weekPlans = next,
+        deleteFromStore: _localStore.deleteWeekPlan,
+      );
+
+  Future<void> deleteJournalEntryById(String id) =>
+      _deleteEntity<JournalEntry>(
+        id: id,
+        current: _journalEntries,
+        idOf: (item) => item.id,
+        assign: (next) => _journalEntries = next,
+        deleteFromStore: _localStore.deleteJournalEntry,
+      );
+
+  Future<void> deleteQuickNoteById(String id) => _deleteEntity<QuickNote>(
+        id: id,
+        current: _quickNotes,
+        idOf: (item) => item.id,
+        assign: (next) => _quickNotes = next,
+        deleteFromStore: _localStore.deleteQuickNote,
+      );
+
+  Future<void> deleteCalendarItemById(String id) =>
+      _deleteEntity<CalendarItem>(
+        id: id,
+        current: _calendarItems,
+        idOf: (item) => item.id,
+        assign: (next) => _calendarItems = next,
+        deleteFromStore: _localStore.deleteCalendarItem,
+      );
+
+  Future<void> deleteRecipeRescueById(String id) =>
+      _deleteEntity<RecipeRescue>(
+        id: id,
+        current: _recipeRescues,
+        idOf: (item) => item.id,
+        assign: (next) => _recipeRescues = next,
+        deleteFromStore: _localStore.deleteRecipeRescue,
+      );
+
   Future<String?> markRecipeRescueCookedById(String id) async {
     final target = _recipeRescues.firstWhere(
       (recipe) => recipe.id == id,
@@ -2174,6 +2258,19 @@ class GoLifeController extends ChangeNotifier {
     return _controllerText('week_plan_refreshed');
   }
 
+  Future<void> _deleteEntity<T>({
+    required String id,
+    required List<T> current,
+    required String Function(T value) idOf,
+    required void Function(List<T> next) assign,
+    required Future<void> Function(String id) deleteFromStore,
+  }) async {
+    assign(_removeById(current, id, idOf));
+    await deleteFromStore(id);
+    await _refreshMissionPlan();
+    notifyListeners();
+  }
+
   Future<void> _upsertTask(GoTask task) async {
     _tasks = _upsertById(_tasks, task, (item) => item.id);
     await _localStore.upsertTask(task);
@@ -2899,4 +2996,14 @@ List<T> _upsertById<T>(
     return List<T>.unmodifiable(mutable);
   }
   return List<T>.unmodifiable(<T>[next, ...mutable]);
+}
+
+List<T> _removeById<T>(
+  List<T> values,
+  String id,
+  String Function(T value) idOf,
+) {
+  return List<T>.unmodifiable(
+    values.where((item) => idOf(item) != id).toList(growable: false),
+  );
 }
