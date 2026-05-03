@@ -203,6 +203,10 @@ void main() {
           (storageSecurity['encrypted_collections'] as List<dynamic>)
               .cast<String>();
 
+      expect(encryptedCollections, contains('life_events'));
+      expect(encryptedCollections, contains('missions'));
+      expect(encryptedCollections, contains('daily_risks'));
+      expect(encryptedCollections, contains('calendar_items'));
       expect(encryptedCollections, contains('owned_items'));
       expect(encryptedCollections, contains('purchase_proofs'));
       expect(encryptedCollections, contains('claim_drafts'));

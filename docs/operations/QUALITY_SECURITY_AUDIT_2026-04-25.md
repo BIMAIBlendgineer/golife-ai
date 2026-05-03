@@ -26,7 +26,7 @@ Date: `2026-04-25`
 
 ## Risks Still Open
 
-- Sensitive encryption does not yet cover all potentially private collections such as `life_events`, `calendar_items`, `daily_risks`, or `missions`.
+- Sensitive encryption coverage was expanded after this audit to include `life_events`, `calendar_items`, `daily_risks`, and `missions`, but device-level validation still remains open before broader release claims.
 - Mobile secure-storage behavior still needs device validation on Android, iOS, and any desktop targets before broader release claims.
 - The current reflection safety model is still rule-based and should gain adversarial test coverage before public scale.
 - Clipboard export is convenient but not equivalent to protected file export.
