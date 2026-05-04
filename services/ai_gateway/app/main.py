@@ -6,7 +6,12 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 
 from app.errors import AITemporarilyUnavailableError
 from app.feedback_store import MissionFeedbackStore
-from app.guardrails import assess_reflection_safety
+from app.guardrails import (
+    assess_reflection_safety,
+    enforce_safe_capture_input,
+    enforce_safe_proof_input,
+    enforce_safe_task_rewrite_content,
+)
 from app.operational_client import NoopOperationalEventsClient, OperationalEventsClient
 from app.operational_payloads import (
     build_ai_unavailable_operation_payload,
@@ -227,18 +232,50 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> EventClassificationResponse:
         started_at = perf_counter()
-        runtime_flags = await request.app.state.provider.runtime_flags()
-        if runtime_flags.get("semantic_classifier") and payload.privacy_settings.ai_enabled:
-            try:
-                response = await run_event_classification_semantic(
-                    payload,
-                    settings=request.app.state.settings,
-                    provider=request.app.state.provider,
-                )
-            except Exception:
+        try:
+            enforce_safe_capture_input(
+                payload,
+                region=request.app.state.settings.crisis_resources_region,
+                catalog_path=request.app.state.settings.crisis_resources_catalog_path,
+            )
+            runtime_flags = await request.app.state.provider.runtime_flags()
+            if runtime_flags.get("semantic_classifier") and payload.privacy_settings.ai_enabled:
+                try:
+                    response = await run_event_classification_semantic(
+                        payload,
+                        settings=request.app.state.settings,
+                        provider=request.app.state.provider,
+                    )
+                except Exception:
+                    response = run_event_classification(payload)
+            else:
                 response = run_event_classification(payload)
-        else:
-            response = run_event_classification(payload)
+        except HTTPException as exc:
+            telemetry = build_classification_operation_payloads(
+                request=payload,
+                response=None,
+                latency_ms=(perf_counter() - started_at) * 1000,
+                correlation_id=_request_correlation_id(request),
+                status="error",
+                error_detail=exc.detail,
+            )
+            await request.app.state.operational_client.record_usage_event(
+                telemetry["usage_event"]
+            )
+            await request.app.state.operational_client.record_ai_invocation(
+                telemetry["ai_invocation"]
+            )
+            if telemetry["safety_events"]:
+                await request.app.state.operational_client.record_safety_events(
+                    telemetry["safety_events"]
+                )
+            await request.app.state.operational_client.record_model_settings(
+                build_model_settings_payload(
+                    request.app.state.settings,
+                    request.app.state.provider.provider_name,
+                )
+            )
+            raise
         telemetry = build_classification_operation_payloads(
             request=payload,
             response=response,
@@ -269,18 +306,50 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> EventParseResponse:
         started_at = perf_counter()
-        runtime_flags = await request.app.state.provider.runtime_flags()
-        if runtime_flags.get("semantic_classifier") and payload.privacy_settings.ai_enabled:
-            try:
-                response = await run_event_parse_semantic(
-                    payload,
-                    settings=request.app.state.settings,
-                    provider=request.app.state.provider,
-                )
-            except Exception:
+        try:
+            enforce_safe_capture_input(
+                payload,
+                region=request.app.state.settings.crisis_resources_region,
+                catalog_path=request.app.state.settings.crisis_resources_catalog_path,
+            )
+            runtime_flags = await request.app.state.provider.runtime_flags()
+            if runtime_flags.get("semantic_classifier") and payload.privacy_settings.ai_enabled:
+                try:
+                    response = await run_event_parse_semantic(
+                        payload,
+                        settings=request.app.state.settings,
+                        provider=request.app.state.provider,
+                    )
+                except Exception:
+                    response = run_event_parse(payload)
+            else:
                 response = run_event_parse(payload)
-        else:
-            response = run_event_parse(payload)
+        except HTTPException as exc:
+            telemetry = build_parse_operation_payloads(
+                request=payload,
+                response=None,
+                latency_ms=(perf_counter() - started_at) * 1000,
+                correlation_id=_request_correlation_id(request),
+                status="error",
+                error_detail=exc.detail,
+            )
+            await request.app.state.operational_client.record_usage_event(
+                telemetry["usage_event"]
+            )
+            await request.app.state.operational_client.record_ai_invocation(
+                telemetry["ai_invocation"]
+            )
+            if telemetry["safety_events"]:
+                await request.app.state.operational_client.record_safety_events(
+                    telemetry["safety_events"]
+                )
+            await request.app.state.operational_client.record_model_settings(
+                build_model_settings_payload(
+                    request.app.state.settings,
+                    request.app.state.provider.provider_name,
+                )
+            )
+            raise
         telemetry = build_parse_operation_payloads(
             request=payload,
             response=response,
@@ -311,18 +380,50 @@ def create_app(
         background_tasks: BackgroundTasks,
     ) -> ProofParseResponse:
         started_at = perf_counter()
-        runtime_flags = await request.app.state.provider.runtime_flags()
-        if runtime_flags.get("proof_parser") and payload.privacy_settings.ai_enabled:
-            try:
-                response = await run_proof_parse_semantic(
-                    payload,
-                    settings=request.app.state.settings,
-                    provider=request.app.state.provider,
-                )
-            except Exception:
+        try:
+            enforce_safe_proof_input(
+                payload,
+                region=request.app.state.settings.crisis_resources_region,
+                catalog_path=request.app.state.settings.crisis_resources_catalog_path,
+            )
+            runtime_flags = await request.app.state.provider.runtime_flags()
+            if runtime_flags.get("proof_parser") and payload.privacy_settings.ai_enabled:
+                try:
+                    response = await run_proof_parse_semantic(
+                        payload,
+                        settings=request.app.state.settings,
+                        provider=request.app.state.provider,
+                    )
+                except Exception:
+                    response = run_proof_parse(payload)
+            else:
                 response = run_proof_parse(payload)
-        else:
-            response = run_proof_parse(payload)
+        except HTTPException as exc:
+            telemetry = build_proof_parse_operation_payloads(
+                request=payload,
+                response=None,
+                latency_ms=(perf_counter() - started_at) * 1000,
+                correlation_id=_request_correlation_id(request),
+                status="error",
+                error_detail=exc.detail,
+            )
+            await request.app.state.operational_client.record_usage_event(
+                telemetry["usage_event"]
+            )
+            await request.app.state.operational_client.record_ai_invocation(
+                telemetry["ai_invocation"]
+            )
+            if telemetry["safety_events"]:
+                await request.app.state.operational_client.record_safety_events(
+                    telemetry["safety_events"]
+                )
+            await request.app.state.operational_client.record_model_settings(
+                build_model_settings_payload(
+                    request.app.state.settings,
+                    request.app.state.provider.provider_name,
+                )
+            )
+            raise
         telemetry = build_proof_parse_operation_payloads(
             request=payload,
             response=response,
@@ -354,6 +455,11 @@ def create_app(
     ) -> TaskRewriteResponse:
         started_at = perf_counter()
         try:
+            enforce_safe_task_rewrite_content(
+                payload,
+                region=request.app.state.settings.crisis_resources_region,
+                catalog_path=request.app.state.settings.crisis_resources_catalog_path,
+            )
             response = await run_task_rewrite(
                 payload,
                 settings=request.app.state.settings,
@@ -366,7 +472,7 @@ def create_app(
                 latency_ms=(perf_counter() - started_at) * 1000,
                 status="error",
                 correlation_id=_request_correlation_id(request),
-                error_detail=str(exc.detail),
+                error_detail=exc.detail,
             )
             await request.app.state.operational_client.record_usage_event(
                 telemetry["usage_event"]
@@ -378,6 +484,12 @@ def create_app(
                 await request.app.state.operational_client.record_safety_events(
                     telemetry["safety_events"]
                 )
+            await request.app.state.operational_client.record_model_settings(
+                build_model_settings_payload(
+                    request.app.state.settings,
+                    request.app.state.provider.provider_name,
+                )
+            )
             raise
         except AITemporarilyUnavailableError as exc:
             telemetry = build_ai_unavailable_operation_payload(
@@ -392,6 +504,12 @@ def create_app(
             )
             await request.app.state.operational_client.record_ai_invocation(
                 telemetry["ai_invocation"]
+            )
+            await request.app.state.operational_client.record_model_settings(
+                build_model_settings_payload(
+                    request.app.state.settings,
+                    request.app.state.provider.provider_name,
+                )
             )
             raise HTTPException(
                 status_code=503,

@@ -60,5 +60,8 @@ This file records the practical implementation status after analyzing:
 - Quality gate: executed locally
 - Release docs: added
 - Remaining hardening:
-  - broader adversarial safety corpus beyond the hardened reflection guardrail
   - device-specific runner validation if Android, iOS, or desktop projects are added beyond the current Flutter test runner
+
+## Next Useful Gap
+
+- Learning and memory over persisted data, so later missions can improve from stored evidence and feedback without breaking the current privacy boundaries.

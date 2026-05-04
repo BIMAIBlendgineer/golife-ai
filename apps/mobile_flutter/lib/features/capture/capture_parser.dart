@@ -59,6 +59,9 @@ class CaptureParser {
     if (normalizedText.isEmpty) {
       return const <CaptureDraftItem>[];
     }
+    if (_looksUnsafeForCapture(normalizedText)) {
+      return const <CaptureDraftItem>[];
+    }
 
     if (gatewayItems != null && gatewayItems.isNotEmpty) {
       return List<CaptureDraftItem>.generate(gatewayItems.length, (index) {
@@ -101,6 +104,150 @@ class CaptureParser {
         hints: parsed.hints,
       );
     });
+  }
+
+  bool _looksUnsafeForCapture(String text) {
+    const crisisTerms = <String>[
+      'suicide',
+      'suicidal',
+      'kill myself',
+      'end my life',
+      'self harm',
+      'harm myself',
+      'quiero morir',
+      'quitarme la vida',
+      'hacerme dano',
+      'lastimarme',
+      'matarme',
+      'nao quero viver',
+      'quero morrer',
+      'me machucar',
+      '死にたい',
+      '自殺',
+      '消えたい',
+      '自残',
+      '不想活了',
+      '想死',
+    ];
+    const clinicalTerms = <String>[
+      'depressed',
+      'depression',
+      'anxiety disorder',
+      'panic disorder',
+      'diagnostico',
+      'diagnosis',
+      'diagnosticar',
+      'terapia',
+      'therapy',
+      'tratamiento',
+      'treatment',
+      'medicacion',
+      'saude mental',
+      'depressao',
+      'ansiedade',
+      'うつ',
+      '不安障害',
+      '診断',
+      '治療',
+      '抑郁',
+      '焦虑症',
+    ];
+
+    final normalized = _normalizeSafetyText(text);
+    final tokens = normalized.split(' ').where((token) => token.isNotEmpty).toList();
+    final joinedTokens = _joinedTokenWindows(tokens);
+    return _matchesSafetyTerms(normalized, joinedTokens, crisisTerms) ||
+        _matchesSafetyTerms(normalized, joinedTokens, clinicalTerms);
+  }
+
+  bool _matchesSafetyTerms(
+    String normalizedText,
+    Set<String> joinedTokens,
+    List<String> terms,
+  ) {
+    for (final term in terms) {
+      final normalizedTerm = _normalizeSafetyText(term);
+      final compactTerm = normalizedTerm.replaceAll(' ', '');
+      if (normalizedText.contains(normalizedTerm) ||
+          joinedTokens.contains(compactTerm)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _normalizeSafetyText(String value) {
+    const replacements = <String, String>{
+      '0': 'o',
+      '1': 'i',
+      '3': 'e',
+      '4': 'a',
+      '5': 's',
+      '7': 't',
+      '@': 'a',
+      r'$': 's',
+      '!': 'i',
+      'á': 'a',
+      'à': 'a',
+      'â': 'a',
+      'ã': 'a',
+      'é': 'e',
+      'ê': 'e',
+      'í': 'i',
+      'ó': 'o',
+      'ô': 'o',
+      'õ': 'o',
+      'ú': 'u',
+      'ü': 'u',
+      'ç': 'c',
+      'ñ': 'n',
+    };
+
+    final translated = value
+        .split('')
+        .map((character) => replacements[character] ?? character.toLowerCase())
+        .join();
+    final sanitized = StringBuffer();
+    for (final rune in translated.runes) {
+      final character = String.fromCharCode(rune);
+      final isAsciiAlphaNum = RegExp(r'[a-z0-9]').hasMatch(character);
+      final isCjkOrKana = rune >= 0x3040 && rune <= 0x30ff ||
+          rune >= 0x3400 && rune <= 0x9fff;
+      sanitized.write(isAsciiAlphaNum || isCjkOrKana ? character : ' ');
+    }
+
+    final collapsed = <String>[];
+    final tokens = sanitized.toString().split(RegExp(r'\s+'));
+    var letterRun = '';
+    for (final token in tokens) {
+      if (token.isEmpty) {
+        continue;
+      }
+      if (token.length == 1 && RegExp(r'[a-z]').hasMatch(token)) {
+        letterRun += token;
+        continue;
+      }
+      if (letterRun.isNotEmpty) {
+        collapsed.add(letterRun);
+        letterRun = '';
+      }
+      collapsed.add(token);
+    }
+    if (letterRun.isNotEmpty) {
+      collapsed.add(letterRun);
+    }
+    return collapsed.join(' ');
+  }
+
+  Set<String> _joinedTokenWindows(List<String> tokens) {
+    final windows = <String>{...tokens};
+    final maxWindow = tokens.length < 4 ? tokens.length : 4;
+    for (var size = 2; size <= maxWindow; size++) {
+      for (var index = 0; index <= tokens.length - size; index++) {
+        windows.add(tokens.sublist(index, index + size).join());
+      }
+    }
+    return windows;
   }
 
   List<String> _splitIntoClauses(String text) {
