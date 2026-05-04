@@ -5,6 +5,7 @@ from pathlib import Path
 from threading import Lock
 from uuid import uuid4
 
+from app.learning_memory import resolve_feedback_learning_key, summarize_feedback_items
 from app.schemas import MissionFeedbackRequest
 
 
@@ -20,6 +21,12 @@ class MissionFeedbackStore:
     def record(self, payload: MissionFeedbackRequest) -> str:
         feedback_id = f"feedback-{uuid4()}"
         note_text = (payload.notes or "").strip()
+        learning_key, learning_key_source = resolve_feedback_learning_key(
+            suggestion_id=payload.suggestion_id,
+            domain_targets=payload.domain_targets,
+            recommendation_type=payload.recommendation_type,
+            trace=payload.trace,
+        )
         item = {
             "feedback_id": feedback_id,
             "user_id": payload.user_id,
@@ -29,6 +36,8 @@ class MissionFeedbackStore:
             "notes_char_count": len(note_text),
             "domain_targets": payload.domain_targets,
             "recommendation_type": payload.recommendation_type,
+            "learning_key": learning_key,
+            "learning_key_source": learning_key_source,
             "trace": payload.trace,
         }
         with self._lock:
@@ -42,35 +51,7 @@ class MissionFeedbackStore:
 
     def summarize(self, user_id: str | None = None) -> dict[str, object]:
         with self._lock:
-            by_suggestion: dict[str, dict[str, int]] = {}
-            by_domain: dict[str, dict[str, int]] = {}
-            totals: dict[str, int] = {}
-            matching_items = 0
-
-            for item in self._items:
-                if user_id and str(item.get("user_id", "")) != user_id:
-                    continue
-
-                status = str(item.get("status", "unknown"))
-                suggestion_id = str(item.get("suggestion_id", ""))
-                matching_items += 1
-                totals[status] = totals.get(status, 0) + 1
-
-                suggestion_stats = by_suggestion.setdefault(suggestion_id, {})
-                suggestion_stats[status] = suggestion_stats.get(status, 0) + 1
-
-                for domain in item.get("domain_targets", []) or []:
-                    domain_name = str(domain)
-                    domain_stats = by_domain.setdefault(domain_name, {})
-                    domain_stats[status] = domain_stats.get(status, 0) + 1
-
-            return {
-                "user_id": user_id,
-                "item_count": matching_items,
-                "totals": totals,
-                "by_suggestion": by_suggestion,
-                "by_domain": by_domain,
-            }
+            return summarize_feedback_items(self._items, user_id=user_id)
 
     def _load(self) -> tuple[list[dict[str, object]], bool]:
         if not self._storage_path.exists():

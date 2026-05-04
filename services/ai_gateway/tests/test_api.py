@@ -149,6 +149,65 @@ class BrokenSemanticParseProvider(LLMProvider):
         return {"semantic_classifier": True, "proof_parser": True}
 
 
+class RotatingTaskPatternProvider(LLMProvider):
+    provider_name = "rotating-task-pattern"
+
+    def __init__(self) -> None:
+        self._call_count = 0
+
+    async def complete_json(
+        self,
+        *,
+        system_prompt: str,
+        user_payload: dict,
+        response_schema: dict | None = None,
+        model: str | None = None,
+        temperature: float = 0.0,
+    ):
+        self._call_count += 1
+        suffix = f"v{self._call_count}"
+        return {
+            "suggestions": [
+                {
+                    "suggestion_id": f"task-reflection-{suffix}",
+                    "title": "Review the task shape",
+                    "domain_targets": ["task"],
+                    "recommendation_type": "reflection",
+                    "body": "Review why this task matters before doing it.",
+                    "evidence": [
+                        {
+                            "source_domain": "task",
+                            "claim": "There is active task evidence.",
+                            "confidence": 0.8,
+                        }
+                    ],
+                    "confidence": 0.66,
+                    "uncertainty": "This reflection may still be too passive.",
+                    "requires_confirmation": True,
+                    "status": "draft",
+                },
+                {
+                    "suggestion_id": f"task-mission-{suffix}",
+                    "title": "Finish one task block",
+                    "domain_targets": ["task"],
+                    "recommendation_type": "mission",
+                    "body": "Complete one visible task block now.",
+                    "evidence": [
+                        {
+                            "source_domain": "task",
+                            "claim": "There is active task evidence.",
+                            "confidence": 0.8,
+                        }
+                    ],
+                    "confidence": 0.62,
+                    "uncertainty": "This mission needs follow-through.",
+                    "requires_confirmation": True,
+                    "status": "draft",
+                },
+            ]
+        }
+
+
 def test_health_reports_mock_mode(client):
     response = client.get("/health")
     assert response.status_code == 200
@@ -1036,6 +1095,8 @@ def test_feedback_store_persists_items(tmp_path):
     assert items[0]["status"] == "useful"
     assert items[0]["notes_present"] is True
     assert items[0]["notes_char_count"] == len("kept locally")
+    assert items[0]["learning_key"] == "mission|system"
+    assert items[0]["learning_key_source"] == "derived_pattern"
     assert "notes" not in items[0]
 
 
@@ -1065,6 +1126,36 @@ def test_feedback_summary_is_isolated_per_user(tmp_path):
     assert user_one_summary["totals"]["useful"] == 1
     assert "rejected" not in user_one_summary["totals"]
     assert user_two_summary["totals"]["rejected"] == 1
+
+
+def test_feedback_summary_builds_pattern_memory_profile(tmp_path):
+    store = MissionFeedbackStore(tmp_path / "feedback.json")
+    store.record(
+        MissionFeedbackRequest(
+            user_id="user-1",
+            suggestion_id="mission-1",
+            status="completed",
+            domain_targets=["task"],
+            recommendation_type="mission",
+        )
+    )
+    store.record(
+        MissionFeedbackRequest(
+            user_id="user-1",
+            suggestion_id="mission-2",
+            status="rejected",
+            domain_targets=["task"],
+            recommendation_type="reflection",
+        )
+    )
+
+    summary = store.summarize("user-1")
+
+    assert summary["by_pattern"]["mission|task"]["positive_count"] == 1
+    assert summary["by_pattern"]["reflection|task"]["negative_count"] == 1
+    assert summary["memory_profile"]["reinforce_patterns"][0]["pattern_key"] == "mission|task"
+    assert summary["memory_profile"]["avoid_patterns"][0]["pattern_key"] == "reflection|task"
+    assert summary["memory_profile"]["recent_feedback"][0]["pattern_key"] == "reflection|task"
 
 
 def test_feedback_summary_is_visible_in_followup_daily_plan(client):
@@ -1097,6 +1188,8 @@ def test_feedback_summary_is_visible_in_followup_daily_plan(client):
     data = response.json()
     assert "feedback_learning" in data["trace"]["nodes"]
     assert data["trace"]["feedback_learning"]["totals"]["useful"] == 1
+    assert data["trace"]["mission_memory"]["reinforce_patterns"][0]["pattern_key"] == "mission|habit+task"
+    assert data["trace"]["learning_keys_by_suggestion_id"]["mock-daily-task-habit"] == "mission|habit+task"
 
 
 def test_feedback_from_other_user_does_not_change_daily_plan_trace(client):
@@ -1127,6 +1220,74 @@ def test_feedback_from_other_user_does_not_change_daily_plan_trace(client):
     assert response.status_code == 200
     data = response.json()
     assert data["trace"]["feedback_learning"]["totals"] == {}
+    assert data["trace"]["mission_memory"]["reinforce_patterns"] == []
+
+
+def test_feedback_learning_reorders_new_suggestion_ids_using_persisted_pattern_memory(tmp_path):
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            openrouter_api_key="test-key",
+            routing_control_enabled=False,
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=RotatingTaskPatternProvider(),
+    )
+
+    request_payload = {
+        "user_id": "user-1",
+        "allowed_domains": ["task"],
+        "privacy_settings": {"ai_enabled": True, "allowed_domains": ["task"]},
+        "life_events": [_event("evt-1", "task", "ai_allowed")],
+    }
+
+    with TestClient(app) as client:
+        first_response = client.post("/v1/missions/daily", json=request_payload)
+
+        assert first_response.status_code == 200
+        first_data = first_response.json()
+        assert first_data["suggestions"][0]["recommendation_type"] == "reflection"
+
+        mission_suggestion = next(
+            item
+            for item in first_data["suggestions"]
+            if item["recommendation_type"] == "mission"
+        )
+        assert (
+            first_data["trace"]["learning_keys_by_suggestion_id"][
+                mission_suggestion["suggestion_id"]
+            ]
+            == "mission|task"
+        )
+
+        feedback_response = client.post(
+            "/v1/feedback",
+            json={
+                "user_id": "user-1",
+                "suggestion_id": mission_suggestion["suggestion_id"],
+                "status": "completed",
+                "domain_targets": mission_suggestion["domain_targets"],
+                "recommendation_type": mission_suggestion["recommendation_type"],
+                "trace": first_data["trace"],
+            },
+        )
+
+        assert feedback_response.status_code == 200
+
+        second_response = client.post("/v1/missions/daily", json=request_payload)
+
+        assert second_response.status_code == 200
+        second_data = second_response.json()
+        assert second_data["suggestions"][0]["recommendation_type"] == "mission"
+        assert (
+            second_data["trace"]["mission_memory"]["reinforce_patterns"][0]["pattern_key"]
+            == "mission|task"
+        )
+        assert any(
+            item["learning_key"] == "mission|task" and item["delta"] > 0
+            for item in second_data["trace"]["feedback_learning"]["candidate_biases"]
+        )
 
 
 def test_daily_mission_reports_operational_events(tmp_path):

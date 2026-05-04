@@ -50,7 +50,7 @@ Date: `2026-04-25`
 
 - add browser-level admin smoke tests and Flutter widget smoke flows for the privacy/export path
 - add platform validation runs for secure storage on release candidates when concrete Android, iOS, or desktop runners exist in the repo
-- expand learning and memory validation over persisted data, with explicit checks that stored evidence and feedback improve later planning without crossing privacy boundaries
+- extend the new feedback-backed mission memory into stronger evidence-level ranking over persisted LifeGraph state
 
 ## Canonical current-state docs
 

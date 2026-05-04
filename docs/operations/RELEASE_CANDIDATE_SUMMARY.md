@@ -61,6 +61,7 @@ The product surface that exists today is a coordinated system across:
 | Admin/backend export-delete workflow | closed | [F04 11 closeout](F04_11_ADMIN_EXPORT_DELETE_WORKFLOW.md) |
 | Secure mobile export bundle | closed | [F04 16 closeout](F04_16_SECURE_MOBILE_EXPORT_BUNDLE.md) |
 | Adversarial safety beyond reflection | closed for current rule-based scope | [F04 26 closeout](F04_26_ADVERSARIAL_INPUT_SURFACES.md) |
+| Persisted mission memory from feedback metadata | closed for current gateway-local scope | [F04 27 closeout](F04_27_PERSISTED_MISSION_MEMORY.md) |
 | Mobile fallback visibility | closed | [F03 closeout](F03_AI_GATEWAY_PRODUCTION_RUNTIME_CLOSEOUT.md) and `apps/mobile_flutter/test/golife_app_test.dart` |
 | Admin live/fallback/offline visibility | closed | `apps/admin_next/components/page-shell.tsx` |
 | Privacy/export/delete boundary | closed for current local-first scope | [Privacy review](../compliance/PRIVACY_REVIEW.md) and [Data map](../compliance/DATA_MAP.md) |
@@ -100,7 +101,7 @@ See [Release risk register](RELEASE_RISK_REGISTER.md) for the canonical risk led
 - checked-in Android, iOS, or desktop runners
 - device-specific secure export retrieval UX validation
 - a strong policy engine or jailbreak-resistant safety system
-- advanced learning or memory over persisted user data
+- advanced evidence-level learning beyond the current feedback-backed mission memory layer
 - final app store submission workflow
 - banking integrations
 - full calendar sync
@@ -125,6 +126,7 @@ This repo can be declared production-ready only if all of the following remain t
 - [F04 11 admin export delete workflow](F04_11_ADMIN_EXPORT_DELETE_WORKFLOW.md)
 - [F04 16 secure mobile export bundle](F04_16_SECURE_MOBILE_EXPORT_BUNDLE.md)
 - [F04 26 adversarial input surfaces](F04_26_ADVERSARIAL_INPUT_SURFACES.md)
+- [F04 27 persisted mission memory](F04_27_PERSISTED_MISSION_MEMORY.md)
 - [Privacy review](../compliance/PRIVACY_REVIEW.md)
 - [Safety review](../compliance/SAFETY_REVIEW.md)
 - [Execution pack status](EXECUTION_PACK_STATUS.md)

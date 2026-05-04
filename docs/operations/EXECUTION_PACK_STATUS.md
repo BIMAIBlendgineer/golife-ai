@@ -49,6 +49,7 @@ This file records the practical implementation status after analyzing:
 - Ranked missions, risks, explanations, feedback traces, runtime config, and OpenRouter routing are implemented
 - Production anti-mock hardening is closed
 - Adversarial safety now covers more than reflection only
+- Persisted mission memory now reuses stored feedback metadata across later plans
 
 ### Release 7 - Closed Beta Readiness
 
@@ -56,7 +57,7 @@ This file records the practical implementation status after analyzing:
 - Admin/backend export-delete workflow implemented
 - Secure mobile export bundle plus submission-asset vault implemented
 - Monitoring and operational admin are live
-- Remaining release gaps are mostly policy, runner, and learning/memory maturity gaps
+- Remaining release gaps are mostly policy, runner, and evidence-level ranking maturity gaps
 
 ## Checklist Summary
 
@@ -68,4 +69,4 @@ This file records the practical implementation status after analyzing:
 
 ## Next Useful Gap
 
-- Learning and memory over persisted data, so later missions can improve from stored evidence and feedback without breaking current privacy boundaries.
+- Strengthen the mission ranker over persisted LifeGraph evidence, beyond the current feedback-backed mission memory layer.

@@ -6,6 +6,7 @@
 | AI Gateway | production health | `GET /health` | `active_provider=openrouter`, `mock_mode=false` | validated locally | production local single-key smoke |
 | AI Gateway | readiness | `GET /ready` | `200` in valid production config | validated locally | production validator enforced |
 | AI Gateway | live smoke | `POST /v1/missions/daily` | `200`, suggestions, no `mock: true` | validated locally | one-request OpenRouter smoke |
+| AI Gateway | persisted mission memory | feedback -> follow-up daily mission | later ranking reflects stored pattern memory, trace stays visible | validated locally | current scope is feedback metadata, not full evidence memory |
 | Web Backend | unit/integration | `cd services/web_backend && python -m pytest -q` | full suite green | green baseline | includes support export/delete |
 | Web Backend | support export | admin bundle endpoint | metadata-only bundle available | validated locally | no local LifeGraph sync |
 | Web Backend | support delete | admin execute-delete endpoint | operational records removed | validated locally | local device data untouched |

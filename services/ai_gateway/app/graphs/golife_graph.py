@@ -5,6 +5,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, StateGraph
 
 from app.guardrails import filter_ai_events, sanitize_suggestions
+from app.learning_memory import build_learning_key
 from app.providers.base import LLMProvider
 from app.schemas import AISuggestion, SuggestionEvidence, SuggestionRequest, SuggestionResponse
 from app.settings import Settings
@@ -189,6 +190,8 @@ def _feedback_delta(
 ) -> tuple[float, list[str]]:
     by_suggestion = feedback_summary.get("by_suggestion", {})
     by_domain = feedback_summary.get("by_domain", {})
+    by_pattern = feedback_summary.get("by_pattern", {})
+    by_recommendation_type = feedback_summary.get("by_recommendation_type", {})
     reasons: list[str] = []
     delta = 0.0
 
@@ -206,6 +209,21 @@ def _feedback_delta(
             f"suggestion useful={useful} completed={completed} rejected={rejected}"
         )
 
+    pattern_key = _suggestion_learning_key(suggestion)
+    pattern_stats = by_pattern.get(pattern_key, {})
+    if pattern_stats:
+        positive_count = int(pattern_stats.get("positive_count", 0))
+        negative_count = int(pattern_stats.get("negative_count", 0))
+        net_score = float(pattern_stats.get("net_score", 0.0) or 0.0)
+        delta += positive_count * 0.06
+        delta -= negative_count * 0.07
+        delta += net_score * 0.05
+        reasons.append(
+            "pattern "
+            f"{pattern_key} score={round(net_score, 4)} "
+            f"positive={positive_count} negative={negative_count}"
+        )
+
     for domain in suggestion.domain_targets:
         domain_stats = by_domain.get(domain, {})
         if not domain_stats:
@@ -220,7 +238,31 @@ def _feedback_delta(
             f"domain {domain} useful={useful} completed={completed} rejected={rejected}"
         )
 
+    recommendation_stats = by_recommendation_type.get(
+        suggestion.recommendation_type,
+        {},
+    )
+    if recommendation_stats:
+        positive_count = int(recommendation_stats.get("positive_count", 0))
+        negative_count = int(recommendation_stats.get("negative_count", 0))
+        net_score = float(recommendation_stats.get("net_score", 0.0) or 0.0)
+        delta += positive_count * 0.01
+        delta -= negative_count * 0.015
+        delta += net_score * 0.01
+        reasons.append(
+            "recommendation_type "
+            f"{suggestion.recommendation_type} score={round(net_score, 4)} "
+            f"positive={positive_count} negative={negative_count}"
+        )
+
     return delta, reasons
+
+
+def _suggestion_learning_key(suggestion: AISuggestion) -> str:
+    return build_learning_key(
+        suggestion.domain_targets,
+        suggestion.recommendation_type,
+    )
 
 
 def _coerce_domain(value: object, fallback: str = "system") -> str:
@@ -578,6 +620,10 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
             "risks": state.get("risks", []),
             "patterns": state.get("patterns", []),
             "feedback_summary": state.get("feedback_summary", {}),
+            "mission_memory": state.get("feedback_summary", {}).get(
+                "memory_profile",
+                {},
+            ),
             "constraints": state["request"].constraints,
         },
         response_schema=SuggestionResponse.model_json_schema(),
@@ -605,12 +651,22 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
 def apply_feedback_learning(state: MissionGraphState) -> MissionGraphState:
     feedback_summary = state.get("feedback_summary", {})
     adjusted_candidates: list[AISuggestion] = []
+    candidate_biases: list[dict[str, Any]] = []
 
     for suggestion in state.get("candidates", []):
-        delta, _reasons = _feedback_delta(suggestion, feedback_summary)
+        delta, reasons = _feedback_delta(suggestion, feedback_summary)
         adjusted_confidence = min(max(suggestion.confidence + delta, 0.0), 1.0)
         adjusted_candidates.append(
             suggestion.model_copy(update={"confidence": adjusted_confidence})
+        )
+        candidate_biases.append(
+            {
+                "suggestion_id": suggestion.suggestion_id,
+                "learning_key": _suggestion_learning_key(suggestion),
+                "delta": round(delta, 4),
+                "adjusted_confidence": round(adjusted_confidence, 4),
+                "reasons": reasons,
+            }
         )
 
     trace = _append_trace(
@@ -619,6 +675,8 @@ def apply_feedback_learning(state: MissionGraphState) -> MissionGraphState:
         payload={
             "adjusted_count": len(adjusted_candidates),
             "totals": feedback_summary.get("totals", {}),
+            "mission_memory": feedback_summary.get("memory_profile", {}),
+            "candidate_biases": candidate_biases,
         },
     )
     return {"candidates": adjusted_candidates, "trace": trace}
@@ -699,6 +757,10 @@ def build_response(state: MissionGraphState) -> MissionGraphState:
         state,
         state.get("ranked_candidates", []),
     )
+    learning_keys_by_suggestion_id = {
+        suggestion.suggestion_id: _suggestion_learning_key(suggestion)
+        for suggestion in ranked_candidates
+    }
     trace = _append_trace(
         state.get("trace", {}),
         node_name="build_response",
@@ -714,6 +776,11 @@ def build_response(state: MissionGraphState) -> MissionGraphState:
             "mock_mode": state["settings"].resolved_mock_mode,
             "filtered_events": state.get("filtered_events", []),
             "provider_meta": state.get("provider_meta", {}),
+            "mission_memory": state.get("feedback_summary", {}).get(
+                "memory_profile",
+                {},
+            ),
+            "learning_keys_by_suggestion_id": learning_keys_by_suggestion_id,
         }
     )
     return {
