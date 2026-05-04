@@ -70,3 +70,4 @@ This file records the practical implementation status after analyzing:
 ## Next Useful Gap
 
 - Strengthen the mission ranker over persisted LifeGraph evidence, beyond the current feedback-backed mission memory layer.
+- Centralize safety decisions into a versioned policy engine before making stronger safety claims.

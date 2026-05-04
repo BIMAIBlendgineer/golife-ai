@@ -2,11 +2,13 @@
 
 | Surface | Gate | Command / check | Expected result | Current status | Notes |
 | --- | --- | --- | --- | --- | --- |
+| Documentation | canonical release docs | manual review of final docs set | no stale claims, no secrets, clear blockers | in progress | final summary, runbooks, ADR index, risk register |
 | AI Gateway | unit/integration | `cd services/ai_gateway && python -m pytest -q` | full suite green | green baseline | anti-mock, routing, safety, API |
 | AI Gateway | production health | `GET /health` | `active_provider=openrouter`, `mock_mode=false` | validated locally | production local single-key smoke |
 | AI Gateway | readiness | `GET /ready` | `200` in valid production config | validated locally | production validator enforced |
 | AI Gateway | live smoke | `POST /v1/missions/daily` | `200`, suggestions, no `mock: true` | validated locally | one-request OpenRouter smoke |
 | AI Gateway | persisted mission memory | feedback -> follow-up daily mission | later ranking reflects stored pattern memory, trace stays visible | validated locally | current scope is feedback metadata, not full evidence memory |
+| AI Gateway | mission ranker | top 3 deterministic with explicit score breakdown | ranking fields visible and privacy-safe | pending | premium blocker until implemented |
 | Web Backend | unit/integration | `cd services/web_backend && python -m pytest -q` | full suite green | green baseline | includes support export/delete |
 | Web Backend | support export | admin bundle endpoint | metadata-only bundle available | validated locally | no local LifeGraph sync |
 | Web Backend | support delete | admin execute-delete endpoint | operational records removed | validated locally | local device data untouched |
@@ -16,6 +18,7 @@
 | Admin | lint | `cd apps/admin_next && npm run lint` | green | green baseline | docs-only PR should not affect |
 | Admin | typecheck | `cd apps/admin_next && npm run typecheck` | green | green baseline | |
 | Admin | build | `cd apps/admin_next && npm run build` | green | green baseline | |
+| Auth | enterprise boundary | admin/web backend auth status review | no enterprise claims without OIDC/SSO | documented only | current mode is hardening-grade, not enterprise-ready |
 | Security | secret scan | `gitleaks git` | no findings | green baseline required | must be re-run for docs PR |
 | Security | Python SAST | `bandit -q -r app -s B105,B106` | green | CI baseline | run in both Python services |
 | Security | Python deps | `pip-audit --ignore-vuln CVE-2026-3219` | green or accepted exception only | CI baseline | |
