@@ -37,11 +37,17 @@
   "privacyMetricAiEligible": "AI 送信可",
   "privacyMetricBlockedLocal": "ローカルでブロック",
   "dataControls": "データ操作",
-  "dataControlsBody": "Export でローカルグラフの JSON スナップショットを出力し、Delete all でローカルデータを消去します。",
+  "dataControlsBody": "Export はローカルグラフ全体をこの端末内の保護された JSON ファイルとして保存し、Delete all はローカルデータを消去します。",
   "exportJson": "JSON をエクスポート",
   "deleteAllLocalData": "ローカルデータを全削除",
   "domainControls": "ドメイン制御",
   "exportCopied": "ローカル JSON エクスポートをクリップボードにコピーしました。",
+  "exportSavedFile": "保護されたローカル JSON エクスポートを {fileName} として保存しました。",
+  "@exportSavedFile": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
   "deleteAllTitle": "すべてのローカルデータを削除しますか?",
   "deleteAllBody": "これはローカルイベント、エンティティ、ミッション、フィードバック、プライバシー設定、runtime config キャッシュ、言語設定を削除します。",
   "cancel": "キャンセル",

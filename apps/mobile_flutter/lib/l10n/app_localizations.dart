@@ -331,7 +331,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataControlsBody.
   ///
   /// In en, this message translates to:
-  /// **'Export copies the full local graph snapshot as JSON. Delete all wipes local data and disables demo reseeding.'**
+  /// **'Export saves the full local graph snapshot as a protected JSON file on this device. Delete all wipes local data and disables demo reseeding.'**
   String get dataControlsBody;
 
   /// No description provided for @exportJson.
@@ -357,6 +357,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Local JSON export copied to clipboard.'**
   String get exportCopied;
+
+  /// No description provided for @exportSavedFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected local JSON export saved as {fileName}.'**
+  String exportSavedFile(Object fileName);
 
   /// No description provided for @deleteAllTitle.
   ///

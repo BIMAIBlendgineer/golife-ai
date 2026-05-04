@@ -37,11 +37,17 @@
   "privacyMetricAiEligible": "AI-eligible",
   "privacyMetricBlockedLocal": "Blocked locally",
   "dataControls": "Data controls",
-  "dataControlsBody": "Export copies the full local graph snapshot as JSON. Delete all wipes local data and disables demo reseeding.",
+  "dataControlsBody": "Export saves the full local graph snapshot as a protected JSON file on this device. Delete all wipes local data and disables demo reseeding.",
   "exportJson": "Export JSON",
   "deleteAllLocalData": "Delete all local data",
   "domainControls": "Domain controls",
   "exportCopied": "Local JSON export copied to clipboard.",
+  "exportSavedFile": "Protected local JSON export saved as {fileName}.",
+  "@exportSavedFile": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
   "deleteAllTitle": "Delete all local data?",
   "deleteAllBody": "This wipes local events, entities, missions, feedback, privacy settings, cached runtime config, and language preference on this device.",
   "cancel": "Cancel",

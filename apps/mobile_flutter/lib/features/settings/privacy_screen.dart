@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/app_localized_values.dart';
@@ -165,13 +164,16 @@ class PrivacyScreen extends StatelessWidget {
   }
 
   Future<void> _exportLocalJson(BuildContext context) async {
-    final json = await controller.exportLocalDataJson();
-    await Clipboard.setData(ClipboardData(text: json));
+    final exportResult = await controller.exportLocalDataFile();
     if (!context.mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.exportCopied)),
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.exportSavedFile(exportResult.fileName),
+        ),
+      ),
     );
   }
 

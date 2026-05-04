@@ -37,11 +37,17 @@
   "privacyMetricAiEligible": "Elegiveis para IA",
   "privacyMetricBlockedLocal": "Bloqueados localmente",
   "dataControls": "Controles de dados",
-  "dataControlsBody": "Exportar copia o snapshot local completo em JSON. Apagar tudo limpa os dados locais e desativa a semeadura demo.",
+  "dataControlsBody": "Exportar salva o snapshot local completo como JSON protegido neste dispositivo. Apagar tudo limpa os dados locais e desativa a semeadura demo.",
   "exportJson": "Exportar JSON",
   "deleteAllLocalData": "Apagar todos os dados locais",
   "domainControls": "Controles por dominio",
   "exportCopied": "A exportacao JSON local foi copiada para a area de transferencia.",
+  "exportSavedFile": "A exportacao JSON protegida foi salva como {fileName}.",
+  "@exportSavedFile": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
   "deleteAllTitle": "Apagar todos os dados locais?",
   "deleteAllBody": "Isso remove eventos locais, entidades, missoes, feedback, ajustes de privacidade, cache runtime e preferencia de idioma neste dispositivo.",
   "cancel": "Cancelar",

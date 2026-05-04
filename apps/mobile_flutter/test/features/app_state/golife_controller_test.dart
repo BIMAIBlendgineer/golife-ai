@@ -2,23 +2,46 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/ai_client/ai_gateway_client.dart';
+import 'package:golife_flutter/core/export/local_export_service.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/tasks/go_task.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
 
+class _RecordingLocalExportService implements LocalExportService {
+  String? lastPayload;
+  String? lastBaseFileName;
+
+  @override
+  Future<LocalExportResult> saveJsonExport({
+    required String baseFileName,
+    required String jsonPayload,
+  }) async {
+    lastBaseFileName = baseFileName;
+    lastPayload = jsonPayload;
+    return const LocalExportResult(
+      fileName: 'golife_local_export_20260504T100000Z.json',
+      filePath: '/protected/exports/golife_local_export_20260504T100000Z.json',
+      byteCount: 256,
+    );
+  }
+}
+
 void main() {
   group('GoLifeController', () {
     late MemoryLocalStore localStore;
     late GoLifeController controller;
+    late _RecordingLocalExportService exportService;
 
     setUp(() async {
+      exportService = _RecordingLocalExportService();
       localStore = MemoryLocalStore();
       controller = GoLifeController(
         localStore: localStore,
         aiGatewayClient: MockAiGatewayClient(),
         lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+        localExportService: exportService,
       );
       await controller.bootstrap();
     });
@@ -76,9 +99,16 @@ void main() {
     test('exports and deletes local data', () async {
       final exportedJson = await controller.exportLocalDataJson();
       final decoded = jsonDecode(exportedJson) as Map<String, dynamic>;
+      final fileExport = await controller.exportLocalDataFile();
 
       expect(decoded['life_events'], isA<List<dynamic>>());
       expect(decoded['tasks'], isA<List<dynamic>>());
+      expect(fileExport.fileName, 'golife_local_export_20260504T100000Z.json');
+      expect(exportService.lastBaseFileName, 'golife_local_export');
+      final exportedFileJson =
+          jsonDecode(exportService.lastPayload!) as Map<String, dynamic>;
+      expect(exportedFileJson['tasks'], decoded['tasks']);
+      expect(exportedFileJson['life_events'], decoded['life_events']);
 
       await controller.deleteAllLocalData();
 

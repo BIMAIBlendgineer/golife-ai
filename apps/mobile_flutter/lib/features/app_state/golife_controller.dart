@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/ai_client/ai_gateway_client.dart';
 import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
+import '../../core/export/local_export_service.dart';
 import '../../core/i18n/app_locale.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
@@ -40,15 +41,19 @@ class GoLifeController extends ChangeNotifier {
     required AiGatewayClient aiGatewayClient,
     required LifeGraphRepository lifeGraphRepository,
     RuntimeConfigClient? runtimeConfigClient,
+    LocalExportService? localExportService,
   })  : _localStore = localStore,
         _aiGatewayClient = aiGatewayClient,
         _lifeGraphRepository = lifeGraphRepository,
-        _runtimeConfigClient = runtimeConfigClient;
+        _runtimeConfigClient = runtimeConfigClient,
+        _localExportService =
+            localExportService ?? ProtectedLocalExportService();
 
   final LocalStore _localStore;
   final AiGatewayClient _aiGatewayClient;
   final LifeGraphRepository _lifeGraphRepository;
   final RuntimeConfigClient? _runtimeConfigClient;
+  final LocalExportService _localExportService;
   final CaptureParser _captureParser = const CaptureParser();
 
   bool _isReady = false;
@@ -1038,8 +1043,7 @@ class GoLifeController extends ChangeNotifier {
         deleteFromStore: _localStore.deleteWeekPlan,
       );
 
-  Future<void> deleteJournalEntryById(String id) =>
-      _deleteEntity<JournalEntry>(
+  Future<void> deleteJournalEntryById(String id) => _deleteEntity<JournalEntry>(
         id: id,
         current: _journalEntries,
         idOf: (item) => item.id,
@@ -1055,8 +1059,7 @@ class GoLifeController extends ChangeNotifier {
         deleteFromStore: _localStore.deleteQuickNote,
       );
 
-  Future<void> deleteCalendarItemById(String id) =>
-      _deleteEntity<CalendarItem>(
+  Future<void> deleteCalendarItemById(String id) => _deleteEntity<CalendarItem>(
         id: id,
         current: _calendarItems,
         idOf: (item) => item.id,
@@ -1064,8 +1067,7 @@ class GoLifeController extends ChangeNotifier {
         deleteFromStore: _localStore.deleteCalendarItem,
       );
 
-  Future<void> deleteRecipeRescueById(String id) =>
-      _deleteEntity<RecipeRescue>(
+  Future<void> deleteRecipeRescueById(String id) => _deleteEntity<RecipeRescue>(
         id: id,
         current: _recipeRescues,
         idOf: (item) => item.id,
@@ -1735,6 +1737,14 @@ class GoLifeController extends ChangeNotifier {
           .toList(growable: false),
     };
     return const JsonEncoder.withIndent('  ').convert(snapshot);
+  }
+
+  Future<LocalExportResult> exportLocalDataFile() async {
+    final jsonPayload = await exportLocalDataJson();
+    return _localExportService.saveJsonExport(
+      baseFileName: 'golife_local_export',
+      jsonPayload: jsonPayload,
+    );
   }
 
   Future<void> deleteAllLocalData() async {

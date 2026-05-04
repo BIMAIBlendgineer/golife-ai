@@ -129,7 +129,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataControlsBody =>
-      'Export copies the full local graph snapshot as JSON. Delete all wipes local data and disables demo reseeding.';
+      'Export saves the full local graph snapshot as a protected JSON file on this device. Delete all wipes local data and disables demo reseeding.';
 
   @override
   String get exportJson => 'Export JSON';
@@ -142,6 +142,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportCopied => 'Local JSON export copied to clipboard.';
+
+  @override
+  String exportSavedFile(Object fileName) {
+    return 'Protected local JSON export saved as $fileName.';
+  }
 
   @override
   String get deleteAllTitle => 'Delete all local data?';

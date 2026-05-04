@@ -129,7 +129,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get dataControlsBody =>
-      'Exportar copia el snapshot local completo en JSON. Borrar todo limpia datos locales y desactiva la resiembra demo.';
+      'Exportar guarda el snapshot local completo como JSON protegido en este dispositivo. Borrar todo limpia datos locales y desactiva la resiembra demo.';
 
   @override
   String get exportJson => 'Exportar JSON';
@@ -143,6 +143,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get exportCopied =>
       'La exportacion JSON local se copio al portapapeles.';
+
+  @override
+  String exportSavedFile(Object fileName) {
+    return 'La exportacion JSON protegida se guardo como $fileName.';
+  }
 
   @override
   String get deleteAllTitle => 'Borrar todos los datos locales?';

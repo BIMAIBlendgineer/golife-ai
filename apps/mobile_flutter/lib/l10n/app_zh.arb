@@ -37,11 +37,17 @@
   "privacyMetricAiEligible": "AI 可发送",
   "privacyMetricBlockedLocal": "本地拦截",
   "dataControls": "数据控制",
-  "dataControlsBody": "Export 会导出本地图谱 JSON 快照。Delete all 会清除本地数据并关闭 demo 重置。",
+  "dataControlsBody": "Export 会在本设备中保存受保护的本地图谱 JSON 快照文件。Delete all 会清除本地数据并关闭 demo 重置。",
   "exportJson": "导出 JSON",
   "deleteAllLocalData": "删除所有本地数据",
   "domainControls": "域控制",
   "exportCopied": "已复制本地 JSON 导出内容。",
+  "exportSavedFile": "受保护的本地 JSON 导出已保存为 {fileName}。",
+  "@exportSavedFile": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
   "deleteAllTitle": "删除所有本地数据?",
   "deleteAllBody": "这将删除本地事件、实体、任务、反馈、隐私设置、runtime config 缓存和语言偏好。",
   "cancel": "取消",

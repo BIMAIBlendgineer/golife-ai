@@ -29,7 +29,7 @@ Date: `2026-04-25`
 - Sensitive encryption coverage was expanded after this audit to include `life_events`, `calendar_items`, `daily_risks`, and `missions`, but device-level validation still remains open before broader release claims.
 - Mobile secure-storage behavior still needs device validation on Android, iOS, and any desktop targets before broader release claims.
 - The current reflection safety model is still rule-based and should gain adversarial test coverage before public scale.
-- Clipboard export is convenient but not equivalent to protected file export.
+- Clipboard-only export is no longer the primary path after the protected local file export hardening, but device-level retrieval UX still needs validation on final runners.
 - Dynamic browser-level regression coverage is still limited; current automation is strongest on API and storage boundaries.
 
 ## QA and DevSecOps Baseline

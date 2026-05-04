@@ -123,7 +123,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dataControlsBody =>
-      'Export 会导出本地图谱 JSON 快照。Delete all 会清除本地数据并关闭 demo 重置。';
+      'Export 会在本设备中保存受保护的本地图谱 JSON 快照文件。Delete all 会清除本地数据并关闭 demo 重置。';
 
   @override
   String get exportJson => '导出 JSON';
@@ -136,6 +136,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get exportCopied => '已复制本地 JSON 导出内容。';
+
+  @override
+  String exportSavedFile(Object fileName) {
+    return '受保护的本地 JSON 导出已保存为 $fileName。';
+  }
 
   @override
   String get deleteAllTitle => '删除所有本地数据?';
@@ -1310,7 +1315,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get dataControlsBody =>
-      'Export 会导出本地图谱 JSON 快照。Delete all 会清除本地数据并关闭 demo 重置。';
+      'Export 会在本设备中保存受保护的本地图谱 JSON 快照文件。Delete all 会清除本地数据并关闭 demo 重置。';
 
   @override
   String get exportJson => '导出 JSON';
@@ -1323,6 +1328,11 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get exportCopied => '已复制本地 JSON 导出内容。';
+
+  @override
+  String exportSavedFile(Object fileName) {
+    return '受保护的本地 JSON 导出已保存为 $fileName。';
+  }
 
   @override
   String get deleteAllTitle => '删除所有本地数据?';

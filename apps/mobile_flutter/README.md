@@ -9,7 +9,7 @@ Estado auditado: 2026-05-03
 - LifeGraph local
 - capture libre con parseo multi-item y confirmacion
 - privacy dashboard con permisos por dominio
-- export JSON local y delete all local
+- export JSON local a archivo protegido y delete all local
 - boards locales para task, habits, money, pantry, closet, week, journal, calendar y recipes
 - persistencia SQLite con cifrado sensible y fallback resiliente
 - cliente HTTP real para `services/ai_gateway` con fallback local
