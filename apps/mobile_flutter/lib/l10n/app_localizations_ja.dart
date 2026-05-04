@@ -125,7 +125,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dataControlsBody =>
-      'Export でローカルグラフの JSON スナップショットを出力し、Delete all でローカルデータを消去します。';
+      'Export はローカルグラフ全体をこの端末内の保護された JSON ファイルとして保存し、Delete all はローカルデータを消去します。';
 
   @override
   String get exportJson => 'JSON をエクスポート';
@@ -138,6 +138,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get exportCopied => 'ローカル JSON エクスポートをクリップボードにコピーしました。';
+
+  @override
+  String exportSavedFile(Object fileName) {
+    return '保護されたローカル JSON エクスポートを $fileName として保存しました。';
+  }
 
   @override
   String get deleteAllTitle => 'すべてのローカルデータを削除しますか?';

@@ -130,7 +130,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get dataControlsBody =>
-      'Exportar copia o snapshot local completo em JSON. Apagar tudo limpa os dados locais e desativa a semeadura demo.';
+      'Exportar salva o snapshot local completo como JSON protegido neste dispositivo. Apagar tudo limpa os dados locais e desativa a semeadura demo.';
 
   @override
   String get exportJson => 'Exportar JSON';
@@ -144,6 +144,11 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get exportCopied =>
       'A exportacao JSON local foi copiada para a area de transferencia.';
+
+  @override
+  String exportSavedFile(Object fileName) {
+    return 'A exportacao JSON protegida foi salva como $fileName.';
+  }
 
   @override
   String get deleteAllTitle => 'Apagar todos os dados locais?';
@@ -1336,7 +1341,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dataControlsBody =>
-      'Exportar copia o snapshot local completo em JSON. Apagar tudo limpa os dados locais e desativa a semeadura demo.';
+      'Exportar salva o snapshot local completo como JSON protegido neste dispositivo. Apagar tudo limpa os dados locais e desativa a semeadura demo.';
 
   @override
   String get exportJson => 'Exportar JSON';
@@ -1350,6 +1355,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get exportCopied =>
       'A exportacao JSON local foi copiada para a area de transferencia.';
+
+  @override
+  String exportSavedFile(Object fileName) {
+    return 'A exportacao JSON protegida foi salva como $fileName.';
+  }
 
   @override
   String get deleteAllTitle => 'Apagar todos os dados locais?';
