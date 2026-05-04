@@ -21,6 +21,7 @@
 - internal routing config endpoint protected by internal token
 - metadata-only safety telemetry
 - mission feedback redaction in gateway, backend, and admin views
+- privacy-safe feedback summaries for ranking memory instead of raw note retention
 
 ## Data boundaries
 
@@ -36,6 +37,7 @@
 - raw local entity database replication
 - raw reflection content in admin telemetry
 - raw mission feedback note text in admin telemetry
+- raw feedback-memory note content in operational telemetry
 - protected submission asset bytes in operational backend
 
 ## Export/delete posture
@@ -62,4 +64,4 @@ See:
 
 - privacy/export/delete: implemented across mobile plus backend operational workflow
 - privacy operations queue: actionable in admin
-- remaining before broader release: stronger retention guidance, broader encrypted-domain review, evidence-aware mission ranking review, and device-specific validation if new runners are added
+- remaining before broader release: stronger retention guidance, broader encrypted-domain review, and device-specific validation if new runners are added

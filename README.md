@@ -20,7 +20,7 @@ The active runtime surface in this repository is:
 
 The hardening blocks closed so far are summarized in:
 
-- [Release candidate summary](docs/operations/RELEASE_CANDIDATE_SUMMARY.md)
+- [Final release summary](docs/operations/FINAL_RELEASE_SUMMARY.md)
 - [Release risk register](docs/operations/RELEASE_RISK_REGISTER.md)
 - [Documentation inventory](docs/operations/DOCUMENTATION_INVENTORY.md)
 
@@ -31,6 +31,7 @@ Key release-readiness closures already documented:
 - admin/backend export-delete workflow
 - secure mobile export bundle with private submission-asset vault
 - adversarial safety coverage across reflection, capture, proof, and task-rewrite surfaces
+- deterministic mission ranking plus metadata-only feedback memory
 - explicit mobile/admin fallback visibility
 
 ## Product thesis
@@ -133,7 +134,7 @@ The checked CI workflow is [ci.yml](.github/workflows/ci.yml).
 
 Full release validation is tracked in:
 
-- [Premium release readiness checklist](docs/operations/PREMIUM_RELEASE_READINESS_CHECKLIST.md)
+- [Final release readiness checklist](docs/operations/FINAL_RELEASE_READINESS_CHECKLIST.md)
 - [Validation matrix](docs/operations/VALIDATION_MATRIX.md)
 
 ## Privacy and safety
@@ -149,7 +150,16 @@ Important boundary:
 
 - raw personal graph data stays local by default
 - admin receives operational metadata, not raw personal payloads
-- safety blocking is real but still rule-based, not a strong policy engine
+- safety blocking is centralized in a versioned policy engine, but it remains rule-based rather than jailbreak-proof
+
+## Release locale scope
+
+The current premium-production release scope supports:
+
+- `en`
+- `es`
+
+Other locale assets may remain in the repo for future completion, but they are not part of the current release claim.
 
 ## API and operations docs
 

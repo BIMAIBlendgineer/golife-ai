@@ -1,11 +1,11 @@
 # ADR-005 Mission Ranking And Learning
 
-- Status: `planned`
+- Status: `accepted`
 - Date: `2026-05-04`
 
 ## Context
 
-GoLife AI already generates daily missions and already persists a bounded feedback-backed mission memory. That is useful, but it is not yet enough to justify the stronger premium claim that the system prioritizes the right action for today with explicit ranking logic.
+GoLife AI already generated daily missions and already persisted a bounded feedback-backed mission memory. That was useful, but it was not enough to justify the stronger premium claim that the system prioritizes the right action for today with explicit ranking logic.
 
 The product thesis requires:
 
@@ -14,18 +14,20 @@ The product thesis requires:
 - privacy-filtered evidence to influence priority
 - feedback and memory to improve ranking over time
 
-## Current evidence
+## Evidence
 
 - [Persisted mission memory closeout](../../operations/F04_27_PERSISTED_MISSION_MEMORY.md)
+- [Mission ranking evaluation](../../operations/MISSION_RANKING_EVALUATION.md)
 - `services/ai_gateway/app/graphs/golife_graph.py`
 - `services/ai_gateway/app/feedback_store.py`
-- `docs/product/PRODUCT_STATUS.md`
+- `services/ai_gateway/app/learning_memory.py`
+- `apps/mobile_flutter/lib/features/dashboard/dashboard_screen.dart`
 
 ## Decision
 
-Introduce an explicit deterministic mission-ranker layer on top of suggestion generation.
+Introduce and keep an explicit deterministic mission-ranker layer on top of suggestion generation.
 
-Target scoring dimensions:
+The ranker scores each suggestion over:
 
 - impact
 - urgency
@@ -35,19 +37,39 @@ Target scoring dimensions:
 - feedback fit
 - novelty
 
-Target outputs:
+Each suggestion now exposes:
 
 - `final_score`
-- visible ranking reason
-- evidence references
-- per-mission score breakdown suitable for trace and UI display
+- `ranking_reason`
+- `evidence_refs`
+- per-mission score breakdown
+
+The current weighted formula is:
+
+```text
+final_score =
+  impact * 0.25 +
+  urgency * 0.20 +
+  confidence * 0.15 +
+  feedback * 0.15 +
+  novelty * 0.10 +
+  privacy * 0.10 -
+  effort_penalty * 0.05
+```
+
+Learning remains metadata-only:
+
+- completed and useful patterns can reinforce similar missions
+- repeated rejected patterns can reduce novelty or feedback fit
+- `too_hard` and effort metadata can penalize expensive patterns
+- privacy-blocked events stay out of provider payloads and score inputs
 
 ## Alternatives considered
 
 - Keep using only LLM ordering:
   - rejected because ranking would be opaque and harder to test
-- Keep only the current heuristic confidence bumping:
-  - rejected because it is too weak for the premium claim
+- Keep only the earlier heuristic confidence bumping:
+  - rejected because it was too weak for the premium claim
 - Train an external model immediately:
   - rejected because privacy-safe deterministic ranking should come first
 
@@ -56,6 +78,7 @@ Target outputs:
 - the user can see why a mission is first today
 - ranking can be tested deterministically
 - feedback can improve prioritization without pretending the model has hidden user memory
+- mobile UI can show compact “why today” and effort hints
 
 ## Consequences negative
 
@@ -65,29 +88,31 @@ Target outputs:
 
 ## Residual risks
 
-- the current persisted mission memory is still feedback-pattern based, not deep evidence memory
-- overfitting simple weights to a few scenarios is possible without an offline evaluation corpus
+- the current persisted mission memory is still metadata-backed ranking memory, not deep cloud memory over the whole LifeGraph
+- scoring remains heuristic even though it is explicit and tested
+- future evidence-level learning will still need more corpus breadth than the current five-case baseline
 
 ## Affected files
 
-Expected affected surfaces:
+Implemented surfaces:
 
-- `services/ai_gateway/app/graphs/*`
-- `services/ai_gateway/app/use_cases.py`
+- `services/ai_gateway/app/graphs/golife_graph.py`
 - `services/ai_gateway/app/schemas.py`
-- `services/ai_gateway/tests/*`
-- `apps/mobile_flutter/lib/features/dashboard/*`
-- `apps/mobile_flutter/test/*`
+- `services/ai_gateway/app/feedback_store.py`
+- `services/ai_gateway/app/learning_memory.py`
+- `services/ai_gateway/tests/test_daily_mission_graph.py`
+- `services/ai_gateway/tests/test_mission_ranking_evaluation.py`
+- `apps/mobile_flutter/lib/features/dashboard/dashboard_screen.dart`
+- `apps/mobile_flutter/lib/domains/missions/daily_mission.dart`
+- `apps/mobile_flutter/test/golife_app_test.dart`
 
 ## Tests and gates
-
-Required before this ADR becomes `accepted`:
 
 - `cd services/ai_gateway && python -m pytest -q`
 - `cd apps/mobile_flutter && flutter analyze`
 - `cd apps/mobile_flutter && flutter test`
-- offline ranking fixture coverage
+- offline ranking fixture coverage in `tests/fixtures/mission_ranking_cases.json`
 
 ## Reversibility
 
-This ADR is still planned. If the ranker design proves too coupled or too opaque, the repo should keep the current simpler ranking layer until a better deterministic design is ready.
+The scoring weights and metadata summaries are reversible. The product should not revert to opaque LLM-only ordering, but it can retune or simplify the deterministic scorer if later evidence shows a better explicit design.

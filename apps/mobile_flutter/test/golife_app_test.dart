@@ -34,6 +34,7 @@ class _FallbackAiGatewayClient extends AiGatewayClient {
           domainTargets: const ['task'],
           recommendationType: 'mission',
           confidence: 0.72,
+          ranking: null,
           trace: const {
             'clientFallback': true,
             'fallbackReason': 'no_connection',
@@ -109,7 +110,7 @@ void main() {
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
-  testWidgets('renders the dashboard in Portuguese when locale preference is pt-BR',
+  testWidgets('falls back to English when a non-release locale preference is stored',
       (tester) async {
     final localStore = MemoryLocalStore();
     await localStore.saveLocalePreference('pt-BR');
@@ -124,8 +125,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('missoes para hoje'), findsOneWidget);
-    expect(find.text('Riscos de hoje'), findsOneWidget);
+    expect(find.textContaining('missions for today'), findsOneWidget);
+    expect(find.text('Risks today'), findsOneWidget);
   });
 
   testWidgets('shows degraded gateway status when the HTTP client falls back',

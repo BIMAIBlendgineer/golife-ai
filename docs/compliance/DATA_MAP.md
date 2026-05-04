@@ -80,6 +80,7 @@ Allowed by explicit privacy settings only:
 - filtered domain summaries
 - locale
 - mission feedback metadata
+- privacy-safe feedback summaries
 - freeform capture text for classify/parse
 - proof text for proof parse
 - task rewrite text
@@ -120,6 +121,29 @@ Operational metadata only:
 
 This backend is not the canonical storage for the full local mobile graph.
 
+## Gateway-local learning memory
+
+`services/ai_gateway` also persists a bounded feedback-memory layer for ranking:
+
+- suggestion id
+- stable learning key
+- domains
+- recommendation type
+- feedback status
+- rejection reason category
+- effort feedback
+- repeated flag
+- privacy-safe summary
+- recorded timestamp
+
+It does not persist:
+
+- raw journal text
+- raw receipt text
+- raw proof attachment bytes
+- raw mission notes in operational telemetry
+- secrets or provider credentials
+
 ## Admin visibility
 
 The admin panel can see:
@@ -136,6 +160,7 @@ The admin panel should not see:
 - raw reflection text
 - raw mission feedback note text
 - raw submission asset bytes
+- raw feedback-memory note content
 
 ## Export behavior
 
@@ -159,6 +184,8 @@ This export covers the local mobile state, including a submission asset manifest
 - operational summaries and audit rows
 
 This export does not replace the mobile local export.
+
+The gateway-local ranking memory is not treated as a separate user-facing export artifact in this repo. Its contents are already bounded to metadata that also appears through feedback and audit paths.
 
 ## Delete behavior
 
@@ -199,4 +226,4 @@ Deletes or resets:
 
 - device-specific secure storage and retrieval UX still need validation if Android, iOS, or desktop runners are added
 - backend export remains operational metadata only by design
-- safety and privacy enforcement remain policy-light compared with a full policy engine or DLP system
+- the policy engine is versioned and centralized, but still rule-based rather than a full DLP or jailbreak-resistant system

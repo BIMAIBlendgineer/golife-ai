@@ -71,12 +71,20 @@ Admin should not see:
 - use the safety page for metadata review
 - treat blocked inputs as sensitive even when admin only sees category/rule metadata
 - use feature flags or routing/model controls to reduce exposure if needed
+- use `policy_id` and `policy_version` to distinguish current rule decisions from older incidents
 
 ## Security operations
 
 - production readiness is not enterprise SSO readiness
 - token plus operator secret is stronger than token-only scaffold, but still not full enterprise identity
 - OpenRouter and BYOK material should remain masked in admin responses
+- `GET /admin/auth/status` is the canonical runtime check for this boundary
+
+## Language scope
+
+- the admin UI release scope is `en` and `es`
+- older or partial locale assets can remain in the repo for future completion work
+- user records may still report historical locale values outside the current UI release scope
 
 ## Operational limits
 

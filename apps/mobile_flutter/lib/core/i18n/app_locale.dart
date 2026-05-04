@@ -4,17 +4,11 @@ enum AppLocalePreference {
   system,
   en,
   es,
-  ptBr,
-  ja,
-  zhHans,
 }
 
 const supportedAppLocales = <Locale>[
   Locale('en'),
   Locale('es'),
-  Locale('pt', 'BR'),
-  Locale('ja'),
-  Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
 ];
 
 extension AppLocalePreferenceX on AppLocalePreference {
@@ -26,12 +20,6 @@ extension AppLocalePreferenceX on AppLocalePreference {
         return 'en';
       case AppLocalePreference.es:
         return 'es';
-      case AppLocalePreference.ptBr:
-        return 'pt-BR';
-      case AppLocalePreference.ja:
-        return 'ja';
-      case AppLocalePreference.zhHans:
-        return 'zh-Hans';
     }
   }
 
@@ -43,12 +31,6 @@ extension AppLocalePreferenceX on AppLocalePreference {
         return const Locale('en');
       case AppLocalePreference.es:
         return const Locale('es');
-      case AppLocalePreference.ptBr:
-        return const Locale('pt', 'BR');
-      case AppLocalePreference.ja:
-        return const Locale('ja');
-      case AppLocalePreference.zhHans:
-        return const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans');
     }
   }
 }
@@ -69,18 +51,6 @@ String normalizeLocaleTag(String? rawValue) {
   }
   if (normalized == 'es' || normalized.startsWith('es-')) {
     return 'es';
-  }
-  if (normalized == 'pt' || normalized == 'pt-br') {
-    return 'pt-BR';
-  }
-  if (normalized == 'ja' || normalized.startsWith('ja-')) {
-    return 'ja';
-  }
-  if (normalized == 'zh' ||
-      normalized == 'zh-cn' ||
-      normalized == 'zh-hans' ||
-      normalized.startsWith('zh-')) {
-    return 'zh-Hans';
   }
   return 'en';
 }

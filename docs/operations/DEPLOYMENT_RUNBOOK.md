@@ -123,6 +123,8 @@ Expected UI behavior:
 - backend state visible as `live`, `fallback`, or `offline`
 - support export/delete actions visible
 - no fake live state when backend is unreachable
+- enterprise auth must remain explicitly out of scope unless a real OIDC/SSO implementation is deployed
+- admin UI locale scope for this release is `en` and `es`
 
 ## Mobile deployment
 
@@ -134,6 +136,7 @@ Required runtime defines or config source:
 Known limitation:
 
 - repo CI validates Flutter on `ubuntu-latest`, but device-specific Android, iOS, and desktop runner validation is still an open release risk
+- mobile locale scope for this release is `en` and `es`
 
 ## Rollback
 

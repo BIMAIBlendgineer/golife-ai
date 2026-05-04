@@ -1,0 +1,387 @@
+[
+  {
+    "case_id": "reject_spend_pattern_does_not_repeat_same_finance_loop",
+    "description": "A previously rejected finance mission should not outrank a pantry rescue with similar evidence.",
+    "request": {
+      "user_id": "user-1",
+      "allowed_domains": ["finance", "pantry"],
+      "privacy_settings": {
+        "ai_enabled": true,
+        "allowed_domains": ["finance", "pantry"]
+      },
+      "life_events": [
+        {
+          "event_id": "evt-finance-1",
+          "user_id": "user-1",
+          "domain": "finance",
+          "event_type": "expense_logged",
+          "timestamp": "2026-05-04T10:00:00Z",
+          "payload": {"value": 18.2},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        },
+        {
+          "event_id": "evt-pantry-1",
+          "user_id": "user-1",
+          "domain": "pantry",
+          "event_type": "ingredient_flagged",
+          "timestamp": "2026-05-04T10:05:00Z",
+          "payload": {"value": 1},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        }
+      ]
+    },
+    "suggestions": [
+      {
+        "suggestion_id": "finance-repeat",
+        "title": "Pause another spend",
+        "domain_targets": ["finance"],
+        "recommendation_type": "mission",
+        "body": "Pause another small spend today.",
+        "evidence": [{"source_domain": "finance", "claim": "Finance evidence exists.", "confidence": 0.8}],
+        "confidence": 0.7,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      },
+      {
+        "suggestion_id": "pantry-rescue",
+        "title": "Use one pantry item first",
+        "domain_targets": ["finance", "pantry"],
+        "recommendation_type": "mission",
+        "body": "Use one pantry item before buying more food.",
+        "evidence": [
+          {"source_domain": "finance", "claim": "Food spend is active.", "confidence": 0.8},
+          {"source_domain": "pantry", "claim": "Pantry stock exists.", "confidence": 0.8}
+        ],
+        "confidence": 0.76,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      }
+    ],
+    "feedback": [
+      {
+        "user_id": "user-1",
+        "suggestion_id": "older-finance-repeat",
+        "status": "rejected",
+        "domain_targets": ["finance"],
+        "recommendation_type": "mission",
+        "rejection_reason_category": "not_relevant",
+        "effort_feedback": "balanced",
+        "repeated_flag": true,
+        "trace": {
+          "learning_keys_by_suggestion_id": {
+            "older-finance-repeat": "mission|finance"
+          }
+        }
+      }
+    ],
+    "expected": {
+      "first_suggestion_id": "pantry-rescue",
+      "max_feedback_score": {
+        "finance-repeat": 0.49
+      }
+    }
+  },
+  {
+    "case_id": "completed_pantry_plus_money_promotes_cross_domain_mission",
+    "description": "Completed pantry+finance missions should reinforce the same cross-domain pattern.",
+    "request": {
+      "user_id": "user-1",
+      "allowed_domains": ["finance", "pantry"],
+      "privacy_settings": {
+        "ai_enabled": true,
+        "allowed_domains": ["finance", "pantry"]
+      },
+      "life_events": [
+        {
+          "event_id": "evt-finance-1",
+          "user_id": "user-1",
+          "domain": "finance",
+          "event_type": "expense_logged",
+          "timestamp": "2026-05-04T10:00:00Z",
+          "payload": {"value": 12.5},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        },
+        {
+          "event_id": "evt-pantry-1",
+          "user_id": "user-1",
+          "domain": "pantry",
+          "event_type": "ingredient_flagged",
+          "timestamp": "2026-05-04T10:05:00Z",
+          "payload": {"value": 1},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        }
+      ]
+    },
+    "suggestions": [
+      {
+        "suggestion_id": "finance-pantry-mission",
+        "title": "Cook from the pantry before spending",
+        "domain_targets": ["finance", "pantry"],
+        "recommendation_type": "mission",
+        "body": "Build dinner from the pantry before opening another food decision.",
+        "evidence": [
+          {"source_domain": "finance", "claim": "Food spending is active.", "confidence": 0.82},
+          {"source_domain": "pantry", "claim": "Usable pantry items exist.", "confidence": 0.82}
+        ],
+        "confidence": 0.74,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      },
+      {
+        "suggestion_id": "finance-only-reflection",
+        "title": "Review the latest spend",
+        "domain_targets": ["finance"],
+        "recommendation_type": "reflection",
+        "body": "Review the latest spend before deciding anything else.",
+        "evidence": [{"source_domain": "finance", "claim": "Finance evidence exists.", "confidence": 0.82}],
+        "confidence": 0.76,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      }
+    ],
+    "feedback": [
+      {
+        "user_id": "user-1",
+        "suggestion_id": "older-finance-pantry",
+        "status": "completed",
+        "domain_targets": ["finance", "pantry"],
+        "recommendation_type": "mission",
+        "trace": {
+          "learning_keys_by_suggestion_id": {
+            "older-finance-pantry": "mission|finance+pantry"
+          }
+        }
+      }
+    ],
+    "expected": {
+      "first_suggestion_id": "finance-pantry-mission",
+      "min_feedback_score": {
+        "finance-pantry-mission": 0.65
+      }
+    }
+  },
+  {
+    "case_id": "too_hard_feedback_reduces_effort_preference",
+    "description": "A pattern marked as too hard should lose against a lower-effort task mission.",
+    "request": {
+      "user_id": "user-1",
+      "allowed_domains": ["task", "week"],
+      "privacy_settings": {
+        "ai_enabled": true,
+        "allowed_domains": ["task", "week"]
+      },
+      "life_events": [
+        {
+          "event_id": "evt-task-1",
+          "user_id": "user-1",
+          "domain": "task",
+          "event_type": "task_captured",
+          "timestamp": "2026-05-04T10:00:00Z",
+          "payload": {"value": 1},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        },
+        {
+          "event_id": "evt-week-1",
+          "user_id": "user-1",
+          "domain": "week",
+          "event_type": "week_plan_checked",
+          "timestamp": "2026-05-04T10:05:00Z",
+          "payload": {"value": 1},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        }
+      ]
+    },
+    "suggestions": [
+      {
+        "suggestion_id": "too-hard-task",
+        "title": "Reshape the whole task system",
+        "domain_targets": ["task", "week"],
+        "recommendation_type": "mission",
+        "body": "Rework the whole task system today.",
+        "evidence": [
+          {"source_domain": "task", "claim": "Task evidence exists.", "confidence": 0.8},
+          {"source_domain": "week", "claim": "Week planning pressure exists.", "confidence": 0.76}
+        ],
+        "confidence": 0.74,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      },
+      {
+        "suggestion_id": "small-task-block",
+        "title": "Finish one visible block",
+        "domain_targets": ["task"],
+        "recommendation_type": "mission",
+        "body": "Finish one visible task block.",
+        "evidence": [{"source_domain": "task", "claim": "Task evidence exists.", "confidence": 0.8}],
+        "confidence": 0.72,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      }
+    ],
+    "feedback": [
+      {
+        "user_id": "user-1",
+        "suggestion_id": "older-too-hard-task",
+        "status": "rejected",
+        "domain_targets": ["task", "week"],
+        "recommendation_type": "mission",
+        "rejection_reason_category": "too_hard",
+        "effort_feedback": "high",
+        "trace": {
+          "learning_keys_by_suggestion_id": {
+            "older-too-hard-task": "mission|task+week"
+          }
+        }
+      }
+    ],
+    "expected": {
+      "first_suggestion_id": "small-task-block"
+    }
+  },
+  {
+    "case_id": "privacy_blocked_event_stays_out_of_payload",
+    "description": "Events outside AI consent should be filtered before ranking and provider calls.",
+    "request": {
+      "user_id": "user-1",
+      "allowed_domains": ["task"],
+      "privacy_settings": {
+        "ai_enabled": true,
+        "allowed_domains": ["task"],
+        "allow_cross_domain_patterns": false
+      },
+      "life_events": [
+        {
+          "event_id": "evt-task-1",
+          "user_id": "user-1",
+          "domain": "task",
+          "event_type": "task_captured",
+          "timestamp": "2026-05-04T10:00:00Z",
+          "payload": {"value": 1},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        },
+        {
+          "event_id": "evt-habit-1",
+          "user_id": "user-1",
+          "domain": "habit",
+          "event_type": "habit_logged",
+          "timestamp": "2026-05-04T10:02:00Z",
+          "payload": {"value": 1},
+          "source": "manual",
+          "privacy_level": "local_only"
+        }
+      ]
+    },
+    "suggestions": [
+      {
+        "suggestion_id": "task-safe",
+        "title": "Close one safe task block",
+        "domain_targets": ["task"],
+        "recommendation_type": "mission",
+        "body": "Finish one task block with AI-allowed evidence only.",
+        "evidence": [{"source_domain": "task", "claim": "Only AI-allowed task evidence was used.", "confidence": 0.82}],
+        "confidence": 0.78,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      }
+    ],
+    "feedback": [],
+    "expected": {
+      "first_suggestion_id": "task-safe",
+      "filtered_events_count": 1,
+      "provider_event_domains": ["task"]
+    }
+  },
+  {
+    "case_id": "repeated_rejection_lowers_novelty",
+    "description": "Repeated rejected patterns should keep a low novelty score.",
+    "request": {
+      "user_id": "user-1",
+      "allowed_domains": ["task"],
+      "privacy_settings": {
+        "ai_enabled": true,
+        "allowed_domains": ["task"]
+      },
+      "life_events": [
+        {
+          "event_id": "evt-task-1",
+          "user_id": "user-1",
+          "domain": "task",
+          "event_type": "task_captured",
+          "timestamp": "2026-05-04T10:00:00Z",
+          "payload": {"value": 1},
+          "source": "manual",
+          "privacy_level": "ai_allowed"
+        }
+      ]
+    },
+    "suggestions": [
+      {
+        "suggestion_id": "repeat-task-pattern",
+        "title": "Push the same task pattern",
+        "domain_targets": ["task"],
+        "recommendation_type": "mission",
+        "body": "Repeat the same push again.",
+        "evidence": [{"source_domain": "task", "claim": "Task evidence exists.", "confidence": 0.8}],
+        "confidence": 0.78,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      },
+      {
+        "suggestion_id": "reflection-reset",
+        "title": "Review the pattern before repeating it",
+        "domain_targets": ["task"],
+        "recommendation_type": "reflection",
+        "body": "Review the pattern before pushing again.",
+        "evidence": [{"source_domain": "task", "claim": "Task evidence exists.", "confidence": 0.8}],
+        "confidence": 0.72,
+        "uncertainty": "medium",
+        "requires_confirmation": true
+      }
+    ],
+    "feedback": [
+      {
+        "user_id": "user-1",
+        "suggestion_id": "older-repeat-task-1",
+        "status": "rejected",
+        "domain_targets": ["task"],
+        "recommendation_type": "mission",
+        "rejection_reason_category": "too_hard",
+        "effort_feedback": "high",
+        "repeated_flag": true,
+        "trace": {
+          "learning_keys_by_suggestion_id": {
+            "older-repeat-task-1": "mission|task"
+          }
+        }
+      },
+      {
+        "user_id": "user-1",
+        "suggestion_id": "older-repeat-task-2",
+        "status": "rejected",
+        "domain_targets": ["task"],
+        "recommendation_type": "mission",
+        "rejection_reason_category": "too_hard",
+        "effort_feedback": "high",
+        "repeated_flag": true,
+        "trace": {
+          "learning_keys_by_suggestion_id": {
+            "older-repeat-task-2": "mission|task"
+          }
+        }
+      }
+    ],
+    "expected": {
+      "first_suggestion_id": "reflection-reset",
+      "max_novelty_score": {
+        "repeat-task-pattern": 0.3
+      }
+    }
+  }
+]

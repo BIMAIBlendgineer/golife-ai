@@ -7,7 +7,13 @@ from langgraph.graph import END, StateGraph
 from app.guardrails import filter_ai_events, sanitize_suggestions
 from app.learning_memory import build_learning_key
 from app.providers.base import LLMProvider
-from app.schemas import AISuggestion, SuggestionEvidence, SuggestionRequest, SuggestionResponse
+from app.schemas import (
+    AISuggestion,
+    MissionRanking,
+    SuggestionEvidence,
+    SuggestionRequest,
+    SuggestionResponse,
+)
 from app.settings import Settings
 
 SYSTEM_PROMPT = """
@@ -231,9 +237,9 @@ def _feedback_delta(
         useful = int(domain_stats.get("useful", 0))
         completed = int(domain_stats.get("completed", 0))
         rejected = int(domain_stats.get("rejected", 0))
-        delta += useful * 0.02
-        delta += completed * 0.03
-        delta -= rejected * 0.04
+        delta += useful * 0.01
+        delta += completed * 0.01
+        delta -= rejected * 0.02
         reasons.append(
             f"domain {domain} useful={useful} completed={completed} rejected={rejected}"
         )
@@ -263,6 +269,239 @@ def _suggestion_learning_key(suggestion: AISuggestion) -> str:
         suggestion.domain_targets,
         suggestion.recommendation_type,
     )
+
+
+def _candidate_bias_map(state: MissionGraphState) -> dict[str, dict[str, Any]]:
+    feedback_learning = state.get("trace", {}).get("feedback_learning", {})
+    if not isinstance(feedback_learning, dict):
+        return {}
+    raw_items = feedback_learning.get("candidate_biases", [])
+    if not isinstance(raw_items, list):
+        return {}
+    items: dict[str, dict[str, Any]] = {}
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        suggestion_id = raw.get("suggestion_id")
+        if isinstance(suggestion_id, str) and suggestion_id:
+            items[suggestion_id] = raw
+    return items
+
+
+def _risk_severity_weight(severity: object) -> float:
+    if severity == "high":
+        return 0.28
+    if severity == "medium":
+        return 0.18
+    if severity == "low":
+        return 0.08
+    return 0.0
+
+
+def _bounded(value: float) -> float:
+    return round(max(0.0, min(1.0, value)), 4)
+
+
+def _effort_score_for_suggestion(suggestion: AISuggestion) -> float:
+    recommendation_type = suggestion.recommendation_type
+    domain_span = len(suggestion.domain_targets)
+    if recommendation_type in {"reflection", "warning"}:
+        base_score = 0.86
+    elif recommendation_type == "plan_adjustment":
+        base_score = 0.78
+    elif recommendation_type == "task_rewrite":
+        base_score = 0.72
+    else:
+        base_score = 0.74
+
+    if domain_span >= 3:
+        base_score -= 0.2
+    elif domain_span == 2:
+        base_score -= 0.1
+
+    if len(suggestion.evidence) >= 3:
+        base_score -= 0.03
+    return _bounded(base_score)
+
+
+def _novelty_score_for_suggestion(
+    suggestion: AISuggestion,
+    feedback_summary: dict[str, Any],
+) -> tuple[float, str]:
+    pattern_key = _suggestion_learning_key(suggestion)
+    pattern_stats = feedback_summary.get("by_pattern", {}).get(pattern_key, {})
+    recent_feedback = feedback_summary.get("memory_profile", {}).get(
+        "recent_feedback",
+        [],
+    )
+    recent_same_pattern = [
+        item
+        for item in recent_feedback
+        if isinstance(item, dict) and item.get("pattern_key") == pattern_key
+    ]
+
+    if not pattern_stats:
+        return 0.82, "new pattern in current mission memory"
+
+    negative_count = int(pattern_stats.get("negative_count", 0) or 0)
+    positive_count = int(pattern_stats.get("positive_count", 0) or 0)
+    repeated_count = int(pattern_stats.get("repeated_count", 0) or 0)
+    if recent_same_pattern and any(
+        item.get("status") == "rejected" for item in recent_same_pattern if isinstance(item, dict)
+    ):
+        return 0.16, "recent rejection reduced novelty"
+    if negative_count > positive_count:
+        return 0.24, "pattern was rejected more often than reinforced"
+    if positive_count > 0 and negative_count == 0 and repeated_count == 0:
+        return 0.72, "pattern was reinforced without recent rejection"
+    if positive_count > 0 and repeated_count == 0:
+        return 0.62, "pattern is familiar and mostly reinforced"
+    if repeated_count > 0:
+        return 0.34, "pattern repeats often in recent feedback"
+    return 0.58, "pattern is known with mixed recent history"
+
+
+def _privacy_score_for_suggestion(
+    state: MissionGraphState,
+    suggestion: AISuggestion,
+) -> tuple[float, str]:
+    request = state["request"]
+    allowed_domains = set(request.privacy_settings.allowed_domains)
+    evidence_domains = {item.source_domain for item in suggestion.evidence}
+    cross_domain = len(set(suggestion.domain_targets)) > 1
+    filtered_events = state.get("filtered_events", [])
+    filtered_domains = {
+        str(item.get("domain"))
+        for item in filtered_events
+        if isinstance(item, dict) and item.get("domain")
+    }
+
+    if cross_domain and not request.privacy_settings.allow_cross_domain_patterns:
+        return 0.18, "cross-domain mission was privacy-constrained"
+    if evidence_domains and not evidence_domains.issubset(allowed_domains):
+        return 0.0, "evidence domains fell outside AI-allowed scope"
+    if cross_domain and filtered_domains & set(suggestion.domain_targets):
+        return 0.58, "privacy filters reduced cross-domain evidence"
+    if cross_domain:
+        return 0.76, "cross-domain mission stayed inside consented scope"
+    return 0.92, "single-domain mission stayed inside consented scope"
+
+
+def _build_ranking_reason(
+    *,
+    matched_risks: list[dict[str, Any]],
+    privacy_reason: str,
+    novelty_reason: str,
+    feedback_reasons: list[str],
+    final_score: float,
+) -> str:
+    reasons: list[str] = []
+    if matched_risks:
+        risk_titles = [str(risk.get("title", "")).strip() for risk in matched_risks]
+        first_risk = next((title for title in risk_titles if title), "")
+        if first_risk:
+            reasons.append(first_risk)
+    if feedback_reasons:
+        reasons.append(feedback_reasons[0])
+    reasons.append(privacy_reason)
+    reasons.append(novelty_reason)
+    reasons.append(f"final score {round(final_score, 2)}")
+    return "; ".join(reasons[:4])
+
+
+def _score_suggestion(
+    state: MissionGraphState,
+    suggestion: AISuggestion,
+) -> dict[str, Any]:
+    risks = state.get("risks", [])
+    matched_risks = [
+        risk
+        for risk in risks
+        if set(risk.get("domains", [])) & set(suggestion.domain_targets)
+    ]
+    bias_map = _candidate_bias_map(state)
+    bias = bias_map.get(suggestion.suggestion_id, {})
+    feedback_delta = float(bias.get("delta", 0.0) or 0.0)
+    feedback_reasons = [
+        str(reason)
+        for reason in bias.get("reasons", [])
+        if isinstance(reason, str) and reason.strip()
+    ]
+
+    evidence_scores = [item.confidence for item in suggestion.evidence] or [0.0]
+    evidence_strength = mean(evidence_scores)
+    severity_score = sum(_risk_severity_weight(risk.get("severity")) for risk in matched_risks)
+    impact_score = _bounded(
+        0.42
+        + (evidence_strength * 0.22)
+        + (min(len(suggestion.domain_targets), 3) - 1) * 0.08
+        + min(len(matched_risks), 3) * 0.08
+    )
+    urgency_score = _bounded(
+        0.32
+        + severity_score
+        + (0.12 if state.get("day_state") == "overloaded" else 0.0)
+        + (0.08 if state.get("day_state") == "recovery" else 0.0)
+    )
+    effort_score = _effort_score_for_suggestion(suggestion)
+    confidence_score = _bounded(suggestion.confidence)
+    privacy_score, privacy_reason = _privacy_score_for_suggestion(state, suggestion)
+    feedback_score = _bounded(0.5 + (feedback_delta * 1.25))
+    novelty_score, novelty_reason = _novelty_score_for_suggestion(
+        suggestion,
+        state.get("feedback_summary", {}),
+    )
+    effort_penalty = 1.0 - effort_score
+    final_score = _bounded(
+        (impact_score * 0.25)
+        + (urgency_score * 0.20)
+        + (confidence_score * 0.15)
+        + (feedback_score * 0.15)
+        + (novelty_score * 0.10)
+        + (privacy_score * 0.10)
+        - (effort_penalty * 0.05)
+    )
+    evidence_refs = [
+        f"{item.source_domain}:{item.claim}"
+        for item in suggestion.evidence[:3]
+    ]
+    ranking_reason = _build_ranking_reason(
+        matched_risks=matched_risks,
+        privacy_reason=privacy_reason,
+        novelty_reason=novelty_reason,
+        feedback_reasons=feedback_reasons,
+        final_score=final_score,
+    )
+
+    ranking = MissionRanking(
+        impact_score=impact_score,
+        urgency_score=urgency_score,
+        effort_score=effort_score,
+        confidence_score=confidence_score,
+        privacy_score=privacy_score,
+        feedback_score=feedback_score,
+        novelty_score=novelty_score,
+        final_score=final_score,
+        ranking_reason=ranking_reason,
+        evidence_refs=evidence_refs,
+    )
+    return {
+        "suggestion": suggestion.model_copy(update={"ranking": ranking}),
+        "breakdown": {
+            "suggestion_id": suggestion.suggestion_id,
+            "impact_score": impact_score,
+            "urgency_score": urgency_score,
+            "effort_score": effort_score,
+            "confidence_score": confidence_score,
+            "privacy_score": privacy_score,
+            "feedback_score": feedback_score,
+            "novelty_score": novelty_score,
+            "final_score": final_score,
+            "ranking_reason": ranking_reason,
+            "matched_risks": [risk.get("risk_id") for risk in matched_risks],
+            "evidence_refs": evidence_refs,
+        },
+    }
 
 
 def _coerce_domain(value: object, fallback: str = "system") -> str:
@@ -650,15 +889,11 @@ async def generate_candidates(state: MissionGraphState) -> MissionGraphState:
 
 def apply_feedback_learning(state: MissionGraphState) -> MissionGraphState:
     feedback_summary = state.get("feedback_summary", {})
-    adjusted_candidates: list[AISuggestion] = []
     candidate_biases: list[dict[str, Any]] = []
 
     for suggestion in state.get("candidates", []):
         delta, reasons = _feedback_delta(suggestion, feedback_summary)
         adjusted_confidence = min(max(suggestion.confidence + delta, 0.0), 1.0)
-        adjusted_candidates.append(
-            suggestion.model_copy(update={"confidence": adjusted_confidence})
-        )
         candidate_biases.append(
             {
                 "suggestion_id": suggestion.suggestion_id,
@@ -673,13 +908,13 @@ def apply_feedback_learning(state: MissionGraphState) -> MissionGraphState:
         state.get("trace", {}),
         node_name="feedback_learning",
         payload={
-            "adjusted_count": len(adjusted_candidates),
+            "adjusted_count": len(state.get("candidates", [])),
             "totals": feedback_summary.get("totals", {}),
             "mission_memory": feedback_summary.get("memory_profile", {}),
             "candidate_biases": candidate_biases,
         },
     )
-    return {"candidates": adjusted_candidates, "trace": trace}
+    return {"trace": trace}
 
 
 def guardrail_review(state: MissionGraphState) -> MissionGraphState:
@@ -699,54 +934,19 @@ def guardrail_review(state: MissionGraphState) -> MissionGraphState:
 
 
 def rank(state: MissionGraphState) -> MissionGraphState:
-    risks = state.get("risks", [])
-
-    def score_breakdown(suggestion: AISuggestion) -> dict[str, Any]:
-        evidence_scores = [item.confidence for item in suggestion.evidence] or [0.0]
-        evidence_strength = mean(evidence_scores)
-        impact = min(
-            1.0,
-            suggestion.confidence + max(0, len(suggestion.domain_targets) - 1) * 0.05,
-        )
-        matched_risks = [
-            risk
-            for risk in risks
-            if set(risk.get("domains", [])) & set(suggestion.domain_targets)
-        ]
-        urgency = min(1.0, 0.45 + (len(matched_risks) * 0.18))
-        effort_fit = 0.72 if suggestion.recommendation_type in {"reflection", "warning"} else 0.64
-        final_score = (
-            (impact * 0.35)
-            + (urgency * 0.30)
-            + (effort_fit * 0.20)
-            + (evidence_strength * 0.15)
-        )
-        return {
-            "suggestion_id": suggestion.suggestion_id,
-            "impact": round(impact, 4),
-            "urgency": round(urgency, 4),
-            "effort_fit": round(effort_fit, 4),
-            "evidence_strength": round(evidence_strength, 4),
-            "matched_risks": [risk.get("risk_id") for risk in matched_risks],
-            "final_score": round(final_score, 4),
-        }
-
     ranked_with_scores = sorted(
-        [
-            (suggestion, score_breakdown(suggestion))
-            for suggestion in state.get("reviewed_candidates", [])
-        ],
-        key=lambda item: item[1]["final_score"],
+        [_score_suggestion(state, suggestion) for suggestion in state.get("reviewed_candidates", [])],
+        key=lambda item: item["breakdown"]["final_score"],
         reverse=True,
     )[: state["request"].max_suggestions]
 
-    ranked_candidates = [item[0] for item in ranked_with_scores]
+    ranked_candidates = [item["suggestion"] for item in ranked_with_scores]
     trace = _append_trace(
         state.get("trace", {}),
         node_name="rank",
         payload={
             "ranked_count": len(ranked_candidates),
-            "score_breakdown": [item[1] for item in ranked_with_scores],
+            "score_breakdown": [item["breakdown"] for item in ranked_with_scores],
         },
     )
     return {"ranked_candidates": ranked_candidates, "trace": trace}
@@ -781,6 +981,7 @@ def build_response(state: MissionGraphState) -> MissionGraphState:
                 {},
             ),
             "learning_keys_by_suggestion_id": learning_keys_by_suggestion_id,
+            "ranking_model": "deterministic_v2",
         }
     )
     return {

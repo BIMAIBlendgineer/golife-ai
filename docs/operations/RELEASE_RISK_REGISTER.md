@@ -1,17 +1,17 @@
 # Release Risk Register
 
 Date: `2026-05-04`
-Release candidate baseline: `main@3848c162822038ae9a80171e0919e7e980695bc0`
+Release baseline before this integration branch: `main@81787ba`
 
 ## Baseline decision
 
-This repo is in a `conditional go` state for a premium release candidate.
+This repo is in a `go` state for premium production within the current scoped release.
 
 That means:
 
-- the core hardening program for anti-mock runtime, export/delete, secure export bundle, and adversarial input safety is closed by evidence
-- release still depends on explicit acceptance of the residual risks below
-- no unresolved secret exposure or failed CI gate is currently accepted
+- the hardening program for anti-mock runtime, export/delete, secure export bundle, ranking, learning, locale scope, and adversarial safety is closed by evidence
+- the remaining limits below are accepted scope boundaries or deployment-time operational requirements
+- no unresolved secret exposure or failed local validation gate is currently accepted
 
 ## Closed or mitigated risks
 
@@ -69,20 +69,21 @@ That means:
 
 ### RR-011 - Adversarial safety coverage was limited to reflection only
 
-- State: `mitigated`
+- State: `closed`
 - Impact: unsafe obfuscated crisis or clinical text could still flow through other freeform AI surfaces
 - Evidence:
   - [F04 15B reflection adversarial coverage](F04_15B_REFLECTION_ADVERSARIAL_COVERAGE.md)
   - [F04 adversarial input surfaces](F04_26_ADVERSARIAL_INPUT_SURFACES.md)
-  - merged PR `#11`
+  - `services/ai_gateway/app/policy_engine.py`
 - Mitigation:
   - reflection-style normalization now also protects classify, parse, proof-parse, and task-rewrite
+  - mission output is checked before leaving the gateway
   - mobile local capture parser drops obviously unsafe text instead of turning it into normal drafts
 - Gate:
   - `services/ai_gateway`: `python -m pytest -q`
   - `apps/mobile_flutter`: `flutter test`
-- Release decision: the old narrow-scope risk is no longer a blocker
-- Next action: track the remaining broader rule-based safety limit separately as RR-007
+- Release decision: the old narrow-scope risk is closed
+- Next action: keep extending the adversarial corpus as scope expands
 
 ### RR-012 - Mobile fallback looked like premium AI
 
@@ -131,6 +132,24 @@ That means:
 - Release decision: not a blocker anymore unless telemetry/admin contracts regress
 - Next action: require a separate ADR before exposing deeper HomeMemory detail in admin
 
+### RR-016 - Mission ranking was not strong enough for the premium claim
+
+- State: `closed`
+- Impact: the product could generate useful missions but not clearly justify why one mission was first today
+- Evidence:
+  - [Mission ranking evaluation](MISSION_RANKING_EVALUATION.md)
+  - [ADR-005 mission ranking and learning](../architecture/adr/ADR-005-mission-ranking-and-learning.md)
+  - `services/ai_gateway/tests/test_mission_ranking_evaluation.py`
+- Mitigation:
+  - deterministic scoring dimensions now exist
+  - ranking reason and evidence refs are visible in trace and UI
+  - repeated rejection, effort, and privacy constraints now affect ordering
+- Gate:
+  - `services/ai_gateway`: `python -m pytest -q`
+  - `apps/mobile_flutter`: `flutter analyze`, `flutter test`
+- Release decision: not a blocker anymore for the current premium-production scope
+- Next action: expand corpus breadth if evidence-level learning becomes deeper
+
 ## Accepted or open risks
 
 ### RR-001 - Transitive Next/PostCSS advisory
@@ -146,23 +165,25 @@ That means:
   - keep `npm audit` in CI
 - Gate:
   - GitHub Actions `admin-security`
-- Release decision: accepted temporarily, not a release blocker for the current RC
+- Release decision: accepted temporarily, not a release blocker for the current scope
 - Next action: update when a safe upstream Next/PostCSS path exists
 
-### RR-002 - Flutter localization gaps
+### RR-002 - Multilingual parity beyond `en` and `es`
 
 - State: `accepted`
-- Impact: medium release-quality risk for locale parity claims
+- Impact: medium release-quality risk only if broader locale parity is claimed
 - Evidence:
+  - [I18N final audit](I18N_FINAL_AUDIT.md)
   - `docs/operations/I18N_RELEASE_GAP_REPORT.md`
   - `flutter gen-l10n`
 - Mitigation:
-  - keep English fallback for missing keys
-  - prioritize `es` and `pt-BR` parity first
+  - release runtime now supports only `en` and `es`
+  - older locale assets remain out of release scope
 - Gate:
   - `apps/mobile_flutter`: `flutter analyze`, `flutter test`
-- Release decision: accepted for RC, not acceptable for full multilingual parity claims
-- Next action: complete the translation sweep before broader launch claims
+  - `apps/admin_next`: `npm run build`
+- Release decision: accepted for the current scoped release, not acceptable for broader multilingual parity claims
+- Next action: complete translations before expanding supported locales again
 
 ### RR-003 - Python 3.14+ dependency warnings
 
@@ -223,23 +244,24 @@ That means:
   - do not overclaim device-specific validation
 - Gate:
   - GitHub Actions `flutter`
-- Release decision: open but accepted for this repo-level RC
+- Release decision: open but accepted for this repo-level premium release scope
 - Next action: add platform runners and device retrieval validation when those targets become part of the repo
 
-### RR-007 - Safety remains rule-based, not a strong policy engine
+### RR-007 - Policy engine remains rule-based, not jailbreak-proof
 
-- State: `open`
-- Impact: adversarial behavior is reduced but not fully covered
+- State: `accepted`
+- Impact: adversarial behavior is reduced and centralized, but not fully eliminated
 - Evidence:
   - [Safety review](../compliance/SAFETY_REVIEW.md)
-  - [F04 adversarial input surfaces](F04_26_ADVERSARIAL_INPUT_SURFACES.md)
+  - [Safety policy](../security/SAFETY_POLICY.md)
+  - `services/ai_gateway/app/policy_engine.py`
 - Mitigation:
   - structured refusals and metadata-only safety telemetry
-  - broader lexical normalization across implemented surfaces
+  - centralized policy IDs and versioning across current guarded routes
 - Gate:
   - `services/ai_gateway`: `python -m pytest -q`
-- Release decision: open but acceptable for RC if the limit is stated explicitly
-- Next action: stronger policy engine, safer refusal catalog, and offline evaluation corpus
+- Release decision: accepted for the current scope as long as the limit is stated explicitly
+- Next action: broader multilingual corpus, stronger output review, and offline evaluation growth
 
 ### RR-015 - Operational telemetry requires a live backend if enabled
 
@@ -257,23 +279,6 @@ That means:
 - Release decision: accepted if the deploy wiring is explicit
 - Next action: validate the full live operational backend path in the target environment
 
-### RR-016 - Mission ranking is not yet strong enough for the full premium claim
-
-- State: `open`
-- Impact: the product can generate useful missions, but it cannot yet fully justify a stronger premium claim around explicit daily prioritization quality
-- Evidence:
-  - [Final release summary](FINAL_RELEASE_SUMMARY.md)
-  - [Persisted mission memory closeout](F04_27_PERSISTED_MISSION_MEMORY.md)
-  - [ADR-005 mission ranking and learning](../architecture/adr/ADR-005-mission-ranking-and-learning.md)
-- Mitigation:
-  - feedback-backed memory already exists
-  - next phase adds deterministic scoring, ranking reasons, and evaluation fixtures
-- Gate:
-  - `services/ai_gateway`: `python -m pytest -q`
-  - ranking corpus evaluation once implemented
-- Release decision: blocker for “premium production complete”, not a blocker for the current RC baseline
-- Next action: implement explicit mission ranking and evidence-aware score breakdown
-
 ### RR-017 - Enterprise auth is not implemented as real OIDC/SSO
 
 - State: `accepted`
@@ -288,7 +293,7 @@ That means:
 - Gate:
   - backend auth status
   - docs review
-- Release decision: accepted only if enterprise claims remain disabled
+- Release decision: accepted only because enterprise claims remain disabled in this release scope
 - Next action: implement real OIDC/SSO before any enterprise-ready claim
 
 ## Release gate

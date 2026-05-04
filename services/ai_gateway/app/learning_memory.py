@@ -10,6 +10,18 @@ STATUS_WEIGHTS: dict[str, float] = {
     "rejected": -0.9,
 }
 
+REJECTION_REASON_CATEGORIES = {
+    "too_hard",
+    "not_relevant",
+    "not_now",
+    "privacy",
+    "too_generic",
+    "already_done",
+    "unknown",
+}
+
+EFFORT_FEEDBACK_VALUES = {"low", "balanced", "high", "unknown"}
+
 ALLOWED_RECOMMENDATION_TYPES = {
     "mission",
     "plan_adjustment",
@@ -34,6 +46,20 @@ def normalize_recommendation_type(raw_value: object) -> str:
     if text in ALLOWED_RECOMMENDATION_TYPES:
         return text
     return "mission"
+
+
+def normalize_rejection_reason_category(raw_value: object) -> str:
+    text = str(raw_value or "").strip().lower()
+    if text in REJECTION_REASON_CATEGORIES:
+        return text
+    return "unknown"
+
+
+def normalize_effort_feedback(raw_value: object) -> str:
+    text = str(raw_value or "").strip().lower()
+    if text in EFFORT_FEEDBACK_VALUES:
+        return text
+    return "unknown"
 
 
 def build_learning_key(
@@ -91,6 +117,77 @@ def feedback_status_weight(status: object) -> float:
     return STATUS_WEIGHTS.get(str(status or "").strip().lower(), 0.0)
 
 
+def derive_rejection_reason_category(
+    *,
+    status: object,
+    raw_category: object,
+    note_text: str,
+) -> str | None:
+    normalized_status = str(status or "").strip().lower()
+    if normalized_status != "rejected":
+        return None
+
+    explicit = normalize_rejection_reason_category(raw_category)
+    if explicit != "unknown":
+        return explicit
+
+    lowered_note = note_text.strip().lower()
+    keyword_map = {
+        "privacy": ("private", "privacy", "sensitive"),
+        "too_hard": ("too hard", "hard", "too much", "exhausting"),
+        "not_now": ("later", "not now", "tomorrow", "busy"),
+        "already_done": ("already done", "done", "finished"),
+        "not_relevant": ("not relevant", "irrelevant", "doesn't fit", "dont fit"),
+        "too_generic": ("generic", "vague", "too broad"),
+    }
+    for category, keywords in keyword_map.items():
+        if any(keyword in lowered_note for keyword in keywords):
+            return category
+    return "unknown"
+
+
+def derive_effort_feedback(
+    *,
+    status: object,
+    raw_effort_feedback: object,
+    rejection_reason_category: str | None,
+) -> str:
+    explicit = normalize_effort_feedback(raw_effort_feedback)
+    if explicit != "unknown":
+        return explicit
+
+    normalized_status = str(status or "").strip().lower()
+    if normalized_status == "completed":
+        return "balanced"
+    if normalized_status in {"useful", "accepted", "edited"}:
+        return "low"
+    if normalized_status == "rejected" and rejection_reason_category == "too_hard":
+        return "high"
+    return "unknown"
+
+
+def build_privacy_safe_feedback_summary(
+    *,
+    status: object,
+    domain_targets: object,
+    recommendation_type: object,
+    rejection_reason_category: str | None,
+    effort_feedback: str,
+    repeated_flag: bool,
+) -> str:
+    domains = "+".join(normalize_domain_targets(domain_targets))
+    recommendation = normalize_recommendation_type(recommendation_type)
+    normalized_status = str(status or "").strip().lower() or "unknown"
+    segments = [normalized_status, recommendation, domains]
+    if rejection_reason_category and rejection_reason_category != "unknown":
+        segments.append(rejection_reason_category)
+    if effort_feedback != "unknown":
+        segments.append(f"effort:{effort_feedback}")
+    if repeated_flag:
+        segments.append("repeated")
+    return " | ".join(segments)
+
+
 def summarize_feedback_items(
     items: list[dict[str, object]],
     *,
@@ -117,6 +214,11 @@ def summarize_feedback_items(
         recommendation_type = normalize_recommendation_type(
             item.get("recommendation_type")
         )
+        rejection_reason_category = normalize_rejection_reason_category(
+            item.get("rejection_reason_category")
+        )
+        effort_feedback = normalize_effort_feedback(item.get("effort_feedback"))
+        repeated_flag = bool(item.get("repeated_flag", False))
         learning_key = str(
             item.get("learning_key")
             or build_learning_key(domain_targets, recommendation_type)
@@ -144,6 +246,9 @@ def summarize_feedback_items(
                 "positive_count": 0,
                 "negative_count": 0,
                 "net_score": 0.0,
+                "repeated_count": 0,
+                "rejection_reason_totals": {},
+                "effort_feedback_totals": {},
             },
         )
         pattern_stats["item_count"] += 1
@@ -154,6 +259,16 @@ def summarize_feedback_items(
         elif weight < 0:
             pattern_stats["negative_count"] += 1
         pattern_stats["net_score"] = round(pattern_stats["net_score"] + weight, 4)
+        if repeated_flag:
+            pattern_stats["repeated_count"] += 1
+        if rejection_reason_category != "unknown":
+            rejection_totals = pattern_stats["rejection_reason_totals"]
+            rejection_totals[rejection_reason_category] = (
+                rejection_totals.get(rejection_reason_category, 0) + 1
+            )
+        if effort_feedback != "unknown":
+            effort_totals = pattern_stats["effort_feedback_totals"]
+            effort_totals[effort_feedback] = effort_totals.get(effort_feedback, 0) + 1
 
         recommendation_stats = by_recommendation_type.setdefault(
             recommendation_type,
@@ -164,6 +279,7 @@ def summarize_feedback_items(
                 "positive_count": 0,
                 "negative_count": 0,
                 "net_score": 0.0,
+                "repeated_count": 0,
             },
         )
         recommendation_stats["item_count"] += 1
@@ -177,6 +293,8 @@ def summarize_feedback_items(
             recommendation_stats["net_score"] + weight,
             4,
         )
+        if repeated_flag:
+            recommendation_stats["repeated_count"] += 1
 
     return {
         "user_id": user_id,
@@ -230,6 +348,7 @@ def _sorted_pattern_items(
                 "item_count": int(stats.get("item_count", 0) or 0),
                 "positive_count": int(stats.get("positive_count", 0) or 0),
                 "negative_count": int(stats.get("negative_count", 0) or 0),
+                "repeated_count": int(stats.get("repeated_count", 0) or 0),
                 "net_score": round(net_score, 4),
             }
         )
@@ -277,6 +396,14 @@ def _recent_feedback_items(
                 "domain_targets": parsed["domain_targets"],
                 "recommendation_type": parsed["recommendation_type"],
                 "notes_present": bool(item.get("notes_present", False)),
+                "rejection_reason_category": normalize_rejection_reason_category(
+                    item.get("rejection_reason_category")
+                ),
+                "effort_feedback": normalize_effort_feedback(
+                    item.get("effort_feedback")
+                ),
+                "repeated_flag": bool(item.get("repeated_flag", False)),
+                "privacy_safe_summary": str(item.get("privacy_safe_summary", "")),
             }
         )
     return recent_items
