@@ -1,30 +1,30 @@
 # GoLife AI License Review
 
-## Primary Source of Truth
+## Primary source of truth
 
-- Generated matrix: [LICENSE_MATRIX.md](/C:/0%20Work/GoLife%20AI/docs/generated/LICENSE_MATRIX.md)
-- ADR: [ADR-011-license-first-development.md](/C:/0%20Work/GoLife%20AI/docs/adrs/ADR-011-license-first-development.md)
+- generated matrix: `docs/generated/LICENSE_MATRIX.md`
+- ADR: `docs/adrs/ADR-011-license-first-development.md`
 
-## Current Position
+## Current position
 
 - MIT-friendly references may inform clean-room implementations
 - GPL repositories must not be copied directly into proprietary surfaces without a deliberate licensing decision
-- Current mobile domain files are written as clean-room rewrites and include provenance notes where relevant
+- current mobile domain files are written as clean-room rewrites and include provenance notes where relevant
 
-## Known Sensitive Inputs
+## Known sensitive inputs
 
 - Habo: GPL-3.0
 - WeekToDo: GPL-3.0
 - Flow: GPL-3.0
 
-## Known Safer Inputs
+## Known safer inputs
 
 - Taskly: MIT
 - Wanna: MIT
 - OpenWardrobe app/db: MIT, but provenance still needs normal verification discipline
 
-## Review Outcome
+## Review outcome
 
-- No source repo folders remain in the active root structure
-- Clean-room approach is still the correct default
-- License review for this release is acceptable provided the generated matrix remains updated
+- no source repo folders remain in the active root structure
+- clean-room approach is still the correct default
+- license review for this release is acceptable provided the generated matrix remains updated

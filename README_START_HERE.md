@@ -249,3 +249,6 @@ La app movil ya cubre estas piezas del roadmap activo:
 - boards locales para tasks, habits, money, pantry, week y closet
 - export JSON local
 - delete all local
+# Historical / superseded entrypoint
+#
+# Use README.md as the canonical repo entrypoint. This file is kept for provenance because it captured the earlier implementation package state.

@@ -1,50 +1,65 @@
 # GoLife AI Privacy Review
 
-## Current Boundary
+## Current boundary
 
-- Personal LifeGraph data remains device-local by default.
-- Mobile fetches runtime config only; it does not sync the personal graph in v1.
-- AI requests are filtered locally by domain permission and event privacy level.
-- Admin surfaces use operational metadata and should not store raw personal payloads.
+- personal LifeGraph data remains device-local by default
+- mobile fetches runtime config only; it does not sync the full personal graph in v1
+- AI requests are filtered locally by domain permission and event privacy level
+- admin surfaces use operational metadata and should not store raw personal payloads
 
-## Implemented Controls
+## Implemented controls
 
-- Per-domain privacy settings in mobile
-- Per-item privacy during multi-event capture confirmation
-- Sensitive local encryption at rest for finance, journal entries, quick notes, `life_events`, `missions`, `daily_risks`, and `calendar_items`
-- Legacy plaintext migration for encrypted mobile collections
-- Safe local-store fallback that avoids app crash if secure storage is unavailable
-- Protected local export bundle to app-private storage
-- HomeMemory submission assets copied into a private vault instead of persisting only external metadata refs
-- Local delete-all flow
-- Support queue plus backend operational export/delete workflows in admin
-- Public mobile runtime-config endpoint with no secrets
-- Internal routing config endpoint protected by internal token
-- Reflection safety telemetry with metadata-only operational audit
-- Mission feedback audit redaction in gateway, backend, and admin views
+- per-domain privacy settings in mobile
+- per-item privacy confirmation during multi-event capture
+- encrypted-at-rest local storage for the most sensitive mobile collections
+- safe secure-storage fallback that avoids app crash if device secure storage is unavailable
+- protected local export bundle to app-private storage
+- submission assets copied into a private vault instead of storing only external metadata refs
+- local delete-all flow that clears graph data plus submission-asset vault contents
+- backend support queue with real admin export/delete workflows for operational metadata
+- public mobile runtime-config endpoint with no secrets
+- internal routing config endpoint protected by internal token
+- metadata-only safety telemetry
+- mission feedback redaction in gateway, backend, and admin views
 
-## Data Leaving Device
+## Data boundaries
+
+### Leaves device only by allowed flow
 
 - AI requests to `services/ai_gateway`
-- Mission feedback to `services/ai_gateway`
-- Runtime config pull from `services/web_backend`
+- mission feedback to `services/ai_gateway`
+- runtime config pull from `services/web_backend`
 
-## Data Not Leaving Device in v1
+### Stays local by design in v1
 
-- Full LifeGraph history sync
-- Raw local entity database replication
-- Background upload of personal notes or events
-- Reflection text in operational admin telemetry
-- Mission feedback note text in operational admin telemetry
+- full LifeGraph history
+- raw local entity database replication
+- raw reflection content in admin telemetry
+- raw mission feedback note text in admin telemetry
+- protected submission asset bytes in operational backend
 
-## Residual Risks
+## Export/delete posture
 
-- Secure-storage behavior is validated on the repo's real CI Flutter runner, but device-specific runner projects still need validation if Android, iOS, or desktop builds are added
-- The admin export bundle covers backend operational metadata only; full local LifeGraph export remains device-local by design
-- Device-level compromise is out of scope for app-only controls
+- mobile export: protected local bundle with `data.json` plus `assets/`
+- mobile delete: `deleteAllLocalData()` clears local data and private asset vault
+- backend export: metadata-only operational bundle
+- backend delete: operational records only, not local device data
 
-## Release Assessment
+See:
 
-- Privacy/export/delete: implemented at local-app level
-- Privacy operations queue: implemented in admin with real backend operational jobs
-- Remaining before wider beta: expand encryption review to more domains and tighten retention guidance
+- [Data map](DATA_MAP.md)
+- [Support process](../operations/SUPPORT_PROCESS.md)
+- [F04 admin export/delete workflow](../operations/F04_11_ADMIN_EXPORT_DELETE_WORKFLOW.md)
+- [F04 secure mobile export bundle](../operations/F04_16_SECURE_MOBILE_EXPORT_BUNDLE.md)
+
+## Residual risks
+
+- secure-storage behavior is validated on the checked CI Flutter runner, but device-specific runners still need validation if Android, iOS, or desktop projects are added
+- the admin export bundle covers backend operational metadata only; full local LifeGraph export remains device-local by design
+- device-level compromise is out of scope for app-only controls
+
+## Release assessment
+
+- privacy/export/delete: implemented across mobile plus backend operational workflow
+- privacy operations queue: actionable in admin
+- remaining before broader release: stronger retention guidance, broader encrypted-domain review, and device-specific validation if new runners are added

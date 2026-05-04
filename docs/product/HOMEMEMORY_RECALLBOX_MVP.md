@@ -124,6 +124,9 @@ Protected local export now emits a bundle with `data.json` plus `assets/` so
 local retrieval can recover both metadata and locally stored submission files
 without exposing raw device paths in the exported JSON.
 
+The admin/backend export workflow remains metadata-only and does not replace
+the local protected export bundle.
+
 ## Limits
 
 - no OCR pipeline yet
@@ -149,3 +152,8 @@ without exposing raw device paths in the exported JSON.
 - stronger warranty country rules
 - richer maintenance templates by category
 - calendar linkage beyond MVP
+
+See also:
+
+- [Product status](PRODUCT_STATUS.md)
+- [Data map](../compliance/DATA_MAP.md)

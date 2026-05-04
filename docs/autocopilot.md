@@ -2073,3 +2073,16 @@ TESTS: gateway local reportado 103 passed; full-stack pendiente
 RIESGOS ABIERTOS: CI billing, PR #6 abierto, no-mock prod, legacy duplication
 RECOMENDACIÓN FINAL: continuar autopiloto local F1-F24; no cerrar remoto hasta billing + CI verde
 ```
+# Historical / legacy reference
+#
+# Not runtime source of truth. The active runtime topology is:
+# - apps/mobile_flutter
+# - apps/admin_next
+# - services/ai_gateway
+# - services/web_backend
+# - packages/contracts
+#
+# Canonical current-state docs:
+# - README.md
+# - docs/operations/RELEASE_CANDIDATE_SUMMARY.md
+# - docs/operations/DOCUMENTATION_INVENTORY.md

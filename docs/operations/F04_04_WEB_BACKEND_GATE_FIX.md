@@ -1,55 +1,51 @@
 # F04 04 Web Backend Gate Fix
 
-Fecha: 2026-05-03
-Ejecutor: Codex
-Área: `services/web_backend`
+Date: `2026-05-03`
+Executor: `Codex`
+Area: `services/web_backend`
 
-## Objetivo
+## Objective
 
-Cerrar los dos fallos que estaban rompiendo el `Monorepo CI` del PR #6:
+Close the two failures that were breaking `Monorepo CI` for PR `#6`:
 
-- job `web-backend`
-- job `python-security (services/web_backend)`
+- `web-backend`
+- `python-security (services/web_backend)`
 
-## Causa raíz
+## Root cause
 
-### 1. Incompatibilidad de lifecycle con FastAPI/Starlette
+### 1. Lifecycle incompatibility with FastAPI / Starlette
 
-El código usaba:
+The code used:
 
 - `app.add_event_handler("shutdown", shutdown_repository)`
 
-En el entorno de CI del PR #6, esa API ya no estaba disponible en la instancia `FastAPI`, provocando:
+In the CI environment at that time, that API path was no longer available on the `FastAPI` instance, causing an `AttributeError`.
 
-```text
-AttributeError: 'FastAPI' object has no attribute 'add_event_handler'
-```
+### 2. Dynamic SQL marked by Bandit
 
-### 2. SQL dinámico marcado por Bandit
+`app/repository.py` built queries with interpolated `where_sql`, producing multiple `B608` findings in CI.
 
-`app/repository.py` construía queries con `f""" ... {where_sql} ... """`, lo que generó seis hallazgos `B608` de baja confianza pero severidad media en CI.
+## Files modified
 
-## Archivos modificados
+- `services/web_backend/app/main.py`
+- `services/web_backend/app/repository.py`
 
-- [services/web_backend/app/main.py](C:/0%20Work/GoLife%20AI/services/web_backend/app/main.py:1)
-- [services/web_backend/app/repository.py](C:/0%20Work/GoLife%20AI/services/web_backend/app/repository.py:1)
-
-## Cambios aplicados
+## Changes applied
 
 ### `app/main.py`
 
-- migración de shutdown a `lifespan`
-- cierre del repositorio en bloque `finally`
-- eliminación del uso de `add_event_handler`
+- migrated shutdown handling to `lifespan`
+- closed the repository in a `finally` block
+- removed dependency on `add_event_handler`
 
 ### `app/repository.py`
 
-- añadido helper `_sql_where_clause(filters)`
-- añadido helper `_join_sql_lines(*lines)`
-- reescritura de las queries con filtros opcionales para evitar interpolación SQL directa dentro de strings `f"""`
-- mantenimiento de argumentos parametrizados `?` para valores del usuario
+- added `_sql_where_clause(filters)`
+- added `_join_sql_lines(*lines)`
+- rewrote optional-filter query composition to avoid direct SQL interpolation inside `f"""` strings
+- preserved parameterized user values
 
-## Validación local post-fix
+## Local validation after fix
 
 ```text
 cd services/web_backend
@@ -57,28 +53,27 @@ python -m pytest -q
 python -m bandit -q -r app -s B105,B106
 ```
 
-Resultados:
+Results:
 
 - `21 passed`
-- `bandit` verde
+- `bandit` green
 
-## Impacto esperado en remoto
+## Expected remote impact
 
-Tras publicar este cambio, los dos jobs que fallaban en PR #6 deberían pasar:
+After publishing the fix, the failing PR jobs should pass:
 
 - `web-backend`
 - `python-security (services/web_backend)`
 
 ## Rollback
 
-Si el fix introduce regresión inesperada:
+If the fix introduces an unexpected regression:
 
 ```text
-git revert <commit-del-fix>
+git revert <fix-commit>
 ```
 
-Rollback manual equivalente:
+Manual equivalent:
 
-- restaurar el lifecycle previo en `app/main.py`
-- restaurar la composición anterior de queries en `app/repository.py`
-
+- restore the previous lifecycle wiring in `app/main.py`
+- restore the previous query composition in `app/repository.py`

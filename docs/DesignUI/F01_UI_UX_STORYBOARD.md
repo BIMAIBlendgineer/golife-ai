@@ -36,3 +36,6 @@ Admin-web is company-facing and may show model, cost, usage, router health and i
 - Admin sees internal costs/model/router status.
 - Admin never sees secrets.
 - Empty/loading/error/quota/read-only states must be implemented.
+# Historical / legacy reference
+#
+# This storyboard predates the current runtime naming and topology. Use current product and release-readiness docs before treating it as active scope.

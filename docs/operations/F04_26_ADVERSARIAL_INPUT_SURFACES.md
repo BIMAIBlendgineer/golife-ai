@@ -1,7 +1,7 @@
 # F04 Adversarial Input Surfaces
 
 Date: `2026-05-04`
-Executor: Codex
+Executor: `Codex`
 Branch: `hardening/f04-adversarial-input-surfaces`
 Base SHA: `79e1d35d69eb0103502a6f798361083002ee396c`
 
@@ -25,7 +25,7 @@ Close the next safety hardening gap after `reflection/check`:
 
 ### Gateway
 
-- Extracted shared text-safety assessment so the same crisis and clinical matching used by `reflection/check` can also gate:
+- Extracted shared text-safety assessment so the same crisis and clinical matching used by `reflection/check` also gates:
   - `/v1/events/classify`
   - `/v1/events/parse`
   - `/v1/proofs/parse`
@@ -46,7 +46,7 @@ Close the next safety hardening gap after `reflection/check`:
 ### Mobile
 
 - Added a minimal local safety cut in `CaptureParser`.
-- Crisis or clinical text now returns no drafts instead of being converted into normal local task, pantry, or finance entities during offline or degraded parsing.
+- Crisis or clinical text now returns no drafts instead of being converted into normal local entities during offline or degraded parsing.
 - The mobile parser uses the same style of normalization hardening as the gateway:
   - accent folding
   - punctuation splitting
@@ -58,16 +58,16 @@ Close the next safety hardening gap after `reflection/check`:
 Gateway:
 
 - `cd services/ai_gateway && python -m pytest -q tests/test_api.py`
-  - Result: `63 passed`
+  - result: `63 passed`
 - `cd services/ai_gateway && python -m pytest -q`
-  - Result: `79 passed`
+  - result: `79 passed`
 
 Mobile:
 
 - `cd apps/mobile_flutter && flutter analyze`
-  - Result: green
+  - result: green
 - `cd apps/mobile_flutter && flutter test`
-  - Result: green
+  - result: green
 
 Focused coverage added:
 
@@ -77,26 +77,32 @@ Focused coverage added:
 - task rewrite rejects crisis text and records safety metadata
 - local mobile capture parser blocks crisis and clinical phrases from producing drafts
 
-## Operational Effect
+## Operational effect
 
-- Freeform capture, proof, and task-rewrite surfaces no longer rely on downstream heuristics after unsafe text has already entered the normal planning path.
-- Admin operational audit still receives metadata only; raw blocked text is not copied into telemetry payloads.
-- Offline mobile fallback becomes more honest by refusing unsafe capture text instead of converting it into ordinary entities.
+- freeform capture, proof, and task-rewrite surfaces no longer rely on downstream heuristics after unsafe text has already entered the normal planning path
+- admin operational audit still receives metadata only; raw blocked text is not copied into telemetry payloads
+- offline mobile fallback becomes more honest by refusing unsafe capture text instead of converting it into ordinary entities
 
-## Residual Risks
+## Residual risks
 
-- The policy remains lexical and heuristic. It is broader now, but it is not a model-level safety system.
-- Mobile local blocking is intentionally minimal and does not yet provide an in-app crisis redirect UI on the capture screen.
-- Device-specific runner validation is still pending if Android, iOS, or desktop projects are added to the repo.
+- the policy remains lexical and heuristic; it is broader now, but it is not a model-level safety system
+- mobile local blocking is intentionally minimal and does not yet provide an in-app crisis redirect UI on the capture screen
+- device-specific runner validation is still pending if Android, iOS, or desktop projects are added to the repo
 
-## Next Useful Gap
+## Canonical follow-up docs
 
-- Learning and memory over persisted data, with explicit validation that feedback and stored evidence improve later daily decisions without violating privacy boundaries.
+- [Safety review](../compliance/SAFETY_REVIEW.md)
+- [Safety policy](../security/SAFETY_POLICY.md)
+- [AI Gateway API](../api/AI_GATEWAY_API.md)
+
+## Next useful gap
+
+- learning and memory over persisted data, with explicit validation that feedback and stored evidence improve later daily decisions without violating privacy boundaries
 
 ## Rollback
 
-- Revert the commit for this block.
-- Restore:
+- revert the commit for this block
+- restore:
   - `services/ai_gateway/app/guardrails.py`
   - `services/ai_gateway/app/main.py`
   - `services/ai_gateway/app/operational_payloads.py`

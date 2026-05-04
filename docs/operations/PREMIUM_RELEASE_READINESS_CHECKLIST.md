@@ -2,77 +2,98 @@
 
 ## Baseline
 
-- Branch under review: `hardening/traceability-safety-pass`
-- Main baseline: `77f4b7c7ca780aca54bf78a1e2caed7875c7329e`
-- Scope: release hardening only, no new features
+- Documentation branch: `docs/release-production-readiness`
+- Runtime baseline on `main`: `d1b521375086142a9c0cdeb258de5968369344e9`
+- Scope: release-readiness consolidation only, no new runtime features
 
-## Validation status
+## Product thesis gate
 
-- [x] mobile validation
-  - `flutter pub get`
-  - `flutter gen-l10n`
-  - `flutter analyze`
-  - `flutter test`
-- [x] admin validation
-  - `npm ci`
-  - `npm run lint`
-  - `npm run typecheck`
-  - `npm run build`
-  - `npm audit --omit=dev --audit-level=high`
-- [x] web backend validation
-  - `python -m pytest -q`
-  - `python -m pytest -q -W default`
-- [x] ai gateway validation
-  - focused local gateway route and safety tests
-  - full remote `ai-gateway` job on GitHub Actions
-- [x] security validation
-  - focused local `bandit`
-  - remote `secret-scan`, `python-security`, and `admin-security`
-- [x] privacy validation
-  - HomeMemory admin confirmed aggregate-only
-  - BYOK secrets remain masked in admin responses
-  - mobile encrypted collections extended to `life_events`, `missions`, `daily_risks`, `calendar_items`
+- [ ] GoLife AI is described as a daily decision system built on LifeGraph, evidence, privacy, and feedback
+- [ ] No canonical doc describes the product as a generic chatbot
+- [ ] No canonical doc claims features that are not implemented
 
-## I18N status
+## AI Gateway
 
-- [x] gaps audited
-- [ ] full locale parity
-- Current gap summary:
-  - `es`: HomeMemory-only gap
-  - `pt_BR`: HomeMemory-only gap
-  - `pt`: broad partial gap
-  - `ja`: broad partial gap
-  - `zh`: broad partial gap
-  - `zh_Hans`: broad partial gap
-- Source of truth: `docs/operations/I18N_RELEASE_GAP_REPORT.md`
+- [x] production blocks `AI_GATEWAY_ENABLE_MOCK=true`
+- [x] production blocks missing OpenRouter key or valid routing backend
+- [x] production blocks dev routing token
+- [x] factory cannot route production to `MockLLMProvider`
+- [x] provider no longer delegates to mock in production
+- [x] `/ready` exists and is production-aware
+- [x] local production single-key smoke returned real OpenRouter output
+- [x] `mock_mode=false` validated in real smoke
+- [x] no `mock: true` in live daily mission response
 
-## Known risks
+## Web Backend
 
-- [x] PostCSS transitive risk documented
-- [x] Python 3.14+ dependency warnings documented
-- [x] HomeMemory privacy risk documented and re-tested
-- [x] local AI gateway concurrent smoke instability documented
-- [ ] PostCSS transitive issue remediated upstream
-- [ ] Full locale parity completed
+- [x] `python -m pytest -q`
+- [x] support export/delete workflow is actionable, not read-only
+- [x] admin export bundle is metadata-only by design
+- [x] production validator blocks dev default tokens and weak secrets
 
-## Rollback plan
+## Mobile
 
-- If this hardening branch fails before merge:
-  - `git switch main`
-  - `git branch -D hardening/post-merge-release-readiness`
-- If this branch is pushed and later discarded:
-  - `git push origin --delete hardening/post-merge-release-readiness`
-  - `git switch main`
-  - `git branch -D hardening/post-merge-release-readiness`
-- If a future hardening PR merges and release validation fails after merge:
-  - prepare a revert PR against the hardening merge commit
+- [x] `flutter analyze`
+- [x] `flutter test`
+- [x] protected export bundle writes `data.json` plus `assets/`
+- [x] submission assets stored in private vault
+- [x] delete-all clears local data plus private vault
+- [x] gateway fallback is visible to the user
+- [ ] Android, iOS, and desktop runner validation
+
+## Admin
+
+- [x] `npm run lint`
+- [x] `npm run typecheck`
+- [x] `npm run build`
+- [x] live/fallback/offline source state visible
+- [x] support export/delete workflow exposed in UI
+
+## Safety and privacy
+
+- [x] reflection safety covered
+- [x] adversarial capture, parse, proof-parse, and task-rewrite coverage added
+- [x] mobile capture parser blocks crisis and clinical text from normal drafts
+- [x] admin receives metadata-only operational telemetry
+- [x] mission feedback notes stay redacted in operational surfaces
+- [ ] stronger policy engine beyond rule-based guardrails
+
+## Security
+
+- [x] `gitleaks git`
+- [x] CI secret scan workflow exists
+- [x] CI Python security workflow exists
+- [x] CI admin security workflow exists
+- [ ] upstream remediation of accepted transitive advisories where applicable
+
+## Environment and deploy
+
+- [x] external production env requirements documented
+- [x] single-key production mode documented
+- [x] control-plane mode documented as conditional
+- [ ] deploy environment actually replicates documented external values
+- [ ] operational telemetry enablement decided for real production
+
+## Git and release hygiene
+
+- [ ] docs PR opened
+- [ ] docs PR merged
+- [ ] docs branch deleted locally
+- [ ] docs branch deleted remotely
+- [ ] worktree clean on `main`
+
+## Residual accepted limits
+
+- [ ] locale parity still incomplete
+- [ ] safety still rule-based
+- [ ] device-specific runner validation still open
+- [ ] control-plane production remains conditional on live backend routing
 
 ## Release decision
 
-- Decision: conditional go for a premium release candidate
+- Decision target: conditional go for production-readiness closeout
 - Conditions:
-  - no new feature work lands before hardening review is complete
-  - `docs/operations/RELEASE_RISK_REGISTER.md` ships with the release packet
-  - locale incompleteness is disclosed as a known limitation
-  - no regression appears in HomeMemory admin privacy coverage
-  - `ADMIN_OPERATOR_SECRET` is configured in production environments
+  - docs PR merged
+  - no secrets in diff
+  - risk register and release summary shipped together
+  - external deploy mirrors the documented production env
