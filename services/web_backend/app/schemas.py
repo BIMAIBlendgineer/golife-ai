@@ -445,6 +445,35 @@ class AIInvocationRecord(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class SupportRequestExecutionResult(BaseModel):
+    request_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    request_type: RequestType
+    action: Literal["resolved", "deleted_operational_records"]
+    status: Literal["done"]
+    processed_at: datetime
+    record_counts: dict[str, int] = Field(default_factory=dict)
+    metadata_only: bool = True
+
+
+class OperationalExportBundle(BaseModel):
+    request_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    generated_at: datetime
+    scope: Literal["web_backend_operational_records"] = "web_backend_operational_records"
+    metadata_only: bool = True
+    checksum_sha256: str = Field(min_length=64, max_length=64)
+    record_counts: dict[str, int] = Field(default_factory=dict)
+    user_summary: UserSummary | None = None
+    usage_events: list[UsageEventRecord] = Field(default_factory=list)
+    ai_invocations: list[AIInvocationRecord] = Field(default_factory=list)
+    ai_usage_ledger: list[AiUsageLedgerRow] = Field(default_factory=list)
+    mission_records: list[MissionAuditRecord] = Field(default_factory=list)
+    feedback_records: list[FeedbackAuditRecord] = Field(default_factory=list)
+    safety_events: list[SafetyAuditRecord] = Field(default_factory=list)
+    support_requests: list[SupportRequest] = Field(default_factory=list)
+
+
 class MissionAuditUpsert(BaseModel):
     mission_id: str = Field(min_length=1)
     user_id: str = Field(min_length=1)

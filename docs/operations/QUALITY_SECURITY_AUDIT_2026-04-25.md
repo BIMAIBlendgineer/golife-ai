@@ -26,10 +26,9 @@ Date: `2026-04-25`
 
 ## Risks Still Open
 
-- Sensitive encryption coverage was expanded after this audit to include `life_events`, `calendar_items`, `daily_risks`, and `missions`, but device-level validation still remains open before broader release claims.
-- Mobile secure-storage behavior still needs device validation on Android, iOS, and any desktop targets before broader release claims.
-- The current reflection safety model is still rule-based and should gain adversarial test coverage before public scale.
-- Clipboard-only export is no longer the primary path after the protected local file export hardening, but device-level retrieval UX still needs validation on final runners.
+- Sensitive encryption coverage was expanded after this audit to include `life_events`, `calendar_items`, `daily_risks`, and `missions`, and the current repo now validates protected export retrieval plus submission-asset vaulting on the real Flutter CI runner. Device-specific validation still remains open if Android, iOS, or desktop targets are added.
+- Reflection safety now covers accent stripping, punctuation splitting, letter-spaced obfuscation, and basic leetspeak variants, but it is still rule-based and should gain a broader adversarial corpus before public scale.
+- Clipboard-only export is no longer the primary path after the protected local bundle export hardening, but device-specific retrieval UX still needs validation if final platform runners are added.
 - Dynamic browser-level regression coverage is still limited; current automation is strongest on API and storage boundaries.
 
 ## QA and DevSecOps Baseline
@@ -49,7 +48,6 @@ Date: `2026-04-25`
 
 ## Recommended Next Block
 
-- Expand the privacy classification and decide which additional collections must be encrypted at rest.
 - Add browser-level admin smoke tests and Flutter widget smoke flows for the privacy/export path.
-- Add platform validation runs for secure storage on release candidates.
-- Add a protected file export path instead of clipboard-only export for sensitive local data.
+- Add platform validation runs for secure storage on release candidates when concrete Android, iOS, or desktop runners exist in the repo.
+- Expand adversarial safety coverage beyond reflection-specific obfuscation cases.

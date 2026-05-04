@@ -146,7 +146,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String exportSavedFile(Object fileName) {
-    return 'La exportacion JSON protegida se guardo como $fileName.';
+    return 'El paquete local protegido se guardo como $fileName.';
   }
 
   @override

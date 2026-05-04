@@ -15,6 +15,7 @@ flutter test
 Notas:
 
 - El shell Flutter valida y testea bien en este entorno.
+- La suite Flutter incluye validaciÃ³n real de vault privado y `data.json + assets/` para el export protegido.
 - Siguen faltando runners `android/`, `ios/`, `web/`, etc.; para `flutter run` hay que generarlos primero con `flutter create .` o incorporar runners del producto final.
 
 ## AI Gateway

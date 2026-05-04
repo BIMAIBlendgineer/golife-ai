@@ -36,6 +36,10 @@ MVP flow:
 
 SQLite and local-store adapters persist the HomeMemory entities.
 
+Submission asset bytes are stored separately in an app-private vault. The
+encrypted entity blobs keep only internal managed refs for purchase-proof and
+evidence files.
+
 Sensitive collections encrypted at rest:
 
 - `owned_items`
@@ -115,6 +119,10 @@ HomeMemory is local-first.
 Receipts, draft claims, evidence, and item notes are treated as sensitive local data.
 
 This MVP does not upload owned items, receipts, or attachments to the operational backend.
+
+Protected local export now emits a bundle with `data.json` plus `assets/` so
+local retrieval can recover both metadata and locally stored submission files
+without exposing raw device paths in the exported JSON.
 
 ## Limits
 

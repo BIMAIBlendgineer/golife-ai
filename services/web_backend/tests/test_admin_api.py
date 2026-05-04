@@ -104,6 +104,74 @@ def test_models_support_and_runtime_config_routes_exist(client):
     assert "openrouter_keys" not in runtime_config.json()
 
 
+def test_support_export_bundle_route_returns_metadata_only_records(client):
+    response = client.get(
+        "/admin/support/export-delete/support-001/bundle",
+        headers=_admin_headers(),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["request_id"] == "support-001"
+    assert payload["user_id"] == "user-2"
+    assert payload["scope"] == "web_backend_operational_records"
+    assert payload["metadata_only"] is True
+    assert len(payload["checksum_sha256"]) == 64
+    assert payload["record_counts"]["usage_events"] >= 1
+    assert payload["record_counts"]["ai_invocations"] >= 1
+    assert payload["record_counts"]["mission_records"] >= 1
+    assert payload["record_counts"]["feedback_records"] >= 1
+    assert payload["record_counts"]["safety_events"] >= 1
+    assert payload["feedback_records"][0]["reason"] == "private_note_redacted"
+    assert payload["user_summary"]["email_masked"].endswith("@golife.ai")
+    assert "user-2@golife.ai" not in str(payload)
+
+
+def test_support_request_can_be_resolved_without_mutating_records(client):
+    response = client.post(
+        "/admin/support/export-delete/support-001/resolve",
+        headers=_admin_headers(),
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["request_id"] == "support-001"
+    assert payload["action"] == "resolved"
+    assert payload["status"] == "done"
+
+    support = client.get("/admin/support/export-delete", headers=_admin_headers())
+    assert support.status_code == 200
+    request = next(item for item in support.json() if item["request_id"] == "support-001")
+    assert request["status"] == "done"
+
+
+def test_support_delete_executes_operational_purge_and_marks_request_done(client):
+    delete_response = client.post(
+        "/admin/support/export-delete/support-002/execute-delete",
+        headers=_admin_headers(),
+    )
+
+    assert delete_response.status_code == 200
+    payload = delete_response.json()
+    assert payload["request_id"] == "support-002"
+    assert payload["action"] == "deleted_operational_records"
+    assert payload["status"] == "done"
+    assert payload["record_counts"]["admin_users"] == 1
+    assert payload["record_counts"]["usage_events"] >= 1
+    assert payload["record_counts"]["ai_invocations"] >= 1
+    assert payload["record_counts"]["safety_events"] >= 1
+
+    users_response = client.get("/admin/users", headers=_admin_headers())
+    assert users_response.status_code == 200
+    users = users_response.json()["items"]
+    assert all(user["user_id"] != "user-3" for user in users)
+
+    support = client.get("/admin/support/export-delete", headers=_admin_headers())
+    assert support.status_code == 200
+    request = next(item for item in support.json() if item["request_id"] == "support-002")
+    assert request["status"] == "done"
+
+
 def test_organizations_and_plans_routes_exist(client):
     organizations = client.get("/admin/organizations", headers=_admin_headers())
     assert organizations.status_code == 200

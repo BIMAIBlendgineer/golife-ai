@@ -141,7 +141,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String exportSavedFile(Object fileName) {
-    return '保護されたローカル JSON エクスポートを $fileName として保存しました。';
+    return '保護されたローカル書き出しバンドルを $fileName として保存しました。';
   }
 
   @override

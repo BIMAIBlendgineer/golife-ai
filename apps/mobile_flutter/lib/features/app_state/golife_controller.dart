@@ -6,6 +6,7 @@ import '../../core/ai_client/ai_gateway_client.dart';
 import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
 import '../../core/export/local_export_service.dart';
+import '../../core/export/submission_asset_vault.dart';
 import '../../core/i18n/app_locale.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
@@ -42,18 +43,22 @@ class GoLifeController extends ChangeNotifier {
     required LifeGraphRepository lifeGraphRepository,
     RuntimeConfigClient? runtimeConfigClient,
     LocalExportService? localExportService,
+    SubmissionAssetVault? submissionAssetVault,
   })  : _localStore = localStore,
         _aiGatewayClient = aiGatewayClient,
         _lifeGraphRepository = lifeGraphRepository,
         _runtimeConfigClient = runtimeConfigClient,
         _localExportService =
-            localExportService ?? ProtectedLocalExportService();
+            localExportService ?? ProtectedLocalExportService(),
+        _submissionAssetVault =
+            submissionAssetVault ?? ProtectedSubmissionAssetVault();
 
   final LocalStore _localStore;
   final AiGatewayClient _aiGatewayClient;
   final LifeGraphRepository _lifeGraphRepository;
   final RuntimeConfigClient? _runtimeConfigClient;
   final LocalExportService _localExportService;
+  final SubmissionAssetVault _submissionAssetVault;
   final CaptureParser _captureParser = const CaptureParser();
 
   bool _isReady = false;
@@ -1121,6 +1126,15 @@ class GoLifeController extends ChangeNotifier {
     return items;
   }
 
+  PurchaseProof? purchaseProofById(String id) {
+    for (final item in _purchaseProofs) {
+      if (item.id == id) {
+        return item;
+      }
+    }
+    return null;
+  }
+
   WarrantyRecord? warrantyRecordForItem(String ownedItemId) {
     for (final item in _warrantyRecords.reversed) {
       if (item.ownedItemId == ownedItemId) {
@@ -1152,6 +1166,15 @@ class GoLifeController extends ChangeNotifier {
         .toList(growable: false);
     items.sort((left, right) => right.createdAt.compareTo(left.createdAt));
     return items;
+  }
+
+  EvidenceAttachment? evidenceAttachmentById(String id) {
+    for (final item in _evidenceAttachments) {
+      if (item.id == id) {
+        return item;
+      }
+    }
+    return null;
   }
 
   Future<String?> saveOwnedItemManual({
@@ -1305,6 +1328,7 @@ class GoLifeController extends ChangeNotifier {
     String currency = 'EUR',
     int? warrantyMonths,
     String notes = '',
+    String? fileRef,
     String privacyLevel = 'local_only',
     bool createWarrantyReminder = true,
   }) async {
@@ -1319,6 +1343,11 @@ class GoLifeController extends ChangeNotifier {
     if (createWarrantyReminder && warrantyUntil != null) {
       reminderId = _entityId('maintenance');
     }
+    final storedProofFileRef = await _persistSubmissionAsset(
+      collection: 'purchase_proofs',
+      entityId: proofId,
+      sourcePath: fileRef,
+    );
 
     final ownedItem = OwnedItem(
       id: ownedItemId,
@@ -1365,6 +1394,7 @@ class GoLifeController extends ChangeNotifier {
         warrantyMonths: warrantyMonths,
         notes: notes.trim(),
       ),
+      fileRef: storedProofFileRef,
       extractedFields: {
         'product_name': productName.trim(),
         'brand': brand.trim(),
@@ -1641,13 +1671,25 @@ class GoLifeController extends ChangeNotifier {
     String description = '',
     String privacyLevel = 'local_only',
   }) async {
+    final attachmentId = id ?? _entityId('evidence');
+    final existing = id == null ? null : evidenceAttachmentById(id);
+    final storedFileRef = await _persistSubmissionAsset(
+      collection: 'evidence_attachments',
+      entityId: attachmentId,
+      sourcePath: fileRef ?? existing?.fileRef,
+    );
+    if (existing != null &&
+        existing.fileRef != null &&
+        existing.fileRef != storedFileRef) {
+      await _submissionAssetVault.deleteStoredAsset(existing.fileRef);
+    }
     final attachment = EvidenceAttachment(
-      id: id ?? _entityId('evidence'),
+      id: attachmentId,
       userId: 'local-user',
       ownedItemId: ownedItemId,
       proofId: proofId,
       type: EvidenceAttachmentType.normalize(type),
-      fileRef: fileRef,
+      fileRef: storedFileRef,
       description: description.trim(),
       privacyLevel: privacyLevel,
       createdAt: DateTime.now().toUtc().toIso8601String(),
@@ -1672,13 +1714,46 @@ class GoLifeController extends ChangeNotifier {
   }
 
   Future<String> exportLocalDataJson() async {
-    final snapshot = <String, Object?>{
+    final snapshot = await _buildLocalDataSnapshot();
+    return const JsonEncoder.withIndent('  ').convert(snapshot);
+  }
+
+  Future<LocalExportResult> exportLocalDataFile() async {
+    final assetEntries = await _submissionAssetVault
+        .collectManifestEntries(_submissionAssetRefs);
+    final snapshot = await _buildLocalDataSnapshot(assetEntries: assetEntries);
+    final jsonPayload = const JsonEncoder.withIndent('  ').convert(snapshot);
+    final exportAssets = assetEntries
+        .where((entry) => entry.available)
+        .map(
+          (entry) => LocalExportAsset(
+            sourcePath: entry.sourcePath,
+            bundleRelativePath: entry.bundleRelativePath,
+            byteCount: entry.byteCount,
+          ),
+        )
+        .toList(growable: false);
+    return _localExportService.saveExportBundle(
+      baseFileName: 'golife_local_export',
+      jsonPayload: jsonPayload,
+      assets: exportAssets,
+    );
+  }
+
+  Future<Map<String, Object?>> _buildLocalDataSnapshot({
+    List<SubmissionAssetManifestEntry>? assetEntries,
+  }) async {
+    final resolvedAssetEntries = assetEntries ??
+        await _submissionAssetVault
+            .collectManifestEntries(_submissionAssetRefs);
+    return <String, Object?>{
       'exported_at': DateTime.now().toUtc().toIso8601String(),
       'locale_preference': _localePreference.storageKey,
       'privacy_settings': _privacySettings.toJson(),
       'runtime_config': _runtimeConfig?.toJson(),
       'storage_security': {
         'sensitive_local_encryption': _sensitiveLocalEncryptionEnabled,
+        'submission_assets_stored_separately': true,
         'encrypted_collections': const <String>[
           'life_events',
           'missions',
@@ -1692,6 +1767,17 @@ class GoLifeController extends ChangeNotifier {
           'claim_drafts',
           'evidence_attachments',
         ],
+      },
+      'submission_assets': {
+        'storage_mode': 'separate_private_files',
+        'managed_ref_prefix': ProtectedSubmissionAssetVault.managedRefPrefix,
+        'bundle_directory': 'assets',
+        'asset_count': resolvedAssetEntries.length,
+        'included_asset_count':
+            resolvedAssetEntries.where((entry) => entry.available).length,
+        'entries': resolvedAssetEntries
+            .map((entry) => entry.toJson())
+            .toList(growable: false),
       },
       'life_events':
           lifeEvents.map((item) => item.toJson()).toList(growable: false),
@@ -1736,14 +1822,26 @@ class GoLifeController extends ChangeNotifier {
           .map((item) => item.toJson())
           .toList(growable: false),
     };
-    return const JsonEncoder.withIndent('  ').convert(snapshot);
   }
 
-  Future<LocalExportResult> exportLocalDataFile() async {
-    final jsonPayload = await exportLocalDataJson();
-    return _localExportService.saveJsonExport(
-      baseFileName: 'golife_local_export',
-      jsonPayload: jsonPayload,
+  Iterable<String?> get _submissionAssetRefs sync* {
+    for (final proof in _purchaseProofs) {
+      yield proof.fileRef;
+    }
+    for (final attachment in _evidenceAttachments) {
+      yield attachment.fileRef;
+    }
+  }
+
+  Future<String?> _persistSubmissionAsset({
+    required String collection,
+    required String entityId,
+    String? sourcePath,
+  }) async {
+    return _submissionAssetVault.persistSubmissionAsset(
+      collection: collection,
+      entityId: entityId,
+      sourcePath: sourcePath,
     );
   }
 
@@ -1751,6 +1849,7 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.saveDemoSeedEnabled(false);
     await _localStore.deleteAllData();
     await _lifeGraphRepository.clear();
+    await _submissionAssetVault.clearVault();
     _privacySettings = PrivacySettings.defaults();
     _localePreference = AppLocalePreference.system;
     _runtimeConfig = null;

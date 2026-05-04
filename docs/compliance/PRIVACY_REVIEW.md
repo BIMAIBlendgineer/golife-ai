@@ -11,12 +11,13 @@
 
 - Per-domain privacy settings in mobile
 - Per-item privacy during multi-event capture confirmation
-- Sensitive local encryption at rest for finance, journal entries, and quick notes in SQLite
+- Sensitive local encryption at rest for finance, journal entries, quick notes, `life_events`, `missions`, `daily_risks`, and `calendar_items`
 - Legacy plaintext migration for encrypted mobile collections
 - Safe local-store fallback that avoids app crash if secure storage is unavailable
-- Local JSON export
+- Protected local export bundle to app-private storage
+- HomeMemory submission assets copied into a private vault instead of persisting only external metadata refs
 - Local delete-all flow
-- Support queue for export/delete operations
+- Support queue plus backend operational export/delete workflows in admin
 - Public mobile runtime-config endpoint with no secrets
 - Internal routing config endpoint protected by internal token
 - Reflection safety telemetry with metadata-only operational audit
@@ -38,13 +39,12 @@
 
 ## Residual Risks
 
-- Export currently copies JSON to clipboard instead of writing a protected file
-- Sensitive encryption still covers only finance, journal entries, and quick notes
-- Secure-storage behavior still needs validation on each target platform
+- Secure-storage behavior is validated on the repo's real CI Flutter runner, but device-specific runner projects still need validation if Android, iOS, or desktop builds are added
+- The admin export bundle covers backend operational metadata only; full local LifeGraph export remains device-local by design
 - Device-level compromise is out of scope for app-only controls
 
 ## Release Assessment
 
 - Privacy/export/delete: implemented at local-app level
-- Privacy operations queue: implemented in admin
+- Privacy operations queue: implemented in admin with real backend operational jobs
 - Remaining before wider beta: expand encryption review to more domains and tighten retention guidance

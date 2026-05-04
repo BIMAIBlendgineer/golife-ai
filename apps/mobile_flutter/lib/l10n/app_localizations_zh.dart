@@ -139,7 +139,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String exportSavedFile(Object fileName) {
-    return '受保护的本地 JSON 导出已保存为 $fileName。';
+    return '受保护的本地导出包已保存为 $fileName。';
   }
 
   @override
@@ -1331,7 +1331,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String exportSavedFile(Object fileName) {
-    return '受保护的本地 JSON 导出已保存为 $fileName。';
+    return '受保护的本地导出包已保存为 $fileName。';
   }
 
   @override

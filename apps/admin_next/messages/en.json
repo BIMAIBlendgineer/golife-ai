@@ -685,10 +685,16 @@
       "deleteNote": "Users requesting full account or data removal.",
       "panelEyebrow": "Queue",
       "panelTitle": "Support requests",
-      "panelNote": "The web backend currently exposes a seeded queue. Replace this with persistent operational data in the next backend block.",
+      "panelNote": "Export requests can now generate metadata-only operational bundles, and delete requests execute a real backend purge for server-side records only.",
       "empty": "No support requests are queued.",
       "statusOpen": "Open",
-      "statusResolved": "Resolved"
+      "statusResolved": "Resolved",
+      "downloadBundleLabel": "Download bundle",
+      "markResolvedLabel": "Mark resolved",
+      "runDeleteLabel": "Delete operational records",
+      "metadataOnlyNote": "This workflow operates on backend metadata only, not the local mobile LifeGraph.",
+      "resolvedRequestPrefix": "Resolved request",
+      "deletedRequestPrefix": "Deleted operational records for"
     },
     "modelSettings": {
       "eyebrow": "AI Routing",

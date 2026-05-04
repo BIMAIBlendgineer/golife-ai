@@ -76,6 +76,7 @@ import type {
   StorageSummary,
   StorageUsageRow,
   SupportRequest,
+  SupportRequestExecutionResult,
   UserManagementRow,
   UserPrivacySummary,
   UserSummary,
@@ -170,12 +171,13 @@ async function adminRequest<T>(
 
 async function adminWrite<T>(
   path: string,
-  body: Record<string, unknown>,
+  body: Record<string, unknown> = {},
+  method: "PATCH" | "POST" = "PATCH",
 ): Promise<AdminFetchResult<T>> {
   const fetchedAt = new Date().toISOString();
   try {
     const response = await fetch(`${ADMIN_API_BASE_URL}${path}`, {
-      method: "PATCH",
+      method,
       cache: "no-store",
       headers: {
         "content-type": "application/json",
@@ -481,6 +483,22 @@ export async function getSupportRequests(): Promise<
   return adminRequest("/admin/support/export-delete", {
     fallbackData: fallbackSupportRequests,
   });
+}
+
+export async function resolveSupportRequest(
+  requestId: string,
+): Promise<AdminFetchResult<SupportRequestExecutionResult>> {
+  return adminWrite(`/admin/support/export-delete/${requestId}/resolve`, {}, "POST");
+}
+
+export async function executeDeleteSupportRequest(
+  requestId: string,
+): Promise<AdminFetchResult<SupportRequestExecutionResult>> {
+  return adminWrite(
+    `/admin/support/export-delete/${requestId}/execute-delete`,
+    {},
+    "POST",
+  );
 }
 
 export async function getOpenRouterKeys(): Promise<
