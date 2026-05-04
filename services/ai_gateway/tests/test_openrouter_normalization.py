@@ -1,6 +1,7 @@
 import asyncio
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -211,6 +212,46 @@ def test_openrouter_retries_after_invalid_json(monkeypatch):
 
     assert FakeAsyncClient.call_count == 2
     assert payload["rewrites"][0]["description"] == "recovered"
+
+
+def test_openrouter_returns_dev_mock_when_mock_mode_is_enabled():
+    provider = OpenRouterProvider(
+        Settings(
+            ai_gateway_enable_mock=True,
+            openrouter_api_key=None,
+            routing_control_enabled=False,
+        )
+    )
+
+    payload = asyncio.run(
+        provider.complete_json(
+            system_prompt="Return JSON only.",
+            user_payload={"intent": "daily_mission"},
+            response_schema={"type": "object"},
+        )
+    )
+
+    assert payload["mock"] is True
+    assert payload["reason"] == "explicit_dev_mock"
+
+
+def test_openrouter_rejects_internal_mock_fallback_in_production():
+    settings = Settings(
+        ai_gateway_enable_mock=False,
+        openrouter_api_key=None,
+        routing_control_enabled=False,
+    )
+    settings.environment = "production"
+    provider = OpenRouterProvider(settings)
+
+    with pytest.raises(RuntimeError, match="disabled in production"):
+        asyncio.run(
+            provider.complete_json(
+                system_prompt="Return JSON only.",
+                user_payload={"intent": "daily_mission"},
+                response_schema={"type": "object"},
+            )
+        )
 
 
 def test_task_rewrite_accepts_provider_array_shape(tmp_path):

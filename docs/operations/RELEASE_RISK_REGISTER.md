@@ -121,7 +121,30 @@
 - Follow-up:
   - keep HomeMemory admin aggregate-only until a separately reviewed privacy ADR authorizes any deeper visibility
 
-## RR-006 - Release decision
+## RR-006 - AI Gateway production runtime external configuration drift
+
+- Area: `services/ai_gateway` deploy configuration
+- Severity: high if misconfigured at deploy time
+- Origin: the validated production runtime relies on external env replication because local `.env` files are ignored by git and not part of the artifact
+- Evidence:
+  - `docs/operations/F03_AI_GATEWAY_PRODUCTION_RUNTIME_CLOSEOUT.md`
+  - local production smoke with `AI_GATEWAY_ENV=production`, `AI_GATEWAY_ENABLE_MOCK=false`, `ROUTING_CONTROL_ENABLED=false`
+- Decision: code risk closed, deploy-config risk accepted temporarily until the runtime environment is aligned explicitly
+- Mitigation:
+  - keep the production validator that blocks mock mode, missing live AI config, and default dev routing tokens
+  - replicate these external values in deploy configuration:
+    - `AI_GATEWAY_ENV=production`
+    - `AI_GATEWAY_ENABLE_MOCK=false`
+    - `LLM_PROVIDER=openrouter`
+    - `OPENROUTER_API_KEY` present
+    - `ROUTING_CONTROL_ENABLED=false` for single-key, or a verified control-plane with non-dev token
+  - enable `OPERATIONAL_BACKEND_ENABLED` only when the operational backend is live and intentionally wired
+- Follow-up:
+  - verify deploy manifests or secret manager entries before release
+  - decide separately whether production should run with single-key or real control-plane routing
+  - keep the local production smoke result as the reference baseline for anti-mock behavior
+
+## RR-007 - Release decision
 
 - Decision: conditional go for a premium release candidate
 - Not a blocker for this hardening branch:
@@ -130,7 +153,9 @@
   - RR-003 accepted temporarily for upstream-only warnings
   - RR-004 accepted temporarily for local environment-specific performance smoke instability
   - RR-005 verified safe
+  - RR-006 accepted temporarily as an external deploy-configuration risk
 - Would block release:
   - failing tests or build
   - `gitleaks` findings
+  - production env drift that re-enables mock mode or removes live AI configuration
   - any regression exposing sensitive HomeMemory or BYOK data in admin

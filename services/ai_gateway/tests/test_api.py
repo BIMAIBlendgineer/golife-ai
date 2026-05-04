@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.guardrails import assess_reflection_safety
@@ -8,6 +9,7 @@ from app.providers.factory import build_provider
 from app.feedback_store import MissionFeedbackStore
 from app.providers.mock import MockLLMProvider
 from app.providers.base import LLMProvider
+from app.providers.openrouter import OpenRouterProvider
 from app.schemas import MissionFeedbackRequest, ReflectionSafetyRequest
 from app.settings import Settings
 
@@ -156,6 +158,17 @@ def test_health_reports_mock_mode(client):
     assert data["mock_mode"] is True
 
 
+def test_ready_reports_dev_mock_without_failing(client):
+    response = client.get("/ready")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["environment"] == "dev"
+    assert data["production_ready"] is False
+    assert data["checks"]["provider_real"] is False
+    assert data["checks"]["mock_mode_disabled"] is False
+
+
 def test_suggestions_filter_non_ai_events_and_include_trace(client):
     response = client.post(
         "/v1/suggestions/generate",
@@ -223,6 +236,49 @@ def test_finance_reflect_avoids_regulated_advice_terms(client):
     assert "stock" not in body
 
 
+def test_settings_reject_production_with_mock_enabled():
+    with pytest.raises(ValueError, match="AI_GATEWAY_ENABLE_MOCK"):
+        Settings(
+            environment="production",
+            ai_gateway_enable_mock=True,
+            openrouter_api_key="test-key",
+            routing_control_enabled=False,
+        )
+
+
+def test_settings_reject_production_without_live_ai_config():
+    with pytest.raises(ValueError, match="OPENROUTER_API_KEY"):
+        Settings(
+            environment="production",
+            ai_gateway_enable_mock=False,
+            openrouter_api_key=None,
+            routing_control_enabled=False,
+        )
+
+
+def test_settings_reject_production_with_default_routing_token():
+    with pytest.raises(ValueError, match="ROUTING_BACKEND_INTERNAL_TOKEN"):
+        Settings(
+            environment="production",
+            ai_gateway_enable_mock=False,
+            openrouter_api_key=None,
+            routing_control_enabled=True,
+            routing_backend_base_url="https://routing.example.test",
+        )
+
+
+def test_settings_allow_production_with_real_openrouter_key():
+    settings = Settings(
+        environment="production",
+        ai_gateway_enable_mock=False,
+        openrouter_api_key="test-key",
+        routing_control_enabled=False,
+    )
+
+    assert settings.is_production is True
+    assert settings.resolved_mock_mode is False
+
+
 def test_provider_factory_falls_back_to_mock_without_api_key():
     provider = build_provider(
         Settings(
@@ -233,6 +289,123 @@ def test_provider_factory_falls_back_to_mock_without_api_key():
         )
     )
     assert isinstance(provider, MockLLMProvider)
+    assert provider.reason == "missing_openrouter_key_dev"
+
+
+def test_provider_factory_uses_explicit_dev_mock_reason():
+    provider = build_provider(
+        Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            openrouter_api_key="test-key",
+            routing_control_enabled=False,
+        )
+    )
+
+    assert isinstance(provider, MockLLMProvider)
+    assert provider.reason == "explicit_dev_mock"
+
+
+def test_provider_factory_uses_routing_unavailable_reason():
+    provider = build_provider(
+        Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            openrouter_api_key=None,
+            routing_control_enabled=True,
+            routing_backend_base_url="",
+            routing_backend_internal_token="",
+        )
+    )
+
+    assert isinstance(provider, MockLLMProvider)
+    assert provider.reason == "routing_unavailable_dev"
+
+
+def test_provider_factory_rejects_production_mock_resolution():
+    settings = Settings(
+        ai_gateway_enable_mock=False,
+        llm_provider="openrouter",
+        openrouter_api_key=None,
+        routing_control_enabled=False,
+    )
+    settings.environment = "production"
+
+    with pytest.raises(ValueError, match="disabled in production"):
+        build_provider(settings)
+
+
+def test_ready_fails_for_mock_provider_in_production(tmp_path):
+    app = create_app(
+        settings=Settings(
+            environment="production",
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            openrouter_api_key="test-key",
+            routing_control_enabled=False,
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=MockLLMProvider(reason="miswired_provider"),
+    )
+    client = TestClient(app)
+
+    response = client.get("/ready")
+
+    assert response.status_code == 503
+    data = response.json()["detail"]
+    assert data["production_ready"] is False
+    assert data["checks"]["provider_real"] is False
+
+
+def test_ready_succeeds_for_real_provider_in_production(tmp_path):
+    app = create_app(
+        settings=Settings(
+            environment="production",
+            ai_gateway_enable_mock=False,
+            llm_provider="openrouter",
+            openrouter_api_key="test-key",
+            routing_control_enabled=False,
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+        ),
+        provider=SemanticClassificationProvider(),
+    )
+    client = TestClient(app)
+
+    response = client.get("/ready")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["production_ready"] is True
+    assert data["checks"]["provider_real"] is True
+    assert data["checks"]["mock_mode_disabled"] is True
+
+
+def test_health_reports_effective_single_key_fields_for_local_env_runtime(tmp_path):
+    settings = Settings(
+        environment="production",
+        ai_gateway_enable_mock=False,
+        llm_provider="openrouter",
+        openrouter_api_key="test-key",
+        routing_control_enabled=False,
+        feedback_store_path=str(tmp_path / "mission_feedback.json"),
+    )
+    app = create_app(
+        settings=settings,
+        provider=OpenRouterProvider(settings),
+    )
+    client = TestClient(app)
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["routing_mode"] == "local_env_fallback"
+    assert data["effective_routing_mode"] == "single_key"
+    assert data["config_source"] == "local_env"
+    assert data["effective_config_source"] == "local_env"
+    assert data["control_plane_config_source"] == "fallback"
+    assert data["active_key_source"] == "local_env"
+    assert data["active_key_count"] == 1
 
 
 def test_feedback_endpoint_stores_structured_feedback(client):
