@@ -24,11 +24,12 @@ GoLife AI is a daily decision system, not a generic assistant. The value comes f
 - AI Gateway production anti-mock hardening
 - adversarial safety across reflection and other freeform input surfaces
 - mobile/admin fallback visibility
+- persisted mission memory over stored feedback metadata
 
 ### Still limited or pending
 
-- learning and memory over persisted data beyond current feedback traces
-- stronger mission ranking over stored evidence
+- stronger mission ranking over stored evidence beyond the current feedback-backed memory layer
+- shared or service-backed mission memory beyond the current local gateway runtime store
 - stronger privacy dashboard and retention controls
 - device-specific secure storage/export retrieval validation
 - stronger safety policy engine
@@ -65,8 +66,8 @@ Do not market or plan as already shipped:
 
 ## Next product blocks after documentation closeout
 
-- learning/memory over persisted data
-- mission ranker improvements
+- mission ranker improvements over persisted evidence
+- shared mission memory architecture if the gateway stops being single-runtime scoped
 - privacy dashboard maturity
 - domain CRUD maturity
 - device and runner validation

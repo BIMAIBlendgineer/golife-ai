@@ -62,6 +62,10 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 ```
 
 - Success: `200` with `SuggestionResponse`
+- Trace highlights:
+  - `mission_memory`
+  - `learning_keys_by_suggestion_id`
+  - `feedback_learning.candidate_biases`
 - Errors:
   - `503` when AI is temporarily unavailable
 - Privacy:
@@ -149,6 +153,10 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 - Purpose: store mission feedback and emit operational feedback audit metadata
 - Request model: `MissionFeedbackRequest`
 - Success: `200` with `MissionFeedbackResponse`
+- Behavior:
+  - stores metadata-only mission feedback
+  - derives or reuses a stable mission-pattern learning key
+  - feeds later mission ranking without storing raw note text in operational surfaces
 - Privacy:
   - feedback notes stay redacted from operational admin surfaces
 - Telemetry:
