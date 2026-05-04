@@ -57,3 +57,7 @@ Una app móvil con:
 ## Advertencia
 
 No es asesor financiero, médico, psicológico ni legal. GoLife AI debe usar lenguaje asistivo y explicable. Las recomendaciones deben ser presentadas como apoyo a la decisión del usuario.
+# Historical / legacy reference
+#
+# This package captures earlier business and implementation planning. It is not the current runtime source of truth.
+# Use README.md, docs/operations/RELEASE_CANDIDATE_SUMMARY.md, and docs/operations/DOCUMENTATION_INVENTORY.md first.

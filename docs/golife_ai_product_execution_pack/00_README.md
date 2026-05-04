@@ -50,3 +50,6 @@ C:\0 Work\GoLife AI\
 5. Completar dominios reales.
 6. Hacer misiones accionables.
 7. Cerrar privacidad, safety y release.
+# Historical / legacy reference
+#
+# Not runtime source of truth. Use README.md and docs/operations/RELEASE_CANDIDATE_SUMMARY.md for current release state.

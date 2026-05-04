@@ -1,15 +1,15 @@
 # F04 11 Admin Export Delete Workflow
 
-Fecha: 2026-05-04
-Ejecutor: Codex
-Rama base: `main`
-SHA base: `32fed4212178d015314afe27976be4f979be73bd`
+Date: `2026-05-04`
+Executor: `Codex`
+Base branch: `main`
+Base SHA: `32fed4212178d015314afe27976be4f979be73bd`
 
-## Objetivo
+## Objective
 
-Cerrar el gap restante del bloque Data/Persistencia/Export-Delete en backend/admin: la cola de soporte ya no debía ser solo observabilidad, sino ejecutar trabajo real sobre los metadatos operacionales del backend.
+Close the remaining data/persistence/export-delete gap in backend and admin. The support queue should not be read-only observability; it should execute real operational work on backend metadata.
 
-## Alcance
+## Scope
 
 - `services/web_backend/app/main.py`
 - `services/web_backend/app/repository.py`
@@ -24,46 +24,53 @@ Cerrar el gap restante del bloque Data/Persistencia/Export-Delete en backend/adm
 - `docs/operations/SUPPORT_PROCESS.md`
 - `docs/compliance/PRIVACY_REVIEW.md`
 
-## Cambios
+## Changes
 
-- Se añadió bundle real de export para solicitudes `export`:
+- Added a real export bundle for `export` requests:
   - `GET /admin/support/export-delete/{request_id}/bundle`
-  - genera un paquete JSON metadata-only con los registros operacionales del usuario en `web_backend`
-  - incluye checksum SHA-256 y recuentos por colección
-- Se añadió resolución explícita para solicitudes `export`:
+  - generates a metadata-only JSON package with backend operational records for the user
+  - includes SHA-256 checksum and per-collection record counts
+- Added explicit resolution for `export` requests:
   - `POST /admin/support/export-delete/{request_id}/resolve`
-- Se añadió borrado operacional real para solicitudes `delete`:
+- Added real operational delete for `delete` requests:
   - `POST /admin/support/export-delete/{request_id}/execute-delete`
-  - elimina registros por `user_id` de `admin_users`, `user_profiles`, `usage_events`, `ai_invocations`, `ai_usage_ledger`, `mission_audit_records`, `feedback_audit_records` y `safety_events`
-- Se añadió auditoría admin para:
-  - descarga de bundle
-  - resolución de solicitud
-  - ejecución de borrado operacional
-- La UI admin de `/support/export-delete` dejó de ser solo lectura:
-  - botón de descarga de bundle para `export`
-  - botón de resolución manual para `export`
-  - botón de borrado operacional real para `delete`
+  - removes backend operational records by `user_id`
+- Added admin audit entries for:
+  - bundle download
+  - request resolution
+  - delete execution
+- The admin UI at `/support/export-delete` is no longer read-only:
+  - export bundle download for `export`
+  - explicit resolve action for `export`
+  - real operational delete action for `delete`
 
-## Verificación
+## Validation
 
 - `cd services/web_backend && python -m pytest -q tests/test_admin_api.py`
-  - Resultado: `22 passed`
+  - result: `22 passed`
 - `cd services/web_backend && python -m pytest -q`
-  - Resultado: `25 passed`
+  - result: `25 passed`
 - `cd apps/admin_next && npm run lint`
-  - Resultado: pass
+  - result: pass
 - `cd apps/admin_next && npm run typecheck`
-  - Resultado: pass
+  - result: pass
 - `cd apps/admin_next && npm run build`
-  - Resultado: pass
+  - result: pass
 
-## Riesgos restantes
+## Residual risks
 
-- El bundle de export cubre solo metadatos operacionales del backend; el LifeGraph local completo sigue siendo responsabilidad del export protegido en mobile.
-- El borrado ejecutado aquí no toca datos locales del dispositivo ni otros sistemas externos potenciales.
-- La autenticación admin sigue siendo el hardening actual del repo, no SSO/RBAC enterprise.
+- the export bundle covers backend operational metadata only; full local LifeGraph export remains the mobile protected export responsibility
+- this delete flow does not touch local device data or external third-party systems
+- admin auth remains the repo hardening level, not enterprise SSO/RBAC
+
+## Canonical follow-up docs
+
+- [Data map](../compliance/DATA_MAP.md)
+- [Privacy review](../compliance/PRIVACY_REVIEW.md)
+- [Support process](SUPPORT_PROCESS.md)
+- [Admin operations](../admin/ADMIN_OPERATIONS.md)
 
 ## Rollback
 
-- Revertir el commit de esta fase.
-- Restaurar las rutas admin/backend afectadas si se decide volver a una cola solo observacional.
+- revert the commit for this phase
+- restore affected backend/admin routes if returning to a read-only support queue

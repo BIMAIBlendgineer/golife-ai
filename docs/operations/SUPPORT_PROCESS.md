@@ -36,6 +36,12 @@ Support exists to resolve product issues, privacy requests, trust concerns, and 
 5. For delete requests, execute the backend operational delete workflow from admin. This does not touch the local mobile LifeGraph.
 6. Record completion timestamp and operator note in the support system.
 
+## Data Scope Notes
+
+- Mobile local export is separate from backend operational export.
+- Admin export/delete covers backend operational metadata only.
+- Local device data, local protected export bundles, and copied submission assets remain device-scoped unless the user exports them manually.
+
 ## Safety Escalation
 
 - Any report of harmful, regulated, or unsafe AI output becomes a safety review ticket.

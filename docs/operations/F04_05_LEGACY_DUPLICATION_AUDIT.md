@@ -1,61 +1,61 @@
 # F04 05 Legacy Duplication Audit
 
-Fecha: 2026-05-03
-Ejecutor: Codex
-Objetivo: determinar si `golife_ai_business_roadmap_package/ai-gateway-skeleton` participa en runtime o sólo conserva valor documental.
+Date: `2026-05-03`
+Executor: `Codex`
+Objective: determine whether `golife_ai_business_roadmap_package/ai-gateway-skeleton` participates in runtime or only preserves documentary value.
 
-## Alcance auditado
+## Scope audited
 
 - `golife_ai_business_roadmap_package/`
-- referencias repo-wide a `golife_ai_business_roadmap_package` y `ai-gateway-skeleton`
-- manifiesto legacy:
-  - [golife_ai_business_roadmap_package/ai-gateway-skeleton/pyproject.toml](C:/0%20Work/GoLife%20AI/golife_ai_business_roadmap_package/ai-gateway-skeleton/pyproject.toml:1)
+- repo-wide references to `golife_ai_business_roadmap_package` and `ai-gateway-skeleton`
+- legacy manifest:
+  - `golife_ai_business_roadmap_package/ai-gateway-skeleton/pyproject.toml`
 
-## Hallazgos
+## Findings
 
-### 1. El skeleton sigue siendo ejecutable como paquete Python
+### 1. The skeleton was still technically executable
 
-El árbol legacy contiene:
+The legacy tree contained:
 
 - `app/`
 - `tests/`
 - `pyproject.toml`
 - `.env.example`
 
-Eso significa que no es sólo documentación; técnicamente puede ejecutarse y confundirse con el gateway real.
+That means it was not just documentation; technically it could be run and confused with the real gateway.
 
-### 2. No hay referencias runtime activas desde el producto actual
+### 2. There were no active runtime references from the current product
 
-La búsqueda repo-wide sólo encontró referencias en:
+Repo-wide search found references only in:
 
-- [README_START_HERE.md](C:/0%20Work/GoLife AI/README_START_HERE.md:125)
-- [golife_ai_business_roadmap_package/ROADMAP.md](C:/0%20Work/GoLife AI/golife_ai_business_roadmap_package/ROADMAP.md:84)
-- [golife_ai_business_roadmap_package/AI_API.md](C:/0%20Work/GoLife AI/golife_ai_business_roadmap_package/AI_API.md:54)
-- docs de auditoría F04 recién añadidas
+- `README_START_HERE.md`
+- `golife_ai_business_roadmap_package/ROADMAP.md`
+- `golife_ai_business_roadmap_package/AI_API.md`
+- F04 audit docs added during that phase
 
-No se encontraron imports ni rutas de CI que apunten a ese skeleton.
+No imports or CI paths pointed to that skeleton.
 
-### 3. Existe conflicto documental interno
+### 3. Internal documentary conflict existed
 
-- el README raíz declara que el runtime productivo único es `services/ai_gateway`
-- `golife_ai_business_roadmap_package/AI_API.md` todavía afirma que la fuente de verdad runtime vive en `ai-gateway-skeleton/app/schemas.py`
+- the root runtime docs stated that the only production gateway was `services/ai_gateway`
+- `golife_ai_business_roadmap_package/AI_API.md` still claimed the old skeleton as runtime source of truth
 
-Esa afirmación ya no es válida para el producto activo.
+That claim was no longer valid for the active product.
 
-## Clasificación
+## Classification
 
-- estado: `legacy executable reference`
-- riesgo actual: `medio`
-- riesgo principal: confusión de fuente de verdad y mantenimiento duplicado
-- riesgo runtime directo: `bajo`, porque CI y manifests activos no lo usan
+- status: `legacy executable reference`
+- current risk: `medium`
+- main risk: source-of-truth confusion and duplicated maintenance
+- direct runtime risk: `low`, because active CI and manifests did not use it
 
-## Decisión
+## Decision
 
-- no borrar en esta fase
-- mantener en cuarentena documental
-- tratar `services/ai_gateway` como única implementación runtime válida
-- corrección ejecutada en esta fase:
-  - [golife_ai_business_roadmap_package/AI_API.md](C:/0%20Work/GoLife%20AI/golife_ai_business_roadmap_package/AI_API.md:54) dejó de declarar al skeleton como source-of-truth runtime
-- plan recomendado posterior:
-  - marcar explícitamente el skeleton como `archived reference only`
-  - evaluar si conviene mover el paquete legacy a `docs/archive/` o excluirlo de futuros audits de runtime
+- do not delete in that phase
+- keep in documentation quarantine
+- treat `services/ai_gateway` as the only valid runtime gateway
+- correction executed then:
+  - `golife_ai_business_roadmap_package/AI_API.md` stopped declaring the skeleton as runtime source of truth
+- recommended next step:
+  - mark the skeleton explicitly as archived reference only
+  - consider moving or further quarantining it in future cleanup passes

@@ -49,3 +49,6 @@
 - Privacy/export/delete.
 - Soporte.
 - Coste controlado.
+# Historical / legacy reference
+#
+# This roadmap package is useful for product provenance, but current runtime source of truth lives in README.md and docs/operations/*.

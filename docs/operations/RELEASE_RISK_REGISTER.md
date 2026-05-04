@@ -1,161 +1,267 @@
 # Release Risk Register
 
-## Baseline
+Date: `2026-05-04`
+Release candidate baseline: `main@d1b521375086142a9c0cdeb258de5968369344e9`
 
-- Branch: `hardening/traceability-safety-pass`
-- Main baseline: `77f4b7c7ca780aca54bf78a1e2caed7875c7329e`
-- Supporting evidence:
-  - `docs/operations/npm-audit-admin-next.json`
-  - `docs/operations/I18N_RELEASE_GAP_REPORT.md`
+## Baseline decision
 
-## RR-001 - Transitive PostCSS issue under Next
+This repo is in a `conditional go` state for a premium release candidate.
 
-- Area: `apps/admin_next`
-- Severity: moderate
-- Origin: transitive advisory `GHSA-qx2v-qp2m-jg93` through `next@15.5.15 -> node_modules/next/node_modules/postcss@8.4.31`
-- Direct dependency status: the repo-level `postcss` dependency is already `8.4.47`; the flagged copy is the one bundled under `next`
+That means:
+
+- the core hardening program for anti-mock runtime, export/delete, secure export bundle, and adversarial input safety is closed by evidence
+- release still depends on explicit acceptance of the residual risks below
+- no unresolved secret exposure or failed CI gate is currently accepted
+
+## Closed or mitigated risks
+
+### RR-008 - AI Gateway mock or silent fallback in production
+
+- State: `closed`
+- Impact: production could look functional while returning mock missions or hidden fallback behavior
+- Evidence:
+  - [F03 AI Gateway production runtime closeout](F03_AI_GATEWAY_PRODUCTION_RUNTIME_CLOSEOUT.md)
+  - merged PRs `#7`, `#10`, `#11`
+- Mitigation:
+  - production validator blocks `AI_GATEWAY_ENABLE_MOCK=true`
+  - production validator blocks missing live AI config
+  - provider factory and OpenRouter provider no longer degrade silently to mock in production
+  - `/ready` fails when production is not actually AI-ready
+- Gate:
+  - `services/ai_gateway`: `python -m pytest -q`
+  - local production smoke with `mock_mode=false` and live OpenRouter response
+- Release decision: not a blocker anymore unless the code regresses
+- Next action: keep the deploy runbook aligned with the validated env contract
+
+### RR-009 - Admin/backend export-delete was read-only
+
+- State: `closed`
+- Impact: privacy operations could be acknowledged operationally without executing real export or delete work
+- Evidence:
+  - [F04 11 admin export delete workflow](F04_11_ADMIN_EXPORT_DELETE_WORKFLOW.md)
+  - merged PR `#10`
+- Mitigation:
+  - admin can download metadata-only export bundles
+  - admin can resolve export requests explicitly
+  - admin can execute backend delete workflows explicitly
+- Gate:
+  - `services/web_backend`: `python -m pytest -q`
+  - `apps/admin_next`: `npm run lint`, `npm run typecheck`, `npm run build`
+- Release decision: not a blocker anymore unless the workflow regresses
+- Next action: keep support and privacy docs synchronized with the implemented flow
+
+### RR-010 - HomeMemory submission assets persisted only as metadata refs
+
+- State: `closed`
+- Impact: export could lose the user's actual receipt or evidence files even if metadata remained
+- Evidence:
+  - [F04 secure mobile export bundle](F04_16_SECURE_MOBILE_EXPORT_BUNDLE.md)
+  - merged PR `#10`
+- Mitigation:
+  - submission assets are copied to an app-private vault
+  - protected export writes `data.json + assets/`
+  - delete-all clears the private vault
+- Gate:
+  - `apps/mobile_flutter`: `flutter analyze`, `flutter test`
+  - GitHub Actions `flutter`
+- Release decision: not a blocker anymore for the current local-first scope
+- Next action: validate device-specific retrieval UX if mobile platform runners are added
+
+### RR-011 - Adversarial safety coverage was limited to reflection only
+
+- State: `mitigated`
+- Impact: unsafe obfuscated crisis or clinical text could still flow through other freeform AI surfaces
+- Evidence:
+  - [F04 15B reflection adversarial coverage](F04_15B_REFLECTION_ADVERSARIAL_COVERAGE.md)
+  - [F04 adversarial input surfaces](F04_26_ADVERSARIAL_INPUT_SURFACES.md)
+  - merged PR `#11`
+- Mitigation:
+  - reflection-style normalization now also protects classify, parse, proof-parse, and task-rewrite
+  - mobile local capture parser drops obviously unsafe text instead of turning it into normal drafts
+- Gate:
+  - `services/ai_gateway`: `python -m pytest -q`
+  - `apps/mobile_flutter`: `flutter test`
+- Release decision: the old narrow-scope risk is no longer a blocker
+- Next action: track the remaining broader rule-based safety limit separately as RR-007
+
+### RR-012 - Mobile fallback looked like premium AI
+
+- State: `closed`
+- Impact: the user could mistake local fallback output for remote AI guidance
+- Evidence:
+  - [F03 AI Gateway production runtime closeout](F03_AI_GATEWAY_PRODUCTION_RUNTIME_CLOSEOUT.md)
+  - `apps/mobile_flutter/test/golife_app_test.dart`
+- Mitigation:
+  - degraded status and reason are visible in the mobile shell
+  - `clientFallback`, `fallbackReason`, and mock traces are surfaced explicitly
+- Gate:
+  - `apps/mobile_flutter`: `flutter test`
+- Release decision: not a blocker anymore unless visibility regresses
+- Next action: preserve degraded UX in future mission-delivery changes
+
+### RR-013 - Admin fallback snapshots looked live
+
+- State: `closed`
+- Impact: operators could mistake snapshot or offline data for live backend state
+- Evidence:
+  - `apps/admin_next/lib/api.ts`
+  - `apps/admin_next/components/page-shell.tsx`
+  - `apps/admin_next/components/premium/source-state-badge.tsx`
+- Mitigation:
+  - admin surfaces distinguish `live`, `fallback`, and `offline`
+  - source state is visible in the topbar and page shell
+- Gate:
+  - `apps/admin_next`: `npm run lint`, `npm run typecheck`, `npm run build`
+- Release decision: not a blocker anymore unless visibility regresses
+- Next action: keep new admin pages on the same source-state pattern
+
+### RR-014 - HomeMemory admin privacy regression risk
+
+- State: `closed`
+- Impact: raw proof text, evidence, or sensitive HomeMemory payloads could leak into admin surfaces
+- Evidence:
+  - [Quality and security audit](QUALITY_SECURITY_AUDIT_2026-04-25.md)
+  - [Privacy review](../compliance/PRIVACY_REVIEW.md)
+- Mitigation:
+  - admin HomeMemory surfaces remain aggregate-only
+  - operational telemetry stays metadata-only
+- Gate:
+  - `services/web_backend`: `python -m pytest -q`
+  - `apps/admin_next`: `npm run build`
+- Release decision: not a blocker anymore unless telemetry/admin contracts regress
+- Next action: require a separate ADR before exposing deeper HomeMemory detail in admin
+
+## Accepted or open risks
+
+### RR-001 - Transitive Next/PostCSS advisory
+
+- State: `accepted`
+- Impact: moderate admin runtime dependency risk
 - Evidence:
   - `npm audit --omit=dev`
   - `npm ls next postcss --depth=3`
   - `docs/operations/npm-audit-admin-next.json`
-- Fix available: only via `npm audit fix --force`, which proposes a semver-major `next` change and is not acceptable in this hardening pass
-- Runtime impact:
-  - Inference: low for the current product because the admin app does not expose a user-authored CSS surface
-  - The vulnerable package sits in the CSS stringify path owned by `next`, so the fix needs to come from a safe upstream update rather than a local force-upgrade
-- Decision: accepted temporarily
 - Mitigation:
-  - do not run `npm audit fix --force`
-  - keep the high-severity audit gate in CI/release validation
-  - avoid shipping any feature that processes user-supplied CSS or theme code before the upstream dependency is fixed safely
-- Follow-up:
-  - monitor the first safe `next` release that removes the vulnerable bundled `postcss`
-  - re-run `npm audit --omit=dev` before each release candidate
+  - do not force-upgrade with `npm audit fix --force`
+  - keep `npm audit` in CI
+- Gate:
+  - GitHub Actions `admin-security`
+- Release decision: accepted temporarily, not a release blocker for the current RC
+- Next action: update when a safe upstream Next/PostCSS path exists
 
-## RR-002 - Flutter localization gaps
+### RR-002 - Flutter localization gaps
 
-- Area: `apps/mobile_flutter`
-- Severity: medium release-quality risk
-- Origin: locale files lag behind the HomeMemory and everyday-surface string expansion
+- State: `accepted`
+- Impact: medium release-quality risk for locale parity claims
 - Evidence:
-  - `flutter gen-l10n`
   - `docs/operations/I18N_RELEASE_GAP_REPORT.md`
-- Current counts:
-  - `es`: 65 missing keys
-  - `pt_BR`: 65 missing keys
-  - `pt`: 196 missing keys
-  - `ja`: 195 missing keys
-  - `zh`: 195 missing keys
-  - `zh_Hans`: 195 missing keys
-- Decision: accepted temporarily for a premium release candidate, but not acceptable for claiming full locale parity
+  - `flutter gen-l10n`
 - Mitigation:
-  - keep English template fallback in place for missing keys
-  - prioritize human translation of the HomeMemory key set for `es` and `pt_BR` first because those are closest to parity and are visible user-facing locales
-  - treat `pt`, `ja`, `zh`, and `zh_Hans` as partial-localization follow-up work
-- Follow-up:
-  - complete the translation sweep tracked in `docs/operations/I18N_RELEASE_GAP_REPORT.md`
-  - do not advertise full multilingual completeness until the gap report is cleared
+  - keep English fallback for missing keys
+  - prioritize `es` and `pt-BR` parity first
+- Gate:
+  - `apps/mobile_flutter`: `flutter analyze`, `flutter test`
+- Release decision: accepted for RC, not acceptable for full multilingual parity claims
+- Next action: complete the translation sweep before broader launch claims
 
-## RR-003 - Python 3.14+ dependency warnings
+### RR-003 - Python 3.14+ dependency warnings
 
-- Area: `services/web_backend`, `services/ai_gateway`
-- Severity: medium future-compatibility risk
-- Origin:
-  - `fastapi` still hits `asyncio.iscoroutinefunction`, which is deprecated and slated for removal in Python 3.16
-  - `langchain_core` still imports the Pydantic v1 compatibility path under Python 3.14+
+- State: `accepted`
+- Impact: medium future-compatibility risk
 - Evidence:
-  - `python -m pytest -q -W default` in both Python services
-- Decision: partially corrected, remainder accepted temporarily
-- Corrected in this hardening branch:
-  - closed SQLite repository connections cleanly in `services/web_backend`
-  - reduced backend warnings from FastAPI deprecation plus many SQLite `ResourceWarning` messages down to the external FastAPI deprecation warnings only
-- Remaining uncorrected warnings:
-  - FastAPI deprecation path in both services
-  - `langchain_core` Pydantic v1 compatibility warning in `ai_gateway`
+  - `python -m pytest -q -W default` in Python services
+  - [Quality and security audit](QUALITY_SECURITY_AUDIT_2026-04-25.md)
 - Mitigation:
-  - keep running tests with warnings visible during hardening/release passes
-  - avoid broad dependency upgrades without an ADR or a dedicated compatibility pass
-- Follow-up:
-  - revisit after upstream FastAPI and `langchain_core` releases land with Python 3.14+/3.16-safe internals
+  - keep warnings visible during hardening
+  - avoid broad dependency churn without a dedicated compatibility pass
+- Gate:
+  - local Python test runs
+  - GitHub Actions `ai-gateway` and `web-backend`
+- Release decision: accepted temporarily
+- Next action: revisit after upstream FastAPI and `langchain_core` updates
 
-## RR-004 - AI Gateway concurrent smoke instability on local Python 3.14
+### RR-004 - AI Gateway concurrent smoke instability on local Windows + Python 3.14
 
-- Area: `services/ai_gateway`
-- Severity: medium release-operations risk
-- Origin: the repo load smoke script timed out locally under Windows + Python 3.14 while the same surface remained functionally healthy for isolated requests
+- State: `accepted`
+- Impact: medium release-operations risk for local load-signoff only
 - Evidence:
-  - `python scripts/performance/ai_gateway_load_smoke.py --base-url http://127.0.0.1:8003 --requests 60 --concurrency 10 --max-p95-ms 2000 --max-error-rate 0.0`
   - `docs/operations/F04_18_PERFORMANCE_BASELINE.md`
-- Working evidence:
-  - a single local `POST /v1/missions/daily` probe returned `200` in `97.17 ms`
-  - the normal PR CI workflow passed for `ai-gateway` on Python 3.12
-- Decision: accepted temporarily as an environment-specific release-operations limitation
+  - manual load-smoke script behavior under Windows + Python 3.14
 - Mitigation:
-  - treat GitHub Actions Python 3.12 as the authoritative broad gate for the branch
-  - keep the manual `ai-gateway-load-smoke` workflow available for future controlled runs
-  - avoid claiming local Windows + Python 3.14 load parity with Linux CI
-- Follow-up:
-  - re-run the smoke from a Python 3.12 or Linux-like environment before a stricter performance sign-off
+  - treat GitHub Actions Python 3.12 as the authoritative broad CI gate
+  - keep the workflow-dispatch load smoke available
+- Gate:
+  - GitHub Actions `ai-gateway`
+  - `ai-gateway-load-smoke` workflow when explicitly dispatched
+- Release decision: accepted temporarily
+- Next action: re-run load smoke from a Linux-like or Python 3.12 environment before stricter performance sign-off
 
-## RR-005 - HomeMemory admin privacy regression risk
+### RR-005 - AI Gateway production runtime external configuration drift
 
-- Area: admin UI + backend operational APIs
-- Severity: high if regressed
-- Origin: potential exposure of raw proof text, receipts, evidence details, claim text, journal/reflection content, or raw BYOK secrets through admin surfaces
-- Evidence reviewed:
-  - `apps/admin_next/app/homememory/page.tsx`
-  - `apps/admin_next/lib/api.ts`
-  - `apps/admin_next/lib/types.ts`
-  - `services/web_backend/app/main.py`
-  - `services/web_backend/app/schemas.py`
-  - `services/web_backend/app/repository.py`
-  - `services/web_backend/tests/test_admin_api.py`
-  - `docs/admin/DDC_HOMEMEMORY_ADMIN_TELEMETRY.md`
-  - `docs/admin/DDD_HOMEMEMORY_ADMIN_AGGREGATES.md`
-  - `docs/admin/SPEC_HOMEMEMORY_ADMIN_UI.md`
-- Decision: verified safe in the current build
-- Mitigation:
-  - backend exposes only `GET /admin/homememory/summary` and `GET /admin/homememory/parser-usage`
-  - response schema remains aggregate-only
-  - admin UI renders only counts, rates, parser names, locale distribution, and encrypted collection metadata
-  - regression tests now assert exact aggregate field shape and absence of sensitive fragments
-- Follow-up:
-  - keep HomeMemory admin aggregate-only until a separately reviewed privacy ADR authorizes any deeper visibility
-
-## RR-006 - AI Gateway production runtime external configuration drift
-
-- Area: `services/ai_gateway` deploy configuration
-- Severity: high if misconfigured at deploy time
-- Origin: the validated production runtime relies on external env replication because local `.env` files are ignored by git and not part of the artifact
+- State: `accepted`
+- Impact: high if deploy-time env values drift from the validated anti-mock configuration
 - Evidence:
-  - `docs/operations/F03_AI_GATEWAY_PRODUCTION_RUNTIME_CLOSEOUT.md`
-  - local production smoke with `AI_GATEWAY_ENV=production`, `AI_GATEWAY_ENABLE_MOCK=false`, `ROUTING_CONTROL_ENABLED=false`
-- Decision: code risk closed, deploy-config risk accepted temporarily until the runtime environment is aligned explicitly
+  - [F03 AI Gateway production runtime closeout](F03_AI_GATEWAY_PRODUCTION_RUNTIME_CLOSEOUT.md)
 - Mitigation:
-  - keep the production validator that blocks mock mode, missing live AI config, and default dev routing tokens
-  - replicate these external values in deploy configuration:
-    - `AI_GATEWAY_ENV=production`
-    - `AI_GATEWAY_ENABLE_MOCK=false`
-    - `LLM_PROVIDER=openrouter`
-    - `OPENROUTER_API_KEY` present
-    - `ROUTING_CONTROL_ENABLED=false` for single-key, or a verified control-plane with non-dev token
-  - enable `OPERATIONAL_BACKEND_ENABLED` only when the operational backend is live and intentionally wired
-- Follow-up:
-  - verify deploy manifests or secret manager entries before release
-  - decide separately whether production should run with single-key or real control-plane routing
-  - keep the local production smoke result as the reference baseline for anti-mock behavior
+  - production validator blocks mock mode, missing live config, and default dev routing tokens
+  - deploys must replicate the validated external env contract
+- Gate:
+  - `/ready` production behavior
+  - deployment runbook review
+- Release decision: accepted only if deploy configuration is explicitly aligned
+- Next action: mirror the documented env matrix into the real deploy platform
 
-## RR-007 - Release decision
+### RR-006 - No checked-in Android, iOS, or desktop runners
 
-- Decision: conditional go for a premium release candidate
-- Not a blocker for this hardening branch:
-  - RR-001 accepted temporarily
-  - RR-002 accepted temporarily with documented fallback
-  - RR-003 accepted temporarily for upstream-only warnings
-  - RR-004 accepted temporarily for local environment-specific performance smoke instability
-  - RR-005 verified safe
-  - RR-006 accepted temporarily as an external deploy-configuration risk
-- Would block release:
-  - failing tests or build
-  - `gitleaks` findings
-  - production env drift that re-enables mock mode or removes live AI configuration
-  - any regression exposing sensitive HomeMemory or BYOK data in admin
+- State: `open`
+- Impact: secure storage and export retrieval are validated on the repo Flutter runner, not on final device targets
+- Evidence:
+  - [F04 secure mobile export bundle](F04_16_SECURE_MOBILE_EXPORT_BUNDLE.md)
+  - `apps/mobile_flutter/README.md`
+- Mitigation:
+  - keep the current Flutter test runner green
+  - do not overclaim device-specific validation
+- Gate:
+  - GitHub Actions `flutter`
+- Release decision: open but accepted for this repo-level RC
+- Next action: add platform runners and device retrieval validation when those targets become part of the repo
+
+### RR-007 - Safety remains rule-based, not a strong policy engine
+
+- State: `open`
+- Impact: adversarial behavior is reduced but not fully covered
+- Evidence:
+  - [Safety review](../compliance/SAFETY_REVIEW.md)
+  - [F04 adversarial input surfaces](F04_26_ADVERSARIAL_INPUT_SURFACES.md)
+- Mitigation:
+  - structured refusals and metadata-only safety telemetry
+  - broader lexical normalization across implemented surfaces
+- Gate:
+  - `services/ai_gateway`: `python -m pytest -q`
+- Release decision: open but acceptable for RC if the limit is stated explicitly
+- Next action: stronger policy engine, safer refusal catalog, and offline evaluation corpus
+
+### RR-015 - Operational telemetry requires a live backend if enabled
+
+- State: `accepted`
+- Impact: production observability degrades if `OPERATIONAL_BACKEND_ENABLED=true` without a live backend
+- Evidence:
+  - [F03 AI Gateway production runtime closeout](F03_AI_GATEWAY_PRODUCTION_RUNTIME_CLOSEOUT.md)
+  - [Support process](SUPPORT_PROCESS.md)
+- Mitigation:
+  - enable operational backend only when it is intentionally wired
+  - keep admin fallback/offline signaling visible
+- Gate:
+  - backend health in admin
+  - deployment runbook review
+- Release decision: accepted if the deploy wiring is explicit
+- Next action: validate the full live operational backend path in the target environment
+
+## Release gate
+
+The following conditions remain hard blockers:
+
+- failing CI or local validation gates for touched surfaces
+- `gitleaks` findings
+- production env drift that re-enables mock mode or removes live AI configuration
+- regressions that expose sensitive HomeMemory or feedback content in admin or operational telemetry

@@ -4,50 +4,58 @@ Date: `2026-04-25`
 
 ## Scope
 
-- Mobile Flutter app
+- mobile Flutter app
 - `services/ai_gateway`
 - `services/web_backend`
 - `apps/admin_next`
 - CI and operational automation
 
-## Corrections Implemented
+## Corrections implemented
 
-- Redacted mission feedback note text before it reaches operational admin surfaces.
-- Sanitized existing operational feedback reasons to the redaction marker on repository startup.
-- Migrated AI gateway local feedback storage away from raw note persistence to metadata only.
-- Hardened reflection safety matching with accent-insensitive normalization and broader multilingual crisis phrases.
-- Replaced placeholder crisis contacts with region-aware defaults for `global`, `us`, `es`, and `br`.
-- Added a checked-in crisis resource catalog sample at `services/ai_gateway/config/crisis_resources.catalog.json`.
-- Added a resilient mobile local-store wrapper that falls back safely instead of crashing when secure storage is unavailable.
-- Exposed the degraded encryption state in the privacy UI.
-- Marked admin API access code as server-only and removed the production fallback admin token.
-- Added CI security gates for `bandit`, `pip-audit`, `npm audit`, and a manual AI gateway load-smoke workflow.
-- Added a reusable load-smoke script at `scripts/performance/ai_gateway_load_smoke.py`.
+- redacted mission feedback note text before it reaches operational admin surfaces
+- sanitized existing operational feedback reasons to the redaction marker on repository startup
+- migrated AI gateway local feedback storage away from raw note persistence to metadata only
+- hardened reflection safety matching with accent-insensitive normalization and broader multilingual crisis phrases
+- replaced placeholder crisis contacts with region-aware defaults for `global`, `us`, `es`, and `br`
+- added a checked-in crisis resource catalog sample at `services/ai_gateway/config/crisis_resources.catalog.json`
+- added a resilient mobile local-store wrapper that falls back safely instead of crashing when secure storage is unavailable
+- exposed the degraded encryption state in the privacy UI
+- marked admin API access code as server-only and removed the production fallback admin token
+- added CI security gates for `bandit`, `pip-audit`, `npm audit`, and a manual AI gateway load-smoke workflow
+- added a reusable load-smoke script at `scripts/performance/ai_gateway_load_smoke.py`
 
-## Risks Still Open
+## Risks still open
 
-- Sensitive encryption coverage was expanded after this audit to include `life_events`, `calendar_items`, `daily_risks`, and `missions`, and the current repo now validates protected export retrieval plus submission-asset vaulting on the real Flutter CI runner. Device-specific validation still remains open if Android, iOS, or desktop targets are added.
-- Reflection safety and the broader freeform gateway surfaces now cover accent stripping, punctuation splitting, letter-spaced obfuscation, and basic leetspeak variants across `reflection/check`, `events/classify`, `events/parse`, `proofs/parse`, and `tasks/rewrite`, plus the local mobile capture fallback. The remaining gap is that the policy is still rule-based, not a stronger policy engine.
-- Clipboard-only export is no longer the primary path after the protected local bundle export hardening, but device-specific retrieval UX still needs validation if final platform runners are added.
-- Dynamic browser-level regression coverage is still limited; current automation is strongest on API and storage boundaries.
+- sensitive encryption coverage was expanded after this audit to include `life_events`, `calendar_items`, `daily_risks`, and `missions`, and the current repo now validates protected export retrieval plus submission-asset vaulting on the real Flutter CI runner; device-specific validation still remains open if Android, iOS, or desktop targets are added
+- reflection safety and the broader freeform gateway surfaces now cover accent stripping, punctuation splitting, letter-spaced obfuscation, and basic leetspeak variants across `reflection/check`, `events/classify`, `events/parse`, `proofs/parse`, and `tasks/rewrite`, plus the local mobile capture fallback; the remaining gap is that the policy is still rule-based, not a stronger policy engine
+- clipboard-only export is no longer the primary path after the protected local bundle export hardening, but device-specific retrieval UX still needs validation if final platform runners are added
+- dynamic browser-level regression coverage is still limited; current automation is strongest on API and storage boundaries
 
-## QA and DevSecOps Baseline
+## QA and DevSecOps baseline
 
-- Functional and regression:
+- functional and regression:
   - Python API tests in `services/ai_gateway/tests` and `services/web_backend/tests`
   - Flutter tests in `apps/mobile_flutter/test`
   - Next lint, typecheck, and production build in CI
-- Security:
+- security:
   - `gitleaks` for secret scanning
   - `bandit` for Python SAST
   - `pip-audit` for Python dependency vulnerabilities
   - `npm audit --omit=dev --audit-level=high` for admin runtime dependencies
-- Performance:
-  - Manual workflow-dispatch load smoke against `ai_gateway`
-  - Script supports thresholds for `p95` latency and error rate
+- performance:
+  - manual workflow-dispatch load smoke against `ai_gateway`
+  - script supports thresholds for `p95` latency and error rate
 
-## Recommended Next Block
+## Recommended next block
 
-- Add browser-level admin smoke tests and Flutter widget smoke flows for the privacy/export path.
-- Add platform validation runs for secure storage on release candidates when concrete Android, iOS, or desktop runners exist in the repo.
-- Expand learning and memory validation over persisted data, with explicit checks that stored evidence and feedback improve later planning without crossing privacy boundaries.
+- add browser-level admin smoke tests and Flutter widget smoke flows for the privacy/export path
+- add platform validation runs for secure storage on release candidates when concrete Android, iOS, or desktop runners exist in the repo
+- expand learning and memory validation over persisted data, with explicit checks that stored evidence and feedback improve later planning without crossing privacy boundaries
+
+## Canonical current-state docs
+
+- [Release candidate summary](RELEASE_CANDIDATE_SUMMARY.md)
+- [Release risk register](RELEASE_RISK_REGISTER.md)
+- [Data map](../compliance/DATA_MAP.md)
+- [Safety review](../compliance/SAFETY_REVIEW.md)
+- [Safety policy](../security/SAFETY_POLICY.md)

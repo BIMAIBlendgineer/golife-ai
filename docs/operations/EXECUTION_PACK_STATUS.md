@@ -12,21 +12,21 @@ This file records the practical implementation status after analyzing:
 ### Release 0 - Order
 
 - Monorepo reorganized to `apps`, `services`, `packages`, and `docs`
-- Root README updated
+- Root README and canonical runtime docs restored
 - CI routed to the active structure
 - `.env.example` files present per active service
 
 ### Release 1 - AI / Operations
 
 - OpenRouter live support implemented
-- PostgreSQL live operational backend validated
+- Operational backend and admin routing surfaces implemented
 - Admin shows live/fallback/offline state
 - Cost tracking and AI invocation ingestion implemented
 
 ### Release 2 - Mobile UX
 
 - Today, Capture, Privacy, and domain boards are running in Flutter
-- Dashboard now acts on missions instead of only collecting feedback
+- Dashboard acts on missions instead of only collecting feedback
 
 ### Release 3 - Capture + LifeGraph
 
@@ -40,19 +40,23 @@ This file records the practical implementation status after analyzing:
 
 ### Release 5 - Extended Domains
 
-- Week and closet now have local boards and actions
-- Journal, calendar, and recipe flows remain pending
+- Week and closet have local boards and actions
+- HomeMemory MVP is active
+- Journal, calendar, and recipe maturity still trail core domains
 
 ### Release 6 - Differential AI
 
-- Ranked missions, risks, explanations, feedback learning, runtime config, and OpenRouter routing are implemented
+- Ranked missions, risks, explanations, feedback traces, runtime config, and OpenRouter routing are implemented
+- Production anti-mock hardening is closed
+- Adversarial safety now covers more than reflection only
 
 ### Release 7 - Closed Beta Readiness
 
 - Local export/delete implemented
-- Support, privacy, safety, and license review docs added
+- Admin/backend export-delete workflow implemented
+- Secure mobile export bundle plus submission-asset vault implemented
 - Monitoring and operational admin are live
-- Remaining closed-beta gaps are mostly hardening items, not missing architecture
+- Remaining release gaps are mostly policy, runner, and learning/memory maturity gaps
 
 ## Checklist Summary
 
@@ -64,4 +68,4 @@ This file records the practical implementation status after analyzing:
 
 ## Next Useful Gap
 
-- Learning and memory over persisted data, so later missions can improve from stored evidence and feedback without breaking the current privacy boundaries.
+- Learning and memory over persisted data, so later missions can improve from stored evidence and feedback without breaking current privacy boundaries.
