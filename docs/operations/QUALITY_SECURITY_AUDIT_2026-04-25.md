@@ -27,7 +27,7 @@ Date: `2026-04-25`
 ## Risks Still Open
 
 - Sensitive encryption coverage was expanded after this audit to include `life_events`, `calendar_items`, `daily_risks`, and `missions`, and the current repo now validates protected export retrieval plus submission-asset vaulting on the real Flutter CI runner. Device-specific validation still remains open if Android, iOS, or desktop targets are added.
-- Reflection safety now covers accent stripping, punctuation splitting, letter-spaced obfuscation, and basic leetspeak variants, but it is still rule-based and should gain a broader adversarial corpus before public scale.
+- Reflection safety and the broader freeform gateway surfaces now cover accent stripping, punctuation splitting, letter-spaced obfuscation, and basic leetspeak variants across `reflection/check`, `events/classify`, `events/parse`, `proofs/parse`, and `tasks/rewrite`, plus the local mobile capture fallback. The remaining gap is that the policy is still rule-based, not a stronger policy engine.
 - Clipboard-only export is no longer the primary path after the protected local bundle export hardening, but device-specific retrieval UX still needs validation if final platform runners are added.
 - Dynamic browser-level regression coverage is still limited; current automation is strongest on API and storage boundaries.
 
@@ -50,4 +50,4 @@ Date: `2026-04-25`
 
 - Add browser-level admin smoke tests and Flutter widget smoke flows for the privacy/export path.
 - Add platform validation runs for secure storage on release candidates when concrete Android, iOS, or desktop runners exist in the repo.
-- Expand adversarial safety coverage beyond reflection-specific obfuscation cases.
+- Expand learning and memory validation over persisted data, with explicit checks that stored evidence and feedback improve later planning without crossing privacy boundaries.

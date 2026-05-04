@@ -471,6 +471,56 @@ def test_event_classification_uses_semantic_provider_when_flag_enabled(tmp_path)
     assert data["trace"]["classifier"] == "semantic_openrouter"
 
 
+def test_event_classification_rejects_crisis_capture_with_safety_telemetry(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/classify",
+        json={
+            "user_id": "user-1",
+            "text": "I am scared I may k1ll mys3lf tonight.",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["task"]},
+        },
+        headers={"x-correlation-id": "corr-capture-block-123"},
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "unsafe_capture_text"
+    assert detail["input_surface"] == "capture"
+    assert detail["category"] == "crisis"
+    assert detail["trace"]["reason"] == "crisis_language"
+    assert response.headers["x-correlation-id"] == "corr-capture-block-123"
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["metadata"]["status"] == "error"
+    assert operational_client.usage_events[0]["metadata"]["correlation_id"] == "corr-capture-block-123"
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["provider"] == "guardrail"
+    assert operational_client.invocations[0]["status"] == "error"
+    assert len(operational_client.safety_batches) == 1
+    assert operational_client.safety_batches[0][0]["rule"] == "crisis_language"
+    assert len(operational_client.model_settings) == 1
+    dumped = json.dumps(
+        {
+            "usage_events": operational_client.usage_events,
+            "invocations": operational_client.invocations,
+            "safety_batches": operational_client.safety_batches,
+        }
+    )
+    assert "k1ll mys3lf" not in dumped
+
+
 def test_event_parse_endpoint_splits_multi_item_capture(client):
     response = client.post(
         "/v1/events/parse",
@@ -490,6 +540,43 @@ def test_event_parse_endpoint_splits_multi_item_capture(client):
     assert data["items"][1]["domain"] == "pantry"
     assert data["items"][2]["domain"] == "task"
     assert data["trace"]["parser"] == "deterministic_capture_parser"
+
+
+def test_event_parse_rejects_letter_spaced_clinical_language(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/events/parse",
+        json={
+            "user_id": "user-1",
+            "text": "I need a d i a g n o s i s and t h e r a p y right now.",
+            "privacy_settings": {"ai_enabled": True, "allowed_domains": ["task"]},
+        },
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "unsafe_capture_text"
+    assert detail["category"] == "clinical"
+    assert detail["trace"]["reason"] == "clinical_language"
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["metadata"]["status"] == "error"
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["status"] == "error"
+    assert len(operational_client.safety_batches) == 1
+    assert operational_client.safety_batches[0][0]["category"] == "clinical"
+    assert len(operational_client.model_settings) == 1
 
 
 def test_event_parse_uses_semantic_provider_when_flag_enabled(tmp_path):
@@ -886,6 +973,50 @@ def test_proof_parse_reports_metadata_only_operational_audit(tmp_path):
     assert proof_text not in dumped
 
 
+def test_proof_parse_rejects_crisis_language_before_parsing(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/proofs/parse",
+            json={
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "Receipt note: I want to k.i.l.l myself tonight.",
+                "privacy_settings": {"ai_enabled": True},
+            },
+        )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "unsafe_proof_text"
+    assert detail["input_surface"] == "proof_parse"
+    assert detail["category"] == "crisis"
+    assert detail["trace"]["reason"] == "crisis_language"
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["metadata"]["status"] == "error"
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["provider"] == "guardrail"
+    assert operational_client.invocations[0]["status"] == "error"
+    assert len(operational_client.safety_batches) == 1
+    assert operational_client.safety_batches[0][0]["rule"] == "crisis_language"
+    serialized = json.dumps(
+        {
+            "usage_events": operational_client.usage_events,
+            "invocations": operational_client.invocations,
+            "safety_batches": operational_client.safety_batches,
+        }
+    )
+    assert "k.i.l.l myself" not in serialized
+
+
 def test_feedback_store_persists_items(tmp_path):
     store_path = tmp_path / "feedback.json"
     store = MissionFeedbackStore(store_path)
@@ -1229,6 +1360,47 @@ def test_task_rewrite_privacy_rejection_reports_safety(tmp_path):
     assert operational_client.invocations[0]["status"] == "error"
     assert len(operational_client.safety_batches) == 1
     assert operational_client.safety_batches[0][0]["rule"] == "task_rewrite_requires_ai_allowed"
+
+
+def test_task_rewrite_rejects_crisis_language_with_structured_safety_detail(tmp_path):
+    operational_client = FakeOperationalClient()
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=True,
+            llm_provider="openrouter",
+            feedback_store_path=str(tmp_path / "mission_feedback.json"),
+            operational_backend_enabled=True,
+        ),
+        provider=MockLLMProvider(),
+        operational_client=operational_client,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/v1/tasks/rewrite",
+        json={
+            "user_id": "user-1",
+            "task_title": "Plan what to do because I may k1ll mys3lf tonight",
+            "privacy_level": "ai_allowed",
+        },
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail["code"] == "unsafe_task_rewrite_text"
+    assert detail["input_surface"] == "task_rewrite"
+    assert detail["category"] == "crisis"
+    assert detail["trace"]["reason"] == "crisis_language"
+    assert detail["redirect_endpoint"] == "/v1/reflection/check"
+    assert len(operational_client.usage_events) == 1
+    assert operational_client.usage_events[0]["metadata"]["status"] == "error"
+    assert operational_client.usage_events[0]["metadata"]["error_code"] == "unsafe_task_rewrite_text"
+    assert len(operational_client.invocations) == 1
+    assert operational_client.invocations[0]["status"] == "error"
+    assert operational_client.invocations[0]["metadata"]["category"] == "crisis"
+    assert len(operational_client.safety_batches) == 1
+    assert operational_client.safety_batches[0][0]["rule"] == "crisis_language"
+    assert len(operational_client.model_settings) == 1
 
 
 def test_reflection_check_returns_supportive_message(client):

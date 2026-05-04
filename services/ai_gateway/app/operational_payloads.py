@@ -43,6 +43,57 @@ def _metadata_with_correlation_id(
     }
 
 
+def _error_detail_code(error_detail: Any) -> str | None:
+    if isinstance(error_detail, dict):
+        code = error_detail.get("code")
+        if code is not None:
+            return str(code)
+    if isinstance(error_detail, str) and error_detail.strip():
+        return error_detail
+    return None
+
+
+def _error_detail_category(error_detail: Any) -> str | None:
+    if isinstance(error_detail, dict):
+        category = error_detail.get("category")
+        if category is not None:
+            return str(category)
+    return None
+
+
+def _error_detail_rule(error_detail: Any) -> str | None:
+    if isinstance(error_detail, dict):
+        trace = error_detail.get("trace")
+        if isinstance(trace, dict) and trace.get("reason") is not None:
+            return str(trace["reason"])
+    return _error_detail_code(error_detail)
+
+
+def _build_input_safety_events(
+    *,
+    user_id: str,
+    endpoint: str,
+    created_at: str,
+    error_detail: Any,
+) -> list[dict[str, Any]]:
+    rule = _error_detail_rule(error_detail)
+    if not rule:
+        return []
+    category = _error_detail_category(error_detail) or "input"
+    severity = "high" if category == "crisis" else "medium"
+    return [
+        {
+            "event_id": f"safety-{uuid4()}",
+            "user_id": user_id,
+            "category": category,
+            "rule": rule,
+            "severity": severity,
+            "endpoint": endpoint,
+            "created_at": created_at,
+        }
+    ]
+
+
 def estimate_cost_usd(
     *,
     endpoint: str,
@@ -196,24 +247,35 @@ def build_suggestion_operation_payloads(
 def build_classification_operation_payloads(
     *,
     request: EventClassificationRequest,
-    response: EventClassificationResponse,
+    response: EventClassificationResponse | None,
     latency_ms: float,
     correlation_id: str,
+    status: str = "success",
+    error_detail: Any | None = None,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
+    safety_events = _build_input_safety_events(
+        user_id=request.user_id,
+        endpoint="/v1/events/classify",
+        created_at=created_at,
+        error_detail=error_detail,
+    )
     return {
         "usage_event": {
             "event_id": f"usage-{uuid4()}",
             "user_id": request.user_id,
             "event_type": "capture_classification_requested",
             "endpoint": "/v1/events/classify",
-            "domain": response.domain,
+            "domain": response.domain if response else None,
             "quantity": 1,
             "created_at": created_at,
             "metadata": _metadata_with_correlation_id(
                 {
-                    "event_type": response.event_type,
-                    "classifier": response.trace.get("classifier"),
+                    "event_type": response.event_type if response else None,
+                    "classifier": response.trace.get("classifier") if response else None,
+                    "status": status,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                     "locale": normalize_locale(request.locale),
                 },
                 correlation_id,
@@ -223,54 +285,78 @@ def build_classification_operation_payloads(
             "invocation_id": f"invoke-{uuid4()}",
             "user_id": request.user_id,
             "endpoint": "/v1/events/classify",
-            "provider": "deterministic_classifier",
-            "model": "deterministic_capture_router",
+            "provider": "deterministic_classifier" if response else "guardrail",
+            "model": "deterministic_capture_router" if response else None,
             "latency_ms": round(latency_ms, 2),
             "fallback": False,
-            "suggestions_count": 1,
+            "suggestions_count": 1 if response else 0,
             "estimated_cost_usd": estimate_cost_usd(
                 endpoint="/v1/events/classify",
-                provider="deterministic_classifier",
-                suggestions_count=1,
+                provider="deterministic_classifier" if response else "guardrail",
+                suggestions_count=1 if response else 0,
             ),
-            "schema_valid": True,
-            "status": "success",
+            "schema_valid": response is not None,
+            "status": status,
             "created_at": created_at,
             "metadata": _metadata_with_correlation_id(
                 {
-                    "domain": response.domain,
-                    "confidence": response.confidence,
+                    "domain": response.domain if response else None,
+                    "confidence": response.confidence if response else None,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                     "locale": normalize_locale(request.locale),
                 },
                 correlation_id,
             ),
         },
+        "safety_events": safety_events,
     }
 
 
 def build_parse_operation_payloads(
     *,
     request: EventParseRequest,
-    response: EventParseResponse,
+    response: EventParseResponse | None,
     latency_ms: float,
     correlation_id: str,
+    status: str = "success",
+    error_detail: Any | None = None,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
-    classifier = response.trace.get("parser", "deterministic_capture_parser")
-    provider_name = "semantic_parser" if classifier == "semantic_openrouter" else "deterministic_parser"
+    classifier = (
+        response.trace.get("parser", "deterministic_capture_parser")
+        if response
+        else "guardrail"
+    )
+    provider_name = (
+        "semantic_parser"
+        if classifier == "semantic_openrouter"
+        else "deterministic_parser"
+        if response
+        else "guardrail"
+    )
+    safety_events = _build_input_safety_events(
+        user_id=request.user_id,
+        endpoint="/v1/events/parse",
+        created_at=created_at,
+        error_detail=error_detail,
+    )
     return {
         "usage_event": {
             "event_id": f"usage-{uuid4()}",
             "user_id": request.user_id,
             "event_type": "capture_parse_requested",
             "endpoint": "/v1/events/parse",
-            "domain": response.items[0].domain if response.items else None,
-            "quantity": max(1, len(response.items)),
+            "domain": response.items[0].domain if response and response.items else None,
+            "quantity": max(1, len(response.items)) if response else 1,
             "created_at": created_at,
             "metadata": _metadata_with_correlation_id(
                 {
-                    "item_count": len(response.items),
+                    "item_count": len(response.items) if response else 0,
                     "parser": classifier,
+                    "status": status,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                     "locale": normalize_locale(request.locale),
                 },
                 correlation_id,
@@ -281,26 +367,31 @@ def build_parse_operation_payloads(
             "user_id": request.user_id,
             "endpoint": "/v1/events/parse",
             "provider": provider_name,
-            "model": response.trace.get("provider_meta", {}).get("model"),
+            "model": response.trace.get("provider_meta", {}).get("model")
+            if response
+            else None,
             "latency_ms": round(latency_ms, 2),
             "fallback": classifier != "semantic_openrouter",
-            "suggestions_count": len(response.items),
+            "suggestions_count": len(response.items) if response else 0,
             "estimated_cost_usd": estimate_cost_usd(
                 endpoint="/v1/events/parse",
                 provider=provider_name,
-                suggestions_count=max(1, len(response.items)),
+                suggestions_count=max(1, len(response.items)) if response else 0,
             ),
-            "schema_valid": True,
-            "status": "success",
+            "schema_valid": response is not None,
+            "status": status,
             "created_at": created_at,
             "metadata": _metadata_with_correlation_id(
                 {
-                    "item_count": len(response.items),
+                    "item_count": len(response.items) if response else 0,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                     "locale": normalize_locale(request.locale),
                 },
                 correlation_id,
             ),
         },
+        "safety_events": safety_events,
     }
 
 
@@ -347,14 +438,32 @@ def build_feedback_operation_payloads(
 def build_proof_parse_operation_payloads(
     *,
     request: ProofParseRequest,
-    response: ProofParseResponse,
+    response: ProofParseResponse | None,
     latency_ms: float,
     correlation_id: str,
+    status: str = "success",
+    error_detail: Any | None = None,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
-    parser = str(response.trace.get("parser", "deterministic_proof_parser"))
-    provider_name = "semantic_parser" if parser == "semantic_openrouter" else "deterministic_parser"
+    parser = (
+        str(response.trace.get("parser", "deterministic_proof_parser"))
+        if response
+        else "guardrail"
+    )
+    provider_name = (
+        "semantic_parser"
+        if parser == "semantic_openrouter"
+        else "deterministic_parser"
+        if response
+        else "guardrail"
+    )
     normalized_locale = normalize_locale(request.locale)
+    safety_events = _build_input_safety_events(
+        user_id=request.user_id,
+        endpoint="/v1/proofs/parse",
+        created_at=created_at,
+        error_detail=error_detail,
+    )
     return {
         "usage_event": {
             "event_id": f"usage-{uuid4()}",
@@ -369,11 +478,16 @@ def build_proof_parse_operation_payloads(
                     "locale": normalized_locale,
                     "region": request.region,
                     "parser": parser,
-                    "confidence": response.confidence,
-                    "has_amount": response.total_amount is not None,
-                    "has_date": bool(response.purchase_date),
-                    "has_warranty_hint": response.warranty_months is not None,
-                    "item_count": 1,
+                    "confidence": response.confidence if response else None,
+                    "has_amount": response.total_amount is not None if response else False,
+                    "has_date": bool(response.purchase_date) if response else False,
+                    "has_warranty_hint": response.warranty_months is not None
+                    if response
+                    else False,
+                    "item_count": 1 if response else 0,
+                    "status": status,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                 },
                 correlation_id,
             ),
@@ -383,32 +497,39 @@ def build_proof_parse_operation_payloads(
             "user_id": request.user_id,
             "endpoint": "/v1/proofs/parse",
             "provider": provider_name,
-            "model": response.trace.get("provider_meta", {}).get("model"),
+            "model": response.trace.get("provider_meta", {}).get("model")
+            if response
+            else None,
             "latency_ms": round(latency_ms, 2),
             "fallback": parser != "semantic_openrouter",
-            "suggestions_count": 1,
+            "suggestions_count": 1 if response else 0,
             "estimated_cost_usd": estimate_cost_usd(
                 endpoint="/v1/proofs/parse",
                 provider=provider_name,
-                suggestions_count=1,
+                suggestions_count=1 if response else 0,
             ),
-            "schema_valid": True,
-            "status": "success",
+            "schema_valid": response is not None,
+            "status": status,
             "created_at": created_at,
             "metadata": _metadata_with_correlation_id(
                 {
                     "locale": normalized_locale,
                     "region": request.region,
                     "parser": parser,
-                    "confidence": response.confidence,
-                    "has_amount": response.total_amount is not None,
-                    "has_date": bool(response.purchase_date),
-                    "has_warranty_hint": response.warranty_months is not None,
-                    "item_count": 1,
+                    "confidence": response.confidence if response else None,
+                    "has_amount": response.total_amount is not None if response else False,
+                    "has_date": bool(response.purchase_date) if response else False,
+                    "has_warranty_hint": response.warranty_months is not None
+                    if response
+                    else False,
+                    "item_count": 1 if response else 0,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                 },
                 correlation_id,
             ),
         },
+        "safety_events": safety_events,
     }
 
 
@@ -463,7 +584,7 @@ def build_task_rewrite_operation_payloads(
     latency_ms: float,
     status: str,
     correlation_id: str,
-    error_detail: str | None = None,
+    error_detail: Any | None = None,
 ) -> dict[str, Any]:
     created_at = _utcnow_iso()
     rewrite_count = len(response.rewrites) if response else 0
@@ -486,6 +607,8 @@ def build_task_rewrite_operation_payloads(
                 {
                     "rewrite_count": rewrite_count,
                     "status": status,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                     "locale": normalize_locale(request.locale),
                 },
                 correlation_id,
@@ -516,6 +639,8 @@ def build_task_rewrite_operation_payloads(
             "metadata": _metadata_with_correlation_id(
                 {
                     "error": error_detail,
+                    "error_code": _error_detail_code(error_detail),
+                    "category": _error_detail_category(error_detail),
                     "locale": normalize_locale(request.locale),
                     "routing_mode": provider_meta.get("routing_mode"),
                     "config_source": provider_meta.get("config_source"),
@@ -526,19 +651,28 @@ def build_task_rewrite_operation_payloads(
             ),
         },
         "safety_events": (
-            [
-                {
-                    "event_id": f"safety-{uuid4()}",
-                    "user_id": request.user_id,
-                    "category": "privacy",
-                    "rule": "task_rewrite_requires_ai_allowed",
-                    "severity": "medium",
-                    "endpoint": "/v1/tasks/rewrite",
-                    "created_at": created_at,
-                }
-            ]
-            if error_detail
-            else []
+            _build_input_safety_events(
+                user_id=request.user_id,
+                endpoint="/v1/tasks/rewrite",
+                created_at=created_at,
+                error_detail=error_detail,
+            )
+            if isinstance(error_detail, dict)
+            else (
+                [
+                    {
+                        "event_id": f"safety-{uuid4()}",
+                        "user_id": request.user_id,
+                        "category": "privacy",
+                        "rule": "task_rewrite_requires_ai_allowed",
+                        "severity": "medium",
+                        "endpoint": "/v1/tasks/rewrite",
+                        "created_at": created_at,
+                    }
+                ]
+                if error_detail
+                else []
+            )
         ),
     }
 

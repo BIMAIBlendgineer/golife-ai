@@ -7,7 +7,10 @@ from app.crisis_resources import resolve_crisis_resources
 from app.i18n import normalize_locale, resolve_reflection_messages
 from app.schemas import (
     AISuggestion,
+    EventClassificationRequest,
+    EventParseRequest,
     LifeEvent,
+    ProofParseRequest,
     ReflectionSafetyRequest,
     ReflectionSafetyResponse,
     SuggestionRequest,
@@ -144,6 +147,86 @@ def _match_terms(text: str, terms: tuple[str, ...]) -> list[str]:
     return matched
 
 
+def _assess_text_safety(
+    text: str,
+    *,
+    locale: str,
+    region: str = "global",
+    catalog_path: str | None = None,
+) -> ReflectionSafetyResponse:
+    normalized_locale = normalize_locale(locale)
+    messages = resolve_reflection_messages(normalized_locale)
+
+    matched_crisis = _match_terms(text, CRISIS_TERMS)
+    if matched_crisis:
+        resources = resolve_crisis_resources(
+            region=region,
+            catalog_path=catalog_path,
+        )
+        return ReflectionSafetyResponse(
+            safe=False,
+            category="crisis",
+            message=messages["crisis"],
+            resources=resources,
+            trace={
+                "policy": "reflection_safety",
+                "matched_terms": matched_crisis,
+                "reason": "crisis_language",
+                "region": region,
+                "locale": normalized_locale,
+            },
+        )
+
+    matched_clinical = _match_terms(text, EMOTIONAL_CLINICAL_TERMS)
+    if matched_clinical:
+        return ReflectionSafetyResponse(
+            safe=False,
+            category="clinical",
+            message=messages["clinical"],
+            trace={
+                "policy": "reflection_safety",
+                "matched_terms": matched_clinical,
+                "reason": "clinical_language",
+                "region": region,
+                "locale": normalized_locale,
+            },
+        )
+
+    return ReflectionSafetyResponse(
+        safe=True,
+        category="supportive",
+        message=messages["supportive"],
+        trace={
+            "policy": "reflection_safety",
+            "matched_terms": [],
+            "reason": "supportive_reflection",
+            "region": region,
+            "locale": normalized_locale,
+        },
+    )
+
+
+def _raise_unsafe_input(
+    *,
+    code: str,
+    input_surface: str,
+    response: ReflectionSafetyResponse,
+) -> None:
+    raise HTTPException(
+        status_code=422,
+        detail={
+            "code": code,
+            "input_surface": input_surface,
+            "message": response.message,
+            "category": response.category,
+            "safe": response.safe,
+            "resources": [resource.model_dump() for resource in response.resources],
+            "redirect_endpoint": "/v1/reflection/check",
+            "trace": response.trace,
+        },
+    )
+
+
 def filter_ai_events(request: SuggestionRequest) -> tuple[list[LifeEvent], list[dict[str, str]]]:
     if not request.privacy_settings.ai_enabled:
         return [], [
@@ -172,6 +255,71 @@ def enforce_task_rewrite_privacy(request: TaskRewriteRequest) -> None:
         raise HTTPException(
             status_code=403,
             detail="Task rewrite requires privacy_level=ai_allowed.",
+        )
+
+
+def enforce_safe_capture_input(
+    request: EventClassificationRequest | EventParseRequest,
+    *,
+    region: str = "global",
+    catalog_path: str | None = None,
+) -> None:
+    response = _assess_text_safety(
+        request.text,
+        locale=request.locale,
+        region=region,
+        catalog_path=catalog_path,
+    )
+    if not response.safe:
+        _raise_unsafe_input(
+            code="unsafe_capture_text",
+            input_surface="capture",
+            response=response,
+        )
+
+
+def enforce_safe_proof_input(
+    request: ProofParseRequest,
+    *,
+    region: str = "global",
+    catalog_path: str | None = None,
+) -> None:
+    response = _assess_text_safety(
+        request.text,
+        locale=request.locale,
+        region=region,
+        catalog_path=catalog_path,
+    )
+    if not response.safe:
+        _raise_unsafe_input(
+            code="unsafe_proof_text",
+            input_surface="proof_parse",
+            response=response,
+        )
+
+
+def enforce_safe_task_rewrite_content(
+    request: TaskRewriteRequest,
+    *,
+    region: str = "global",
+    catalog_path: str | None = None,
+) -> None:
+    combined_text = " ".join(
+        part.strip()
+        for part in (request.task_title, request.task_description or "")
+        if part and part.strip()
+    )
+    response = _assess_text_safety(
+        combined_text,
+        locale=request.locale,
+        region=region,
+        catalog_path=catalog_path,
+    )
+    if not response.safe:
+        _raise_unsafe_input(
+            code="unsafe_task_rewrite_text",
+            input_surface="task_rewrite",
+            response=response,
         )
 
 
@@ -225,53 +373,9 @@ def assess_reflection_safety(
     region: str = "global",
     catalog_path: str | None = None,
 ) -> ReflectionSafetyResponse:
-    locale = normalize_locale(request.locale)
-    messages = resolve_reflection_messages(locale)
-
-    matched_crisis = _match_terms(request.text, CRISIS_TERMS)
-    if matched_crisis:
-        resources = resolve_crisis_resources(
-            region=region,
-            catalog_path=catalog_path,
-        )
-        return ReflectionSafetyResponse(
-            safe=False,
-            category="crisis",
-            message=messages["crisis"],
-            resources=resources,
-            trace={
-                "policy": "reflection_safety",
-                "matched_terms": matched_crisis,
-                "reason": "crisis_language",
-                "region": region,
-                "locale": locale,
-            },
-        )
-
-    matched_clinical = _match_terms(request.text, EMOTIONAL_CLINICAL_TERMS)
-    if matched_clinical:
-        return ReflectionSafetyResponse(
-            safe=False,
-            category="clinical",
-            message=messages["clinical"],
-            trace={
-                "policy": "reflection_safety",
-                "matched_terms": matched_clinical,
-                "reason": "clinical_language",
-                "region": region,
-                "locale": locale,
-            },
-        )
-
-    return ReflectionSafetyResponse(
-        safe=True,
-        category="supportive",
-        message=messages["supportive"],
-        trace={
-            "policy": "reflection_safety",
-            "matched_terms": [],
-            "reason": "supportive_reflection",
-            "region": region,
-            "locale": locale,
-        },
+    return _assess_text_safety(
+        request.text,
+        locale=request.locale,
+        region=region,
+        catalog_path=catalog_path,
     )

@@ -60,5 +60,22 @@ void main() {
       expect(japanese.single.domain, DomainKey.pantry);
       expect(chinese.single.domain, DomainKey.pantry);
     });
+    test('blocks crisis language from becoming a normal capture draft', () {
+      final drafts = parser.parse(
+        text: 'I am scared I may k1ll mys3lf tonight.',
+        privacySettings: PrivacySettings.defaults(),
+      );
+
+      expect(drafts, isEmpty);
+    });
+
+    test('blocks letter-spaced clinical language from capture parsing', () {
+      final drafts = parser.parse(
+        text: 'I need a d i a g n o s i s and t h e r a p y right now.',
+        privacySettings: PrivacySettings.defaults(),
+      );
+
+      expect(drafts, isEmpty);
+    });
   });
 }
