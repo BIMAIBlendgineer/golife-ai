@@ -2,7 +2,7 @@
 
 Date: `2026-05-04`
 Documentation branch: `docs/release-production-readiness`
-Release candidate code baseline: `main@d1b521375086142a9c0cdeb258de5968369344e9`
+Release candidate code baseline: `main@3848c162822038ae9a80171e0919e7e980695bc0`
 
 ## Product thesis
 
@@ -51,6 +51,15 @@ The product surface that exists today is a coordinated system across:
   - adversarial safety expansion across freeform gateway input surfaces
   - mobile local capture fallback safety cut
   - safety telemetry and closeout docs
+
+### PR #14
+
+- URL: <https://github.com/BIMAIBlendgineer/golife-ai/pull/14>
+- Merge commit: `3848c162822038ae9a80171e0919e7e980695bc0`
+- Scope:
+  - persisted mission memory over feedback metadata
+  - trace-visible learning keys and candidate bias explanations
+  - current-state docs for ranking/memory follow-up
 
 ## Current implementation state
 
@@ -102,6 +111,8 @@ See [Release risk register](RELEASE_RISK_REGISTER.md) for the canonical risk led
 - device-specific secure export retrieval UX validation
 - a strong policy engine or jailbreak-resistant safety system
 - advanced evidence-level learning beyond the current feedback-backed mission memory layer
+- explicit premium mission ranker with full score breakdown
+- real enterprise OIDC/SSO authentication
 - final app store submission workflow
 - banking integrations
 - full calendar sync

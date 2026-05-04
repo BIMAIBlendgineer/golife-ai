@@ -1,7 +1,7 @@
 # Release Risk Register
 
 Date: `2026-05-04`
-Release candidate baseline: `main@d1b521375086142a9c0cdeb258de5968369344e9`
+Release candidate baseline: `main@3848c162822038ae9a80171e0919e7e980695bc0`
 
 ## Baseline decision
 
@@ -256,6 +256,40 @@ That means:
   - deployment runbook review
 - Release decision: accepted if the deploy wiring is explicit
 - Next action: validate the full live operational backend path in the target environment
+
+### RR-016 - Mission ranking is not yet strong enough for the full premium claim
+
+- State: `open`
+- Impact: the product can generate useful missions, but it cannot yet fully justify a stronger premium claim around explicit daily prioritization quality
+- Evidence:
+  - [Final release summary](FINAL_RELEASE_SUMMARY.md)
+  - [Persisted mission memory closeout](F04_27_PERSISTED_MISSION_MEMORY.md)
+  - [ADR-005 mission ranking and learning](../architecture/adr/ADR-005-mission-ranking-and-learning.md)
+- Mitigation:
+  - feedback-backed memory already exists
+  - next phase adds deterministic scoring, ranking reasons, and evaluation fixtures
+- Gate:
+  - `services/ai_gateway`: `python -m pytest -q`
+  - ranking corpus evaluation once implemented
+- Release decision: blocker for “premium production complete”, not a blocker for the current RC baseline
+- Next action: implement explicit mission ranking and evidence-aware score breakdown
+
+### RR-017 - Enterprise auth is not implemented as real OIDC/SSO
+
+- State: `accepted`
+- Impact: the admin surface is hardened for internal/operational use, but it is not enterprise-ready identity
+- Evidence:
+  - `services/web_backend/app/main.py`
+  - [Admin operations](../admin/ADMIN_OPERATIONS.md)
+  - [ADR-006 enterprise auth boundary](../architecture/adr/ADR-006-enterprise-auth-boundary.md)
+- Mitigation:
+  - docs and UI explicitly avoid calling the current mode enterprise auth
+  - operator-secret gate remains stronger than token-only scaffold
+- Gate:
+  - backend auth status
+  - docs review
+- Release decision: accepted only if enterprise claims remain disabled
+- Next action: implement real OIDC/SSO before any enterprise-ready claim
 
 ## Release gate
 

@@ -62,4 +62,4 @@ See:
 
 - privacy/export/delete: implemented across mobile plus backend operational workflow
 - privacy operations queue: actionable in admin
-- remaining before broader release: stronger retention guidance, broader encrypted-domain review, and device-specific validation if new runners are added
+- remaining before broader release: stronger retention guidance, broader encrypted-domain review, evidence-aware mission ranking review, and device-specific validation if new runners are added

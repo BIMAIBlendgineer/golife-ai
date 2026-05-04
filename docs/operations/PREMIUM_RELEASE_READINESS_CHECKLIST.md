@@ -2,9 +2,14 @@
 
 ## Baseline
 
-- Documentation branch: `docs/release-production-readiness`
-- Runtime baseline on `main`: `d1b521375086142a9c0cdeb258de5968369344e9`
-- Scope: release-readiness consolidation only, no new runtime features
+- Documentation branch: `docs/final-production-readiness`
+- Runtime baseline on `main`: `3848c162822038ae9a80171e0919e7e980695bc0`
+- Scope: RC hardening plus persisted mission-memory baseline
+
+See also:
+
+- [Final release summary](FINAL_RELEASE_SUMMARY.md)
+- [Final release readiness checklist](FINAL_RELEASE_READINESS_CHECKLIST.md)
 
 ## Product thesis gate
 
@@ -23,6 +28,8 @@
 - [x] local production single-key smoke returned real OpenRouter output
 - [x] `mock_mode=false` validated in real smoke
 - [x] no `mock: true` in live daily mission response
+- [x] persisted mission memory exists for feedback-backed follow-up planning
+- [ ] explicit score-based mission ranker
 
 ## Web Backend
 
@@ -56,6 +63,7 @@
 - [x] mobile capture parser blocks crisis and clinical text from normal drafts
 - [x] admin receives metadata-only operational telemetry
 - [x] mission feedback notes stay redacted in operational surfaces
+- [x] persisted mission memory remains metadata-only
 - [ ] stronger policy engine beyond rule-based guardrails
 
 ## Security
@@ -86,6 +94,7 @@
 
 - [ ] locale parity still incomplete
 - [ ] safety still rule-based
+- [ ] enterprise auth still not real OIDC/SSO
 - [ ] device-specific runner validation still open
 - [ ] control-plane production remains conditional on live backend routing
 

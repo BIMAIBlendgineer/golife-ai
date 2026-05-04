@@ -51,4 +51,15 @@ GoLife AI prioritizes planning, reflection, and small daily actions. It must avo
 - model/profile-level safety tuning per capability
 - product-level crisis UX for local-only or offline capture surfaces if those flows are expanded
 
+## Release boundary
+
+Current safety is real and implemented, but it is still not a strong policy-engine posture.
+
+Until a centralized policy engine exists, the product should describe safety as:
+
+- broader than the original reflection-only scope
+- metadata-only in telemetry
+- tested and implemented
+- still rule-based rather than fully policy-driven
+
 See also [Safety policy](../security/SAFETY_POLICY.md).
