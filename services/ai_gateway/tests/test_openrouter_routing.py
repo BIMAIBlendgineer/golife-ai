@@ -118,6 +118,17 @@ class FakeRoutingClient:
         return True
 
 
+class StaticRoutingClient:
+    def __init__(self, resolution: RoutingConfigResolution):
+        self._resolution = resolution
+
+    async def get_config(self) -> RoutingConfigResolution:
+        return self._resolution
+
+    async def record_key_event(self, payload: dict[str, Any]) -> bool:
+        return True
+
+
 class FakeResponse:
     def __init__(self, *, status_code: int, payload: dict[str, Any]) -> None:
         self.status_code = status_code
@@ -281,3 +292,110 @@ def test_all_key_exhaustion_returns_stable_ai_unavailable(monkeypatch):
         )
 
     assert exc.value.code == "ai_temporarily_unavailable"
+
+
+def test_health_reports_single_key_local_env_when_routing_is_disabled():
+    provider = OpenRouterProvider(
+        Settings(
+            ai_gateway_enable_mock=False,
+            routing_control_enabled=False,
+            openrouter_api_key="test-key",
+        )
+    )
+
+    health = asyncio.run(provider.health_snapshot())
+
+    assert health["routing_mode"] == "local_env_fallback"
+    assert health["effective_routing_mode"] == "single_key"
+    assert health["config_source"] == "local_env"
+    assert health["effective_config_source"] == "local_env"
+    assert health["control_plane_config_source"] == "fallback"
+    assert health["active_key_source"] == "local_env"
+    assert health["active_key_count"] == 1
+
+
+def test_cached_unusable_control_plane_falls_back_to_local_env_health(monkeypatch):
+    class FakeAsyncClient:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        async def post(self, *args, **kwargs) -> FakeResponse:
+            return FakeResponse(
+                status_code=200,
+                payload={
+                    "model": "google/gemini-2.0-flash-001",
+                    "choices": [{"message": {"content": '{"suggestions": []}'}}],
+                },
+            )
+
+    monkeypatch.setattr("app.providers.openrouter.httpx.AsyncClient", FakeAsyncClient)
+
+    unusable_config = RoutingConfig(
+        config_source="cached",
+        generated_at="2026-04-24T00:00:00Z",
+        openrouter_keys=[],
+        routing_profiles=[],
+        selection_snapshots=[],
+        feature_flags={},
+    )
+    provider = OpenRouterProvider(
+        Settings(
+            ai_gateway_enable_mock=False,
+            routing_control_enabled=True,
+            openrouter_api_key="test-key",
+        )
+    )
+    provider.routing_client = StaticRoutingClient(
+        RoutingConfigResolution(config=unusable_config, source="cached")
+    )
+
+    payload = asyncio.run(
+        provider.complete_json(
+            system_prompt="Return JSON only.",
+            user_payload={"intent": "daily_mission"},
+            response_schema={"type": "object"},
+        )
+    )
+    health = asyncio.run(provider.health_snapshot())
+
+    assert payload["_provider_meta"]["routing_mode"] == "single_key"
+    assert payload["_provider_meta"]["effective_routing_mode"] == "single_key"
+    assert payload["_provider_meta"]["config_source"] == "local_env"
+    assert payload["_provider_meta"]["control_plane_config_source"] == "cached"
+    assert payload["_provider_meta"]["active_key_source"] == "local_env"
+    assert health["routing_mode"] == "local_env_fallback"
+    assert health["effective_routing_mode"] == "single_key"
+    assert health["config_source"] == "local_env"
+    assert health["control_plane_config_source"] == "cached"
+    assert health["active_key_source"] == "local_env"
+    assert health["active_key_count"] == 1
+
+
+def test_live_control_plane_health_reports_multi_key_mode():
+    provider = OpenRouterProvider(
+        Settings(
+            ai_gateway_enable_mock=False,
+            routing_control_enabled=True,
+            openrouter_api_key=None,
+            routing_backend_internal_token="routing-prod-token",
+        )
+    )
+    provider.routing_client = StaticRoutingClient(
+        RoutingConfigResolution(config=_routing_config(), source="live")
+    )
+
+    health = asyncio.run(provider.health_snapshot())
+
+    assert health["routing_mode"] == "multi_key_control_plane"
+    assert health["effective_routing_mode"] == "multi_key_control_plane"
+    assert health["config_source"] == "live"
+    assert health["effective_config_source"] == "live"
+    assert health["control_plane_config_source"] == "live"
+    assert health["active_key_source"] == "control_plane"
+    assert health["active_key_count"] == 2

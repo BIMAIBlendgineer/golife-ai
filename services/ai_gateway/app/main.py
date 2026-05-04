@@ -1,3 +1,4 @@
+from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
@@ -36,7 +37,7 @@ from app.schemas import (
     TaskRewriteRequest,
     TaskRewriteResponse,
 )
-from app.settings import Settings
+from app.settings import Settings, get_settings
 from app.use_cases import (
     run_domain_suggestions,
     run_event_classification,
@@ -56,7 +57,7 @@ def create_app(
     provider: LLMProvider | None = None,
     operational_client: OperationalEventsClient | None = None,
 ) -> FastAPI:
-    resolved_settings = settings or Settings()
+    resolved_settings = settings or get_settings()
     resolved_provider = provider or build_provider(resolved_settings)
     resolved_operational_client = operational_client or (
         OperationalEventsClient(
@@ -96,6 +97,48 @@ def create_app(
             "mock_mode": resolved_settings.resolved_mock_mode,
             **provider_health,
         }
+
+    async def readiness_snapshot() -> tuple[dict[str, object], bool]:
+        provider_health = await resolved_provider.health_snapshot()
+        crisis_catalog_ready = not resolved_settings.crisis_resources_catalog_path or Path(
+            resolved_settings.crisis_resources_catalog_path
+        ).exists()
+        routing_source = str(provider_health.get("config_source", "fallback"))
+        active_key_count = int(provider_health.get("active_key_count", 0) or 0)
+        ai_configured = bool(
+            resolved_settings.has_openrouter_key
+            or (
+                routing_source in {"live", "cached"}
+                and active_key_count > 0
+            )
+        )
+        checks = {
+            "provider_real": resolved_provider.provider_name != "mock",
+            "mock_mode_disabled": not resolved_settings.resolved_mock_mode,
+            "ai_configured": ai_configured,
+            "crisis_catalog_ready": crisis_catalog_ready,
+        }
+        production_ready = all(checks.values())
+        return (
+            {
+                "status": "ready" if production_ready else "not_ready",
+                "environment": resolved_settings.normalized_environment,
+                "configured_provider": resolved_settings.llm_provider,
+                "active_provider": resolved_provider.provider_name,
+                "mock_mode": resolved_settings.resolved_mock_mode,
+                "production_ready": production_ready,
+                "checks": checks,
+                **provider_health,
+            },
+            production_ready,
+        )
+
+    @app.get("/ready")
+    async def ready() -> dict[str, object]:
+        payload, production_ready = await readiness_snapshot()
+        if resolved_settings.is_production and not production_ready:
+            raise HTTPException(status_code=503, detail=payload)
+        return payload
 
     @app.post("/v1/suggestions/generate", response_model=SuggestionResponse)
     async def generate_suggestions(

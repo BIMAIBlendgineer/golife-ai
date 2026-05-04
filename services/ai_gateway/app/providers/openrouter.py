@@ -40,8 +40,12 @@ class OpenRouterProvider(LLMProvider):
         self.routing_client = RoutingConfigClient(settings)
         self._last_health: dict[str, Any] = {
             "routing_mode": "local_env_fallback",
-            "active_key_count": 0,
-            "config_source": "fallback",
+            "effective_routing_mode": "single_key",
+            "active_key_count": 1 if settings.has_openrouter_key else 0,
+            "config_source": "local_env",
+            "effective_config_source": "local_env",
+            "control_plane_config_source": "fallback",
+            "active_key_source": "local_env",
             "capability_model_counts": {},
         }
 
@@ -55,7 +59,13 @@ class OpenRouterProvider(LLMProvider):
         temperature: float = 0.0,
     ) -> Any:
         if self.settings.resolved_mock_mode:
-            return await MockLLMProvider(reason="mock_mode_or_missing_key").complete_json(
+            if self.settings.is_production:
+                raise RuntimeError(
+                    "OpenRouter mock fallback is disabled in production. Check AI Gateway settings."
+                )
+            return await MockLLMProvider(
+                reason=self.settings.mock_fallback_reason
+            ).complete_json(
                 system_prompt=system_prompt,
                 user_payload=user_payload,
                 response_schema=response_schema,
@@ -65,12 +75,7 @@ class OpenRouterProvider(LLMProvider):
 
         capability = self._capability_from_payload(user_payload)
         resolution = await self.routing_client.get_config()
-        routed_config = resolution.config
-        if (
-            routed_config is not None
-            and routed_config.openrouter_keys
-            and routed_config.models_for(capability)
-        ):
+        if self._has_usable_control_plane_config(resolution, capability=capability):
             self._set_health_from_resolution(resolution)
             return await self._complete_with_remote_routing(
                 capability=capability,
@@ -81,24 +86,22 @@ class OpenRouterProvider(LLMProvider):
                 temperature=temperature,
             )
 
-        self._last_health = {
-            "routing_mode": "local_env_fallback",
-            "active_key_count": 0,
-            "config_source": resolution.source,
-            "capability_model_counts": {},
-        }
+        self._set_health_for_local_key(resolution)
         return await self._complete_with_local_key(
             system_prompt=system_prompt,
             user_payload=user_payload,
             response_schema=response_schema,
             temperature=temperature,
             override_model=model,
+            control_plane_source=resolution.source,
         )
 
     async def health_snapshot(self) -> dict[str, Any]:
         resolution = await self.routing_client.get_config()
-        if resolution.config is not None:
+        if self._has_usable_control_plane_config(resolution):
             self._set_health_from_resolution(resolution)
+        else:
+            self._set_health_for_local_key(resolution)
         return dict(self._last_health)
 
     async def runtime_flags(self) -> dict[str, bool]:
@@ -149,6 +152,10 @@ class OpenRouterProvider(LLMProvider):
                         "key_label": key.label,
                         "config_source": resolution.source,
                         "routing_mode": "multi_key_fallback",
+                        "effective_routing_mode": "multi_key_control_plane",
+                        "effective_config_source": resolution.source,
+                        "control_plane_config_source": resolution.source,
+                        "active_key_source": self._active_key_source(resolution.source),
                         "active_key_count": len(config.openrouter_keys),
                         "fallback_used": final_meta.get("model") not in {None, models[0]},
                     }
@@ -195,6 +202,7 @@ class OpenRouterProvider(LLMProvider):
         response_schema: dict[str, Any] | None,
         temperature: float,
         override_model: str | None,
+        control_plane_source: str,
     ) -> Any:
         models_to_try = [override_model or self.settings.openrouter_default_model]
         if self.settings.openrouter_fallback_model:
@@ -217,8 +225,12 @@ class OpenRouterProvider(LLMProvider):
                     {
                         "provider": self.provider_name,
                         "requested_models": [selected_model],
-                        "config_source": "fallback",
+                        "config_source": "local_env",
                         "routing_mode": "single_key",
+                        "effective_routing_mode": "single_key",
+                        "effective_config_source": "local_env",
+                        "control_plane_config_source": control_plane_source,
+                        "active_key_source": "local_env",
                         "active_key_count": 1,
                         "fallback_used": False,
                     }
@@ -331,18 +343,61 @@ class OpenRouterProvider(LLMProvider):
 
     def _set_health_from_resolution(self, resolution: RoutingConfigResolution) -> None:
         config = resolution.config
-        capability_counts: dict[str, int] = {}
-        if config is not None:
-            for snapshot in config.selection_snapshots:
-                capability_counts[snapshot.capability] = (
-                    capability_counts.get(snapshot.capability, 0) + 1
-                )
+        capability_counts = self._capability_counts(config)
         self._last_health = {
             "routing_mode": "multi_key_control_plane" if config else "fallback",
+            "effective_routing_mode": "multi_key_control_plane" if config else "fallback",
             "active_key_count": len(config.openrouter_keys) if config else 0,
             "config_source": resolution.source,
+            "effective_config_source": resolution.source,
+            "control_plane_config_source": resolution.source,
+            "active_key_source": self._active_key_source(resolution.source),
             "capability_model_counts": capability_counts,
         }
+
+    def _set_health_for_local_key(self, resolution: RoutingConfigResolution) -> None:
+        self._last_health = {
+            "routing_mode": "local_env_fallback",
+            "effective_routing_mode": "single_key",
+            "active_key_count": 1 if self.settings.has_openrouter_key else 0,
+            "config_source": "local_env",
+            "effective_config_source": "local_env",
+            "control_plane_config_source": resolution.source,
+            "active_key_source": "local_env",
+            "capability_model_counts": self._capability_counts(resolution.config),
+        }
+
+    @staticmethod
+    def _capability_counts(config: Any) -> dict[str, int]:
+        capability_counts: dict[str, int] = {}
+        if config is None:
+            return capability_counts
+        for snapshot in config.selection_snapshots:
+            capability_counts[snapshot.capability] = (
+                capability_counts.get(snapshot.capability, 0) + 1
+            )
+        return capability_counts
+
+    @staticmethod
+    def _active_key_source(config_source: str) -> str:
+        if config_source == "cached":
+            return "cached_control_plane"
+        if config_source == "live":
+            return "control_plane"
+        return "local_env"
+
+    def _has_usable_control_plane_config(
+        self,
+        resolution: RoutingConfigResolution,
+        *,
+        capability: RoutingCapability | None = None,
+    ) -> bool:
+        config = resolution.config
+        if config is None or not config.openrouter_keys:
+            return False
+        if capability is not None:
+            return bool(config.models_for(capability))
+        return bool(config.selection_snapshots)
 
     @staticmethod
     def _should_rotate_key(status_code: int | None) -> bool:

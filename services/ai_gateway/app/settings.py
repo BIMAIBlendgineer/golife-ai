@@ -1,9 +1,14 @@
 from functools import lru_cache
 
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    environment: str = Field(
+        default="dev",
+        validation_alias=AliasChoices("environment", "AI_GATEWAY_ENV", "ENVIRONMENT"),
+    )
     llm_provider: str = "openrouter"
     ai_gateway_enable_mock: bool = True
     openrouter_api_key: str | None = None
@@ -25,21 +30,68 @@ class Settings(BaseSettings):
     crisis_resources_region: str = "global"
     crisis_resources_catalog_path: str | None = None
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore")
+
+    @property
+    def normalized_environment(self) -> str:
+        return self.environment.strip().lower() or "dev"
+
+    @property
+    def is_production(self) -> bool:
+        return self.normalized_environment == "production"
+
+    @property
+    def has_openrouter_key(self) -> bool:
+        return bool(self.openrouter_api_key)
+
+    @property
+    def routing_backend_uses_default_dev_token(self) -> bool:
+        return self.routing_backend_internal_token == "golife-internal-dev"
+
+    @property
+    def has_routing_backend_config(self) -> bool:
+        return bool(
+            self.routing_control_enabled
+            and self.routing_backend_base_url
+            and self.routing_backend_internal_token
+        )
+
+    @property
+    def has_local_or_remote_openrouter(self) -> bool:
+        return bool(self.has_openrouter_key or self.has_routing_backend_config)
 
     @property
     def resolved_mock_mode(self) -> bool:
-        has_local_or_remote_openrouter = bool(
-            self.openrouter_api_key
-            or (
-                self.routing_control_enabled
-                and self.routing_backend_base_url
-                and self.routing_backend_internal_token
+        return bool(self.ai_gateway_enable_mock or not self.has_local_or_remote_openrouter)
+
+    @property
+    def mock_fallback_reason(self) -> str:
+        if self.ai_gateway_enable_mock:
+            return "explicit_dev_mock"
+        if self.routing_control_enabled:
+            return "routing_unavailable_dev"
+        return "missing_openrouter_key_dev"
+
+    @model_validator(mode="after")
+    def validate_production_configuration(self) -> "Settings":
+        if not self.is_production:
+            return self
+        if self.ai_gateway_enable_mock:
+            raise ValueError("AI_GATEWAY_ENABLE_MOCK must be false in production.")
+        if (
+            self.routing_control_enabled
+            and self.routing_backend_uses_default_dev_token
+        ):
+            raise ValueError(
+                "ROUTING_BACKEND_INTERNAL_TOKEN must not use the default dev token in production."
             )
-        )
-        return bool(self.ai_gateway_enable_mock or not has_local_or_remote_openrouter)
+        if not self.has_openrouter_key and not self.has_routing_backend_config:
+            raise ValueError(
+                "Production requires OPENROUTER_API_KEY or a valid routing backend configuration."
+            )
+        return self
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()
+    return Settings(_env_file=".env")
