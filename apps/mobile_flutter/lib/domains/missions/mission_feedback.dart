@@ -6,6 +6,59 @@ enum MissionFeedbackStatus {
   edited,
 }
 
+enum MissionRejectionReasonCategory {
+  tooHard,
+  notRelevant,
+  notNow,
+  privacy,
+  tooGeneric,
+  alreadyDone,
+  unknown,
+}
+
+extension MissionRejectionReasonCategoryX on MissionRejectionReasonCategory {
+  String get storageKey {
+    switch (this) {
+      case MissionRejectionReasonCategory.tooHard:
+        return 'too_hard';
+      case MissionRejectionReasonCategory.notRelevant:
+        return 'not_relevant';
+      case MissionRejectionReasonCategory.notNow:
+        return 'not_now';
+      case MissionRejectionReasonCategory.privacy:
+        return 'privacy';
+      case MissionRejectionReasonCategory.tooGeneric:
+        return 'too_generic';
+      case MissionRejectionReasonCategory.alreadyDone:
+        return 'already_done';
+      case MissionRejectionReasonCategory.unknown:
+        return 'unknown';
+    }
+  }
+}
+
+enum MissionEffortFeedback {
+  low,
+  balanced,
+  high,
+  unknown,
+}
+
+extension MissionEffortFeedbackX on MissionEffortFeedback {
+  String get storageKey {
+    switch (this) {
+      case MissionEffortFeedback.low:
+        return 'low';
+      case MissionEffortFeedback.balanced:
+        return 'balanced';
+      case MissionEffortFeedback.high:
+        return 'high';
+      case MissionEffortFeedback.unknown:
+        return 'unknown';
+    }
+  }
+}
+
 extension MissionFeedbackStatusX on MissionFeedbackStatus {
   String get storageKey {
     switch (this) {
@@ -47,6 +100,9 @@ class MissionFeedback {
     this.domainTargets = const <String>[],
     this.recommendationType,
     this.notes,
+    this.rejectionReasonCategory,
+    this.effortFeedback,
+    this.repeatedFlag = false,
     this.trace = const <String, Object?>{},
   });
 
@@ -57,6 +113,9 @@ class MissionFeedback {
   final List<String> domainTargets;
   final String? recommendationType;
   final String? notes;
+  final MissionRejectionReasonCategory? rejectionReasonCategory;
+  final MissionEffortFeedback? effortFeedback;
+  final bool repeatedFlag;
   final Map<String, Object?> trace;
 
   Map<String, Object?> toJson() {
@@ -68,6 +127,9 @@ class MissionFeedback {
       'domain_targets': domainTargets,
       'recommendation_type': recommendationType,
       'notes': notes,
+      'rejection_reason_category': rejectionReasonCategory?.storageKey,
+      'effort_feedback': effortFeedback?.storageKey,
+      'repeated_flag': repeatedFlag,
       'trace': trace,
     };
   }
@@ -88,6 +150,12 @@ class MissionFeedback {
           (json['recommendation_type'] ?? json['recommendationType'])
               ?.toString(),
       notes: json['notes']?.toString(),
+      rejectionReasonCategory: _rejectionReasonFromKey(
+        json['rejection_reason_category']?.toString(),
+      ),
+      effortFeedback:
+          _effortFeedbackFromKey(json['effort_feedback']?.toString()),
+      repeatedFlag: json['repeated_flag'] == true,
       trace: Map<String, Object?>.from(
         (json['trace'] as Map?)?.cast<String, Object?>() ?? const {},
       ),
@@ -102,4 +170,22 @@ MissionFeedbackStatus _statusFromKey(String rawValue) {
     }
   }
   return MissionFeedbackStatus.useful;
+}
+
+MissionRejectionReasonCategory? _rejectionReasonFromKey(String? rawValue) {
+  for (final reason in MissionRejectionReasonCategory.values) {
+    if (reason.storageKey == rawValue) {
+      return reason;
+    }
+  }
+  return null;
+}
+
+MissionEffortFeedback? _effortFeedbackFromKey(String? rawValue) {
+  for (final effort in MissionEffortFeedback.values) {
+    if (effort.storageKey == rawValue) {
+      return effort;
+    }
+  }
+  return null;
 }

@@ -2,11 +2,8 @@ import { cookies } from "next/headers";
 
 import en from "@/messages/en.json";
 import es from "@/messages/es.json";
-import ja from "@/messages/ja.json";
-import ptBR from "@/messages/pt-BR.json";
-import zhHans from "@/messages/zh-Hans.json";
 
-export const adminLocales = ["en", "es", "pt-BR", "ja", "zh-Hans"] as const;
+export const adminLocales = ["en", "es"] as const;
 export type AdminLocale = (typeof adminLocales)[number];
 
 export type AdminMessages = typeof en;
@@ -23,9 +20,6 @@ const localeCookieName = "golife_admin_locale";
 const localeMap: Record<AdminLocale, DeepPartial<AdminMessages>> = {
   en,
   es,
-  "pt-BR": ptBR,
-  ja,
-  "zh-Hans": zhHans,
 };
 
 function mergeMessages<T>(base: T, overrides: DeepPartial<T>): T {
@@ -63,20 +57,6 @@ export function normalizeAdminLocale(rawValue?: string | null): AdminLocale {
   const normalized = (rawValue ?? "").trim().replaceAll("_", "-").toLowerCase();
   if (normalized === "es" || normalized.startsWith("es-")) {
     return "es";
-  }
-  if (normalized === "pt" || normalized === "pt-br") {
-    return "pt-BR";
-  }
-  if (normalized === "ja" || normalized.startsWith("ja-")) {
-    return "ja";
-  }
-  if (
-    normalized === "zh" ||
-    normalized === "zh-cn" ||
-    normalized === "zh-hans" ||
-    normalized.startsWith("zh-")
-  ) {
-    return "zh-Hans";
   }
   return "en";
 }
@@ -122,12 +102,6 @@ export function intlLocaleForAdmin(locale: AdminLocale): string {
   switch (locale) {
     case "es":
       return "es-ES";
-    case "pt-BR":
-      return "pt-BR";
-    case "ja":
-      return "ja-JP";
-    case "zh-Hans":
-      return "zh-CN";
     case "en":
     default:
       return "en-US";

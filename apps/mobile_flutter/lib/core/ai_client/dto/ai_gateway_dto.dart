@@ -1,3 +1,46 @@
+class MissionRankingDto {
+  const MissionRankingDto({
+    required this.impactScore,
+    required this.urgencyScore,
+    required this.effortScore,
+    required this.confidenceScore,
+    required this.privacyScore,
+    required this.feedbackScore,
+    required this.noveltyScore,
+    required this.finalScore,
+    required this.rankingReason,
+    required this.evidenceRefs,
+  });
+
+  final double impactScore;
+  final double urgencyScore;
+  final double effortScore;
+  final double confidenceScore;
+  final double privacyScore;
+  final double feedbackScore;
+  final double noveltyScore;
+  final double finalScore;
+  final String rankingReason;
+  final List<String> evidenceRefs;
+
+  factory MissionRankingDto.fromJson(Map<String, dynamic> json) {
+    return MissionRankingDto(
+      impactScore: _asDouble(json['impact_score']) ?? 0,
+      urgencyScore: _asDouble(json['urgency_score']) ?? 0,
+      effortScore: _asDouble(json['effort_score']) ?? 0,
+      confidenceScore: _asDouble(json['confidence_score']) ?? 0,
+      privacyScore: _asDouble(json['privacy_score']) ?? 0,
+      feedbackScore: _asDouble(json['feedback_score']) ?? 0,
+      noveltyScore: _asDouble(json['novelty_score']) ?? 0,
+      finalScore: _asDouble(json['final_score']) ?? 0,
+      rankingReason: (json['ranking_reason'] ?? '').toString(),
+      evidenceRefs: ((json['evidence_refs'] ?? const <Object?>[]) as List)
+          .map((item) => item.toString())
+          .toList(growable: false),
+    );
+  }
+}
+
 class MissionSuggestionDto {
   const MissionSuggestionDto({
     required this.id,
@@ -9,6 +52,7 @@ class MissionSuggestionDto {
     required this.domainTargets,
     required this.recommendationType,
     required this.confidence,
+    required this.ranking,
     required this.trace,
   });
 
@@ -21,6 +65,7 @@ class MissionSuggestionDto {
   final List<String> domainTargets;
   final String recommendationType;
   final double confidence;
+  final MissionRankingDto? ranking;
   final Map<String, Object?> trace;
 
   MissionSuggestionDto copyWith({
@@ -33,6 +78,7 @@ class MissionSuggestionDto {
     List<String>? domainTargets,
     String? recommendationType,
     double? confidence,
+    MissionRankingDto? ranking,
     Map<String, Object?>? trace,
   }) {
     return MissionSuggestionDto(
@@ -45,6 +91,7 @@ class MissionSuggestionDto {
       domainTargets: domainTargets ?? this.domainTargets,
       recommendationType: recommendationType ?? this.recommendationType,
       confidence: confidence ?? this.confidence,
+      ranking: ranking ?? this.ranking,
       trace: trace ?? this.trace,
     );
   }
@@ -64,6 +111,7 @@ class MissionSuggestionDto {
 
     final rawDomainTargets =
         suggestionJson['domain_targets'] as List<dynamic>? ?? const [];
+    final rankingJson = suggestionJson['ranking'];
 
     return MissionSuggestionDto(
       id: (suggestionJson['suggestion_id'] ?? 'mission-unknown').toString(),
@@ -82,6 +130,13 @@ class MissionSuggestionDto {
       recommendationType:
           (suggestionJson['recommendation_type'] ?? 'mission').toString(),
       confidence: _asDouble(suggestionJson['confidence']) ?? 0.5,
+      ranking: rankingJson is Map<String, dynamic>
+          ? MissionRankingDto.fromJson(rankingJson)
+          : rankingJson is Map
+              ? MissionRankingDto.fromJson(
+                  Map<String, dynamic>.from(rankingJson),
+                )
+              : null,
       trace: trace,
     );
   }

@@ -47,13 +47,13 @@ Future<void> _pumpDomainScreen(
 }
 
 void main() {
-  testWidgets('everyday screen renders in Japanese without overflow',
+  testWidgets('everyday screen renders in English without overflow',
       (tester) async {
     final controller = _buildController();
 
     await _pumpDomainScreen(
       tester,
-      locale: const Locale('ja'),
+      locale: const Locale('en'),
       screen: EverydayScreen(controller: controller),
     );
 
@@ -61,13 +61,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('journal screen renders in Simplified Chinese without overflow',
+  testWidgets('journal screen renders in Spanish without overflow',
       (tester) async {
     final controller = _buildController();
 
     await _pumpDomainScreen(
       tester,
-      locale: const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+      locale: const Locale('es'),
       screen: JournalScreen(controller: controller),
     );
 

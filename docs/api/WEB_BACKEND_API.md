@@ -106,6 +106,21 @@ The web backend is the operational and admin API surface for GoLife AI. It is no
   - key counts
   - dependency scan placeholder status
 
+## `GET /admin/auth/status`
+
+- Purpose: expose the current admin auth boundary
+- Auth: admin token
+- Success: `200`
+- Response model: `AdminAuthStatus`
+- Includes:
+  - `auth_mode`
+  - `production_ready`
+  - `enterprise_ready`
+  - operator warning text
+- Release boundary:
+  - current release keeps `enterprise_ready=false`
+  - real OIDC or SSO is not included in this release scope
+
 ## `GET /admin/audit`
 
 - Purpose: view admin audit log

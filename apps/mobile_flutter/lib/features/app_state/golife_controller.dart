@@ -2037,6 +2037,8 @@ class GoLifeController extends ChangeNotifier {
       createdAtIso: DateTime.now().toUtc().toIso8601String(),
       domainTargets: targetMission.domainTargets,
       recommendationType: targetMission.recommendationType,
+      effortFeedback: _missionEffortFeedback(targetMission),
+      repeatedFlag: _missionWasRepeated(targetMission),
       trace: targetMission.trace,
     );
 
@@ -2079,6 +2081,50 @@ class GoLifeController extends ChangeNotifier {
     return trace['clientFallback'] == true ||
         trace['mock'] == true ||
         reason.isNotEmpty;
+  }
+
+  MissionEffortFeedback? _missionEffortFeedback(DailyMission mission) {
+    final effortScore = mission.ranking?.effortScore;
+    if (effortScore == null) {
+      return null;
+    }
+    if (effortScore >= 0.8) {
+      return MissionEffortFeedback.low;
+    }
+    if (effortScore >= 0.6) {
+      return MissionEffortFeedback.balanced;
+    }
+    return MissionEffortFeedback.high;
+  }
+
+  bool _missionWasRepeated(DailyMission mission) {
+    final learningKey = _missionLearningKey(mission);
+    if (learningKey == null) {
+      return false;
+    }
+    for (final feedback in _missionFeedback) {
+      final trace = feedback.trace;
+      final mapped = trace['learning_keys_by_suggestion_id'];
+      if (mapped is Map && mapped[feedback.missionId]?.toString() == learningKey) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String? _missionLearningKey(DailyMission mission) {
+    final mapped = mission.trace['learning_keys_by_suggestion_id'];
+    if (mapped is Map) {
+      final value = mapped[mission.id];
+      if (value != null && value.toString().isNotEmpty) {
+        return value.toString();
+      }
+    }
+    if (mission.domainTargets.isEmpty) {
+      return null;
+    }
+    final sortedDomains = List<String>.from(mission.domainTargets)..sort();
+    return '${mission.recommendationType}|${sortedDomains.join('+')}';
   }
 
   List<DailyRisk> _extractDailyRisksFromMission(DailyMission? mission) {

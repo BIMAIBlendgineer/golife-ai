@@ -61,6 +61,7 @@ void main() {
           domainTargets: <String>['task'],
           recommendationType: 'mission',
           confidence: 0.88,
+          ranking: null,
           trace: <String, Object?>{'provider': 'mock'},
         ),
       ],

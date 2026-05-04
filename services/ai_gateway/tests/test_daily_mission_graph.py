@@ -169,6 +169,26 @@ class TwoSuggestionProvider(LLMProvider):
         }
 
 
+class StaticSuggestionProvider(LLMProvider):
+    provider_name = 'static-suggestion-provider'
+
+    def __init__(self, suggestions: list[dict]) -> None:
+        self._suggestions = suggestions
+        self.seen_payloads: list[dict] = []
+
+    async def complete_json(
+        self,
+        *,
+        system_prompt: str,
+        user_payload: dict,
+        response_schema: dict | None = None,
+        model: str | None = None,
+        temperature: float = 0.0,
+    ) -> dict:
+        self.seen_payloads.append(user_payload)
+        return {'suggestions': self._suggestions}
+
+
 def test_daily_mission_graph_synthesizes_missing_third_suggestion():
     app = create_app(
         settings=Settings(ai_gateway_enable_mock=False, llm_provider='openrouter'),
@@ -197,3 +217,248 @@ def test_daily_mission_graph_synthesizes_missing_third_suggestion():
     data = response.json()
     assert len(data['suggestions']) == 3
     assert data['trace']['build_response']['synthesized_count'] == 1
+
+
+def test_daily_mission_graph_adds_structured_ranking(client):
+    response = client.post(
+        '/v1/missions/daily',
+        json={
+            'user_id': 'user-1',
+            'allowed_domains': ['task', 'habit'],
+            'privacy_settings': {
+                'ai_enabled': True,
+                'allowed_domains': ['task', 'habit'],
+            },
+            'domain_summaries': [
+                {'domain': 'task', 'summary': 'Urgent task pressure exists', 'evidence_count': 2},
+                {'domain': 'habit', 'summary': 'A fragile habit needs continuity', 'evidence_count': 1},
+            ],
+            'life_events': [
+                _event('evt-task-1', 'task'),
+                _event('evt-habit-1', 'habit', 'habit_checked'),
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    ranking = data['suggestions'][0]['ranking']
+    assert ranking['impact_score'] >= 0.6
+    assert ranking['urgency_score'] >= 0.5
+    assert ranking['final_score'] >= 0.5
+    assert ranking['ranking_reason']
+    assert ranking['evidence_refs']
+    assert 'privacy_score' in ranking
+    assert 'feedback_score' in ranking
+    assert 'novelty_score' in ranking
+    assert data['trace']['rank']['score_breakdown'][0]['ranking_reason']
+
+
+def test_daily_mission_graph_low_effort_mission_beats_higher_effort_peer():
+    provider = StaticSuggestionProvider(
+        suggestions=[
+            {
+                'suggestion_id': 'mission-low-effort',
+                'title': 'Close one visible task block',
+                'domain_targets': ['task'],
+                'recommendation_type': 'mission',
+                'body': 'Finish one visible task block before switching.',
+                'evidence': [
+                    {
+                        'source_domain': 'task',
+                        'claim': 'Task evidence exists.',
+                        'confidence': 0.8,
+                    }
+                ],
+                'confidence': 0.76,
+                'uncertainty': 'low',
+                'requires_confirmation': True,
+            },
+            {
+                'suggestion_id': 'mission-higher-effort',
+                'title': 'Reshape the task and the whole week',
+                'domain_targets': ['task', 'week'],
+                'recommendation_type': 'mission',
+                'body': 'Rework the task plan and also adjust the wider week.',
+                'evidence': [
+                    {
+                        'source_domain': 'task',
+                        'claim': 'Task evidence exists.',
+                        'confidence': 0.76,
+                    }
+                ],
+                'confidence': 0.72,
+                'uncertainty': 'medium',
+                'requires_confirmation': True,
+            },
+        ]
+    )
+    app = create_app(
+        settings=Settings(ai_gateway_enable_mock=False, llm_provider='openrouter'),
+        provider=provider,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        '/v1/missions/daily',
+        json={
+            'user_id': 'user-1',
+            'allowed_domains': ['task', 'week'],
+            'privacy_settings': {
+                'ai_enabled': True,
+                'allowed_domains': ['task', 'week'],
+            },
+            'life_events': [
+                _event('evt-task-1', 'task'),
+                _event('evt-week-1', 'week'),
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data['suggestions'][0]['suggestion_id'] == 'mission-low-effort'
+    assert data['suggestions'][0]['ranking']['effort_score'] > data['suggestions'][1]['ranking']['effort_score']
+
+
+def test_daily_mission_graph_penalizes_repeated_rejected_pattern(tmp_path):
+    provider = StaticSuggestionProvider(
+        suggestions=[
+            {
+                'suggestion_id': 'mission-repeat-task',
+                'title': 'Push the same task mission again',
+                'domain_targets': ['task'],
+                'recommendation_type': 'mission',
+                'body': 'Repeat the same task push.',
+                'evidence': [
+                    {
+                        'source_domain': 'task',
+                        'claim': 'Task evidence exists.',
+                        'confidence': 0.82,
+                    }
+                ],
+                'confidence': 0.78,
+                'uncertainty': 'medium',
+                'requires_confirmation': True,
+            },
+            {
+                'suggestion_id': 'reflection-task',
+                'title': 'Review the task shape first',
+                'domain_targets': ['task'],
+                'recommendation_type': 'reflection',
+                'body': 'Review why this task matters before pushing again.',
+                'evidence': [
+                    {
+                        'source_domain': 'task',
+                        'claim': 'Task evidence exists.',
+                        'confidence': 0.8,
+                    }
+                ],
+                'confidence': 0.72,
+                'uncertainty': 'medium',
+                'requires_confirmation': True,
+            },
+        ]
+    )
+    app = create_app(
+        settings=Settings(
+            ai_gateway_enable_mock=False,
+            llm_provider='openrouter',
+            feedback_store_path=str(tmp_path / 'mission_feedback.json'),
+        ),
+        provider=provider,
+    )
+    client = TestClient(app)
+
+    for index in range(2):
+        feedback_response = client.post(
+            '/v1/feedback',
+            json={
+                'user_id': 'user-1',
+                'suggestion_id': f'old-task-mission-{index}',
+                'status': 'rejected',
+                'domain_targets': ['task'],
+                'recommendation_type': 'mission',
+                'rejection_reason_category': 'too_hard',
+                'effort_feedback': 'high',
+                'repeated_flag': True,
+                'notes': 'This feels too hard and too repetitive.',
+                'trace': {'learning_keys_by_suggestion_id': {f'old-task-mission-{index}': 'mission|task'}},
+            },
+        )
+        assert feedback_response.status_code == 200
+
+    response = client.post(
+        '/v1/missions/daily',
+        json={
+            'user_id': 'user-1',
+            'allowed_domains': ['task'],
+            'privacy_settings': {
+                'ai_enabled': True,
+                'allowed_domains': ['task'],
+            },
+            'life_events': [_event('evt-task-1', 'task')],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data['suggestions'][0]['suggestion_id'] == 'reflection-task'
+    mission_candidate = next(
+        item for item in data['suggestions'] if item['suggestion_id'] == 'mission-repeat-task'
+    )
+    assert mission_candidate['ranking']['feedback_score'] < 0.5
+    assert mission_candidate['ranking']['novelty_score'] < 0.3
+
+
+def test_daily_mission_graph_excludes_privacy_blocked_events_from_provider_payload():
+    provider = StaticSuggestionProvider(
+        suggestions=[
+            {
+                'suggestion_id': 'task-safe',
+                'title': 'Close one safe task block',
+                'domain_targets': ['task'],
+                'recommendation_type': 'mission',
+                'body': 'Finish one task block with AI-allowed evidence only.',
+                'evidence': [
+                    {
+                        'source_domain': 'task',
+                        'claim': 'Only AI-allowed task evidence was used.',
+                        'confidence': 0.81,
+                    }
+                ],
+                'confidence': 0.79,
+                'uncertainty': 'medium',
+                'requires_confirmation': True,
+            }
+        ]
+    )
+    app = create_app(
+        settings=Settings(ai_gateway_enable_mock=False, llm_provider='openrouter'),
+        provider=provider,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        '/v1/missions/daily',
+        json={
+            'user_id': 'user-1',
+            'allowed_domains': ['task'],
+            'privacy_settings': {
+                'ai_enabled': True,
+                'allowed_domains': ['task'],
+                'allow_cross_domain_patterns': False,
+            },
+            'life_events': [
+                _event('evt-task-1', 'task', 'ai_allowed'),
+                _event('evt-habit-1', 'habit', 'local_only'),
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    provider_payload = provider.seen_payloads[-1]
+    assert [item['domain'] for item in provider_payload['events']] == ['task']
+    data = response.json()
+    assert data['trace']['validate_consent']['filtered_events_count'] == 1
+    assert data['suggestions'][0]['ranking']['privacy_score'] >= 0.9

@@ -11,6 +11,7 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 - response echoes `x-correlation-id`
 - production must not run with mock enabled
 - operational telemetry is metadata-only
+- policy decisions carry `policy_id` and `policy_version`
 
 ## `GET /health`
 
@@ -62,15 +63,29 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 ```
 
 - Success: `200` with `SuggestionResponse`
+- Mission ranking fields per suggestion:
+  - `impact_score`
+  - `urgency_score`
+  - `effort_score`
+  - `confidence_score`
+  - `privacy_score`
+  - `feedback_score`
+  - `novelty_score`
+  - `final_score`
+  - `ranking_reason`
+  - `evidence_refs`
 - Trace highlights:
   - `mission_memory`
   - `learning_keys_by_suggestion_id`
   - `feedback_learning.candidate_biases`
+  - `ranking_model`
 - Errors:
   - `503` when AI is temporarily unavailable
+  - `422` when output policy rejects unsafe suggestions
 - Privacy:
   - caller should send only AI-allowed events
   - gateway preserves trace, not raw secret config
+  - privacy-blocked events are filtered before provider ranking input
 - Telemetry:
   - usage event
   - AI invocation
@@ -81,6 +96,8 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
   - `tests/test_api.py`
   - `tests/test_openrouter_routing.py`
   - `tests/test_openrouter_normalization.py`
+  - `tests/test_daily_mission_graph.py`
+  - `tests/test_mission_ranking_evaluation.py`
 
 ## `POST /v1/events/classify`
 
@@ -88,7 +105,7 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 - Request model: `EventClassificationRequest`
 - Success: `200` with `EventClassificationResponse`
 - Safety behavior:
-  - blocks unsafe crisis/clinical text with structured `422`
+  - blocks unsafe crisis, clinical, prompt-injection, or secret-bearing text with structured `422`
 - Privacy:
   - honors `privacy_settings.ai_enabled`
 - Telemetry:
@@ -103,7 +120,7 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 - Request model: `EventParseRequest`
 - Success: `200` with `EventParseResponse`
 - Safety behavior:
-  - blocks unsafe crisis/clinical text with structured `422`
+  - blocks unsafe crisis, clinical, prompt-injection, or secret-bearing text with structured `422`
 - Telemetry:
   - usage event
   - AI invocation
@@ -116,7 +133,7 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 - Request model: `ProofParseRequest`
 - Success: `200` with `ProofParseResponse`
 - Safety behavior:
-  - blocks unsafe crisis/clinical text with structured `422`
+  - blocks unsafe crisis, clinical, prompt-injection, or secret-bearing text with structured `422`
 - Privacy:
   - operational telemetry excludes raw proof text
 - Tests: `tests/test_api.py`
@@ -144,6 +161,10 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 - Success: `200` with `ReflectionSafetyResponse`
 - Safety behavior:
   - returns structured categorization and support resources
+- Policy metadata:
+  - `policy_id`
+  - `policy_version`
+  - `reason`
 - Privacy:
   - admin receives metadata-only telemetry
 - Tests: `tests/test_api.py`
@@ -156,6 +177,8 @@ The AI Gateway is the production AI surface for GoLife AI. It enforces privacy g
 - Behavior:
   - stores metadata-only mission feedback
   - derives or reuses a stable mission-pattern learning key
+  - stores privacy-safe summary metadata for ranking memory
+  - records normalized rejection and effort metadata when provided or derivable
   - feeds later mission ranking without storing raw note text in operational surfaces
 - Privacy:
   - feedback notes stay redacted from operational admin surfaces
@@ -173,3 +196,18 @@ The gateway also exposes domain-targeted suggestion routes:
 - `POST /v1/closet/decision`
 
 These follow the same `SuggestionRequest` / `SuggestionResponse` pattern and share the same provider, safety, and telemetry posture.
+
+## Policy response shape
+
+Safety rejections use structured policy details instead of freeform failures.
+
+Common machine-readable fields:
+
+- `code`
+- `input_surface`
+- `category`
+- `policy_id`
+- `policy_version`
+- `reason`
+- `resources` when applicable
+- metadata-only trace

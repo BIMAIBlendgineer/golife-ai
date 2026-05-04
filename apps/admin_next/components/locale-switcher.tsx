@@ -10,7 +10,7 @@ type LocaleSwitcherProps = {
   labels: AdminMessages["localeSwitcher"];
 };
 
-const localeOptions: AdminLocale[] = ["en", "es", "pt-BR", "ja", "zh-Hans"];
+const localeOptions: AdminLocale[] = ["en", "es"];
 
 export function LocaleSwitcher({
   currentLocale,

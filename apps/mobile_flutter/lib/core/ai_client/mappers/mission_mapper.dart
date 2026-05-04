@@ -12,6 +12,20 @@ DailyMission mapMissionSuggestion(MissionSuggestionDto dto) {
     domainTargets: dto.domainTargets,
     recommendationType: dto.recommendationType,
     confidence: dto.confidence,
+    ranking: dto.ranking == null
+        ? null
+        : MissionRanking(
+            impactScore: dto.ranking!.impactScore,
+            urgencyScore: dto.ranking!.urgencyScore,
+            effortScore: dto.ranking!.effortScore,
+            confidenceScore: dto.ranking!.confidenceScore,
+            privacyScore: dto.ranking!.privacyScore,
+            feedbackScore: dto.ranking!.feedbackScore,
+            noveltyScore: dto.ranking!.noveltyScore,
+            finalScore: dto.ranking!.finalScore,
+            rankingReason: dto.ranking!.rankingReason,
+            evidenceRefs: dto.ranking!.evidenceRefs,
+          ),
     trace: dto.trace,
   );
 }

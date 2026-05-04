@@ -48,8 +48,9 @@ This file records the practical implementation status after analyzing:
 
 - Ranked missions, risks, explanations, feedback traces, runtime config, and OpenRouter routing are implemented
 - Production anti-mock hardening is closed
-- Adversarial safety now covers more than reflection only
+- Mission ranking is now deterministic and trace-visible
 - Persisted mission memory now reuses stored feedback metadata across later plans
+- Safety now uses a centralized versioned policy engine across the current guarded surfaces
 
 ### Release 7 - Closed Beta Readiness
 
@@ -57,7 +58,9 @@ This file records the practical implementation status after analyzing:
 - Admin/backend export-delete workflow implemented
 - Secure mobile export bundle plus submission-asset vault implemented
 - Monitoring and operational admin are live
-- Remaining release gaps are mostly policy, runner, and evidence-level ranking maturity gaps
+- Release language scope is explicitly `en` and `es`
+- Enterprise auth remains explicitly out of scope until real OIDC/SSO exists
+- Remaining release gaps are mostly device-runner validation and scope-dependent enterprise identity work
 
 ## Checklist Summary
 
@@ -66,8 +69,9 @@ This file records the practical implementation status after analyzing:
 - Release docs: added
 - Remaining hardening:
   - device-specific runner validation if Android, iOS, or desktop projects are added beyond the current Flutter test runner
+  - real OIDC/SSO only if enterprise identity is brought into scope
 
 ## Next Useful Gap
 
-- Strengthen the mission ranker over persisted LifeGraph evidence, beyond the current feedback-backed mission memory layer.
-- Centralize safety decisions into a versioned policy engine before making stronger safety claims.
+- Validate Android, iOS, or desktop runners if those targets are brought into the repo scope.
+- Implement real OIDC/SSO only if enterprise identity becomes part of the product claim.

@@ -2,32 +2,36 @@
 
 | Surface | Gate | Command / check | Expected result | Current status | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Documentation | canonical release docs | manual review of final docs set | no stale claims, no secrets, clear blockers | in progress | final summary, runbooks, ADR index, risk register |
-| AI Gateway | unit/integration | `cd services/ai_gateway && python -m pytest -q` | full suite green | green baseline | anti-mock, routing, safety, API |
+| Documentation | canonical release docs | manual review of final docs set | no stale claims, no secrets, clear blockers | green on integration branch | final summary, runbooks, ADR index, risk register, i18n audit, ranking evaluation |
+| AI Gateway | unit/integration | `cd services/ai_gateway && python -m pytest -q` | full suite green | green (`95 passed`) | anti-mock, routing, safety, ranker, API |
 | AI Gateway | production health | `GET /health` | `active_provider=openrouter`, `mock_mode=false` | validated locally | production local single-key smoke |
 | AI Gateway | readiness | `GET /ready` | `200` in valid production config | validated locally | production validator enforced |
 | AI Gateway | live smoke | `POST /v1/missions/daily` | `200`, suggestions, no `mock: true` | validated locally | one-request OpenRouter smoke |
-| AI Gateway | persisted mission memory | feedback -> follow-up daily mission | later ranking reflects stored pattern memory, trace stays visible | validated locally | current scope is feedback metadata, not full evidence memory |
-| AI Gateway | mission ranker | top 3 deterministic with explicit score breakdown | ranking fields visible and privacy-safe | pending | premium blocker until implemented |
-| Web Backend | unit/integration | `cd services/web_backend && python -m pytest -q` | full suite green | green baseline | includes support export/delete |
+| AI Gateway | persisted mission memory | feedback -> follow-up daily mission | later ranking reflects stored pattern memory, trace stays visible | green | current scope is metadata-backed ranking memory |
+| AI Gateway | mission ranker | top 3 deterministic with explicit score breakdown | ranking fields visible and privacy-safe | green | covered by graph tests and offline corpus |
+| AI Gateway | policy engine | structured policy decisions across guarded routes | `policy_id` and `policy_version` returned | green | input, reflection, and mission-output checks |
+| Web Backend | unit/integration | `cd services/web_backend && python -m pytest -q` | full suite green | green (`25 passed`) | includes support export/delete |
 | Web Backend | support export | admin bundle endpoint | metadata-only bundle available | validated locally | no local LifeGraph sync |
 | Web Backend | support delete | admin execute-delete endpoint | operational records removed | validated locally | local device data untouched |
-| Mobile | static analysis | `cd apps/mobile_flutter && flutter analyze` | green | green baseline | CI runner: ubuntu-latest |
-| Mobile | tests | `cd apps/mobile_flutter && flutter test` | green | green baseline | includes fallback and export bundle coverage |
-| Mobile | secure export | controller/export tests | `data.json + assets/` | green baseline | submission-asset vault validated |
-| Admin | lint | `cd apps/admin_next && npm run lint` | green | green baseline | docs-only PR should not affect |
-| Admin | typecheck | `cd apps/admin_next && npm run typecheck` | green | green baseline | |
-| Admin | build | `cd apps/admin_next && npm run build` | green | green baseline | |
-| Auth | enterprise boundary | admin/web backend auth status review | no enterprise claims without OIDC/SSO | documented only | current mode is hardening-grade, not enterprise-ready |
-| Security | secret scan | `gitleaks git` | no findings | green baseline required | must be re-run for docs PR |
+| Mobile | l10n generation | `cd apps/mobile_flutter && flutter gen-l10n` | generation succeeds | green with known untranslated warnings | non-release locale files remain partial by design |
+| Mobile | static analysis | `cd apps/mobile_flutter && flutter analyze` | green | green | CI runner: ubuntu-latest |
+| Mobile | tests | `cd apps/mobile_flutter && flutter test` | green | green (`52 passed`) | includes fallback, export bundle, ranker visibility |
+| Mobile | secure export | controller/export tests | `data.json + assets/` | green | submission-asset vault validated |
+| Mobile | locale scope | runtime locale picker | only `en` and `es` | green | older locale assets stay out of release scope |
+| Admin | lint | `cd apps/admin_next && npm run lint` | green | green | |
+| Admin | typecheck | `cd apps/admin_next && npm run typecheck` | green | green | |
+| Admin | build | `cd apps/admin_next && npm run build` | green | green | |
+| Auth | enterprise boundary | admin/web backend auth status review | no enterprise claims without OIDC/SSO | documented and runtime-aligned | current mode is hardening-grade, not enterprise-ready |
+| Security | secret scan | `gitleaks git` | no findings | green | no leaks found |
 | Security | Python SAST | `bandit -q -r app -s B105,B106` | green | CI baseline | run in both Python services |
 | Security | Python deps | `pip-audit --ignore-vuln CVE-2026-3219` | green or accepted exception only | CI baseline | |
 | Security | Admin deps | `npm audit --omit=dev --audit-level=high` | green or accepted exception only | CI baseline | |
-| Git | docs diff | `git diff --stat` and secret grep | docs-only, no secrets | pending final review | |
+| Git | docs and code diff | `git diff --stat` and secret grep | no unrelated secrets or scope drift | pending final review | release branch still open |
 | Git | branch hygiene | PR merged, branch deleted | clean main | pending final closeout | |
 
 ## Residual non-blocking gaps
 
-- No checked-in Android, iOS, or desktop runner validation
-- Safety remains rule-based, not a strong policy engine
-- Deploy environment must reproduce documented external variables
+- no checked-in Android, iOS, or desktop runner validation
+- policy engine is centralized and versioned, but still rule-based rather than jailbreak-proof
+- deploy environment must reproduce documented external variables
+- enterprise identity remains out of scope unless real OIDC/SSO is added

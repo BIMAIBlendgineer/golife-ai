@@ -13,7 +13,7 @@ The product must not claim enterprise readiness unless real OIDC or SSO exists.
 
 - `services/web_backend/app/main.py`
 - `services/web_backend/app/schemas.py`
-- `apps/admin_next/messages/en.json`
+- `apps/admin_next/app/login/page.tsx`
 - `docs/admin/ADMIN_OPERATIONS.md`
 - `docs/decisions/ADR_TOKEN_ONLY_NOT_ENTERPRISE_AUTH.md`
 
@@ -23,6 +23,7 @@ For the current release:
 
 - do not claim enterprise auth readiness
 - keep the current admin gate described as internal/admin hardening only
+- keep release scope explicitly outside enterprise SSO unless a real IdP-backed implementation is added
 - only move to enterprise-ready claims after a real OIDC/SSO implementation exists with tests and deploy docs
 
 ## Alternatives considered
@@ -39,6 +40,7 @@ For the current release:
 - product claims stay honest
 - release docs and admin UI align with actual security posture
 - a future OIDC implementation can be reviewed as a separate hardening change
+- this release can close without shipping security theater
 
 ## Consequences negative
 
@@ -56,7 +58,7 @@ Current affected surfaces:
 
 - `services/web_backend/app/main.py`
 - `services/web_backend/app/schemas.py`
-- `apps/admin_next/messages/en.json`
+- `apps/admin_next/app/login/page.tsx`
 - `docs/admin/ADMIN_OPERATIONS.md`
 - `docs/operations/RELEASE_RISK_REGISTER.md`
 

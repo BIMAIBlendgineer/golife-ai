@@ -257,12 +257,6 @@ class _LanguageCard extends StatelessWidget {
         return l10n.languageEnglish;
       case AppLocalePreference.es:
         return l10n.languageSpanish;
-      case AppLocalePreference.ptBr:
-        return l10n.languagePortugueseBrazil;
-      case AppLocalePreference.ja:
-        return l10n.languageJapanese;
-      case AppLocalePreference.zhHans:
-        return l10n.languageChineseSimplified;
     }
   }
 }

@@ -4,6 +4,27 @@
 
 GoLife AI supports planning, reflection, and small daily actions. It must not present itself as a provider of medical, legal, or regulated financial advice.
 
+## Engine model
+
+Current runtime uses a centralized policy engine in `services/ai_gateway/app/policy_engine.py`.
+
+Every decision carries:
+
+- `policy_id`
+- `policy_version`
+- `category`
+- `reason`
+- metadata-only trace fields
+
+The current action vocabulary is:
+
+- `allow`
+- `reject_422`
+- `degrade`
+- `require_confirmation`
+- `local_only`
+- `metadata_only`
+
 ## Covered surfaces
 
 Current guarded freeform inputs:
@@ -13,6 +34,7 @@ Current guarded freeform inputs:
 - `POST /v1/events/parse`
 - `POST /v1/proofs/parse`
 - `POST /v1/tasks/rewrite`
+- `POST /v1/missions/daily` output review
 - mobile local capture parser fallback
 
 ## Blocking categories
@@ -21,6 +43,11 @@ The current rule set blocks or redirects text suggesting:
 
 - crisis or self-harm intent
 - clinical diagnosis or treatment framing
+- regulated financial advice
+- legal advice
+- prompt injection or instruction-bypass attempts
+- secret or credential exposure
+- unsafe claim language
 - obfuscated variants using:
   - leetspeak
   - punctuation splitting
@@ -37,6 +64,7 @@ Returns a structured response with:
 - `category`
 - user-facing message
 - optional support resources
+- policy trace metadata
 
 ### Other guarded AI routes
 
@@ -48,10 +76,24 @@ Return structured `422` responses with machine-readable fields such as:
 - localized guidance
 - crisis resources when applicable
 - redirect hint toward `/v1/reflection/check`
+- `policy_id`
+- `policy_version`
 
 ### Mobile fallback
 
 Local capture parsing does not quietly turn obvious crisis or clinical text into ordinary drafts.
+
+### Mission output
+
+Mission suggestions are reviewed before they leave the gateway.
+
+Unsafe outputs are rejected when they:
+
+- have no evidence
+- look like regulated financial advice
+- look like medical or legal advice
+- expose secrets
+- use unsafe claim language
 
 ## Telemetry
 
@@ -91,8 +133,7 @@ GoLife AI may not:
 
 ## Limits
 
-- this policy is rule-based and heuristic
-- it is not a strong policy engine
+- this policy engine is centralized and versioned, but still rule-based and heuristic
 - it is not jailbreak-proof
 - it does not guarantee full adversarial coverage
 
@@ -109,5 +150,5 @@ If a safety issue is reported:
 
 - broader adversarial corpus
 - offline evaluation set
-- stronger policy engine
+- stronger multilingual and output-side evaluation
 - crisis UX improvements for local-only capture flows if product scope expands

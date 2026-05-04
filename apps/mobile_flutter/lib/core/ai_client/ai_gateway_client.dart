@@ -75,6 +75,7 @@ class MockAiGatewayClient extends AiGatewayClient {
             domainTargets: const ['mission'],
             recommendationType: 'warning',
             confidence: 0.95,
+            ranking: null,
             trace: const {
               'mock': true,
               'allowedDomains': <String>[],
@@ -617,6 +618,9 @@ class HttpAiGatewayClient extends AiGatewayClient {
       'notes': feedback.notes,
       'domain_targets': feedback.domainTargets,
       'recommendation_type': feedback.recommendationType,
+      'rejection_reason_category': feedback.rejectionReasonCategory?.storageKey,
+      'effort_feedback': feedback.effortFeedback?.storageKey,
+      'repeated_flag': feedback.repeatedFlag,
       'trace': feedback.trace,
     };
 
@@ -745,6 +749,7 @@ MissionSuggestionDto _mission({
     domainTargets: domainTargets,
     recommendationType: recommendationType,
     confidence: confidence,
+    ranking: null,
     trace: const <String, Object?>{},
   );
 }

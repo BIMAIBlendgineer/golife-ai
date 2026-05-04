@@ -201,6 +201,70 @@ extension LocalizedGoLifeController on GoLifeController {
     final content = _localizedMockMissionContent(l10n.localeName, mission.id);
     return content?.uncertainty ?? mission.uncertainty;
   }
+
+  String localizedMissionRankingReason(
+    DailyMission mission,
+    AppLocalizations l10n,
+  ) {
+    final ranking = mission.ranking;
+    if (ranking == null || ranking.rankingReason.isEmpty) {
+      return localizedMissionDeliverySummary(mission, l10n);
+    }
+    return ranking.rankingReason;
+  }
+
+  String localizedMissionEffortLabel(
+    DailyMission mission,
+    AppLocalizations l10n,
+  ) {
+    final effortScore = mission.ranking?.effortScore;
+    if (effortScore == null) {
+      return _pickLocale(
+        l10n.localeName,
+        en: 'Effort not estimated',
+        es: 'Esfuerzo no estimado',
+        ptBr: 'Esforco nao estimado',
+        ja: '必要な負荷は未推定です',
+        zhHans: '尚未估算投入强度',
+      );
+    }
+    if (effortScore >= 0.8) {
+      return _pickLocale(
+        l10n.localeName,
+        en: 'Low effort',
+        es: 'Esfuerzo bajo',
+        ptBr: 'Esforco baixo',
+        ja: '低負荷',
+        zhHans: '低投入',
+      );
+    }
+    if (effortScore >= 0.6) {
+      return _pickLocale(
+        l10n.localeName,
+        en: 'Balanced effort',
+        es: 'Esfuerzo equilibrado',
+        ptBr: 'Esforco equilibrado',
+        ja: '中くらいの負荷',
+        zhHans: '投入适中',
+      );
+    }
+    return _pickLocale(
+      l10n.localeName,
+      en: 'Higher effort',
+      es: 'Esfuerzo alto',
+      ptBr: 'Esforco alto',
+      ja: '高めの負荷',
+      zhHans: '投入较高',
+    );
+  }
+
+  List<String> missionEvidenceReferences(DailyMission mission) {
+    final evidenceRefs = mission.ranking?.evidenceRefs ?? const <String>[];
+    if (evidenceRefs.isNotEmpty) {
+      return evidenceRefs;
+    }
+    return mission.evidence;
+  }
 }
 
 typedef _MissionContent = ({

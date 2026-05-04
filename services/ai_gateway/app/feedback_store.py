@@ -3,9 +3,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from threading import Lock
+from datetime import datetime, timezone
 from uuid import uuid4
 
-from app.learning_memory import resolve_feedback_learning_key, summarize_feedback_items
+from app.learning_memory import (
+    build_privacy_safe_feedback_summary,
+    derive_effort_feedback,
+    derive_rejection_reason_category,
+    resolve_feedback_learning_key,
+    summarize_feedback_items,
+)
 from app.schemas import MissionFeedbackRequest
 
 
@@ -21,11 +28,26 @@ class MissionFeedbackStore:
     def record(self, payload: MissionFeedbackRequest) -> str:
         feedback_id = f"feedback-{uuid4()}"
         note_text = (payload.notes or "").strip()
+        rejection_reason_category = derive_rejection_reason_category(
+            status=payload.status,
+            raw_category=payload.rejection_reason_category,
+            note_text=note_text,
+        )
+        effort_feedback = derive_effort_feedback(
+            status=payload.status,
+            raw_effort_feedback=payload.effort_feedback,
+            rejection_reason_category=rejection_reason_category,
+        )
         learning_key, learning_key_source = resolve_feedback_learning_key(
             suggestion_id=payload.suggestion_id,
             domain_targets=payload.domain_targets,
             recommendation_type=payload.recommendation_type,
             trace=payload.trace,
+        )
+        recorded_at = (
+            payload.timestamp.astimezone(timezone.utc).isoformat()
+            if payload.timestamp is not None
+            else datetime.now(timezone.utc).isoformat()
         )
         item = {
             "feedback_id": feedback_id,
@@ -38,6 +60,18 @@ class MissionFeedbackStore:
             "recommendation_type": payload.recommendation_type,
             "learning_key": learning_key,
             "learning_key_source": learning_key_source,
+            "rejection_reason_category": rejection_reason_category,
+            "effort_feedback": effort_feedback,
+            "repeated_flag": payload.repeated_flag,
+            "privacy_safe_summary": build_privacy_safe_feedback_summary(
+                status=payload.status,
+                domain_targets=payload.domain_targets,
+                recommendation_type=payload.recommendation_type,
+                rejection_reason_category=rejection_reason_category,
+                effort_feedback=effort_feedback,
+                repeated_flag=payload.repeated_flag,
+            ),
+            "recorded_at": recorded_at,
             "trace": payload.trace,
         }
         with self._lock:
@@ -80,6 +114,24 @@ class MissionFeedbackStore:
             if "notes_char_count" not in item:
                 item["notes_char_count"] = len(legacy_notes)
                 migrated = migrated or bool(legacy_notes)
+            item.setdefault("rejection_reason_category", None)
+            item.setdefault("effort_feedback", "unknown")
+            item.setdefault("repeated_flag", False)
+            item.setdefault(
+                "privacy_safe_summary",
+                build_privacy_safe_feedback_summary(
+                    status=item.get("status"),
+                    domain_targets=item.get("domain_targets", []),
+                    recommendation_type=item.get("recommendation_type"),
+                    rejection_reason_category=item.get("rejection_reason_category"),
+                    effort_feedback=str(item.get("effort_feedback", "unknown")),
+                    repeated_flag=bool(item.get("repeated_flag", False)),
+                ),
+            )
+            item.setdefault(
+                "recorded_at",
+                datetime.now(timezone.utc).isoformat(),
+            )
             items.append(item)
         return items, migrated
 

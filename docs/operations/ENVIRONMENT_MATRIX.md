@@ -50,6 +50,8 @@ Admin UI behavior:
 - `live`: backend reachable with live data
 - `fallback`: backend answered through snapshot/fallback path
 - `offline`: backend unreachable
+- release-supported admin locales: `en`, `es`
+- enterprise auth is not part of this release unless real OIDC/SSO is added separately
 
 ## Mobile Flutter
 
@@ -57,6 +59,11 @@ Admin UI behavior:
 | --- | --- | --- | --- |
 | `GOLIFE_AI_GATEWAY_BASE_URL` | `http://127.0.0.1:8000` | required | compile-time define used by app |
 | `GOLIFE_RUNTIME_CONFIG_BASE_URL` | `http://127.0.0.1:8010` | required | compile-time define used by runtime config client |
+
+Release-supported mobile locales:
+
+- `en`
+- `es`
 
 Known release gap:
 

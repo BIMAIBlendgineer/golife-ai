@@ -143,6 +143,7 @@ void main() {
         domainTargets: const <String>['task'],
         recommendationType: 'task_execution',
         confidence: 0.9,
+        ranking: null,
         trace: const <String, Object?>{},
       );
 

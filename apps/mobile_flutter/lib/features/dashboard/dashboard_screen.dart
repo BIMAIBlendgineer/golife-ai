@@ -112,6 +112,18 @@ class DashboardScreen extends StatelessWidget {
                     color: const Color(0xFFF2E5D2),
                   ),
                 ),
+                if (primaryMission != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    controller.localizedMissionRankingReason(
+                      primaryMission,
+                      l10n,
+                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFFE3D3BC),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 Wrap(
                   spacing: 10,
@@ -141,6 +153,12 @@ class DashboardScreen extends StatelessWidget {
                           (primaryMission.confidence * 100).round(),
                         ),
                         color: const Color(0xFF4C6A4F),
+                      ),
+                    if (primaryMission != null)
+                      _MetaPill(
+                        label:
+                            controller.localizedMissionEffortLabel(primaryMission, l10n),
+                        color: const Color(0xFF6C5B3D),
                       ),
                   ],
                 ),
@@ -274,6 +292,8 @@ class DashboardScreen extends StatelessWidget {
                   body: controller.localizedMissionBody(mission, l10n),
                   sourceLabel:
                       controller.localizedMissionDeliveryLabel(mission, l10n),
+                  effortLabel:
+                      controller.localizedMissionEffortLabel(mission, l10n),
                   onExplain: () => _showExplanationSheet(context, mission),
                   onAccept: () => controller.acceptMission(mission),
                   onComplete: () async {
@@ -372,6 +392,19 @@ class DashboardScreen extends StatelessWidget {
                   body:
                       controller.localizedMissionDeliverySummary(mission, l10n),
                 ),
+                if (mission.ranking != null) ...[
+                  const SizedBox(height: 12),
+                  _DisclosurePanel(
+                    title: controller.localizedMissionEffortLabel(
+                      mission,
+                      l10n,
+                    ),
+                    body: controller.localizedMissionRankingReason(
+                      mission,
+                      l10n,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Text(
                   l10n.dashboardConfidenceWithType(
@@ -530,6 +563,7 @@ class _MissionSupportCard extends StatelessWidget {
     required this.title,
     required this.body,
     required this.sourceLabel,
+    required this.effortLabel,
     required this.onExplain,
     required this.onAccept,
     required this.onComplete,
@@ -539,6 +573,7 @@ class _MissionSupportCard extends StatelessWidget {
   final String title;
   final String body;
   final String sourceLabel;
+  final String effortLabel;
   final VoidCallback onExplain;
   final Future<void> Function() onAccept;
   final Future<void> Function() onComplete;
@@ -560,12 +595,23 @@ class _MissionSupportCard extends StatelessWidget {
           Text(title, style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(body, style: theme.textTheme.bodyMedium),
+          if ((mission.ranking?.rankingReason ?? '').isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              mission.ranking!.rankingReason,
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               Chip(label: Text(sourceLabel)),
+              if (mission.ranking != null)
+                Chip(
+                  label: Text(effortLabel),
+                ),
               for (final domain in mission.domainTargets)
                 Chip(label: Text(domain.localizedDomainLabel(l10n))),
               Chip(

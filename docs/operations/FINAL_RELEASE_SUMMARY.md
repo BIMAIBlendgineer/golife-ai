@@ -1,8 +1,8 @@
 # Final Release Summary
 
 Date: `2026-05-04`
-Branch at creation: `docs/final-production-readiness`
-Current baseline: `main@3848c162822038ae9a80171e0919e7e980695bc0`
+Branch at update: `release/final-premium-production`
+Baseline before this integration branch: `main@81787ba`
 
 ## Product thesis
 
@@ -31,67 +31,66 @@ The implemented surfaces today are:
 - `services/web_backend`
 - `apps/admin_next`
 
-Closed technical/runtime blocks already merged:
+Closed technical/runtime blocks now included in this release scope:
 
 - AI Gateway production anti-mock runtime
 - OpenRouter live single-key production-local validation
 - admin/backend export-delete workflow
 - secure mobile export bundle with private submission-asset vault
-- adversarial safety across reflection, capture, parse, proof-parse, and task-rewrite
+- adversarial safety across reflection, capture, parse, proof-parse, task-rewrite, and mission-output review
 - explicit fallback visibility in mobile and admin
 - persisted mission memory over feedback metadata in the AI Gateway
+- deterministic mission ranking with trace-visible score breakdown
+- privacy-safe learning metadata and offline ranking evaluation corpus
+- explicit release locale closure to `en` and `es`
+- explicit enterprise-auth boundary: out of scope unless real OIDC/SSO is implemented
 
-## What is ready now
+## Validated gates on this integration branch
 
-Ready at the current baseline:
+- `services/ai_gateway`: `python -m pytest -q` -> `95 passed`
+- `services/web_backend`: `python -m pytest -q` -> `25 passed`
+- `apps/mobile_flutter`: `flutter gen-l10n` completed, with untranslated warnings only for non-release locales
+- `apps/mobile_flutter`: `flutter analyze` -> green
+- `apps/mobile_flutter`: `flutter test` -> `52 passed`
+- `apps/admin_next`: `npm run lint` -> green
+- `apps/admin_next`: `npm run typecheck` -> green
+- `apps/admin_next`: `npm run build` -> green
+- repo root: `gitleaks git` -> clean
 
-- local-first graph and domain flows
-- daily mission generation
-- production anti-mock AI runtime
-- metadata-only operational telemetry
-- privacy/export/delete baseline
-- secure mobile export bundle
-- rule-based adversarial safety baseline
+## Release scope
 
-## What still blocks “premium production complete”
+This premium-production release scope includes:
 
-The remaining product-completion blockers are:
+- local-first mobile decision flows
+- ranked daily missions with feedback-backed learning
+- privacy-bounded AI Gateway behavior
+- metadata-only operational backend and admin
+- mobile/admin degraded-state visibility
+- release UI locales `en` and `es`
 
-1. mission ranker maturation:
-   - explicit scoring dimensions
-   - visible ranking reasons
-   - stronger evidence-aware ordering
-2. learning and memory maturation:
-   - extend beyond feedback-pattern memory into evidence-aware ranking
-   - add reproducible evaluation corpus
-3. strong policy engine:
-   - versioned decisions
-   - centralized policy outcomes
-   - stronger adversarial corpus
-4. i18n release closure:
-   - define release locales explicitly
-   - complete `en` and `es`
-   - mark others as partial or future
-5. enterprise auth boundary:
-   - implement real OIDC/SSO if enterprise is claimed
-   - otherwise keep enterprise auth explicitly out of scope
-6. final full-system validation:
-   - local gates
-   - `gitleaks`
-   - CI
-   - merge and branch hygiene
+This release does not include:
+
+- checked-in Android, iOS, or desktop runners
+- real enterprise OIDC/SSO
+- full multilingual parity beyond `en` and `es`
+- deep cloud memory over the full LifeGraph
+- banking integrations
+- full calendar sync
+- social/community features
+- marketplace flows
+- medical, financial, or legal advice behavior
 
 ## Current release posture
 
 Current posture:
 
-- repository release candidate: `conditional go`
-- premium production complete: `not yet`
+- repository release candidate: `go within current scoped release`
+- premium production claim: `valid within the documented scope`
 
 Reason:
 
-- the runtime and privacy/safety hardening base is strong enough for an RC
-- the premium-complete promise still depends on ranker, policy, locale, and auth-boundary closure
+- the runtime, privacy, export/delete, ranking, learning, and safety baselines are now implemented and validated locally
+- the remaining limits are explicit scope boundaries, not hidden blockers
 
 ## Canonical docs
 
@@ -106,14 +105,16 @@ Reason:
 - [AI Gateway API](../api/AI_GATEWAY_API.md)
 - [Web Backend API](../api/WEB_BACKEND_API.md)
 - [Admin operations](../admin/ADMIN_OPERATIONS.md)
+- [I18N final audit](I18N_FINAL_AUDIT.md)
+- [Mission ranking evaluation](MISSION_RANKING_EVALUATION.md)
 
-## Final-release decision rule
+## Premium-production decision rule
 
-This repo should be called premium-production ready only when all of the following are true:
+This repo can be called premium-production ready for the current release scope when all of the following remain true:
 
 - mission ranking is explicit, tested, and visible
 - learning changes ranking without violating privacy boundaries
 - safety decisions are centralized in a versioned policy engine
-- release locales are explicitly complete
-- enterprise auth is either real OIDC/SSO or explicitly excluded from claims
+- release locales are explicitly scoped to `en` and `es`
+- enterprise auth remains explicitly excluded from claims unless real OIDC/SSO is added
 - all validation gates are green locally and in CI

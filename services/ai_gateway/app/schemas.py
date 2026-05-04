@@ -10,6 +10,16 @@ SuggestionStatus = Literal["draft", "shown", "accepted", "rejected", "edited", "
 DayState = Literal["overloaded", "steady", "recovery", "unstructured", "unknown"]
 FeedbackStatus = Literal["useful", "rejected", "accepted", "completed", "edited"]
 ReflectionSafetyCategory = Literal["supportive", "clinical", "crisis"]
+FeedbackRejectionCategory = Literal[
+    "too_hard",
+    "not_relevant",
+    "not_now",
+    "privacy",
+    "too_generic",
+    "already_done",
+    "unknown",
+]
+EffortFeedback = Literal["low", "balanced", "high", "unknown"]
 
 
 class PrivacySettings(BaseModel):
@@ -44,6 +54,19 @@ class SuggestionEvidence(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
 
+class MissionRanking(BaseModel):
+    impact_score: float = Field(ge=0.0, le=1.0)
+    urgency_score: float = Field(ge=0.0, le=1.0)
+    effort_score: float = Field(ge=0.0, le=1.0)
+    confidence_score: float = Field(ge=0.0, le=1.0)
+    privacy_score: float = Field(ge=0.0, le=1.0)
+    feedback_score: float = Field(ge=0.0, le=1.0)
+    novelty_score: float = Field(ge=0.0, le=1.0)
+    final_score: float = Field(ge=0.0, le=1.0)
+    ranking_reason: str = Field(min_length=1)
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
 class AISuggestion(BaseModel):
     suggestion_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
@@ -56,6 +79,7 @@ class AISuggestion(BaseModel):
     requires_confirmation: bool = True
     forbidden_actions: list[str] = Field(default_factory=list)
     status: SuggestionStatus = "draft"
+    ranking: MissionRanking | None = None
 
 
 class SuggestionRequest(BaseModel):
@@ -170,6 +194,10 @@ class MissionFeedbackRequest(BaseModel):
     notes: str | None = None
     domain_targets: list[Domain] = Field(default_factory=list)
     recommendation_type: RecommendationType | None = None
+    rejection_reason_category: FeedbackRejectionCategory | None = None
+    effort_feedback: EffortFeedback | None = None
+    repeated_flag: bool = False
+    timestamp: datetime | None = None
     trace: dict[str, Any] = Field(default_factory=dict)
 
 
