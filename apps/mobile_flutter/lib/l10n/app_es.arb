@@ -42,7 +42,7 @@
   "deleteAllLocalData": "Borrar todos los datos locales",
   "domainControls": "Controles por dominio",
   "exportCopied": "La exportacion JSON local se copio al portapapeles.",
-  "exportSavedFile": "La exportacion JSON protegida se guardo como {fileName}.",
+  "exportSavedFile": "El paquete local protegido se guardo como {fileName}.",
   "@exportSavedFile": {
     "placeholders": {
       "fileName": {}

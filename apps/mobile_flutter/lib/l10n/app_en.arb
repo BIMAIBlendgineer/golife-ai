@@ -42,7 +42,7 @@
   "deleteAllLocalData": "Delete all local data",
   "domainControls": "Domain controls",
   "exportCopied": "Local JSON export copied to clipboard.",
-  "exportSavedFile": "Protected local JSON export saved as {fileName}.",
+  "exportSavedFile": "Protected local export bundle saved as {fileName}.",
   "@exportSavedFile": {
     "placeholders": {
       "fileName": {}

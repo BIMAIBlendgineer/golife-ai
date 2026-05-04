@@ -60,6 +60,5 @@ This file records the practical implementation status after analyzing:
 - Quality gate: executed locally
 - Release docs: added
 - Remaining hardening:
-  - stronger mobile encryption at rest
-  - store submission assets outside metadata copy
-  - deeper adversarial safety coverage
+  - broader adversarial safety corpus beyond the hardened reflection guardrail
+  - device-specific runner validation if Android, iOS, or desktop projects are added beyond the current Flutter test runner

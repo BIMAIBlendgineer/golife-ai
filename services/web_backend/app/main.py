@@ -50,6 +50,7 @@ from app.schemas import (
     OpenRouterApiKeyRecord,
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
+    OperationalExportBundle,
     PaginatedResponse,
     PlanRow,
     PrivacyDataMap,
@@ -71,6 +72,7 @@ from app.schemas import (
     UsageEventRecord,
     StorageSummary,
     StorageUsageRow,
+    SupportRequestExecutionResult,
     XInsightCreditSummary,
 )
 from app.settings import Settings
@@ -711,6 +713,98 @@ def create_app(
             item.model_dump(mode="json")
             for item in resolved_repository.list_support_requests()
         ]
+
+    @app.get(
+        "/admin/support/export-delete/{request_id}/bundle",
+        response_model=OperationalExportBundle,
+    )
+    async def support_request_bundle(
+        request_id: str,
+        _: None = Depends(require_admin),
+    ) -> OperationalExportBundle:
+        request = resolved_repository.get_support_request(request_id)
+        if request is None:
+            raise HTTPException(status_code=404, detail="Support request not found.")
+        if request.request_type != "export":
+            raise HTTPException(status_code=400, detail="Support request is not an export.")
+        bundle = resolved_repository.build_operational_export_bundle(request_id)
+        if bundle is None:
+            raise HTTPException(status_code=404, detail="Support request not found.")
+        record_admin_audit(
+            action="download_support_export_bundle",
+            target_type="support_request",
+            target_id=request_id,
+            safe_diff={
+                "request_type": request.request_type,
+                "user_id": bundle.user_id,
+                "record_counts": bundle.record_counts,
+                "checksum_sha256": bundle.checksum_sha256,
+                "metadata_only": bundle.metadata_only,
+            },
+        )
+        return bundle
+
+    @app.post(
+        "/admin/support/export-delete/{request_id}/resolve",
+        response_model=SupportRequestExecutionResult,
+    )
+    async def resolve_support_request(
+        request_id: str,
+        _: None = Depends(require_admin),
+    ) -> SupportRequestExecutionResult:
+        request = resolved_repository.get_support_request(request_id)
+        if request is None:
+            raise HTTPException(status_code=404, detail="Support request not found.")
+        if request.status != "open":
+            raise HTTPException(status_code=409, detail="Support request is already resolved.")
+        result = resolved_repository.resolve_support_request(request_id, processed_at=utcnow())
+        if result is None:  # pragma: no cover
+            raise HTTPException(status_code=404, detail="Support request not found.")
+        record_admin_audit(
+            action="resolve_support_request",
+            target_type="support_request",
+            target_id=request_id,
+            safe_diff={
+                "request_type": result.request_type,
+                "user_id": result.user_id,
+                "status": result.status,
+            },
+        )
+        return result
+
+    @app.post(
+        "/admin/support/export-delete/{request_id}/execute-delete",
+        response_model=SupportRequestExecutionResult,
+    )
+    async def execute_support_delete(
+        request_id: str,
+        _: None = Depends(require_admin),
+    ) -> SupportRequestExecutionResult:
+        request = resolved_repository.get_support_request(request_id)
+        if request is None:
+            raise HTTPException(status_code=404, detail="Support request not found.")
+        if request.request_type != "delete":
+            raise HTTPException(status_code=400, detail="Support request is not a delete.")
+        if request.status != "open":
+            raise HTTPException(status_code=409, detail="Support request is already resolved.")
+        result = resolved_repository.execute_support_delete_request(
+            request_id,
+            processed_at=utcnow(),
+        )
+        if result is None:  # pragma: no cover
+            raise HTTPException(status_code=404, detail="Support request not found.")
+        record_admin_audit(
+            action="execute_support_delete_request",
+            target_type="support_request",
+            target_id=request_id,
+            safe_diff={
+                "request_type": result.request_type,
+                "user_id": result.user_id,
+                "record_counts": result.record_counts,
+                "metadata_only": result.metadata_only,
+            },
+        )
+        return result
 
     @app.get("/admin/openrouter/keys", response_model=list[OpenRouterApiKeyRecord])
     async def list_openrouter_keys(_: None = Depends(require_admin)) -> list[OpenRouterApiKeyRecord]:

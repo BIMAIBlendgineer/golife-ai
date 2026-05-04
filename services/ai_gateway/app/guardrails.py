@@ -83,8 +83,23 @@ CRISIS_TERMS = (
 )
 
 
+LEET_TRANSLATION = str.maketrans(
+    {
+        "0": "o",
+        "1": "i",
+        "3": "e",
+        "4": "a",
+        "5": "s",
+        "7": "t",
+        "@": "a",
+        "$": "s",
+        "!": "i",
+    }
+)
+
+
 def _normalize_text(value: str) -> str:
-    normalized = unicodedata.normalize("NFKD", value)
+    normalized = unicodedata.normalize("NFKD", value.translate(LEET_TRANSLATION))
     ascii_only = "".join(
         character for character in normalized if not unicodedata.combining(character)
     )
@@ -92,7 +107,41 @@ def _normalize_text(value: str) -> str:
         character.lower() if character.isalnum() else " "
         for character in ascii_only
     )
-    return " ".join(tokenized.split())
+    tokens = tokenized.split()
+    collapsed_tokens: list[str] = []
+    single_letter_run = ""
+    for token in tokens:
+        if len(token) == 1 and token.isalpha():
+            single_letter_run += token
+            continue
+        if single_letter_run:
+            collapsed_tokens.append(single_letter_run)
+            single_letter_run = ""
+        collapsed_tokens.append(token)
+    if single_letter_run:
+        collapsed_tokens.append(single_letter_run)
+    return " ".join(collapsed_tokens)
+
+
+def _joined_windows(tokens: list[str]) -> set[str]:
+    windows: set[str] = set(tokens)
+    for size in range(2, min(4, len(tokens)) + 1):
+        for index in range(len(tokens) - size + 1):
+            windows.add("".join(tokens[index : index + size]))
+    return windows
+
+
+def _match_terms(text: str, terms: tuple[str, ...]) -> list[str]:
+    normalized_text = _normalize_text(text)
+    tokens = normalized_text.split()
+    joined_tokens = _joined_windows(tokens)
+    matched: list[str] = []
+    for term in terms:
+        normalized_term = _normalize_text(term)
+        compact_term = normalized_term.replace(" ", "")
+        if normalized_term in normalized_text or compact_term in joined_tokens:
+            matched.append(term)
+    return matched
 
 
 def filter_ai_events(request: SuggestionRequest) -> tuple[list[LifeEvent], list[dict[str, str]]]:
@@ -176,11 +225,10 @@ def assess_reflection_safety(
     region: str = "global",
     catalog_path: str | None = None,
 ) -> ReflectionSafetyResponse:
-    lowered = _normalize_text(request.text)
     locale = normalize_locale(request.locale)
     messages = resolve_reflection_messages(locale)
 
-    matched_crisis = [term for term in CRISIS_TERMS if term in lowered]
+    matched_crisis = _match_terms(request.text, CRISIS_TERMS)
     if matched_crisis:
         resources = resolve_crisis_resources(
             region=region,
@@ -200,7 +248,7 @@ def assess_reflection_safety(
             },
         )
 
-    matched_clinical = [term for term in EMOTIONAL_CLINICAL_TERMS if term in lowered]
+    matched_clinical = _match_terms(request.text, EMOTIONAL_CLINICAL_TERMS)
     if matched_clinical:
         return ReflectionSafetyResponse(
             safe=False,

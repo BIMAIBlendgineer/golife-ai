@@ -42,7 +42,7 @@
   "deleteAllLocalData": "Apagar todos os dados locais",
   "domainControls": "Controles por dominio",
   "exportCopied": "A exportacao JSON local foi copiada para a area de transferencia.",
-  "exportSavedFile": "A exportacao JSON protegida foi salva como {fileName}.",
+  "exportSavedFile": "O pacote local protegido foi salvo como {fileName}.",
   "@exportSavedFile": {
     "placeholders": {
       "fileName": {}

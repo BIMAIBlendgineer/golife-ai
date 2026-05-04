@@ -11,14 +11,18 @@ import 'package:golife_flutter/l10n/app_localizations.dart';
 
 class _FakeLocalExportService implements LocalExportService {
   @override
-  Future<LocalExportResult> saveJsonExport({
+  Future<LocalExportResult> saveExportBundle({
     required String baseFileName,
     required String jsonPayload,
+    List<LocalExportAsset> assets = const <LocalExportAsset>[],
   }) async {
     return const LocalExportResult(
-      fileName: 'golife_local_export_20260504T103015Z.json',
-      filePath: '/protected/exports/golife_local_export_20260504T103015Z.json',
+      fileName: 'golife_local_export_20260504T103015Z',
+      filePath: '/protected/exports/golife_local_export_20260504T103015Z',
+      dataFilePath:
+          '/protected/exports/golife_local_export_20260504T103015Z/data.json',
       byteCount: 128,
+      assetCount: 0,
     );
   }
 }
@@ -59,7 +63,7 @@ void main() {
 
     expect(
       find.text(
-        'Protected local JSON export saved as golife_local_export_20260504T103015Z.json.',
+        'Protected local export bundle saved as golife_local_export_20260504T103015Z.',
       ),
       findsOneWidget,
     );

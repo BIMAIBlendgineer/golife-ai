@@ -42,7 +42,7 @@
   "deleteAllLocalData": "ローカルデータを全削除",
   "domainControls": "ドメイン制御",
   "exportCopied": "ローカル JSON エクスポートをクリップボードにコピーしました。",
-  "exportSavedFile": "保護されたローカル JSON エクスポートを {fileName} として保存しました。",
+  "exportSavedFile": "保護されたローカル書き出しバンドルを {fileName} として保存しました。",
   "@exportSavedFile": {
     "placeholders": {
       "fileName": {}

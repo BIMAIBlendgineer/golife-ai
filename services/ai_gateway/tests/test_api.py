@@ -1490,3 +1490,51 @@ def test_assess_reflection_safety_detects_hyphenated_crisis_language():
     )
     assert response.safe is False
     assert response.category == "crisis"
+
+
+def test_assess_reflection_safety_detects_leetspeak_crisis_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "I am scared I may k1ll mys3lf tonight.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "crisis"
+    assert "kill myself" in response.trace["matched_terms"]
+
+
+def test_assess_reflection_safety_detects_punctuation_split_crisis_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "Sometimes I think about k.i.l.l myself when it gets bad.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "crisis"
+    assert "kill myself" in response.trace["matched_terms"]
+
+
+def test_assess_reflection_safety_detects_letter_spaced_clinical_language():
+    response = assess_reflection_safety(
+        ReflectionSafetyRequest.model_validate(
+            {
+                "user_id": "user-1",
+                "locale": "en",
+                "text": "I need a d i a g n o s i s and t h e r a p y right now.",
+                "privacy_level": "local_only",
+            }
+        )
+    )
+    assert response.safe is False
+    assert response.category == "clinical"
+    assert "diagnosis" in response.trace["matched_terms"]

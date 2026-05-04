@@ -42,7 +42,7 @@
   "deleteAllLocalData": "删除所有本地数据",
   "domainControls": "域控制",
   "exportCopied": "已复制本地 JSON 导出内容。",
-  "exportSavedFile": "受保护的本地 JSON 导出已保存为 {fileName}。",
+  "exportSavedFile": "受保护的本地导出包已保存为 {fileName}。",
   "@exportSavedFile": {
     "placeholders": {
       "fileName": {}

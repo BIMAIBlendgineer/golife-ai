@@ -361,7 +361,7 @@ abstract class AppLocalizations {
   /// No description provided for @exportSavedFile.
   ///
   /// In en, this message translates to:
-  /// **'Protected local JSON export saved as {fileName}.'**
+  /// **'Protected local export bundle saved as {fileName}.'**
   String exportSavedFile(Object fileName);
 
   /// No description provided for @deleteAllTitle.

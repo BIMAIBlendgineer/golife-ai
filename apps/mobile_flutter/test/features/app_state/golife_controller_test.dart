@@ -1,30 +1,94 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/ai_client/ai_gateway_client.dart';
 import 'package:golife_flutter/core/export/local_export_service.dart';
+import 'package:golife_flutter/core/export/submission_asset_vault.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/tasks/go_task.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
+import 'package:path/path.dart' as path;
 
 class _RecordingLocalExportService implements LocalExportService {
   String? lastPayload;
   String? lastBaseFileName;
+  List<LocalExportAsset> lastAssets = <LocalExportAsset>[];
 
   @override
-  Future<LocalExportResult> saveJsonExport({
+  Future<LocalExportResult> saveExportBundle({
     required String baseFileName,
     required String jsonPayload,
+    List<LocalExportAsset> assets = const <LocalExportAsset>[],
   }) async {
     lastBaseFileName = baseFileName;
     lastPayload = jsonPayload;
+    lastAssets = List<LocalExportAsset>.from(assets);
     return const LocalExportResult(
-      fileName: 'golife_local_export_20260504T100000Z.json',
-      filePath: '/protected/exports/golife_local_export_20260504T100000Z.json',
+      fileName: 'golife_local_export_20260504T100000Z',
+      filePath: '/protected/exports/golife_local_export_20260504T100000Z',
+      dataFilePath:
+          '/protected/exports/golife_local_export_20260504T100000Z/data.json',
       byteCount: 256,
+      assetCount: 0,
     );
+  }
+}
+
+class _StaticSubmissionAssetDirectoryResolver
+    implements SubmissionAssetDirectoryResolver {
+  const _StaticSubmissionAssetDirectoryResolver(this.path);
+
+  final String path;
+
+  @override
+  Future<String> resolveProtectedSubmissionAssetDirectory() async => path;
+}
+
+class _StaticExportDirectoryResolver implements ExportDirectoryResolver {
+  const _StaticExportDirectoryResolver(this.path);
+
+  final String path;
+
+  @override
+  Future<String> resolveProtectedExportDirectory() async => path;
+}
+
+class _NoopSubmissionAssetVault implements SubmissionAssetVault {
+  @override
+  Future<void> clearVault() async {}
+
+  @override
+  Future<List<SubmissionAssetManifestEntry>> collectManifestEntries(
+    Iterable<String?> storedRefs,
+  ) async {
+    return storedRefs
+        .whereType<String>()
+        .map(
+          (storedRef) => SubmissionAssetManifestEntry(
+            storedRef: storedRef,
+            sourcePath: storedRef,
+            bundleRelativePath: 'assets/legacy/${path.basename(storedRef)}',
+            byteCount: 0,
+            available: false,
+            sourceKind: 'legacy_metadata_ref',
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> deleteStoredAsset(String? storedRef) async {}
+
+  @override
+  Future<String?> persistSubmissionAsset({
+    required String collection,
+    required String entityId,
+    String? sourcePath,
+  }) async {
+    return sourcePath;
   }
 }
 
@@ -42,6 +106,7 @@ void main() {
         aiGatewayClient: MockAiGatewayClient(),
         lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
         localExportService: exportService,
+        submissionAssetVault: _NoopSubmissionAssetVault(),
       );
       await controller.bootstrap();
     });
@@ -103,7 +168,7 @@ void main() {
 
       expect(decoded['life_events'], isA<List<dynamic>>());
       expect(decoded['tasks'], isA<List<dynamic>>());
-      expect(fileExport.fileName, 'golife_local_export_20260504T100000Z.json');
+      expect(fileExport.fileName, 'golife_local_export_20260504T100000Z');
       expect(exportService.lastBaseFileName, 'golife_local_export');
       final exportedFileJson =
           jsonDecode(exportService.lastPayload!) as Map<String, dynamic>;
@@ -241,6 +306,117 @@ void main() {
       expect(encryptedCollections, contains('purchase_proofs'));
       expect(encryptedCollections, contains('claim_drafts'));
       expect(encryptedCollections, contains('evidence_attachments'));
+    });
+
+    test(
+        'stores submission assets in a private vault and exports a recoverable bundle',
+        () async {
+      final vaultDirectory =
+          await Directory.systemTemp.createTemp('golife_controller_vault_');
+      final exportDirectory =
+          await Directory.systemTemp.createTemp('golife_controller_export_');
+      final sourceDirectory =
+          await Directory.systemTemp.createTemp('golife_controller_source_');
+      addTearDown(() async {
+        if (await vaultDirectory.exists()) {
+          await vaultDirectory.delete(recursive: true);
+        }
+        if (await exportDirectory.exists()) {
+          await exportDirectory.delete(recursive: true);
+        }
+        if (await sourceDirectory.exists()) {
+          await sourceDirectory.delete(recursive: true);
+        }
+      });
+
+      final proofSource =
+          File(path.join(sourceDirectory.path, 'manual-proof.txt'));
+      await proofSource.writeAsString('proof text bytes', flush: true);
+      final evidenceSource =
+          File(path.join(sourceDirectory.path, 'receipt.jpg'));
+      await evidenceSource.writeAsString('receipt image bytes', flush: true);
+
+      final endToEndLocalStore = MemoryLocalStore();
+      final endToEndController = GoLifeController(
+        localStore: endToEndLocalStore,
+        aiGatewayClient: MockAiGatewayClient(),
+        lifeGraphRepository:
+            LifeGraphRepository.seeded(localStore: endToEndLocalStore),
+        localExportService: ProtectedLocalExportService(
+          directoryResolver: _StaticExportDirectoryResolver(
+            exportDirectory.path,
+          ),
+          now: () => DateTime.utc(2026, 5, 4, 10, 45, 0),
+        ),
+        submissionAssetVault: ProtectedSubmissionAssetVault(
+          directoryResolver: _StaticSubmissionAssetDirectoryResolver(
+            vaultDirectory.path,
+          ),
+        ),
+      );
+      await endToEndController.bootstrap();
+
+      await endToEndController.saveManualPurchaseProof(
+        productName: 'Dyson V8',
+        store: 'Amazon',
+        purchaseDate: '2026-04-10',
+        price: 249.99,
+        currency: 'USD',
+        notes: 'Keep proof local.',
+        fileRef: proofSource.path,
+        createWarrantyReminder: false,
+      );
+      final ownedItem = endToEndController.ownedItems.single;
+      final purchaseProof = endToEndController.purchaseProofs.single;
+
+      await endToEndController.saveEvidenceAttachment(
+        ownedItemId: ownedItem.id,
+        proofId: purchaseProof.id,
+        type: 'receipt',
+        fileRef: evidenceSource.path,
+        description: 'Receipt photo',
+        privacyLevel: 'local_only',
+      );
+
+      expect(
+        purchaseProof.fileRef,
+        startsWith(ProtectedSubmissionAssetVault.managedRefPrefix),
+      );
+      expect(
+        endToEndController.evidenceAttachments.single.fileRef,
+        startsWith(ProtectedSubmissionAssetVault.managedRefPrefix),
+      );
+
+      final exportResult = await endToEndController.exportLocalDataFile();
+      final exportPayload = jsonDecode(
+        await File(exportResult.dataFilePath).readAsString(),
+      ) as Map<String, dynamic>;
+      final submissionAssets =
+          exportPayload['submission_assets'] as Map<String, dynamic>;
+      final entries = (submissionAssets['entries'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+
+      expect(exportResult.fileName, 'golife_local_export_20260504T104500Z');
+      expect(exportResult.assetCount, 2);
+      expect(submissionAssets['storage_mode'], 'separate_private_files');
+      expect(submissionAssets['asset_count'], 2);
+      expect(submissionAssets['included_asset_count'], 2);
+      expect(entries.every((entry) => entry['available'] == true), isTrue);
+
+      for (final entry in entries) {
+        final copiedFile = File(
+          path.joinAll(
+            <String>[
+              exportResult.filePath,
+              ...(entry['bundle_path'] as String).split('/'),
+            ],
+          ),
+        );
+        expect(await copiedFile.exists(), isTrue);
+      }
+
+      await endToEndController.deleteAllLocalData();
+      expect(await Directory(vaultDirectory.path).exists(), isFalse);
     });
 
     test('deletes individual entities without wiping the full local state',

@@ -451,6 +451,17 @@ export type SupportRequest = {
   requested_at: string;
 };
 
+export type SupportRequestExecutionResult = {
+  request_id: string;
+  user_id: string;
+  request_type: "export" | "delete";
+  action: "resolved" | "deleted_operational_records";
+  status: "done";
+  processed_at: string;
+  record_counts: Record<string, number>;
+  metadata_only: boolean;
+};
+
 export type AdminBackendHealth = {
   status: "ok";
   data_source: string;

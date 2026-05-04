@@ -32,8 +32,9 @@ Support exists to resolve product issues, privacy requests, trust concerns, and 
 1. Confirm the request identity in the support system.
 2. Mark the request in the admin support queue.
 3. Trigger local guidance for the user when possible.
-4. For server-side operational records, complete the request through the admin workflow.
-5. Record completion timestamp and operator note.
+4. For export requests, download the metadata-only operational bundle from admin and then mark the request resolved.
+5. For delete requests, execute the backend operational delete workflow from admin. This does not touch the local mobile LifeGraph.
+6. Record completion timestamp and operator note in the support system.
 
 ## Safety Escalation
 

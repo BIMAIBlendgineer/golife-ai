@@ -147,7 +147,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String exportSavedFile(Object fileName) {
-    return 'A exportacao JSON protegida foi salva como $fileName.';
+    return 'O pacote local protegido foi salvo como $fileName.';
   }
 
   @override
@@ -1358,7 +1358,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String exportSavedFile(Object fileName) {
-    return 'A exportacao JSON protegida foi salva como $fileName.';
+    return 'O pacote local protegido foi salvo como $fileName.';
   }
 
   @override

@@ -7,9 +7,19 @@ import { getSupportRequests } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
 
-export default async function SupportExportDeletePage() {
+import {
+  executeSupportDelete,
+  markSupportRequestResolved,
+} from "./actions";
+
+export default async function SupportExportDeletePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ updated?: string; action?: string; error?: string }>;
+}) {
   const { locale, messages } = await getAdminMessages();
   const t = messages.pages.supportQueue;
+  const params = await searchParams;
   const supportResult = await getSupportRequests();
   const requests = supportResult.data ?? [];
   const exportCount = requests.filter((item) => item.request_type === "export").length;
@@ -23,7 +33,16 @@ export default async function SupportExportDeletePage() {
         description={t.description}
         badge={t.badge}
       />
-      <ErrorBanner error={supportResult.error} />
+      <ErrorBanner error={supportResult.error ?? params.error ?? null} />
+      {params.updated ? (
+        <div className="rounded-[22px] border border-[color:rgba(93,122,104,0.24)] bg-[color:var(--sage-soft)] p-4">
+          <p className="text-sm font-semibold text-moss">
+            {params.action === "deleted"
+              ? `${t.deletedRequestPrefix}: ${params.updated}`
+              : `${t.resolvedRequestPrefix}: ${params.updated}`}
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
@@ -72,10 +91,46 @@ export default async function SupportExportDeletePage() {
                 <p className="font-mono text-xs text-[color:var(--ink-muted)]">
                   {item.request_id} | {item.user_id}
                 </p>
+                <p className="text-sm text-[color:var(--ink-soft)]">{t.metadataOnlyNote}</p>
               </div>
-              <p className="text-sm text-[color:var(--ink-muted)]">
-                {formatDateTime(item.requested_at, locale)}
-              </p>
+              <div className="flex flex-col items-start gap-3 md:items-end">
+                <p className="text-sm text-[color:var(--ink-muted)]">
+                  {formatDateTime(item.requested_at, locale)}
+                </p>
+                {item.status === "open" ? (
+                  <div className="flex flex-wrap gap-2">
+                    {item.request_type === "export" ? (
+                      <>
+                        <a
+                          href={`/support/export-delete/${item.request_id}/bundle`}
+                          className="rounded-full border border-[color:var(--line-strong)] bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-moss hover:text-moss"
+                        >
+                          {t.downloadBundleLabel}
+                        </a>
+                        <form action={markSupportRequestResolved}>
+                          <input type="hidden" name="requestId" value={item.request_id} />
+                          <button
+                            type="submit"
+                            className="rounded-full border border-[color:var(--line-strong)] bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-moss hover:text-moss"
+                          >
+                            {t.markResolvedLabel}
+                          </button>
+                        </form>
+                      </>
+                    ) : (
+                      <form action={executeSupportDelete}>
+                        <input type="hidden" name="requestId" value={item.request_id} />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-[color:rgba(173,81,53,0.32)] bg-[color:var(--danger-soft)] px-4 py-2 text-sm font-semibold text-[color:var(--copper)] transition-colors hover:border-[color:rgba(173,81,53,0.48)]"
+                        >
+                          {t.runDeleteLabel}
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>

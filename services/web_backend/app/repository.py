@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from pathlib import Path
 from typing import TypeVar
 from urllib.parse import urlsplit, urlunsplit
@@ -47,6 +48,7 @@ from app.schemas import (
     OpenRouterApiKeyRecord,
     OpenRouterKeyEventRecord,
     OpenRouterKeyEventUpsert,
+    OperationalExportBundle,
     PlanRow,
     PrivacyDataMap,
     PrivacyRequestRow,
@@ -68,6 +70,7 @@ from app.schemas import (
     UsageSnapshot,
     StorageSummary,
     StorageUsageRow,
+    SupportRequestExecutionResult,
     XInsightCreditSummary,
 )
 from app.routing import build_default_routing_profiles
@@ -1394,6 +1397,267 @@ class OperationalRepository:
             ),
         )
         self._commit()
+
+    def get_support_request(self, request_id: str) -> SupportRequest | None:
+        row = self._fetchone(
+            """
+            SELECT request_id, user_id, request_type, status, requested_at
+            FROM support_requests
+            WHERE request_id = ?
+            """,
+            (request_id,),
+        )
+        if row is None:
+            return None
+        return SupportRequest(
+            request_id=row["request_id"],
+            user_id=row["user_id"],
+            request_type=row["request_type"],
+            status=row["status"],
+            requested_at=_from_iso(row["requested_at"]) or _utcnow(),
+        )
+
+    def resolve_support_request(
+        self,
+        request_id: str,
+        *,
+        processed_at: datetime | None = None,
+    ) -> SupportRequestExecutionResult | None:
+        request = self.get_support_request(request_id)
+        if request is None:
+            return None
+        timestamp = processed_at or _utcnow()
+        self._execute(
+            "UPDATE support_requests SET status = 'done' WHERE request_id = ?",
+            (request_id,),
+        )
+        self._commit()
+        return SupportRequestExecutionResult(
+            request_id=request.request_id,
+            user_id=request.user_id,
+            request_type=request.request_type,
+            action="resolved",
+            status="done",
+            processed_at=timestamp,
+            record_counts={},
+            metadata_only=True,
+        )
+
+    def list_support_requests_for_user(self, user_id: str) -> list[SupportRequest]:
+        return [
+            request
+            for request in self.list_support_requests()
+            if request.user_id == user_id
+        ]
+
+    def list_usage_events_for_user(self, user_id: str) -> list[UsageEventRecord]:
+        rows = self._fetchall(
+            """
+            SELECT event_id, user_id, event_type, endpoint, domain, quantity, created_at, metadata_json
+            FROM usage_events
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            """,
+            (user_id,),
+        )
+        return [
+            UsageEventRecord(
+                event_id=row["event_id"],
+                user_id=row["user_id"],
+                event_type=row["event_type"],
+                endpoint=row["endpoint"],
+                domain=row["domain"],
+                quantity=int(row["quantity"]),
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+                metadata=dict(_json_loads(row["metadata_json"], default={})),
+            )
+            for row in rows
+        ]
+
+    def list_ai_invocations_for_user(self, user_id: str) -> list[AIInvocationRecord]:
+        rows = self._fetchall(
+            """
+            SELECT invocation_id, user_id, endpoint, provider, model, latency_ms, fallback,
+                   suggestions_count, estimated_cost_usd, schema_valid, status, created_at, metadata_json
+            FROM ai_invocations
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            """,
+            (user_id,),
+        )
+        return [
+            AIInvocationRecord(
+                invocation_id=row["invocation_id"],
+                user_id=row["user_id"],
+                endpoint=row["endpoint"],
+                provider=row["provider"],
+                model=row["model"],
+                latency_ms=float(row["latency_ms"]),
+                fallback=bool(row["fallback"]),
+                suggestions_count=int(row["suggestions_count"]),
+                estimated_cost_usd=float(row["estimated_cost_usd"]),
+                schema_valid=bool(row["schema_valid"]),
+                status=row["status"],
+                created_at=_from_iso(row["created_at"]) or _utcnow(),
+                metadata=dict(_json_loads(row["metadata_json"], default={})),
+            )
+            for row in rows
+        ]
+
+    def list_ai_usage_ledger_for_user(self, user_id: str) -> list[AiUsageLedgerRow]:
+        return [
+            row for row in self.list_ai_usage_ledger() if row.user_id == user_id
+        ]
+
+    def list_missions_for_user(self, user_id: str) -> list[MissionAuditRecord]:
+        return [
+            row for row in self.list_missions() if row.user_id == user_id
+        ]
+
+    def list_feedback_for_user(self, user_id: str) -> list[FeedbackAuditRecord]:
+        return [
+            row for row in self.list_feedback() if row.user_id == user_id
+        ]
+
+    def list_safety_for_user(self, user_id: str) -> list[SafetyAuditRecord]:
+        return [
+            row for row in self.list_safety() if row.user_id == user_id
+        ]
+
+    def build_operational_export_bundle(
+        self,
+        request_id: str,
+    ) -> OperationalExportBundle | None:
+        request = self.get_support_request(request_id)
+        if request is None or request.request_type != "export":
+            return None
+
+        user_summary = self.get_user_summary(request.user_id)
+        usage_events = self.list_usage_events_for_user(request.user_id)
+        ai_invocations = self.list_ai_invocations_for_user(request.user_id)
+        ai_usage_ledger = self.list_ai_usage_ledger_for_user(request.user_id)
+        mission_records = self.list_missions_for_user(request.user_id)
+        feedback_records = self.list_feedback_for_user(request.user_id)
+        safety_events = self.list_safety_for_user(request.user_id)
+        support_requests = self.list_support_requests_for_user(request.user_id)
+        record_counts = {
+            "usage_events": len(usage_events),
+            "ai_invocations": len(ai_invocations),
+            "ai_usage_ledger": len(ai_usage_ledger),
+            "mission_records": len(mission_records),
+            "feedback_records": len(feedback_records),
+            "safety_events": len(safety_events),
+            "support_requests": len(support_requests),
+        }
+        generated_at = _utcnow()
+        bundle_payload = {
+            "request_id": request.request_id,
+            "user_id": request.user_id,
+            "generated_at": _to_iso(generated_at),
+            "scope": "web_backend_operational_records",
+            "metadata_only": True,
+            "record_counts": record_counts,
+            "user_summary": user_summary.model_dump(mode="json") if user_summary else None,
+            "usage_events": [item.model_dump(mode="json") for item in usage_events],
+            "ai_invocations": [item.model_dump(mode="json") for item in ai_invocations],
+            "ai_usage_ledger": [item.model_dump(mode="json") for item in ai_usage_ledger],
+            "mission_records": [item.model_dump(mode="json") for item in mission_records],
+            "feedback_records": [item.model_dump(mode="json") for item in feedback_records],
+            "safety_events": [item.model_dump(mode="json") for item in safety_events],
+            "support_requests": [item.model_dump(mode="json") for item in support_requests],
+        }
+        checksum_sha256 = sha256(
+            _json_dumps(bundle_payload).encode("utf-8")
+        ).hexdigest()
+        return OperationalExportBundle(
+            request_id=request.request_id,
+            user_id=request.user_id,
+            generated_at=generated_at,
+            scope="web_backend_operational_records",
+            metadata_only=True,
+            checksum_sha256=checksum_sha256,
+            record_counts=record_counts,
+            user_summary=user_summary,
+            usage_events=usage_events,
+            ai_invocations=ai_invocations,
+            ai_usage_ledger=ai_usage_ledger,
+            mission_records=mission_records,
+            feedback_records=feedback_records,
+            safety_events=safety_events,
+            support_requests=support_requests,
+        )
+
+    def execute_support_delete_request(
+        self,
+        request_id: str,
+        *,
+        processed_at: datetime | None = None,
+    ) -> SupportRequestExecutionResult | None:
+        request = self.get_support_request(request_id)
+        if request is None or request.request_type != "delete":
+            return None
+
+        user_id = request.user_id
+        record_counts = {
+            "admin_users": int(
+                self._scalar("SELECT COUNT(*) FROM admin_users WHERE user_id = ?", (user_id,))
+            ),
+            "user_profiles": int(
+                self._scalar("SELECT COUNT(*) FROM user_profiles WHERE user_id = ?", (user_id,))
+            ),
+            "usage_events": int(
+                self._scalar("SELECT COUNT(*) FROM usage_events WHERE user_id = ?", (user_id,))
+            ),
+            "ai_invocations": int(
+                self._scalar("SELECT COUNT(*) FROM ai_invocations WHERE user_id = ?", (user_id,))
+            ),
+            "ai_usage_ledger": int(
+                self._scalar("SELECT COUNT(*) FROM ai_usage_ledger WHERE user_id = ?", (user_id,))
+            ),
+            "mission_records": int(
+                self._scalar(
+                    "SELECT COUNT(*) FROM mission_audit_records WHERE user_id = ?",
+                    (user_id,),
+                )
+            ),
+            "feedback_records": int(
+                self._scalar(
+                    "SELECT COUNT(*) FROM feedback_audit_records WHERE user_id = ?",
+                    (user_id,),
+                )
+            ),
+            "safety_events": int(
+                self._scalar("SELECT COUNT(*) FROM safety_events WHERE user_id = ?", (user_id,))
+            ),
+        }
+
+        for statement in (
+            "DELETE FROM usage_events WHERE user_id = ?",
+            "DELETE FROM ai_invocations WHERE user_id = ?",
+            "DELETE FROM ai_usage_ledger WHERE user_id = ?",
+            "DELETE FROM mission_audit_records WHERE user_id = ?",
+            "DELETE FROM feedback_audit_records WHERE user_id = ?",
+            "DELETE FROM safety_events WHERE user_id = ?",
+            "DELETE FROM user_profiles WHERE user_id = ?",
+            "DELETE FROM admin_users WHERE user_id = ?",
+        ):
+            self._execute(statement, (user_id,))
+
+        self._execute(
+            "UPDATE support_requests SET status = 'done' WHERE request_id = ?",
+            (request_id,),
+        )
+        self._commit()
+        return SupportRequestExecutionResult(
+            request_id=request.request_id,
+            user_id=request.user_id,
+            request_type=request.request_type,
+            action="deleted_operational_records",
+            status="done",
+            processed_at=processed_at or _utcnow(),
+            record_counts=record_counts,
+            metadata_only=True,
+        )
 
     def set_model_settings(self, model_settings: ModelSettingsUpsert) -> None:
         self._execute(
