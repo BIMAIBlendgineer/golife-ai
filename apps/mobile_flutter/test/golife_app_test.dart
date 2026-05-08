@@ -9,6 +9,7 @@ import 'package:golife_flutter/core/i18n/app_locale.dart';
 import 'package:golife_flutter/core/lifegraph/life_event.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
 import 'package:golife_flutter/core/privacy/privacy_models.dart';
+import 'package:golife_flutter/core/settings/app_profile_preferences.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/domains/missions/mission_feedback.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
@@ -110,7 +111,7 @@ void main() {
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
-  testWidgets('falls back to English when a non-release locale preference is stored',
+  testWidgets('supports a stored pt-BR locale preference',
       (tester) async {
     final localStore = MemoryLocalStore();
     await localStore.saveLocalePreference('pt-BR');
@@ -125,8 +126,30 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('missions for today'), findsOneWidget);
-    expect(find.text('Risks today'), findsOneWidget);
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.locale, const Locale('pt', 'BR'));
+  });
+
+  testWidgets('uses stored dark theme preference', (tester) async {
+    final localStore = MemoryLocalStore();
+    await localStore.saveProfilePreferences(
+      AppProfilePreferences.defaults().copyWith(
+        themePreference: AppThemePreference.dark,
+      ),
+    );
+
+    await tester.pumpWidget(
+      GoLifeApp(
+        localStore: localStore,
+        aiGatewayClient: MockAiGatewayClient(),
+        lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.dark);
   });
 
   testWidgets('shows degraded gateway status when the HTTP client falls back',

@@ -1,0 +1,12 @@
+# Copy this file to `android/key.properties` and replace the placeholder values.
+# Do not commit the real file, keystore, or passwords.
+#
+# For Play distribution:
+# - enroll the app in Play App Signing
+# - keep the upload key outside the repo
+# - reference the keystore path relative to the `android/` directory
+
+storeFile=../secrets/golife-upload-keystore.jks
+storePassword=replace-with-store-password
+keyAlias=golife-upload
+keyPassword=replace-with-key-password

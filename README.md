@@ -154,12 +154,24 @@ Important boundary:
 
 ## Release locale scope
 
-The current premium-production release scope supports:
+The current mobile play-readiness runtime supports:
 
 - `en`
 - `es`
+- `pt-BR`
+- `pt-PT`
+- `fr`
+- `it`
+- `de`
+- `ja`
+- `zh-Hans`
+- `zh-Hant`
 
-Other locale assets may remain in the repo for future completion, but they are not part of the current release claim.
+Notes:
+
+- admin runtime remains intentionally scoped to `en` and `es`
+- the settings/profile surface is translated across the shipped 10-locale mobile set, while some deeper domain copy still falls back to English pending polish
+- current mobile profile settings include language, theme, notifications, quiet hours, units, region, reminder frequency, AI detail level, backup and sync, privacy controls, and current plan state
 
 ## API and operations docs
 

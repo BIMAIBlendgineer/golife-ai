@@ -108,7 +108,9 @@ class _GoLifeAppState extends State<GoLifeApp> with WidgetsBindingObserver {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
           onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
-          theme: buildGoLifeTheme(),
+          theme: buildGoLifeTheme(Brightness.light),
+          darkTheme: buildGoLifeTheme(Brightness.dark),
+          themeMode: _controller.themeMode,
           locale: _controller.preferredLocale,
           supportedLocales: supportedAppLocales,
           localizationsDelegates: const [

@@ -20,19 +20,26 @@ class AppShellScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final isWide = MediaQuery.sizeOf(context).width >= 980;
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF5EDE1),
-              Color(0xFFEFE2CF),
-              Color(0xFFE6D4BF),
-            ],
+            colors: isDark
+                ? const [
+                    Color(0xFF17110F),
+                    Color(0xFF231914),
+                    Color(0xFF2D201A),
+                  ]
+                : const [
+                    Color(0xFFF5EDE1),
+                    Color(0xFFEFE2CF),
+                    Color(0xFFE6D4BF),
+                  ],
           ),
         ),
         child: Stack(
@@ -41,7 +48,10 @@ class AppShellScaffold extends StatelessWidget {
               top: -60,
               right: -20,
               child: _BlurBlob(
-                color: const Color(0xFFD06447).withValues(alpha: 0.14),
+                color: (isDark
+                        ? const Color(0xFFE48B6E)
+                        : const Color(0xFFD06447))
+                    .withValues(alpha: 0.14),
                 size: 220,
               ),
             ),
@@ -49,7 +59,10 @@ class AppShellScaffold extends StatelessWidget {
               left: -50,
               bottom: -40,
               child: _BlurBlob(
-                color: const Color(0xFF5D7A68).withValues(alpha: 0.14),
+                color: (isDark
+                        ? const Color(0xFF89A58F)
+                        : const Color(0xFF5D7A68))
+                    .withValues(alpha: 0.14),
                 size: 260,
               ),
             ),
@@ -145,13 +158,18 @@ class _SideRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 240,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.72),
+        color: isDark
+            ? const Color(0xFF261D18).withValues(alpha: 0.92)
+            : Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0x33FFFFFF)),
+        border: Border.all(
+          color: isDark ? const Color(0x33E6CDB9) : const Color(0x33FFFFFF),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,8 +232,11 @@ class _DestinationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Material(
-      color: selected ? const Color(0xFF1F1A17) : Colors.transparent,
+      color: selected
+          ? (isDark ? const Color(0xFFE48B6E) : const Color(0xFF1F1A17))
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -225,13 +246,21 @@ class _DestinationButton extends StatelessWidget {
           child: Row(
             children: [
               Icon(destination.icon,
-                  color: selected ? Colors.white : const Color(0xFF4F443D)),
+                  color: selected
+                      ? (isDark ? const Color(0xFF1A120F) : Colors.white)
+                      : (isDark
+                          ? const Color(0xFFE8D5C8)
+                          : const Color(0xFF4F443D))),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   destination.localizedLabel(l10n),
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: selected ? Colors.white : const Color(0xFF4F443D),
+                    color: selected
+                        ? (isDark ? const Color(0xFF1A120F) : Colors.white)
+                        : (isDark
+                            ? const Color(0xFFE8D5C8)
+                            : const Color(0xFF4F443D)),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -257,17 +286,22 @@ class _DestinationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return FilterChip(
       selected: selected,
       showCheckmark: false,
       avatar: Icon(destination.icon, size: 18),
       label: Text(destination.localizedLabel(l10n)),
       labelStyle: TextStyle(
-        color: selected ? Colors.white : const Color(0xFF4F443D),
+        color: selected
+            ? (isDark ? const Color(0xFF1A120F) : Colors.white)
+            : (isDark ? const Color(0xFFE8D5C8) : const Color(0xFF4F443D)),
         fontWeight: FontWeight.w700,
       ),
-      backgroundColor: Colors.white.withValues(alpha: 0.62),
-      selectedColor: const Color(0xFF1F1A17),
+      backgroundColor: isDark
+          ? const Color(0xFF261D18).withValues(alpha: 0.92)
+          : Colors.white.withValues(alpha: 0.62),
+      selectedColor: isDark ? const Color(0xFFE48B6E) : const Color(0xFF1F1A17),
       side: BorderSide.none,
       onSelected: (_) => context.go(destination.path),
     );
@@ -281,11 +315,16 @@ class _ContentFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
+        color: isDark
+            ? const Color(0xFF1A1512).withValues(alpha: 0.96)
+            : Colors.white.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: const Color(0x33FFFFFF)),
+        border: Border.all(
+          color: isDark ? const Color(0x33E6CDB9) : const Color(0x33FFFFFF),
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),

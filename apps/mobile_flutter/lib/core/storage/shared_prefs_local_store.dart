@@ -24,6 +24,7 @@ import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
+import '../settings/app_profile_preferences.dart';
 import 'local_store.dart';
 
 class SharedPrefsLocalStore implements LocalStore {
@@ -31,6 +32,7 @@ class SharedPrefsLocalStore implements LocalStore {
 
   static const _privacyKey = 'golife.privacy_settings';
   static const _localePreferenceKey = 'golife.locale_preference';
+  static const _profilePreferencesKey = 'golife.profile_preferences';
   static const _lifeEventsKey = 'golife.life_events';
   static const _missionFeedbackKey = 'golife.mission_feedback';
   static const _missionsKey = 'golife.missions';
@@ -86,6 +88,27 @@ class SharedPrefsLocalStore implements LocalStore {
       return;
     }
     await prefs.setString(_localePreferenceKey, localeTag);
+  }
+
+  @override
+  Future<AppProfilePreferences> loadProfilePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawJson = prefs.getString(_profilePreferencesKey);
+    if (rawJson == null || rawJson.isEmpty) {
+      return AppProfilePreferences.defaults();
+    }
+    return AppProfilePreferences.fromJson(
+      Map<String, dynamic>.from(jsonDecode(rawJson) as Map),
+    );
+  }
+
+  @override
+  Future<void> saveProfilePreferences(AppProfilePreferences preferences) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _profilePreferencesKey,
+      jsonEncode(preferences.toJson()),
+    );
   }
 
   @override
@@ -490,6 +513,7 @@ class SharedPrefsLocalStore implements LocalStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_privacyKey);
     await prefs.remove(_localePreferenceKey);
+    await prefs.remove(_profilePreferencesKey);
     await prefs.remove(_lifeEventsKey);
     await prefs.remove(_missionFeedbackKey);
     await prefs.remove(_missionsKey);

@@ -20,12 +20,18 @@ import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
+import '../settings/app_profile_preferences.dart';
 
 abstract class LocalStore {
   Future<PrivacySettings> loadPrivacySettings();
   Future<void> savePrivacySettings(PrivacySettings settings);
   Future<String?> loadLocalePreference() async => null;
   Future<void> saveLocalePreference(String? localeTag) async {}
+  Future<AppProfilePreferences> loadProfilePreferences() async =>
+      AppProfilePreferences.defaults();
+  Future<void> saveProfilePreferences(
+    AppProfilePreferences preferences,
+  ) async {}
   Future<bool> loadDemoSeedEnabled() async => true;
   Future<void> saveDemoSeedEnabled(bool enabled) async {}
   Future<bool> supportsSensitiveLocalEncryption() async => false;

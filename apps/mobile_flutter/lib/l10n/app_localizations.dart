@@ -5,8 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_it.dart';
 import 'app_localizations_ja.dart';
 import 'app_localizations_pt.dart';
 import 'app_localizations_zh.dart';
@@ -97,13 +100,18 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
     Locale('en'),
     Locale('es'),
+    Locale('fr'),
+    Locale('it'),
     Locale('ja'),
     Locale('pt'),
     Locale('pt', 'BR'),
+    Locale('pt', 'PT'),
     Locale('zh'),
-    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans')
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')
   ];
 
   /// No description provided for @appTitle.
@@ -226,6 +234,30 @@ abstract class AppLocalizations {
   /// **'Portuguese Brazil'**
   String get languagePortugueseBrazil;
 
+  /// No description provided for @languagePortuguesePortugal.
+  ///
+  /// In en, this message translates to:
+  /// **'Portuguese Portugal'**
+  String get languagePortuguesePortugal;
+
+  /// No description provided for @languageFrench.
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get languageFrench;
+
+  /// No description provided for @languageItalian.
+  ///
+  /// In en, this message translates to:
+  /// **'Italian'**
+  String get languageItalian;
+
+  /// No description provided for @languageGerman.
+  ///
+  /// In en, this message translates to:
+  /// **'German'**
+  String get languageGerman;
+
   /// No description provided for @languageJapanese.
   ///
   /// In en, this message translates to:
@@ -237,6 +269,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Simplified Chinese'**
   String get languageChineseSimplified;
+
+  /// No description provided for @languageChineseTraditional.
+  ///
+  /// In en, this message translates to:
+  /// **'Traditional Chinese'**
+  String get languageChineseTraditional;
+
+  /// No description provided for @profilePreferencesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile preferences'**
+  String get profilePreferencesTitle;
+
+  /// No description provided for @profilePreferencesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Set language, theme, AI style, and current plan from one local-first profile center.'**
+  String get profilePreferencesBody;
+
+  /// No description provided for @deliveryPreferencesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications and rhythm'**
+  String get deliveryPreferencesTitle;
+
+  /// No description provided for @regionalPreferencesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Region and units'**
+  String get regionalPreferencesTitle;
+
+  /// No description provided for @preferencesLocalOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'These preferences stay local on this device until live sync and billing are connected.'**
+  String get preferencesLocalOnlyHint;
+
+  /// No description provided for @themePreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themePreference;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @notificationsPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsPreference;
+
+  /// No description provided for @notificationsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get notificationsEnabled;
+
+  /// No description provided for @notificationsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get notificationsDisabled;
+
+  /// No description provided for @quietHoursPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours'**
+  String get quietHoursPreference;
+
+  /// No description provided for @quietHoursOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get quietHoursOff;
+
+  /// No description provided for @quietHours2207.
+  ///
+  /// In en, this message translates to:
+  /// **'22:00-07:00'**
+  String get quietHours2207;
+
+  /// No description provided for @quietHours2308.
+  ///
+  /// In en, this message translates to:
+  /// **'23:00-08:00'**
+  String get quietHours2308;
+
+  /// No description provided for @measurementUnitsPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurement units'**
+  String get measurementUnitsPreference;
+
+  /// No description provided for @unitMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Metric'**
+  String get unitMetric;
+
+  /// No description provided for @unitImperial.
+  ///
+  /// In en, this message translates to:
+  /// **'Imperial'**
+  String get unitImperial;
+
+  /// No description provided for @regionCountryPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Region or country'**
+  String get regionCountryPreference;
+
+  /// No description provided for @regionAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get regionAuto;
+
+  /// No description provided for @regionUs.
+  ///
+  /// In en, this message translates to:
+  /// **'United States'**
+  String get regionUs;
+
+  /// No description provided for @regionSpain.
+  ///
+  /// In en, this message translates to:
+  /// **'Spain'**
+  String get regionSpain;
+
+  /// No description provided for @regionBrazil.
+  ///
+  /// In en, this message translates to:
+  /// **'Brazil'**
+  String get regionBrazil;
+
+  /// No description provided for @regionPortugal.
+  ///
+  /// In en, this message translates to:
+  /// **'Portugal'**
+  String get regionPortugal;
+
+  /// No description provided for @regionFrance.
+  ///
+  /// In en, this message translates to:
+  /// **'France'**
+  String get regionFrance;
+
+  /// No description provided for @regionItaly.
+  ///
+  /// In en, this message translates to:
+  /// **'Italy'**
+  String get regionItaly;
+
+  /// No description provided for @regionGermany.
+  ///
+  /// In en, this message translates to:
+  /// **'Germany'**
+  String get regionGermany;
+
+  /// No description provided for @regionJapan.
+  ///
+  /// In en, this message translates to:
+  /// **'Japan'**
+  String get regionJapan;
+
+  /// No description provided for @regionChinaMainland.
+  ///
+  /// In en, this message translates to:
+  /// **'Mainland China'**
+  String get regionChinaMainland;
+
+  /// No description provided for @regionTaiwan.
+  ///
+  /// In en, this message translates to:
+  /// **'Taiwan'**
+  String get regionTaiwan;
+
+  /// No description provided for @reminderFrequencyPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder frequency'**
+  String get reminderFrequencyPreference;
+
+  /// No description provided for @reminderOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get reminderOff;
+
+  /// No description provided for @reminderDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get reminderDaily;
+
+  /// No description provided for @reminderWeekdays.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekdays'**
+  String get reminderWeekdays;
+
+  /// No description provided for @reminderWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get reminderWeekly;
+
+  /// No description provided for @aiResponseStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI preference'**
+  String get aiResponseStyle;
+
+  /// No description provided for @aiBrief.
+  ///
+  /// In en, this message translates to:
+  /// **'Brief'**
+  String get aiBrief;
+
+  /// No description provided for @aiDetailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed'**
+  String get aiDetailed;
+
+  /// No description provided for @backupSyncPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup and sync'**
+  String get backupSyncPreference;
+
+  /// No description provided for @backupSyncOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get backupSyncOff;
+
+  /// No description provided for @backupSyncOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get backupSyncOn;
+
+  /// No description provided for @currentPlanPreference.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan'**
+  String get currentPlanPreference;
+
+  /// No description provided for @planFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get planFree;
+
+  /// No description provided for @planPlus.
+  ///
+  /// In en, this message translates to:
+  /// **'Plus'**
+  String get planPlus;
+
+  /// No description provided for @planPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get planPro;
 
   /// No description provided for @privacyTitle.
   ///
@@ -381,6 +695,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get cancel;
+
+  /// No description provided for @clearAiHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear AI history'**
+  String get clearAiHistory;
+
+  /// No description provided for @clearAiHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear AI history?'**
+  String get clearAiHistoryTitle;
+
+  /// No description provided for @clearAiHistoryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This clears saved missions, daily risks, and AI feedback history on this device.'**
+  String get clearAiHistoryBody;
+
+  /// No description provided for @clearAiHistoryDone.
+  ///
+  /// In en, this message translates to:
+  /// **'AI history cleared.'**
+  String get clearAiHistoryDone;
 
   /// No description provided for @deleteAll.
   ///
@@ -2308,8 +2646,16 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'es', 'ja', 'pt', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+        'de',
+        'en',
+        'es',
+        'fr',
+        'it',
+        'ja',
+        'pt',
+        'zh'
+      ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -2323,6 +2669,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
         switch (locale.scriptCode) {
           case 'Hans':
             return AppLocalizationsZhHans();
+          case 'Hant':
+            return AppLocalizationsZhHant();
         }
         break;
       }
@@ -2335,6 +2683,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
         switch (locale.countryCode) {
           case 'BR':
             return AppLocalizationsPtBr();
+          case 'PT':
+            return AppLocalizationsPtPt();
         }
         break;
       }
@@ -2342,10 +2692,16 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'de':
+      return AppLocalizationsDe();
     case 'en':
       return AppLocalizationsEn();
     case 'es':
       return AppLocalizationsEs();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'it':
+      return AppLocalizationsIt();
     case 'ja':
       return AppLocalizationsJa();
     case 'pt':

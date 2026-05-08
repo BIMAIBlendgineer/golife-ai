@@ -71,10 +71,165 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languagePortugueseBrazil => 'Portuguese Brazil';
 
   @override
+  String get languagePortuguesePortugal => 'Portuguese Portugal';
+
+  @override
+  String get languageFrench => 'French';
+
+  @override
+  String get languageItalian => 'Italian';
+
+  @override
+  String get languageGerman => 'German';
+
+  @override
   String get languageJapanese => 'Japanese';
 
   @override
   String get languageChineseSimplified => 'Simplified Chinese';
+
+  @override
+  String get languageChineseTraditional => 'Traditional Chinese';
+
+  @override
+  String get profilePreferencesTitle => 'Profile preferences';
+
+  @override
+  String get profilePreferencesBody =>
+      'Set language, theme, AI style, and current plan from one local-first profile center.';
+
+  @override
+  String get deliveryPreferencesTitle => 'Notifications and rhythm';
+
+  @override
+  String get regionalPreferencesTitle => 'Region and units';
+
+  @override
+  String get preferencesLocalOnlyHint =>
+      'These preferences stay local on this device until live sync and billing are connected.';
+
+  @override
+  String get themePreference => 'Theme';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get notificationsPreference => 'Notifications';
+
+  @override
+  String get notificationsEnabled => 'Enabled';
+
+  @override
+  String get notificationsDisabled => 'Disabled';
+
+  @override
+  String get quietHoursPreference => 'Quiet hours';
+
+  @override
+  String get quietHoursOff => 'Off';
+
+  @override
+  String get quietHours2207 => '22:00-07:00';
+
+  @override
+  String get quietHours2308 => '23:00-08:00';
+
+  @override
+  String get measurementUnitsPreference => 'Measurement units';
+
+  @override
+  String get unitMetric => 'Metric';
+
+  @override
+  String get unitImperial => 'Imperial';
+
+  @override
+  String get regionCountryPreference => 'Region or country';
+
+  @override
+  String get regionAuto => 'Auto';
+
+  @override
+  String get regionUs => 'United States';
+
+  @override
+  String get regionSpain => 'Spain';
+
+  @override
+  String get regionBrazil => 'Brazil';
+
+  @override
+  String get regionPortugal => 'Portugal';
+
+  @override
+  String get regionFrance => 'France';
+
+  @override
+  String get regionItaly => 'Italy';
+
+  @override
+  String get regionGermany => 'Germany';
+
+  @override
+  String get regionJapan => 'Japan';
+
+  @override
+  String get regionChinaMainland => 'Mainland China';
+
+  @override
+  String get regionTaiwan => 'Taiwan';
+
+  @override
+  String get reminderFrequencyPreference => 'Reminder frequency';
+
+  @override
+  String get reminderOff => 'Off';
+
+  @override
+  String get reminderDaily => 'Daily';
+
+  @override
+  String get reminderWeekdays => 'Weekdays';
+
+  @override
+  String get reminderWeekly => 'Weekly';
+
+  @override
+  String get aiResponseStyle => 'AI preference';
+
+  @override
+  String get aiBrief => 'Brief';
+
+  @override
+  String get aiDetailed => 'Detailed';
+
+  @override
+  String get backupSyncPreference => 'Backup and sync';
+
+  @override
+  String get backupSyncOff => 'Off';
+
+  @override
+  String get backupSyncOn => 'On';
+
+  @override
+  String get currentPlanPreference => 'Current plan';
+
+  @override
+  String get planFree => 'Free';
+
+  @override
+  String get planPlus => 'Plus';
+
+  @override
+  String get planPro => 'Pro';
 
   @override
   String get privacyTitle => 'Privacy';
@@ -157,6 +312,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
+
+  @override
+  String get clearAiHistory => 'Clear AI history';
+
+  @override
+  String get clearAiHistoryTitle => 'Clear AI history?';
+
+  @override
+  String get clearAiHistoryBody =>
+      'This clears saved missions, daily risks, and AI feedback history on this device.';
+
+  @override
+  String get clearAiHistoryDone => 'AI history cleared.';
 
   @override
   String get deleteAll => 'Delete all';

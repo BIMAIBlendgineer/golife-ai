@@ -13,12 +13,14 @@ Estado auditado: 2026-05-03
 - boards locales para task, habits, money, pantry, closet, week, journal, calendar y recipes
 - persistencia SQLite con cifrado sensible y fallback resiliente
 - cliente HTTP real para `services/ai_gateway` con fallback local
+- runner Android reproducible con `applicationId` `ai.golife.mobile`
 
 ## Falta o sigue limitado
 
-- runners de plataforma (`android/`, `ios/`, `web/`, etc.) no estan en este paquete
+- runners `ios/` y `web/` siguen fuera de este paquete
 - sync remoto opcional no esta cableado en mobile
-- algunas traducciones siguen incompletas fuera de `en`, `es` y `pt-BR`
+- el selector de idioma ya cubre `en`, `es`, `pt-BR`, `pt-PT`, `fr`, `it`, `de`, `ja`, `zh-Hans` y `zh-Hant`; la superficie de ajustes/perfil ya esta traducida en todo ese set y algunas vistas de dominio secundarias aun reutilizan copy en ingles
+- Play App Signing y upload key reales siguen externos al repo
 
 ## Validacion local
 
@@ -27,10 +29,11 @@ flutter pub get
 flutter gen-l10n
 flutter analyze
 flutter test
+cd android && gradlew.bat bundleRelease
 ```
 
 ## Nota sobre ejecucion
 
-En este entorno el SDK Flutter si esta instalado y el proyecto ya valida con `analyze` y `test`.
+En este entorno el SDK Flutter si esta instalado y el proyecto valida con `analyze` y `test`.
 
-Para `flutter run` siguen faltando runners de plataforma, asi que antes hay que generarlos o integrarlos desde la app final.
+`flutter build appbundle --release` puede reportar un falso fallo de symbol stripping en este workspace Windows aunque Gradle genere el `.aab`. Para verificar el bundle de forma autoritativa aqui, usar `cd android && gradlew.bat bundleRelease`.

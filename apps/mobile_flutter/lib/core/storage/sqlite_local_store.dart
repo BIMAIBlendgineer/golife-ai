@@ -26,6 +26,7 @@ import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
+import '../settings/app_profile_preferences.dart';
 import 'local_store.dart';
 import 'sensitive_data_cipher.dart';
 
@@ -42,6 +43,7 @@ class SqliteLocalStore implements LocalStore {
   static const _databaseVersion = 4;
   static const _privacyKey = 'privacy_settings';
   static const _localePreferenceKey = 'locale_preference';
+  static const _profilePreferencesKey = 'profile_preferences';
   static const _runtimeConfigKey = 'runtime_config';
   static const _demoSeedEnabledKey = 'demo_seed_enabled';
 
@@ -151,6 +153,41 @@ class SqliteLocalStore implements LocalStore {
       {
         'key': _localePreferenceKey,
         'value': localeTag ?? 'system',
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<AppProfilePreferences> loadProfilePreferences() async {
+    final db = await _db;
+    final rows = await db.query(
+      'key_value',
+      columns: const ['value'],
+      where: 'key = ?',
+      whereArgs: const [_profilePreferencesKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return AppProfilePreferences.defaults();
+    }
+    final rawJson = rows.first['value']?.toString();
+    if (rawJson == null || rawJson.isEmpty) {
+      return AppProfilePreferences.defaults();
+    }
+    return AppProfilePreferences.fromJson(
+      Map<String, dynamic>.from(jsonDecode(rawJson) as Map),
+    );
+  }
+
+  @override
+  Future<void> saveProfilePreferences(AppProfilePreferences preferences) async {
+    final db = await _db;
+    await db.insert(
+      'key_value',
+      {
+        'key': _profilePreferencesKey,
+        'value': jsonEncode(preferences.toJson()),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );

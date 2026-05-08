@@ -14,6 +14,8 @@ When ADR numbering overlaps with older implementation ADRs, treat this index as 
 - [ADR-004 Adversarial Safety Input Surfaces](adr/ADR-004-adversarial-safety-input-surfaces.md)
 - [ADR-005 Mission Ranking And Learning](adr/ADR-005-mission-ranking-and-learning.md)
 - [ADR-006 Enterprise Auth Boundary](adr/ADR-006-enterprise-auth-boundary.md)
+- [ADR-007 Play Store Compliance Gate](adr/ADR-007-play-store-compliance-gate.md)
+- [ADR-008 Consumer Play Billing Boundary](adr/ADR-008-consumer-play-billing-boundary.md)
 
 ## Supporting implementation ADRs
 

@@ -64,7 +64,16 @@ Release-supported mobile locales:
 
 - `en`
 - `es`
+- `pt-BR`
+- `pt-PT`
+- `fr`
+- `it`
+- `de`
+- `ja`
+- `zh-Hans`
+- `zh-Hant`
 
 Known release gap:
 
-- checked CI does not yet validate Android, iOS, or desktop runner projects because they are not part of this repo baseline
+- translation completeness remains uneven across the full 10-locale mobile set
+- checked device QA is still blocked on the current workstation because no Android device or working AVD path is available

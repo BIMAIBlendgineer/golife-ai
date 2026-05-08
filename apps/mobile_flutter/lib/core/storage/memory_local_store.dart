@@ -20,11 +20,13 @@ import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
+import '../settings/app_profile_preferences.dart';
 import 'local_store.dart';
 
 class MemoryLocalStore implements LocalStore {
   PrivacySettings _settings = PrivacySettings.defaults();
   String? _localePreference;
+  AppProfilePreferences _profilePreferences = AppProfilePreferences.defaults();
   bool _demoSeedEnabled = true;
   final List<LifeEvent> _events = <LifeEvent>[];
   final List<MissionFeedback> _feedbackItems = <MissionFeedback>[];
@@ -67,6 +69,16 @@ class MemoryLocalStore implements LocalStore {
   @override
   Future<void> saveLocalePreference(String? localeTag) async {
     _localePreference = localeTag;
+  }
+
+  @override
+  Future<AppProfilePreferences> loadProfilePreferences() async {
+    return _profilePreferences;
+  }
+
+  @override
+  Future<void> saveProfilePreferences(AppProfilePreferences preferences) async {
+    _profilePreferences = preferences;
   }
 
   @override
@@ -370,6 +382,7 @@ class MemoryLocalStore implements LocalStore {
   Future<void> deleteAllData() async {
     _settings = PrivacySettings.defaults();
     _localePreference = null;
+    _profilePreferences = AppProfilePreferences.defaults();
     _demoSeedEnabled = false;
     _events.clear();
     _feedbackItems.clear();

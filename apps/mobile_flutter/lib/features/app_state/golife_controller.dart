@@ -14,6 +14,7 @@ import '../../core/lifegraph/lifegraph_repository.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/runtime/app_runtime_config.dart';
 import '../../core/runtime/runtime_config_client.dart';
+import '../../core/settings/app_profile_preferences.dart';
 import '../../core/storage/local_store.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/finance/expense_record.dart';
@@ -85,6 +86,7 @@ class GoLifeController extends ChangeNotifier {
   List<EvidenceAttachment> _evidenceAttachments = <EvidenceAttachment>[];
   bool _sensitiveLocalEncryptionEnabled = false;
   AppLocalePreference _localePreference = AppLocalePreference.system;
+  AppProfilePreferences _profilePreferences = AppProfilePreferences.defaults();
   String _deviceLocaleTag = 'en';
 
   final GoTask criticalTask = const GoTask(
@@ -181,7 +183,9 @@ class GoLifeController extends ChangeNotifier {
       List<EvidenceAttachment>.unmodifiable(_evidenceAttachments);
   bool get sensitiveLocalEncryptionEnabled => _sensitiveLocalEncryptionEnabled;
   AppLocalePreference get localePreference => _localePreference;
+  AppProfilePreferences get profilePreferences => _profilePreferences;
   Locale? get preferredLocale => _localePreference.locale;
+  ThemeMode get themeMode => _profilePreferences.themePreference.themeMode;
   String get currentLocaleTag => _localePreference == AppLocalePreference.system
       ? normalizeLocaleTag(_deviceLocaleTag)
       : _localePreference.storageKey;
@@ -339,6 +343,7 @@ class GoLifeController extends ChangeNotifier {
     _localePreference = appLocalePreferenceFromStorage(
       await _localStore.loadLocalePreference(),
     );
+    _profilePreferences = await _localStore.loadProfilePreferences();
     _sensitiveLocalEncryptionEnabled =
         await _localStore.supportsSensitiveLocalEncryption();
     _runtimeConfig = await _localStore.loadRuntimeConfig();
@@ -410,6 +415,84 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.saveLocalePreference(
       preference == AppLocalePreference.system ? null : preference.storageKey,
     );
+    notifyListeners();
+  }
+
+  Future<void> updateThemePreference(AppThemePreference preference) async {
+    _profilePreferences = _profilePreferences.copyWith(
+      themePreference: preference,
+    );
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateNotificationsPreference(
+    NotificationPreference preference,
+  ) async {
+    _profilePreferences = _profilePreferences.copyWith(
+      notifications: preference,
+    );
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateQuietHoursPreference(
+    QuietHoursPreference preference,
+  ) async {
+    _profilePreferences = _profilePreferences.copyWith(
+      quietHours: preference,
+    );
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateMeasurementUnitsPreference(
+    MeasurementUnitPreference preference,
+  ) async {
+    _profilePreferences = _profilePreferences.copyWith(
+      measurementUnits: preference,
+    );
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateRegionPreference(RegionPreference preference) async {
+    _profilePreferences = _profilePreferences.copyWith(region: preference);
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateReminderFrequencyPreference(
+    ReminderFrequencyPreference preference,
+  ) async {
+    _profilePreferences = _profilePreferences.copyWith(
+      reminderFrequency: preference,
+    );
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateAiDetailPreference(AiDetailPreference preference) async {
+    _profilePreferences = _profilePreferences.copyWith(aiDetail: preference);
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateBackupSyncPreference(
+    BackupSyncPreference preference,
+  ) async {
+    _profilePreferences = _profilePreferences.copyWith(
+      backupSync: preference,
+    );
+    await _localStore.saveProfilePreferences(_profilePreferences);
+    notifyListeners();
+  }
+
+  Future<void> updateCurrentPlanPreference(
+    CurrentPlanPreference preference,
+  ) async {
+    _profilePreferences = _profilePreferences.copyWith(currentPlan: preference);
+    await _localStore.saveProfilePreferences(_profilePreferences);
     notifyListeners();
   }
 
@@ -1749,6 +1832,7 @@ class GoLifeController extends ChangeNotifier {
     return <String, Object?>{
       'exported_at': DateTime.now().toUtc().toIso8601String(),
       'locale_preference': _localePreference.storageKey,
+      'profile_preferences': _profilePreferences.toJson(),
       'privacy_settings': _privacySettings.toJson(),
       'runtime_config': _runtimeConfig?.toJson(),
       'storage_security': {
@@ -1852,6 +1936,7 @@ class GoLifeController extends ChangeNotifier {
     await _submissionAssetVault.clearVault();
     _privacySettings = PrivacySettings.defaults();
     _localePreference = AppLocalePreference.system;
+    _profilePreferences = AppProfilePreferences.defaults();
     _runtimeConfig = null;
     _dailyMissions = <DailyMission>[];
     _cachedDailyRisks = <DailyRisk>[];
@@ -1872,6 +1957,16 @@ class GoLifeController extends ChangeNotifier {
     _maintenanceReminders = <MaintenanceReminder>[];
     _claimDrafts = <ClaimDraft>[];
     _evidenceAttachments = <EvidenceAttachment>[];
+    notifyListeners();
+  }
+
+  Future<void> clearAiHistory() async {
+    _dailyMissions = <DailyMission>[];
+    _cachedDailyRisks = <DailyRisk>[];
+    _missionFeedback = <MissionFeedback>[];
+    await _localStore.saveDailyMissions(_dailyMissions);
+    await _localStore.saveDailyRisks(_cachedDailyRisks);
+    await _localStore.saveMissionFeedback(_missionFeedback);
     notifyListeners();
   }
 

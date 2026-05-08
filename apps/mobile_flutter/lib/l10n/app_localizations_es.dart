@@ -71,10 +71,165 @@ class AppLocalizationsEs extends AppLocalizations {
   String get languagePortugueseBrazil => 'Portugues Brasil';
 
   @override
+  String get languagePortuguesePortugal => 'Portugu?s de Portugal';
+
+  @override
+  String get languageFrench => 'Franc?s';
+
+  @override
+  String get languageItalian => 'Italiano';
+
+  @override
+  String get languageGerman => 'Alem?n';
+
+  @override
   String get languageJapanese => 'Japones';
 
   @override
   String get languageChineseSimplified => 'Chino simplificado';
+
+  @override
+  String get languageChineseTraditional => 'Chino tradicional';
+
+  @override
+  String get profilePreferencesTitle => 'Preferencias del perfil';
+
+  @override
+  String get profilePreferencesBody =>
+      'Configura idioma, tema, estilo de IA y plan actual desde un ?nico centro de perfil local-first.';
+
+  @override
+  String get deliveryPreferencesTitle => 'Notificaciones y ritmo';
+
+  @override
+  String get regionalPreferencesTitle => 'Regi?n y unidades';
+
+  @override
+  String get preferencesLocalOnlyHint =>
+      'Estas preferencias permanecen en este dispositivo hasta que se conecten la sincronizaci?n en vivo y la facturaci?n.';
+
+  @override
+  String get themePreference => 'Tema';
+
+  @override
+  String get themeSystem => 'Sistema';
+
+  @override
+  String get themeLight => 'Claro';
+
+  @override
+  String get themeDark => 'Oscuro';
+
+  @override
+  String get notificationsPreference => 'Notificaciones';
+
+  @override
+  String get notificationsEnabled => 'Activadas';
+
+  @override
+  String get notificationsDisabled => 'Desactivadas';
+
+  @override
+  String get quietHoursPreference => 'Horario silencioso';
+
+  @override
+  String get quietHoursOff => 'Desactivado';
+
+  @override
+  String get quietHours2207 => '22:00-07:00';
+
+  @override
+  String get quietHours2308 => '23:00-08:00';
+
+  @override
+  String get measurementUnitsPreference => 'Unidad de medida';
+
+  @override
+  String get unitMetric => 'M?trico';
+
+  @override
+  String get unitImperial => 'Imperial';
+
+  @override
+  String get regionCountryPreference => 'Regi?n o pa?s';
+
+  @override
+  String get regionAuto => 'Autom?tico';
+
+  @override
+  String get regionUs => 'Estados Unidos';
+
+  @override
+  String get regionSpain => 'Espa?a';
+
+  @override
+  String get regionBrazil => 'Brasil';
+
+  @override
+  String get regionPortugal => 'Portugal';
+
+  @override
+  String get regionFrance => 'Francia';
+
+  @override
+  String get regionItaly => 'Italia';
+
+  @override
+  String get regionGermany => 'Alemania';
+
+  @override
+  String get regionJapan => 'Jap?n';
+
+  @override
+  String get regionChinaMainland => 'China continental';
+
+  @override
+  String get regionTaiwan => 'Taiw?n';
+
+  @override
+  String get reminderFrequencyPreference => 'Frecuencia de recordatorios';
+
+  @override
+  String get reminderOff => 'Desactivado';
+
+  @override
+  String get reminderDaily => 'Diaria';
+
+  @override
+  String get reminderWeekdays => 'Entre semana';
+
+  @override
+  String get reminderWeekly => 'Semanal';
+
+  @override
+  String get aiResponseStyle => 'Preferencia de IA';
+
+  @override
+  String get aiBrief => 'Breve';
+
+  @override
+  String get aiDetailed => 'Detallado';
+
+  @override
+  String get backupSyncPreference => 'Copia y sincronizaci?n';
+
+  @override
+  String get backupSyncOff => 'Desactivado';
+
+  @override
+  String get backupSyncOn => 'Activado';
+
+  @override
+  String get currentPlanPreference => 'Plan actual';
+
+  @override
+  String get planFree => 'Free';
+
+  @override
+  String get planPlus => 'Plus';
+
+  @override
+  String get planPro => 'Pro';
 
   @override
   String get privacyTitle => 'Privacidad';
@@ -158,6 +313,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cancel => 'Cancelar';
+
+  @override
+  String get clearAiHistory => 'Borrar historial de IA';
+
+  @override
+  String get clearAiHistoryTitle => '?Borrar historial de IA?';
+
+  @override
+  String get clearAiHistoryBody =>
+      'Esto borra las misiones guardadas, los riesgos diarios y el historial de feedback de IA en este dispositivo.';
+
+  @override
+  String get clearAiHistoryDone => 'Historial de IA borrado.';
 
   @override
   String get deleteAll => 'Borrar todo';

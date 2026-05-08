@@ -22,6 +22,7 @@ import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
+import '../settings/app_profile_preferences.dart';
 import 'local_store.dart';
 import 'memory_local_store.dart';
 
@@ -69,6 +70,14 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> saveLocalePreference(String? localeTag) =>
       _run((store) => store.saveLocalePreference(localeTag));
+
+  @override
+  Future<AppProfilePreferences> loadProfilePreferences() =>
+      _run((store) => store.loadProfilePreferences());
+
+  @override
+  Future<void> saveProfilePreferences(AppProfilePreferences preferences) =>
+      _run((store) => store.saveProfilePreferences(preferences));
 
   @override
   Future<bool> loadDemoSeedEnabled() =>

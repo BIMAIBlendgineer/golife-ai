@@ -69,10 +69,165 @@ class AppLocalizationsJa extends AppLocalizations {
   String get languagePortugueseBrazil => 'Português Brasil';
 
   @override
+  String get languagePortuguesePortugal => '?????????????';
+
+  @override
+  String get languageFrench => '?????';
+
+  @override
+  String get languageItalian => '?????';
+
+  @override
+  String get languageGerman => '????';
+
+  @override
   String get languageJapanese => '日本語';
 
   @override
   String get languageChineseSimplified => '简体中文';
+
+  @override
+  String get languageChineseTraditional => '??????';
+
+  @override
+  String get profilePreferencesTitle => '????????';
+
+  @override
+  String get profilePreferencesBody =>
+      '???????AI ??????????????? 1 ?????????????????????????????';
+
+  @override
+  String get deliveryPreferencesTitle => '??????';
+
+  @override
+  String get regionalPreferencesTitle => '?????';
+
+  @override
+  String get preferencesLocalOnlyHint =>
+      '???????????????????????????????????????';
+
+  @override
+  String get themePreference => '???';
+
+  @override
+  String get themeSystem => '????';
+
+  @override
+  String get themeLight => '???';
+
+  @override
+  String get themeDark => '???';
+
+  @override
+  String get notificationsPreference => '??';
+
+  @override
+  String get notificationsEnabled => '??';
+
+  @override
+  String get notificationsDisabled => '??';
+
+  @override
+  String get quietHoursPreference => '???????';
+
+  @override
+  String get quietHoursOff => '??';
+
+  @override
+  String get quietHours2207 => '22:00-07:00';
+
+  @override
+  String get quietHours2308 => '23:00-08:00';
+
+  @override
+  String get measurementUnitsPreference => '??';
+
+  @override
+  String get unitMetric => '?????';
+
+  @override
+  String get unitImperial => '????????';
+
+  @override
+  String get regionCountryPreference => '??????';
+
+  @override
+  String get regionAuto => '??';
+
+  @override
+  String get regionUs => '???????';
+
+  @override
+  String get regionSpain => '????';
+
+  @override
+  String get regionBrazil => '????';
+
+  @override
+  String get regionPortugal => '?????';
+
+  @override
+  String get regionFrance => '????';
+
+  @override
+  String get regionItaly => '????';
+
+  @override
+  String get regionGermany => '???';
+
+  @override
+  String get regionJapan => '??';
+
+  @override
+  String get regionChinaMainland => '????';
+
+  @override
+  String get regionTaiwan => '??';
+
+  @override
+  String get reminderFrequencyPreference => '????????';
+
+  @override
+  String get reminderOff => '??';
+
+  @override
+  String get reminderDaily => '??';
+
+  @override
+  String get reminderWeekdays => '??';
+
+  @override
+  String get reminderWeekly => '??';
+
+  @override
+  String get aiResponseStyle => 'AI ???';
+
+  @override
+  String get aiBrief => '??';
+
+  @override
+  String get aiDetailed => '??';
+
+  @override
+  String get backupSyncPreference => '?????????';
+
+  @override
+  String get backupSyncOff => '??';
+
+  @override
+  String get backupSyncOn => '??';
+
+  @override
+  String get currentPlanPreference => '??????';
+
+  @override
+  String get planFree => 'Free';
+
+  @override
+  String get planPlus => 'Plus';
+
+  @override
+  String get planPro => 'Pro';
 
   @override
   String get privacyTitle => 'プライバシー';
@@ -153,6 +308,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cancel => 'キャンセル';
+
+  @override
+  String get clearAiHistory => 'AI ?????';
+
+  @override
+  String get clearAiHistoryTitle => 'AI ??????????';
+
+  @override
+  String get clearAiHistoryBody => '??????????????????????AI ????????????????';
+
+  @override
+  String get clearAiHistoryDone => 'AI ??????????';
 
   @override
   String get deleteAll => 'すべて削除';

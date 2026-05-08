@@ -1,0 +1,608 @@
+{
+  "@@locale": "zh_Hant",
+  "appTitle": "GoLife AI",
+  "appShellTaglineReady": "Life operating system shell with explicit privacy boundaries.",
+  "appShellTaglineBooting": "Bootstrapping privacy, mission mock and local graph...",
+  "navigate": "Navigate",
+  "navDashboard": "Dashboard",
+  "navCapture": "Capture",
+  "navWeek": "Week",
+  "navTasks": "Tasks",
+  "navHabits": "Habits",
+  "navMoney": "Money",
+  "navPantry": "Pantry",
+  "navCloset": "Closet",
+  "navEveryday": "Everyday",
+  "navCopilot": "Copilot",
+  "navSettings": "Settings",
+  "language": "Language",
+  "languageSystem": "System default",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languagePortugueseBrazil": "Portuguese Brazil",
+  "languagePortuguesePortugal": "???????",
+  "languageFrench": "??",
+  "languageItalian": "????",
+  "languageGerman": "??",
+  "languageJapanese": "日本語",
+  "languageChineseSimplified": "簡體中文",
+  "languageChineseTraditional": "????",
+  "profilePreferencesTitle": "????",
+  "profilePreferencesBody": "?????????????????????AI ????????",
+  "deliveryPreferencesTitle": "?????",
+  "regionalPreferencesTitle": "?????",
+  "preferencesLocalOnlyHint": "?????????????????????????",
+  "themePreference": "??",
+  "themeSystem": "??",
+  "themeLight": "??",
+  "themeDark": "??",
+  "notificationsPreference": "??",
+  "notificationsEnabled": "??",
+  "notificationsDisabled": "??",
+  "quietHoursPreference": "????",
+  "quietHoursOff": "??",
+  "quietHours2207": "22:00-07:00",
+  "quietHours2308": "23:00-08:00",
+  "measurementUnitsPreference": "????",
+  "unitMetric": "??",
+  "unitImperial": "??",
+  "regionCountryPreference": "?????",
+  "regionAuto": "??",
+  "regionUs": "??",
+  "regionSpain": "???",
+  "regionBrazil": "??",
+  "regionPortugal": "???",
+  "regionFrance": "??",
+  "regionItaly": "???",
+  "regionGermany": "??",
+  "regionJapan": "??",
+  "regionChinaMainland": "????",
+  "regionTaiwan": "??",
+  "reminderFrequencyPreference": "????",
+  "reminderOff": "??",
+  "reminderDaily": "??",
+  "reminderWeekdays": "??",
+  "reminderWeekly": "??",
+  "aiResponseStyle": "AI ??",
+  "aiBrief": "??",
+  "aiDetailed": "??",
+  "backupSyncPreference": "?????",
+  "backupSyncOff": "??",
+  "backupSyncOn": "??",
+  "currentPlanPreference": "????",
+  "planFree": "Free",
+  "planPlus": "Plus",
+  "planPro": "Pro",
+  "privacyTitle": "Privacy",
+  "privacyIntro": "Each event stays local unless both the domain permission and the event privacy level allow AI. This screen also gives you direct local export and delete controls.",
+  "privacyEncryptedActive": "Sensitive local encryption is active for Journal, Quick Notes, and Finance records stored on this device.",
+  "privacyEncryptedUnavailable": "Sensitive local encryption is unavailable in this runtime. Treat Journal, Quick Notes, and Finance as not protected at rest until secure storage is available again.",
+  "privacyCenter": "Privacy center",
+  "privacyDisclosureEncryptedTitle": "Encrypted locally",
+  "privacyDisclosureEncryptedBody": "These collections are protected at rest on this device.",
+  "privacyDisclosureLocalTitle": "Always local",
+  "privacyDisclosureLocalBody": "These items stay on the device and do not go to AI routing.",
+  "privacyDisclosureAiTitle": "Can be sent to AI if allowed",
+  "privacyDisclosureAiBody": "Only domains with AI permission and AI-allowed events can be sent.",
+  "privacyMetricTotalEvents": "Total events",
+  "privacyMetricAiEligible": "AI-eligible",
+  "privacyMetricBlockedLocal": "Blocked locally",
+  "dataControls": "Data controls",
+  "dataControlsBody": "Export saves the full local graph snapshot as a protected JSON file on this device. Delete all wipes local data and disables demo reseeding.",
+  "exportJson": "Export JSON",
+  "deleteAllLocalData": "Delete all local data",
+  "domainControls": "Domain controls",
+  "exportCopied": "Local JSON export copied to clipboard.",
+  "exportSavedFile": "Protected local export bundle saved as {fileName}.",
+  "@exportSavedFile": {
+    "placeholders": {
+      "fileName": {}
+    }
+  },
+  "deleteAllTitle": "Delete all local data?",
+  "deleteAllBody": "This wipes local events, entities, missions, feedback, privacy settings, cached runtime config, and language preference on this device.",
+  "cancel": "Cancel",
+  "clearAiHistory": "?? AI ??",
+  "clearAiHistoryTitle": "?? AI ???",
+  "clearAiHistoryBody": "??????????????????? AI ?????",
+  "clearAiHistoryDone": "AI ??????",
+  "deleteAll": "Delete all",
+  "deleteAllDone": "All local data deleted.",
+  "domainEventsEligible": "{eventCount} events · {aiCount} currently AI-eligible",
+  "@domainEventsEligible": {
+    "placeholders": {
+      "eventCount": {
+        "type": "int"
+      },
+      "aiCount": {
+        "type": "int"
+      }
+    }
+  },
+  "permissionLocal": "Local",
+  "permissionSync": "Sync",
+  "permissionAi": "AI",
+  "domainHabits": "Habits",
+  "domainTasks": "Tasks",
+  "domainWeek": "Week",
+  "domainFinance": "Money",
+  "domainPantry": "Pantry",
+  "domainWardrobe": "Closet",
+  "domainCopilot": "Copilot",
+  "collectionFinanceRecords": "Finance records",
+  "collectionJournalEntries": "Journal entries",
+  "collectionQuickNotes": "Quick notes",
+  "collectionOwnedItems": "Owned items",
+  "collectionPurchaseProofs": "Purchase proofs",
+  "collectionClaimDrafts": "Claim drafts",
+  "collectionEvidenceAttachments": "Evidence attachments",
+  "collectionPrivacySettings": "Privacy settings",
+  "collectionRuntimeConfigCache": "Runtime config cache",
+  "collectionDeviceEncryptionKey": "Device encryption key",
+  "nothingAiEnabled": "Nothing is AI-enabled right now",
+  "gatewayLive": "Gateway live",
+  "gatewayNoConnection": "No connection",
+  "gatewayUnavailable": "AI temporarily unavailable",
+  "gatewayLocalFallback": "Using local fallback",
+  "feedbackNone": "No feedback yet",
+  "feedbackUseful": "Useful",
+  "feedbackRejected": "Rejected",
+  "feedbackAccepted": "Accepted",
+  "feedbackCompleted": "Completed",
+  "feedbackEdited": "Edited",
+  "missionDeliveryAi": "AI-assisted",
+  "missionDeliveryFallback": "Fallback local",
+  "missionDeliveryLocal": "Local",
+  "missionDeliverySummaryAi": "GoLife used AI for this mission after local privacy filtering.",
+  "missionDeliverySummaryFallback": "GoLife stayed local because the gateway was unavailable or degraded.",
+  "missionDeliverySummaryLocal": "GoLife kept this mission local on the device.",
+  "actionWrite": "Write",
+  "actionChat": "Chat",
+  "actionExplain": "Explain",
+  "actionUseful": "Useful",
+  "actionDoNow": "Do now",
+  "actionNotUseful": "Not useful",
+  "actionAccept": "Accept",
+  "actionEdit": "Edit",
+  "actionRemove": "Remove",
+  "actionSave": "Save",
+  "actionParseCapture": "Parse capture",
+  "actionReparseCapture": "Re-parse capture",
+  "actionSaveCaptureItems": "Save {count} items",
+  "@actionSaveCaptureItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "statusReady": "Ready",
+  "statusBooting": "Booting",
+  "labelEvidence": "Evidence",
+  "labelDataUsedForMission": "Data used for this mission",
+  "labelDataSentToAi": "Data sent to AI",
+  "labelBlockedFromAi": "Blocked from AI",
+  "labelAlwaysLocalOnDevice": "Always local on this device",
+  "labelEncryptedLocally": "Encrypted locally",
+  "labelUncertainty": "Uncertainty",
+  "labelTrace": "Trace",
+  "fieldDomain": "Domain",
+  "fieldPrivacy": "Privacy",
+  "dashboardDisclosurePending": "GoLife keeps data local until a mission is ready.",
+  "dashboardMissionCountTitle": "{count} missions for today",
+  "@dashboardMissionCountTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardMissionIntro": "Home Today turns the graph into small actions: one main mission, two support missions, visible evidence and fast feedback.",
+  "dashboardLoadingMissions": "Loading missions...",
+  "dashboardBootstrappingMission": "Bootstrapping local events, ranked missions and gateway trace.",
+  "dashboardRiskCount": "{count} risks",
+  "@dashboardRiskCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardConfidencePill": "{percent}% confidence",
+  "@dashboardConfidencePill": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardAiDisclosureTitle": "AI data disclosure",
+  "dashboardAiDisclosureSummary": "{summary} Sent now: {sentCount} local events. Blocked locally: {blockedCount}.",
+  "@dashboardAiDisclosureSummary": {
+    "placeholders": {
+      "summary": {},
+      "sentCount": {
+        "type": "int"
+      },
+      "blockedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardRisksTitle": "Risks today",
+  "dashboardNoRisks": "No explicit daily risks were detected from the current AI-eligible graph.",
+  "dashboardSupportMissionsTitle": "Support missions",
+  "dashboardNoSupportMissions": "Secondary missions will appear once the daily plan is available.",
+  "signalCriticalTask": "Critical task",
+  "signalRecoveryHabit": "Recovery habit",
+  "signalRecoveryHabitBody": "Cue: {cue} - {streak}",
+  "@signalRecoveryHabitBody": {
+    "placeholders": {
+      "cue": {},
+      "streak": {}
+    }
+  },
+  "signalRelevantSpend": "Relevant spend",
+  "signalUseThisFood": "Use this food",
+  "dashboardWhyThisToday": "Why this one today",
+  "dashboardConfidenceWithType": "Confidence {percent}% - {type}",
+  "@dashboardConfidenceWithType": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "type": {}
+    }
+  },
+  "dashboardNothingSent": "Nothing was sent for this mission. GoLife stayed local for this step.",
+  "dashboardNothingBlocked": "No mission-specific items were blocked from AI for this step.",
+  "dashboardNoAlwaysLocalCollections": "No always-local collections configured.",
+  "dashboardNoEncryptedCollections": "No encrypted collections configured.",
+  "dashboardRiskSeverityLabel": "{severity} risk",
+  "@dashboardRiskSeverityLabel": {
+    "placeholders": {
+      "severity": {}
+    }
+  },
+  "captureTitle": "Capture",
+  "captureIntro": "Write one sentence. GoLife can split it into several drafts, let you edit domain and privacy per item, then save all of them together.",
+  "captureRouteTitle": "Route",
+  "captureAutoRoute": "Auto",
+  "captureAutoModeBody": "Auto mode will try to split and classify each clause first.",
+  "captureCurrentDefaultPrivacy": "Current default privacy for {domain}: {permission}",
+  "@captureCurrentDefaultPrivacy": {
+    "placeholders": {
+      "domain": {},
+      "permission": {}
+    }
+  },
+  "captureDraftsToConfirm": "Drafts to confirm",
+  "captureRecentEvents": "Recent events",
+  "capturePrivacyLabel": "Privacy: {privacy}",
+  "@capturePrivacyLabel": {
+    "placeholders": {
+      "privacy": {}
+    }
+  },
+  "captureItemsCaptured": "{count} item(s) captured.",
+  "@captureItemsCaptured": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureEditItemTitle": "Edit item",
+  "captureHintAuto": "Example: I bought coffee for 4.50, lettuce expires tomorrow, and I need to pay internet.",
+  "captureHintTasks": "Example: submit rent receipt before lunch",
+  "captureHintHabits": "Example: walked 15 minutes after dinner",
+  "captureHintWeek": "Example: Friday focus should stay on admin work",
+  "captureHintFinance": "Example: bought coffee and sandwich for 8.50",
+  "captureHintPantry": "Example: spinach expires tomorrow",
+  "captureHintWardrobe": "Example: thinking about buying another black jacket",
+  "captureHintCopilot": "Example: a mission note",
+  "copilotTitle": "Copilot",
+  "copilotIntro": "The copilot now works around a ranked daily plan: visible trace, three missions and local fallback when the gateway is unavailable.",
+  "copilotBoundariesTitle": "Reflection boundaries",
+  "copilotBoundariesBody": "GoLife helps with daily organization and practical reflection. It does not diagnose, provide therapy, or replace professional care. If something feels urgent or unsafe, use real crisis or medical support.",
+  "copilotTodayPlanTitle": "Today plan",
+  "copilotNoPlan": "No mission plan loaded yet.",
+  "copilotLatestTraceTitle": "Latest trace",
+  "copilotNoTrace": "No mission loaded yet.",
+  "navJournal": "Journal",
+  "navCalendar": "Calendar",
+  "navRecipes": "Recipes",
+  "homeMemoryEyebrow": "RecallBox",
+  "homeMemoryTitle": "HomeMemory",
+  "homeMemorySubtitle": "Things, receipts, warranties, and reminders.",
+  "homeMemoryDisclosureTitle": "Local purchase memory",
+  "homeMemoryDisclosureBody": "Receipts, draft claims, and evidence stay local-first in this MVP. GoLife turns them into reminders and next actions without promising legal review.",
+  "homeMemoryWarrantySoonTitle": "Warranty ending soon",
+  "homeMemoryWarrantySoonEmpty": "No active warranty close to expiration.",
+  "homeMemoryRecentProofsTitle": "Recent proofs",
+  "homeMemoryRecentProofsEmpty": "No proofs captured yet.",
+  "homeMemoryRemindersTitle": "Maintenance reminders",
+  "homeMemoryRemindersEmpty": "No reminders scheduled.",
+  "homeMemoryClaimsTitle": "Claim drafts",
+  "homeMemoryClaimsEmpty": "No draft claims yet.",
+  "homeMemoryActionAddItem": "Add item manually",
+  "homeMemoryActionAddProof": "Add proof",
+  "homeMemoryActionCreateReminder": "Create reminder",
+  "homeMemoryActionDraftClaim": "Draft claim",
+  "homeMemoryActionOpen": "Open HomeMemory",
+  "homeMemoryItemsTitle": "Owned items",
+  "homeMemoryItemsEmpty": "No owned items stored yet.",
+  "homeMemoryWarrantyUntilLabel": "Warranty until {date}",
+  "@homeMemoryWarrantyUntilLabel": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "homeMemoryItemNoMeta": "No purchase metadata yet.",
+  "homeMemorySectionItem": "Item",
+  "homeMemorySectionProofs": "Proofs",
+  "homeMemorySectionWarranty": "Warranty",
+  "homeMemorySectionReminders": "Reminders",
+  "homeMemorySectionClaims": "Claim drafts",
+  "homeMemorySectionEvidence": "Evidence",
+  "homeMemoryFieldProductName": "Product name",
+  "homeMemoryFieldBrand": "Brand",
+  "homeMemoryFieldModel": "Model",
+  "homeMemoryFieldSerialNumber": "Serial number",
+  "homeMemoryFieldStore": "Store",
+  "homeMemoryFieldPurchaseDate": "Purchase date",
+  "homeMemoryFieldPrice": "Price",
+  "homeMemoryFieldCurrency": "Currency",
+  "homeMemoryFieldWarrantyMonths": "Warranty months",
+  "homeMemoryFieldWarrantyUntil": "Warranty until",
+  "homeMemoryFieldDueDate": "Due date",
+  "homeMemoryFieldRecurrence": "Recurrence",
+  "homeMemoryFieldIssueDescription": "Issue description",
+  "homeMemoryFieldRecipientHint": "Recipient hint",
+  "homeMemoryCreateWarrantyReminder": "Create a reminder before warranty expiration",
+  "homeMemoryDefaultReminderTitle": "Review warranty before expiration",
+  "homeMemorySelectItem": "Select item",
+  "homeMemoryClaimDisclaimer": "No legal advice. Verify warranty and seller policies. Send outside the app.",
+  "homeMemoryNoNotes": "No notes",
+  "homeMemoryUnknownMerchant": "Unknown merchant",
+  "homeMemoryUnknownDate": "Unknown date",
+  "homeMemoryUnknownValue": "Unknown",
+  "homeMemoryNoProofs": "No proofs attached yet.",
+  "homeMemoryWarrantyUnknown": "Warranty unknown.",
+  "homeMemoryNoReminders": "No reminders yet.",
+  "homeMemoryNoClaims": "No claim drafts yet.",
+  "homeMemoryNoEvidence": "No evidence attached yet.",
+  "homeMemoryEvidencePresent": "Evidence attachment available.",
+  "homeMemoryWarrantyStatusUnknown": "unknown",
+  "homeMemoryWarrantyStatusExpired": "expired",
+  "homeMemoryWarrantyStatusActive": "active warranty",
+  "homeMemoryEverydaySubtitle": "{itemCount} items | {warrantyCount} warranties ending soon",
+  "@homeMemoryEverydaySubtitle": {
+    "placeholders": {
+      "itemCount": {
+        "type": "int"
+      },
+      "warrantyCount": {
+        "type": "int"
+      }
+    }
+  },
+  "homeMemoryEverydayBody": "Keep receipts, owned items, warranties, reminders, and draft claims in one local memory surface.",
+  "entityTask": "task",
+  "entityHabit": "habit",
+  "entityExpense": "expense",
+  "entityPantryItem": "pantry item",
+  "entityPurchaseIntention": "purchase intention",
+  "entityWeekPlan": "week plan",
+  "entityJournalEntry": "journal entry",
+  "entityQuickNote": "quick note",
+  "entityCalendarItem": "calendar item",
+  "entityRecipeRescue": "recipe rescue",
+  "actionNewEntity": "New {entity}",
+  "@actionNewEntity": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "actionEditEntity": "Edit {entity}",
+  "@actionEditEntity": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "actionDelete": "Delete",
+  "actionComplete": "Complete",
+  "actionDone": "Done",
+  "actionCheckIn": "Check in",
+  "actionReflect": "Reflect",
+  "actionMarkUsed": "Mark used",
+  "actionUsed": "Used",
+  "actionPause24h": "Pause 24h",
+  "actionReplan": "Replan",
+  "actionReview": "Review",
+  "actionKeepLocal": "Keep local",
+  "actionOpenJournal": "Open journal",
+  "actionOpenCalendar": "Open calendar",
+  "actionOpenRecipes": "Open recipes",
+  "actionCookNow": "Cook now",
+  "actionCooked": "Cooked",
+  "actionTimeBlock": "Time block",
+  "actionSaving": "Saving...",
+  "domainTasksEyebrow": "Execution",
+  "domainTasksDescription": "TaskDoctor is now a local-first task board with direct create, edit, and complete flows.",
+  "domainHabitsEyebrow": "Continuity",
+  "domainHabitsDescription": "LifeQuest now supports direct habit creation and recovery-friendly check-ins.",
+  "domainMoneyEyebrow": "Awareness",
+  "domainMoneyDescription": "MoneyMirror stays conservative: log, edit, and reflect locally without crossing into regulated advice.",
+  "domainPantryEyebrow": "Rescue",
+  "domainPantryDescription": "FridgeZero now keeps a rescue board where ingredients can be created, edited, and marked used.",
+  "domainClosetEyebrow": "Anti-consumption",
+  "domainClosetDescription": "ClosetLess remains an intention-first board, now with editable pauses and purchase reasons.",
+  "domainWeekEyebrow": "Planner",
+  "domainWeekDescription": "WeekPilot stays intentionally light, but now supports quick creation and direct replanning.",
+  "domainJournalEyebrow": "Private by default",
+  "domainJournalDescription": "Journal and notes stay local-first so the app can learn from your day without turning into therapy.",
+  "domainCalendarEyebrow": "QuickCal",
+  "domainCalendarDescription": "QuickCal starts as a fast local layer for time blocks and overload detection, not a full sync engine.",
+  "domainRecipesEyebrow": "Recipe Rescue",
+  "domainRecipesDescription": "Recipe Rescue turns pantry context into simple local meal plans that can mark ingredients as used.",
+  "domainEverydayEyebrow": "Life OS",
+  "domainEverydayDescription": "Journal, calendar, and recipes live together here so the shell stays lighter while everyday context keeps growing.",
+  "tasksEmpty": "No tasks captured yet.",
+  "habitsEmpty": "No habits captured yet.",
+  "moneyEmpty": "No expenses captured yet.",
+  "pantryEmpty": "No pantry items captured yet.",
+  "closetEmpty": "No purchase intentions captured yet.",
+  "weekEmpty": "No week plans captured yet.",
+  "journalEmpty": "No journal entries yet.",
+  "quickNotesEmpty": "No quick notes yet.",
+  "calendarEmpty": "No calendar items yet.",
+  "recipesEmpty": "No recipe rescues yet.",
+  "calendarOverloadTitle": "Overload detected",
+  "calendarOverloadBody": "There are already four or more local calendar items. Protect the smallest non-critical block first.",
+  "calendarCalmTitle": "Calm calendar",
+  "calendarCalmBody": "Use QuickCal for fast local blocks before adding full calendar sync.",
+  "everydayContextTitle": "Everyday context",
+  "everydayContextBody": "Use writing, time blocks, and recipe rescue to give Today better context without turning the app into six crowded tabs.",
+  "everydayJournalBody": "Capture reflection and short notes locally, with privacy-first defaults.",
+  "everydayCalendarBody": "Keep a quick local calendar before you need full sync.",
+  "everydayRecipesBody": "Turn pantry context into low-friction meals and mark ingredients used.",
+  "fieldTitle": "Title",
+  "fieldEstimatedMinutes": "Estimated minutes",
+  "fieldPriority": "Priority",
+  "fieldNotes": "Notes",
+  "fieldCue": "Cue",
+  "fieldCadence": "Cadence",
+  "fieldLabel": "Label",
+  "fieldAmount": "Amount",
+  "fieldCategory": "Category",
+  "fieldName": "Name",
+  "fieldQuantity": "Quantity",
+  "fieldRescueHint": "Rescue hint",
+  "fieldReason": "Reason",
+  "fieldTheme": "Theme",
+  "fieldFocus": "Focus",
+  "fieldMood": "Mood",
+  "fieldBody": "Body",
+  "fieldNote": "Note",
+  "fieldStartIso": "Start ISO",
+  "fieldEndIso": "End ISO",
+  "fieldLocation": "Location",
+  "fieldEnergy": "Energy",
+  "fieldSummary": "Summary",
+  "fieldIngredientsCommaSeparated": "Ingredients (comma separated)",
+  "chipRescue": "Rescue",
+  "chipPurchaseIntention": "Purchase intention",
+  "chipJournal": "Journal",
+  "chipNote": "Note",
+  "chipLocalOnly": "Local only",
+  "statusTaskInbox": "Inbox",
+  "statusTaskActive": "Active",
+  "statusTaskDone": "Done",
+  "priorityGentle": "Gentle",
+  "priorityStandard": "Standard",
+  "priorityCritical": "Critical",
+  "cadenceDaily": "Daily",
+  "cadenceWeekdays": "Weekdays",
+  "cadenceWeekly": "Weekly",
+  "recipeStatusDraft": "Draft",
+  "recipeStatusCooked": "Cooked",
+  "unitMinutesShort": "min",
+  "journalQuickNotesTitle": "Quick notes",
+  "messageTaskUpdated": "Task updated.",
+  "messageHabitCheckedIn": "Habit checked in.",
+  "messageExpenseRevisited": "Expense revisited.",
+  "messagePantryItemUpdated": "Pantry item updated.",
+  "messagePurchaseIntentionPaused": "Purchase intention paused.",
+  "messageWeekPlanUpdated": "Week plan updated.",
+  "messageJournalLocalOnly": "Journal stays local on this device.",
+  "messageNoteLocalOnly": "Note stays local on this device.",
+  "messageOpeningEditor": "Opening editor.",
+  "messageRecipeUpdated": "Recipe rescue updated.",
+  "messageEntitySaved": "{entity} saved.",
+  "@messageEntitySaved": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "messageEntityDeleted": "{entity} deleted.",
+  "@messageEntityDeleted": {
+    "placeholders": {
+      "entity": {}
+    }
+  },
+  "taskTimeboxFirstBlock": "{minutes} min first block",
+  "@taskTimeboxFirstBlock": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "habitStreakDays": "{count}-day streak",
+  "@habitStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "everydayJournalSubtitle": "{entryCount} entries | {noteCount} quick notes",
+  "@everydayJournalSubtitle": {
+    "placeholders": {
+      "entryCount": {
+        "type": "int"
+      },
+      "noteCount": {
+        "type": "int"
+      }
+    }
+  },
+  "overloadDetected": "detected",
+  "overloadNotDetected": "not detected",
+  "everydayCalendarSubtitle": "{blockCount} local blocks | overload {status}",
+  "@everydayCalendarSubtitle": {
+    "placeholders": {
+      "blockCount": {
+        "type": "int"
+      },
+      "status": {}
+    }
+  },
+  "everydayRecipesSubtitle": "{count} rescue ideas",
+  "@everydayRecipesSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "labelToday": "Today",
+  "mockCriticalTaskTitle": "Finish the next critical task",
+  "mockCriticalTaskBody": "Protect a {minutes}-minute block for the next critical step and keep priority at {priority}.",
+  "@mockCriticalTaskBody": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "mockRecoveryHabitTitle": "Keep the recovery rhythm alive",
+  "mockFinanceSummaryTitle": "Review the spend signal",
+  "mockFinanceSummaryBody": "Check {label} and decide whether {amount} still reflects a real need.",
+  "@mockFinanceSummaryBody": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mockPantrySummaryTitle": "Use one ingredient already at home",
+  "mockPantrySummaryBody": "Start with the oldest ingredient before opening a new shopping loop."
+}
