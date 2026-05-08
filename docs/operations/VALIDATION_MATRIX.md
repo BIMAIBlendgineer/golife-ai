@@ -28,8 +28,8 @@
 | Security | Python SAST | `bandit -q -r app -s B105,B106` | green | CI baseline | run in both Python services |
 | Security | Python deps | clean-venv `pip-audit --ignore-vuln CVE-2026-3219` per Python service | green or accepted exception only | green in isolated service envs | workstation global Python is noisy; release gate should run in a clean env per service |
 | Security | Admin deps | `npm audit --omit=dev --audit-level=high` | green or accepted exception only | green at `high` threshold | 2 moderate transitive `postcss` findings remain under `next`; no `high` or above |
-| Git | docs and code diff | `git diff --stat` and secret grep | no unrelated secrets or scope drift | pending final review | release branch still open |
-| Git | branch hygiene | PR merged, branch deleted | clean main | pending final closeout | |
+| Git | docs and code diff | `git diff --stat` and secret grep | no unrelated secrets or scope drift | green | final review completed; `git diff --check` only reported CRLF normalization warnings |
+| Git | branch hygiene | merged release branch, deleted rescue branch, verified worktrees | clean main | green | only `main` remains as the durable local branch after closeout |
 
 ## Residual gaps
 
