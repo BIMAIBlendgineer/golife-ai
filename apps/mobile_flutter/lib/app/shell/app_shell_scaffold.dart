@@ -48,10 +48,9 @@ class AppShellScaffold extends StatelessWidget {
               top: -60,
               right: -20,
               child: _BlurBlob(
-                color: (isDark
-                        ? const Color(0xFFE48B6E)
-                        : const Color(0xFFD06447))
-                    .withValues(alpha: 0.14),
+                color:
+                    (isDark ? const Color(0xFFE48B6E) : const Color(0xFFD06447))
+                        .withValues(alpha: 0.14),
                 size: 220,
               ),
             ),
@@ -59,10 +58,9 @@ class AppShellScaffold extends StatelessWidget {
               left: -50,
               bottom: -40,
               child: _BlurBlob(
-                color: (isDark
-                        ? const Color(0xFF89A58F)
-                        : const Color(0xFF5D7A68))
-                    .withValues(alpha: 0.14),
+                color:
+                    (isDark ? const Color(0xFF89A58F) : const Color(0xFF5D7A68))
+                        .withValues(alpha: 0.14),
                 size: 260,
               ),
             ),
@@ -206,11 +204,11 @@ class _TopTabs extends StatelessWidget {
           for (final destination in appDestinations)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-                child: _DestinationChip(
-                  destination: destination,
-                  l10n: l10n,
-                  selected: currentLocation.startsWith(destination.path),
-                ),
+              child: _DestinationChip(
+                destination: destination,
+                l10n: l10n,
+                selected: currentLocation.startsWith(destination.path),
+              ),
             ),
         ],
       ),
@@ -383,8 +381,12 @@ class AppDestination {
         return l10n.navMoney;
       case AppDestinationKind.pantry:
         return l10n.navPantry;
+      case AppDestinationKind.shopping:
+        return 'Shopping';
       case AppDestinationKind.closet:
         return l10n.navCloset;
+      case AppDestinationKind.decisions:
+        return 'Decisions';
       case AppDestinationKind.everyday:
         return l10n.navEveryday;
       case AppDestinationKind.copilot:
@@ -403,7 +405,9 @@ enum AppDestinationKind {
   habits,
   money,
   pantry,
+  shopping,
   closet,
+  decisions,
   everyday,
   copilot,
   settings,
@@ -439,9 +443,17 @@ const appDestinations = [
       path: '/pantry',
       icon: Icons.kitchen_rounded),
   AppDestination(
+      kind: AppDestinationKind.shopping,
+      path: '/shopping',
+      icon: Icons.shopping_bag_outlined),
+  AppDestination(
       kind: AppDestinationKind.closet,
       path: '/closet',
       icon: Icons.checkroom_rounded),
+  AppDestination(
+      kind: AppDestinationKind.decisions,
+      path: '/decisions',
+      icon: Icons.rule_folder_outlined),
   AppDestination(
       kind: AppDestinationKind.everyday,
       path: '/everyday',

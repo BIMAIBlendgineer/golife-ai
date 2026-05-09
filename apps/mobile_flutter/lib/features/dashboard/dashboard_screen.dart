@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/i18n/app_localized_values.dart';
+import '../../domains/mindflow/decision_card.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../domains/shopping/product_evidence_card.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
 import 'signal_card.dart';
@@ -58,6 +60,16 @@ class DashboardScreen extends StatelessWidget {
                 onPressed: () => context.go('/journal'),
                 icon: const Icon(Icons.edit_note_rounded),
                 label: Text(l10n.actionWrite),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => context.go('/decisions'),
+                icon: const Icon(Icons.rule_folder_outlined),
+                label: Text(_decisionsLabel(l10n)),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => context.go('/shopping'),
+                icon: const Icon(Icons.shopping_bag_outlined),
+                label: Text(_shoppingLabel(l10n)),
               ),
               FilledButton.tonalIcon(
                 onPressed: () => context.go('/copilot'),
@@ -156,8 +168,8 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     if (primaryMission != null)
                       _MetaPill(
-                        label:
-                            controller.localizedMissionEffortLabel(primaryMission, l10n),
+                        label: controller.localizedMissionEffortLabel(
+                            primaryMission, l10n),
                         color: const Color(0xFF6C5B3D),
                       ),
                   ],
@@ -257,6 +269,21 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 20),
+          if (controller.primaryMentalLoadItem != null)
+            _MentalLoadSummaryCard(controller: controller),
+          if (controller.primaryMentalLoadItem != null)
+            const SizedBox(height: 12),
+          if (controller.primaryDecisionCard != null)
+            _DecisionPreviewCard(controller: controller),
+          if (controller.primaryDecisionCard != null)
+            const SizedBox(height: 12),
+          if (controller.secondaryDecisionCards.isNotEmpty)
+            _SecondaryDecisionListCard(controller: controller),
+          if (controller.secondaryDecisionCards.isNotEmpty)
+            const SizedBox(height: 12),
+          if (controller.hasShoppingAlert)
+            _ShoppingAlertCard(controller: controller),
           const SizedBox(height: 20),
           Text(l10n.dashboardRisksTitle, style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
@@ -495,6 +522,347 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
+String _decisionsLabel(AppLocalizations l10n) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: 'Decisions',
+      es: 'Decisiones',
+      ptBr: 'Decisoes',
+      ptPt: 'Decisoes',
+      fr: 'Decisions',
+      it: 'Decisioni',
+      de: 'Entscheidungen',
+      ja: 'Decisions',
+      zhHans: 'Decisions',
+      zhHant: 'Decisions',
+    );
+
+String _shoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Shopping',
+      es: 'Shopping',
+      ptBr: 'Shopping',
+      ptPt: 'Shopping',
+      fr: 'Achats',
+      it: 'Shopping',
+      de: 'Einkaufen',
+      ja: 'Shopping',
+      zhHans: 'Shopping',
+      zhHant: 'Shopping',
+    );
+
+String _mentalLoadSummaryTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Mental load summary',
+      es: 'Resumen de carga mental',
+      ptBr: 'Resumo da carga mental',
+      ptPt: 'Resumo da carga mental',
+      fr: 'Resume de charge mentale',
+      it: 'Riepilogo del carico mentale',
+      de: 'Zusammenfassung der mentalen Last',
+      ja: 'Mental load summary',
+      zhHans: 'Mental load summary',
+      zhHant: 'Mental load summary',
+    );
+
+String _mentalLoadSummaryBody(
+  AppLocalizations l10n,
+  int count,
+  String title,
+) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: '$count pending items. Top item: $title',
+      es: '$count items pendientes. Tema principal: $title',
+      ptBr: '$count itens pendentes. Item principal: $title',
+      ptPt: '$count itens pendentes. Item principal: $title',
+      fr: '$count elements en attente. Principal: $title',
+      it: '$count elementi in sospeso. Priorita: $title',
+      de: '$count offene Elemente. Oberstes Thema: $title',
+      ja: '$count pending items. Top item: $title',
+      zhHans: '$count pending items. Top item: $title',
+      zhHant: '$count pending items. Top item: $title',
+    );
+
+String _primaryDecisionTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Primary decision',
+      es: 'Decision principal',
+      ptBr: 'Decisao principal',
+      ptPt: 'Decisao principal',
+      fr: 'Decision principale',
+      it: 'Decisione principale',
+      de: 'Primaere Entscheidung',
+      ja: 'Primary decision',
+      zhHans: 'Primary decision',
+      zhHant: 'Primary decision',
+    );
+
+String _secondaryDecisionsTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Secondary decisions',
+      es: 'Decisiones secundarias',
+      ptBr: 'Decisoes secundarias',
+      ptPt: 'Decisoes secundarias',
+      fr: 'Decisions secondaires',
+      it: 'Decisioni secondarie',
+      de: 'Sekundaere Entscheidungen',
+      ja: 'Secondary decisions',
+      zhHans: 'Secondary decisions',
+      zhHant: 'Secondary decisions',
+    );
+
+String _openDecisionsLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Open decisions',
+      es: 'Abrir decisiones',
+      ptBr: 'Abrir decisoes',
+      ptPt: 'Abrir decisoes',
+      fr: 'Ouvrir les decisions',
+      it: 'Apri decisioni',
+      de: 'Entscheidungen oeffnen',
+      ja: 'Open decisions',
+      zhHans: 'Open decisions',
+      zhHant: 'Open decisions',
+    );
+
+String _postponeLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Postpone',
+      es: 'Posponer',
+      ptBr: 'Adiar',
+      ptPt: 'Adiar',
+      fr: 'Reporter',
+      it: 'Posticipa',
+      de: 'Verschieben',
+      ja: 'Postpone',
+      zhHans: 'Postpone',
+      zhHant: 'Postpone',
+    );
+
+String _createReminderLabel(AppLocalizations l10n) =>
+    l10n.homeMemoryActionCreateReminder;
+
+String _shoppingAlertTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Shopping alert',
+      es: 'Alerta de shopping',
+      ptBr: 'Alerta de shopping',
+      ptPt: 'Alerta de shopping',
+      fr: 'Alerte achats',
+      it: 'Avviso shopping',
+      de: 'Shopping-Hinweis',
+      ja: 'Shopping alert',
+      zhHans: 'Shopping alert',
+      zhHant: 'Shopping alert',
+    );
+
+String _noProductEvidenceLoaded(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'No product evidence loaded yet.',
+      es: 'Todavia no hay evidencia de producto cargada.',
+      ptBr: 'Ainda nao ha evidencia de produto carregada.',
+      ptPt: 'Ainda nao ha evidencia de produto carregada.',
+      fr: 'Aucune preuve produit chargee pour le moment.',
+      it: 'Nessuna evidenza prodotto caricata.',
+      de: 'Noch keine Produktevidenz geladen.',
+      ja: 'No product evidence loaded yet.',
+      zhHans: 'No product evidence loaded yet.',
+      zhHant: 'No product evidence loaded yet.',
+    );
+
+String _openShoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Open shopping',
+      es: 'Abrir shopping',
+      ptBr: 'Abrir shopping',
+      ptPt: 'Abrir shopping',
+      fr: 'Ouvrir les achats',
+      it: 'Apri shopping',
+      de: 'Shopping oeffnen',
+      ja: 'Open shopping',
+      zhHans: 'Open shopping',
+      zhHant: 'Open shopping',
+    );
+
+String _loadEvidenceLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Load evidence',
+      es: 'Cargar evidencia',
+      ptBr: 'Carregar evidencia',
+      ptPt: 'Carregar evidencia',
+      fr: 'Charger les preuves',
+      it: 'Carica evidenza',
+      de: 'Evidenz laden',
+      ja: 'Load evidence',
+      zhHans: 'Load evidence',
+      zhHant: 'Load evidence',
+    );
+
+String _decisionEvidenceStatusLabel(AppLocalizations l10n, String value) {
+  switch (value) {
+    case 'local_only':
+      return pickLocalizedValue(
+        l10n.localeName,
+        en: 'Local only',
+        es: 'Solo local',
+        ptBr: 'So local',
+        ptPt: 'So local',
+        fr: 'Local uniquement',
+        it: 'Solo locale',
+        de: 'Nur lokal',
+        ja: 'Local only',
+        zhHans: 'Local only',
+        zhHant: 'Local only',
+      );
+    case 'insufficient_verified_data':
+      return pickLocalizedValue(
+        l10n.localeName,
+        en: 'Insufficient evidence',
+        es: 'Evidencia insuficiente',
+        ptBr: 'Evidencia insuficiente',
+        ptPt: 'Evidencia insuficiente',
+        fr: 'Preuves insuffisantes',
+        it: 'Evidenza insufficiente',
+        de: 'Unzureichende Evidenz',
+        ja: 'Insufficient evidence',
+        zhHans: 'Insufficient evidence',
+        zhHant: 'Insufficient evidence',
+      );
+    default:
+      return value;
+  }
+}
+
+String _shoppingEvidenceSummary(
+  AppLocalizations l10n,
+  ProductEvidenceCard card,
+) =>
+    '${_decisionEvidenceStatusLabel(l10n, card.sustainabilityStatus)}: ${card.disclaimer}';
+
+void _showDecisionExplanationSheet(
+  BuildContext context,
+  GoLifeController controller,
+  DecisionCard card,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: const Color(0xFFFFF8EF),
+    showDragHandle: true,
+    builder: (context) {
+      final l10n = AppLocalizations.of(context)!;
+      final theme = Theme.of(context);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(card.title, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 8),
+              Text(card.recommendedAction, style: theme.textTheme.bodyLarge),
+              const SizedBox(height: 16),
+              Text(l10n.labelEvidence, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              for (final item in card.evidence)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text('- $item', style: theme.textTheme.bodyMedium),
+                ),
+              const SizedBox(height: 16),
+              Text(l10n.labelBlockedFromAi, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                card.privacySummary.blockedDomains.isEmpty
+                    ? l10n.dashboardNothingBlocked
+                    : card.privacySummary.blockedDomains.join(', '),
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.labelAlwaysLocalOnDevice, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                card.privacySummary.localOnlyCollections.join(', '),
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.labelUncertainty, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(card.uncertainty, style: theme.textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void _showShoppingExplanationSheet(
+  BuildContext context,
+  GoLifeController controller,
+  String title,
+  ProductEvidenceCard? evidence,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: const Color(0xFFFFF8EF),
+    showDragHandle: true,
+    builder: (context) {
+      final l10n = AppLocalizations.of(context)!;
+      final theme = Theme.of(context);
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 8),
+              Text(
+                evidence == null
+                    ? _noProductEvidenceLoaded(l10n)
+                    : _shoppingEvidenceSummary(l10n, evidence),
+                style: theme.textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.labelDataUsedForMission, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                controller.localizedAlwaysLocalCollectionLabels(l10n).join(', '),
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              Text(l10n.labelBlockedFromAi, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                controller.blockedFromAiEvents.isEmpty
+                    ? l10n.dashboardNothingBlocked
+                    : controller.blockedFromAiEvents
+                        .map((event) => event.domain.localizedDomainLabel(l10n))
+                        .join(', '),
+                style: theme.textTheme.bodyMedium,
+              ),
+              if (evidence != null) ...[
+                const SizedBox(height: 16),
+                Text(l10n.labelTrace, style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                for (final entry in evidence.trace.entries)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      '${entry.key}: ${entry.value}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class _DailyRiskCard extends StatelessWidget {
   const _DailyRiskCard({
     required this.risk,
@@ -554,6 +922,269 @@ class _DailyRiskCard extends StatelessWidget {
       default:
         return const Color(0xFF5D7A68);
     }
+  }
+}
+
+class _MentalLoadSummaryCard extends StatelessWidget {
+  const _MentalLoadSummaryCard({
+    required this.controller,
+  });
+
+  final GoLifeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = controller.primaryMentalLoadItem;
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    if (item == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_mentalLoadSummaryTitle(l10n), style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(
+            _mentalLoadSummaryBody(
+              l10n,
+              controller.pendingMentalLoadItems.length,
+              item.title,
+            ),
+            style: theme.textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(item.summary, style: theme.textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _DecisionPreviewCard extends StatelessWidget {
+  const _DecisionPreviewCard({
+    required this.controller,
+  });
+
+  final GoLifeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final card = controller.primaryDecisionCard;
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    if (card == null) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F0E4),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_primaryDecisionTitle(l10n), style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(card.title, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(card.recommendedAction, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Chip(label: Text(_decisionEvidenceStatusLabel(l10n, card.evidenceStatus))),
+              Chip(label: Text(l10n.dashboardConfidencePill((card.confidence * 100).round()))),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => _showDecisionExplanationSheet(
+                  context,
+                  controller,
+                  card,
+                ),
+                icon: const Icon(Icons.visibility_outlined),
+                label: Text(l10n.actionExplain),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => context.go('/decisions'),
+                icon: const Icon(Icons.visibility_outlined),
+                label: Text(_openDecisionsLabel(l10n)),
+              ),
+              FilledButton.icon(
+                onPressed: () async {
+                  await controller.acceptDecisionCard(card.id);
+                },
+                icon: const Icon(Icons.thumb_up_alt_outlined),
+                label: Text(l10n.actionAccept),
+              ),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  await controller.postponeDecisionCard(card.id);
+                },
+                icon: const Icon(Icons.schedule_outlined),
+                label: Text(_postponeLabel(l10n)),
+              ),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final message =
+                      await controller.createReminderFromDecisionCard(card.id);
+                  if (context.mounted && message != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.notifications_active_outlined),
+                label: Text(_createReminderLabel(l10n)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShoppingAlertCard extends StatelessWidget {
+  const _ShoppingAlertCard({
+    required this.controller,
+  });
+
+  final GoLifeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final need = controller.activeShoppingNeeds.first;
+    final evidence = controller.productEvidenceForTitle(need.title);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6EEE7),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD6C0A7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_shoppingAlertTitle(l10n), style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(need.title, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            evidence == null
+                ? _noProductEvidenceLoaded(l10n)
+                : _shoppingEvidenceSummary(l10n, evidence),
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => _showShoppingExplanationSheet(
+                  context,
+                  controller,
+                  need.title,
+                  evidence,
+                ),
+                icon: const Icon(Icons.visibility_outlined),
+                label: Text(l10n.actionExplain),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => context.go('/shopping'),
+                icon: const Icon(Icons.shopping_bag_outlined),
+                label: Text(_openShoppingLabel(l10n)),
+              ),
+              if (evidence == null)
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await controller.fetchProductEvidenceForNeed(need);
+                  },
+                  icon: const Icon(Icons.verified_outlined),
+                  label: Text(_loadEvidenceLabel(l10n)),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SecondaryDecisionListCard extends StatelessWidget {
+  const _SecondaryDecisionListCard({
+    required this.controller,
+  });
+
+  final GoLifeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.74),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_secondaryDecisionsTitle(l10n), style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
+          for (final card in controller.secondaryDecisionCards.take(2))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F0E4),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(card.title, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 6),
+                    Text(card.recommendedAction, style: theme.textTheme.bodyMedium),
+                  ],
+                ),
+              ),
+            ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => context.go('/decisions'),
+              icon: const Icon(Icons.rule_folder_outlined),
+              label: Text(_openDecisionsLabel(l10n)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

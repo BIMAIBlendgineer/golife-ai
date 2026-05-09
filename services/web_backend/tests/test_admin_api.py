@@ -354,6 +354,136 @@ def test_homememory_admin_routes_are_aggregate_only(client):
         }
 
 
+def test_mindflow_and_shopping_admin_routes_expose_aggregate_metrics_only(client):
+    mindflow_summary = client.get("/admin/mindflow/summary", headers=_admin_headers())
+    decision_quality = client.get(
+        "/admin/mindflow/decision-quality",
+        headers=_admin_headers(),
+    )
+    open_loops = client.get("/admin/mindflow/open-loops", headers=_admin_headers())
+    shopping_summary = client.get("/admin/shopping/summary", headers=_admin_headers())
+    evidence_quality = client.get(
+        "/admin/shopping/evidence-quality",
+        headers=_admin_headers(),
+    )
+    claims_summary = client.get(
+        "/admin/shopping/sustainability-claims",
+        headers=_admin_headers(),
+    )
+    routing_profiles = client.get("/admin/routing-profiles", headers=_admin_headers())
+    feature_flags = client.get("/admin/feature-flags", headers=_admin_headers())
+    dashboard = client.get("/admin/dashboard", headers=_admin_headers())
+
+    assert mindflow_summary.status_code == 200
+    assert decision_quality.status_code == 200
+    assert open_loops.status_code == 200
+    assert shopping_summary.status_code == 200
+    assert evidence_quality.status_code == 200
+    assert claims_summary.status_code == 200
+    assert routing_profiles.status_code == 200
+    assert feature_flags.status_code == 200
+    assert dashboard.status_code == 200
+
+    assert set(mindflow_summary.json()) == {
+        "mental_load_items_per_active_user",
+        "decision_acceptance_rate",
+        "decision_completion_rate",
+        "decision_postpone_rate",
+        "privacy_filtered_decision_rate",
+        "open_loop_count",
+        "open_loop_rate",
+        "fallback_rate",
+    }
+    assert set(decision_quality.json()) == {
+        "generated_count",
+        "accepted_count",
+        "completed_count",
+        "rejected_count",
+        "postponed_count",
+        "repeated_count",
+        "acceptance_rate",
+        "completion_rate",
+        "rejection_rate",
+        "postpone_rate",
+    }
+    assert set(open_loops.json()) == {
+        "total_open_loops",
+        "mental_load_items",
+        "pending_decisions",
+        "pending_shopping_needs",
+        "warranty_review_needs",
+    }
+    assert set(shopping_summary.json()) == {
+        "shopping_need_conversion_rate",
+        "shopping_claims_with_evidence_rate",
+        "insufficient_sustainability_data_rate",
+        "needs_detected",
+        "plans_generated",
+        "external_sources_enabled",
+        "product_evidence_enabled",
+    }
+    assert set(evidence_quality.json()) == {
+        "verified_count",
+        "partial_count",
+        "insufficient_count",
+        "not_checked_count",
+        "verified_rate",
+        "insufficient_rate",
+    }
+    assert set(claims_summary.json()) == {
+        "unverified_price_attempts",
+        "unverified_sustainability_attempts",
+        "no_availability_claim_count",
+        "blocked_external_sources",
+    }
+
+    dashboard_payload = dashboard.json()
+    for key in (
+        "mental_load_items_per_active_user",
+        "decision_acceptance_rate",
+        "decision_completion_rate",
+        "decision_postpone_rate",
+        "shopping_need_conversion_rate",
+        "shopping_claims_with_evidence_rate",
+        "insufficient_sustainability_data_rate",
+        "privacy_filtered_decision_rate",
+    ):
+        assert key in dashboard_payload
+
+    capability_set = {profile["capability"] for profile in routing_profiles.json()}
+    assert {
+        "mindflow_parse",
+        "decision_plan",
+        "shopping_plan",
+        "product_evidence",
+    }.issubset(capability_set)
+
+    feature_flag_set = {flag["key"] for flag in feature_flags.json()}
+    assert {
+        "mindflow_core_enabled",
+        "mindflow_decision_cards_enabled",
+        "mindflow_reminder_candidates_enabled",
+        "shopping_domain_enabled",
+        "shopping_product_evidence_enabled",
+        "shopping_external_sources_enabled",
+        "sustainability_claims_enabled",
+    }.issubset(feature_flag_set)
+
+    aggregate_payload_text = " ".join(
+        str(payload).lower()
+        for payload in (
+            mindflow_summary.json(),
+            decision_quality.json(),
+            open_loops.json(),
+            shopping_summary.json(),
+            evidence_quality.json(),
+            claims_summary.json(),
+        )
+    )
+    for forbidden_fragment in ("rawtext", "merchant", "serial", "notes", "description"):
+        assert forbidden_fragment not in aggregate_payload_text
+
+
 def test_openrouter_keys_are_masked_for_admin_and_decrypted_for_internal(client):
     created = client.post(
         "/admin/openrouter/keys",

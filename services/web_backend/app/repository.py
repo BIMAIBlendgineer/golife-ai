@@ -31,6 +31,9 @@ from app.schemas import (
     HomeMemoryParserUsageRow,
     HomeMemorySummary,
     IncidentRow,
+    MindFlowDecisionQuality,
+    MindFlowOpenLoops,
+    MindFlowSummary,
     MissionAuditRecord,
     MissionAuditUpsert,
     PaginatedResponse,
@@ -60,6 +63,9 @@ from app.schemas import (
     QualityBreakdownRow,
     QualitySummary,
     SecuritySummary,
+    ShoppingClaimsSummary,
+    ShoppingEvidenceQuality,
+    ShoppingSummary,
     SupportRequest,
     UserManagementRow,
     UserPrivacySummary,
@@ -130,6 +136,15 @@ def _sql_where_clause(filters: list[str]) -> str:
 
 def _join_sql_lines(*lines: str) -> str:
     return "\n".join(line for line in lines if line)
+
+
+def _bounded_ratio(
+    numerator: int | float,
+    denominator: int | float,
+    *,
+    precision: int = 4,
+) -> float:
+    return max(0.0, min(1.0, round(float(numerator) / max(1.0, float(denominator)), precision)))
 
 
 def _paginate_sequence(
@@ -531,6 +546,48 @@ class OperationalRepository:
                 updated_at=now,
             ),
             FeatureFlag(
+                key="mindflow_core_enabled",
+                enabled=True,
+                description="Enable MindFlow parsing and open-loop reduction flows.",
+                updated_at=now,
+            ),
+            FeatureFlag(
+                key="mindflow_decision_cards_enabled",
+                enabled=True,
+                description="Expose decision cards generated from MindFlow items.",
+                updated_at=now,
+            ),
+            FeatureFlag(
+                key="mindflow_reminder_candidates_enabled",
+                enabled=False,
+                description="Allow generated reminder candidates from MindFlow items.",
+                updated_at=now,
+            ),
+            FeatureFlag(
+                key="shopping_domain_enabled",
+                enabled=True,
+                description="Enable local-first shopping intelligence and needs extraction.",
+                updated_at=now,
+            ),
+            FeatureFlag(
+                key="shopping_product_evidence_enabled",
+                enabled=False,
+                description="Allow product evidence cards for shopping decisions.",
+                updated_at=now,
+            ),
+            FeatureFlag(
+                key="shopping_external_sources_enabled",
+                enabled=False,
+                description="Allow external shopping sources once verification is ready.",
+                updated_at=now,
+            ),
+            FeatureFlag(
+                key="sustainability_claims_enabled",
+                enabled=False,
+                description="Allow sustainability claims only when verified evidence exists.",
+                updated_at=now,
+            ),
+            FeatureFlag(
                 key="admin_live_metrics",
                 enabled=True,
                 description="Show backend live/offline state and ingestion timestamp in admin.",
@@ -885,6 +942,136 @@ class OperationalRepository:
                 created_at=now - timedelta(days=1, hours=2),
                 metadata={"source": "seed"},
             ),
+            UsageEventRecord(
+                event_id="usage-004",
+                user_id="local-user",
+                event_type="mindflow_items_detected",
+                endpoint="/v1/mindflow/inbox/parse",
+                domain="task",
+                quantity=9,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-005",
+                user_id="local-user",
+                event_type="decision_generated",
+                endpoint="/v1/mindflow/decisions/daily",
+                domain="decision",
+                quantity=6,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-006",
+                user_id="local-user",
+                event_type="decision_accepted",
+                endpoint="/v1/mindflow/decisions/daily",
+                domain="decision",
+                quantity=2,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-007",
+                user_id="local-user",
+                event_type="decision_completed",
+                endpoint="/v1/mindflow/decisions/daily",
+                domain="decision",
+                quantity=1,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-008",
+                user_id="user-2",
+                event_type="decision_postponed",
+                endpoint="/v1/mindflow/decisions/daily",
+                domain="decision",
+                quantity=1,
+                created_at=now - timedelta(hours=18),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-009",
+                user_id="user-2",
+                event_type="decision_rejected",
+                endpoint="/v1/mindflow/decisions/daily",
+                domain="decision",
+                quantity=2,
+                created_at=now - timedelta(hours=18),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-010",
+                user_id="local-user",
+                event_type="privacy_filtered_decision",
+                endpoint="/v1/mindflow/decisions/daily",
+                domain="decision",
+                quantity=1,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-011",
+                user_id="local-user",
+                event_type="shopping_need_detected",
+                endpoint="/v1/shopping/list/optimize",
+                domain="shopping",
+                quantity=4,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-012",
+                user_id="local-user",
+                event_type="shopping_plan_generated",
+                endpoint="/v1/shopping/list/optimize",
+                domain="shopping",
+                quantity=3,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-013",
+                user_id="local-user",
+                event_type="shopping_evidence_verified",
+                endpoint="/v1/shopping/product/evidence",
+                domain="shopping",
+                quantity=1,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-014",
+                user_id="user-2",
+                event_type="shopping_evidence_partial",
+                endpoint="/v1/shopping/product/evidence",
+                domain="shopping",
+                quantity=1,
+                created_at=now - timedelta(hours=18),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-015",
+                user_id="user-2",
+                event_type="shopping_evidence_insufficient",
+                endpoint="/v1/shopping/product/evidence",
+                domain="shopping",
+                quantity=2,
+                created_at=now - timedelta(hours=18),
+                metadata={"source": "seed"},
+            ),
+            UsageEventRecord(
+                event_id="usage-016",
+                user_id="local-user",
+                event_type="warranty_review_needed",
+                endpoint="/v1/shopping/list/optimize",
+                domain="homememory",
+                quantity=1,
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
         ]
         for usage_event in usage_events:
             self.record_usage_event(usage_event)
@@ -933,6 +1120,51 @@ class OperationalRepository:
                 schema_valid=True,
                 status="success",
                 created_at=now - timedelta(days=1, hours=2),
+                metadata={"source": "seed"},
+            ),
+            AIInvocationRecord(
+                invocation_id="invoke-004",
+                user_id="local-user",
+                endpoint="/v1/mindflow/inbox/parse",
+                provider="openrouter",
+                model="openai/gpt-4.1-mini",
+                latency_ms=310,
+                fallback=False,
+                suggestions_count=3,
+                estimated_cost_usd=0.18,
+                schema_valid=True,
+                status="success",
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            AIInvocationRecord(
+                invocation_id="invoke-005",
+                user_id="local-user",
+                endpoint="/v1/mindflow/decisions/daily",
+                provider="openrouter",
+                model="openai/gpt-4.1-mini",
+                latency_ms=620,
+                fallback=False,
+                suggestions_count=3,
+                estimated_cost_usd=0.34,
+                schema_valid=True,
+                status="success",
+                created_at=now - timedelta(hours=2),
+                metadata={"source": "seed"},
+            ),
+            AIInvocationRecord(
+                invocation_id="invoke-006",
+                user_id="user-2",
+                endpoint="/v1/shopping/list/optimize",
+                provider="openrouter",
+                model="openai/gpt-4.1-mini",
+                latency_ms=710,
+                fallback=True,
+                suggestions_count=2,
+                estimated_cost_usd=0.27,
+                schema_valid=True,
+                status="success",
+                created_at=now - timedelta(hours=18),
                 metadata={"source": "seed"},
             ),
         ]
@@ -1025,6 +1257,24 @@ class OperationalRepository:
                 severity="low",
                 endpoint="/v1/missions/daily",
                 created_at=now - timedelta(hours=9),
+            ),
+            SafetyAuditUpsert(
+                event_id="safety-003",
+                user_id="user-2",
+                category="shopping",
+                rule="no_unverified_price_claim",
+                severity="medium",
+                endpoint="/v1/shopping/product/evidence",
+                created_at=now - timedelta(hours=8),
+            ),
+            SafetyAuditUpsert(
+                event_id="safety-004",
+                user_id="user-2",
+                category="shopping",
+                rule="no_unverified_sustainability_claim",
+                severity="medium",
+                endpoint="/v1/shopping/product/evidence",
+                created_at=now - timedelta(hours=8),
             ),
         ]:
             self.record_safety_event(safety_event)
@@ -1744,6 +1994,17 @@ class OperationalRepository:
         privacy_requests = int(
             self._scalar("SELECT COUNT(*) FROM support_requests WHERE status = 'open'")
         )
+        mental_load_items = self._sum_usage_events("mindflow_items_detected")
+        decision_generated = self._sum_usage_events("decision_generated")
+        decision_accepted = self._sum_usage_events("decision_accepted")
+        decision_completed = self._sum_usage_events("decision_completed")
+        decision_postponed = self._sum_usage_events("decision_postponed")
+        shopping_needs_detected = self._sum_usage_events("shopping_need_detected")
+        shopping_plans_generated = self._sum_usage_events("shopping_plan_generated")
+        shopping_evidence_verified = self._sum_usage_events("shopping_evidence_verified")
+        shopping_evidence_partial = self._sum_usage_events("shopping_evidence_partial")
+        shopping_evidence_insufficient = self._sum_usage_events("shopping_evidence_insufficient")
+        privacy_filtered_decisions = self._sum_usage_events("privacy_filtered_decision")
         latest_snapshot = self._fetchone(
             "SELECT MAX(generated_at) AS generated_at FROM model_selection_snapshots"
         )
@@ -1769,32 +2030,153 @@ class OperationalRepository:
                 / active_user_count,
                 2,
             ),
-            mission_completion_rate=round(
-                completed_missions / max(1, total_missions),
-                4,
-            ),
-            recommendation_usefulness_rate=round(useful_feedback / total_feedback, 4),
-            rejection_rate=round(rejected_feedback / total_feedback, 4),
+            mission_completion_rate=_bounded_ratio(completed_missions, total_missions),
+            recommendation_usefulness_rate=_bounded_ratio(useful_feedback, total_feedback),
+            rejection_rate=_bounded_ratio(rejected_feedback, total_feedback),
             capture_events_per_active_user=round(
                 total_capture_events / active_user_count,
                 2,
             ),
-            fallback_rate=round(avg_fallback, 4),
+            fallback_rate=_bounded_ratio(avg_fallback, 1),
             ai_latency_ms_avg=round(avg_latency, 2),
             ai_cost_total_usd=round(total_cost, 2),
             ai_cost_per_active_user_usd=round(total_cost / active_user_count, 2),
-              safety_intervention_rate=round(
-                  safety_count / max(1, total_missions),
-                  4,
-              ),
-              privacy_concern_rate=round(
-                  privacy_requests / active_user_count,
-                  4,
-              ),
-              active_key_count=active_key_count,
-              disabled_key_count=disabled_key_count,
-              routing_snapshot_age_seconds=snapshot_age_seconds,
-          )
+            safety_intervention_rate=_bounded_ratio(safety_count, total_missions),
+            privacy_concern_rate=_bounded_ratio(privacy_requests, active_user_count),
+            mental_load_items_per_active_user=round(
+                mental_load_items / active_user_count,
+                2,
+            ),
+            decision_acceptance_rate=_bounded_ratio(decision_accepted, decision_generated),
+            decision_completion_rate=_bounded_ratio(decision_completed, decision_generated),
+            decision_postpone_rate=_bounded_ratio(decision_postponed, decision_generated),
+            shopping_need_conversion_rate=_bounded_ratio(
+                shopping_plans_generated,
+                shopping_needs_detected,
+            ),
+            shopping_claims_with_evidence_rate=_bounded_ratio(
+                (shopping_evidence_verified + shopping_evidence_partial)
+                ,
+                shopping_evidence_verified
+                + shopping_evidence_partial
+                + shopping_evidence_insufficient,
+            ),
+            insufficient_sustainability_data_rate=_bounded_ratio(
+                shopping_evidence_insufficient,
+                shopping_evidence_verified
+                + shopping_evidence_partial
+                + shopping_evidence_insufficient,
+            ),
+            privacy_filtered_decision_rate=_bounded_ratio(
+                privacy_filtered_decisions,
+                decision_generated,
+            ),
+            active_key_count=active_key_count,
+            disabled_key_count=disabled_key_count,
+            routing_snapshot_age_seconds=snapshot_age_seconds,
+        )
+
+    def get_mindflow_summary(self) -> MindFlowSummary:
+        dashboard = self.dashboard()
+        open_loops = self.get_mindflow_open_loops()
+        generated = self._sum_usage_events("decision_generated")
+        return MindFlowSummary(
+            mental_load_items_per_active_user=dashboard.mental_load_items_per_active_user,
+            decision_acceptance_rate=dashboard.decision_acceptance_rate,
+            decision_completion_rate=dashboard.decision_completion_rate,
+            decision_postpone_rate=dashboard.decision_postpone_rate,
+            privacy_filtered_decision_rate=dashboard.privacy_filtered_decision_rate,
+            open_loop_count=open_loops.total_open_loops,
+            open_loop_rate=_bounded_ratio(open_loops.total_open_loops, generated),
+            fallback_rate=dashboard.fallback_rate,
+        )
+
+    def get_mindflow_decision_quality(self) -> MindFlowDecisionQuality:
+        generated = self._sum_usage_events("decision_generated")
+        accepted = self._sum_usage_events("decision_accepted")
+        completed = self._sum_usage_events("decision_completed")
+        rejected = self._sum_usage_events("decision_rejected")
+        postponed = self._sum_usage_events("decision_postponed")
+        repeated = self._sum_usage_events("decision_repeated")
+        return MindFlowDecisionQuality(
+            generated_count=generated,
+            accepted_count=accepted,
+            completed_count=completed,
+            rejected_count=rejected,
+            postponed_count=postponed,
+            repeated_count=repeated,
+            acceptance_rate=_bounded_ratio(accepted, generated),
+            completion_rate=_bounded_ratio(completed, generated),
+            rejection_rate=_bounded_ratio(rejected, generated),
+            postpone_rate=_bounded_ratio(postponed, generated),
+        )
+
+    def get_mindflow_open_loops(self) -> MindFlowOpenLoops:
+        mental_load_items = self._sum_usage_events("mindflow_items_detected")
+        decision_generated = self._sum_usage_events("decision_generated")
+        decision_completed = self._sum_usage_events("decision_completed")
+        decision_rejected = self._sum_usage_events("decision_rejected")
+        shopping_needs = self._sum_usage_events("shopping_need_detected")
+        shopping_completed = self._sum_usage_events("shopping_need_completed")
+        warranty_review_needs = self._sum_usage_events("warranty_review_needed")
+        pending_decisions = max(0, decision_generated - decision_completed - decision_rejected)
+        pending_shopping_needs = max(0, shopping_needs - shopping_completed)
+        total_open_loops = mental_load_items + pending_decisions + pending_shopping_needs + warranty_review_needs
+        return MindFlowOpenLoops(
+            total_open_loops=total_open_loops,
+            mental_load_items=mental_load_items,
+            pending_decisions=pending_decisions,
+            pending_shopping_needs=pending_shopping_needs,
+            warranty_review_needs=warranty_review_needs,
+        )
+
+    def get_shopping_summary(self) -> ShoppingSummary:
+        dashboard = self.dashboard()
+        return ShoppingSummary(
+            shopping_need_conversion_rate=dashboard.shopping_need_conversion_rate,
+            shopping_claims_with_evidence_rate=dashboard.shopping_claims_with_evidence_rate,
+            insufficient_sustainability_data_rate=dashboard.insufficient_sustainability_data_rate,
+            needs_detected=self._sum_usage_events("shopping_need_detected"),
+            plans_generated=self._sum_usage_events("shopping_plan_generated"),
+            external_sources_enabled=self._feature_flag_enabled("shopping_external_sources_enabled"),
+            product_evidence_enabled=self._feature_flag_enabled("shopping_product_evidence_enabled"),
+        )
+
+    def get_shopping_evidence_quality(self) -> ShoppingEvidenceQuality:
+        verified = self._sum_usage_events("shopping_evidence_verified")
+        partial = self._sum_usage_events("shopping_evidence_partial")
+        insufficient = self._sum_usage_events("shopping_evidence_insufficient")
+        not_checked = self._sum_usage_events("shopping_evidence_not_checked")
+        total = max(1, verified + partial + insufficient + not_checked)
+        return ShoppingEvidenceQuality(
+            verified_count=verified,
+            partial_count=partial,
+            insufficient_count=insufficient,
+            not_checked_count=not_checked,
+            verified_rate=_bounded_ratio(verified + partial, total),
+            insufficient_rate=_bounded_ratio(insufficient, total),
+        )
+
+    def get_shopping_claims_summary(self) -> ShoppingClaimsSummary:
+        unverified_price_attempts = sum(
+            1
+            for event in self.list_safety()
+            if event.rule == "no_unverified_price_claim"
+        )
+        unverified_sustainability_attempts = sum(
+            1
+            for event in self.list_safety()
+            if event.rule == "no_unverified_sustainability_claim"
+        )
+        no_availability_claim_count = self._sum_usage_events("shopping_availability_claim_blocked")
+        return ShoppingClaimsSummary(
+            unverified_price_attempts=unverified_price_attempts,
+            unverified_sustainability_attempts=unverified_sustainability_attempts,
+            no_availability_claim_count=no_availability_claim_count,
+            blocked_external_sources=not self._feature_flag_enabled(
+                "shopping_external_sources_enabled"
+            ),
+        )
 
     @staticmethod
     def _privacy_status_from_counts(
@@ -2929,6 +3311,34 @@ class OperationalRepository:
                 source="live",
             ),
             QualityBreakdownRow(
+                dimension="mindflow",
+                label="Decision acceptance",
+                value=dashboard.decision_acceptance_rate,
+                unit="ratio",
+                source="derived",
+            ),
+            QualityBreakdownRow(
+                dimension="mindflow",
+                label="Decision completion",
+                value=dashboard.decision_completion_rate,
+                unit="ratio",
+                source="derived",
+            ),
+            QualityBreakdownRow(
+                dimension="shopping",
+                label="Claims with evidence",
+                value=dashboard.shopping_claims_with_evidence_rate,
+                unit="ratio",
+                source="derived",
+            ),
+            QualityBreakdownRow(
+                dimension="shopping",
+                label="Insufficient sustainability data",
+                value=dashboard.insufficient_sustainability_data_rate,
+                unit="ratio",
+                source="derived",
+            ),
+            QualityBreakdownRow(
                 dimension="homememory",
                 label="Proof parser success",
                 value=homememory.parser_success_rate,
@@ -2954,16 +3364,34 @@ class OperationalRepository:
     ) -> PaginatedResponse[IncidentRow]:
         items: list[IncidentRow] = []
         for event in self.list_safety():
+            incident_type = "safety_intervention"
+            safe_summary = f"Safety rule {event.rule} flagged category {event.category}."
+            if event.rule in {
+                "no_unverified_price_claim",
+                "no_unverified_sustainability_claim",
+            }:
+                incident_type = "unverified_claim_attempted"
+                safe_summary = (
+                    "An unverified shopping claim was blocked before exposure."
+                )
+            elif event.rule in {"external_action_without_confirmation"}:
+                incident_type = "external_action_without_confirmation"
+                safe_summary = (
+                    "An external action attempt was blocked until human confirmation."
+                )
+            elif event.rule in {"secret_exposure", "privacy_level"}:
+                incident_type = "privacy_blocked_data_leak_attempt"
+                safe_summary = "A privacy-blocked payload was rejected before operator exposure."
             items.append(
                 IncidentRow(
                     incident_id=f"safety-{event.event_id}",
-                    type="safety_intervention",
+                    type=incident_type,
                     severity=event.severity,
                     source="ai_gateway",
                     status="open" if event.severity == "high" else "monitoring",
                     created_at=event.created_at,
                     resolved_at=None,
-                    safe_summary=f"Safety rule {event.rule} flagged category {event.category}.",
+                    safe_summary=safe_summary,
                 )
             )
         for event in self.list_openrouter_key_events():
@@ -2994,6 +3422,33 @@ class OperationalRepository:
                     created_at=request.requested_at,
                     resolved_at=None,
                     safe_summary=f"{request.request_type.title()} request waiting for operator action.",
+                )
+            )
+        dashboard = self.dashboard()
+        if dashboard.fallback_rate >= 0.2:
+            items.append(
+                IncidentRow(
+                    incident_id="derived-fallback-rate",
+                    type="fallback_rate_above_threshold",
+                    severity="medium",
+                    source="derived",
+                    status="monitoring",
+                    created_at=_utcnow(),
+                    resolved_at=None,
+                    safe_summary="AI fallback rate is above the monitoring threshold.",
+                )
+            )
+        if self.get_mindflow_decision_quality().rejection_rate >= 0.3:
+            items.append(
+                IncidentRow(
+                    incident_id="derived-decision-rejection-rate",
+                    type="decision_rejection_rate_above_threshold",
+                    severity="medium",
+                    source="derived",
+                    status="monitoring",
+                    created_at=_utcnow(),
+                    resolved_at=None,
+                    safe_summary="Decision rejection rate is above the monitoring threshold.",
                 )
             )
         if severity:
@@ -3220,6 +3675,15 @@ class OperationalRepository:
             )
             for row in rows
         ]
+
+    def _feature_flag_enabled(self, key: str, *, default: bool = False) -> bool:
+        row = self._fetchone(
+            "SELECT enabled FROM feature_flags WHERE key = ?",
+            (key,),
+        )
+        if row is None:
+            return default
+        return bool(row["enabled"] if isinstance(row, dict) else row[0])
 
     def update_feature_flag(self, key: str, enabled: bool) -> FeatureFlag | None:
         existing = self._fetchone(
@@ -3796,6 +4260,13 @@ class OperationalRepository:
             "task_rewrite": ("/v1/tasks/rewrite",),
             "semantic_classify": ("/v1/events/classify",),
             "weekly_summary": (),
+            "mindflow_parse": ("/v1/mindflow/inbox/parse",),
+            "decision_plan": ("/v1/mindflow/decisions/daily",),
+            "shopping_plan": (
+                "/v1/shopping/needs/extract",
+                "/v1/shopping/list/optimize",
+            ),
+            "product_evidence": ("/v1/shopping/product/evidence",),
         }
         endpoints = endpoint_filters[capability]
         if not endpoints:

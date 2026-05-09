@@ -43,6 +43,37 @@ abstract class AiGatewayClient {
     return null;
   }
 
+  Future<MindFlowParseResponseDto?> parseMindFlowInbox({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    return null;
+  }
+
+  Future<DecisionPlanDto> fetchDecisionPlan({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> mentalLoadItems,
+  });
+
+  Future<ShoppingPlanDto> optimizeShoppingList({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> shoppingNeeds,
+    List<Map<String, Object?>> pantryContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> financeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> wardrobeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> homememoryContext = const <Map<String, Object?>>[],
+  });
+
+  Future<ProductEvidenceCardDto?> fetchProductEvidence({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required String productName,
+    String? merchantName,
+  });
+
   Future<void> submitMissionFeedback({
     String locale = 'en',
     required MissionFeedback feedback,
@@ -302,6 +333,73 @@ class MockAiGatewayClient extends AiGatewayClient {
     required String text,
   }) async {
     return null;
+  }
+
+  @override
+  Future<MindFlowParseResponseDto?> parseMindFlowInbox({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    return _localMindFlowParse(
+      text: text,
+      privacySettings: privacySettings,
+    );
+  }
+
+  @override
+  Future<DecisionPlanDto> fetchDecisionPlan({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> mentalLoadItems,
+  }) async {
+    return _localDecisionPlan(
+      privacySettings: privacySettings,
+      mentalLoadItems: mentalLoadItems,
+    );
+  }
+
+  @override
+  Future<ShoppingPlanDto> optimizeShoppingList({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> shoppingNeeds,
+    List<Map<String, Object?>> pantryContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> financeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> wardrobeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> homememoryContext = const <Map<String, Object?>>[],
+  }) async {
+    return _localShoppingPlan(
+      privacySettings: privacySettings,
+      shoppingNeeds: shoppingNeeds,
+      pantryContext: pantryContext,
+      financeContext: financeContext,
+      wardrobeContext: wardrobeContext,
+      homememoryContext: homememoryContext,
+    );
+  }
+
+  @override
+  Future<ProductEvidenceCardDto?> fetchProductEvidence({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required String productName,
+    String? merchantName,
+  }) async {
+    return ProductEvidenceCardDto.fromJson({
+      'id': 'evidence-$productName',
+      'user_id': 'local-user',
+      'product_name': productName,
+      'merchant_name': merchantName,
+      'sustainability_status': 'insufficient_verified_data',
+      'confidence': 0.42,
+      'disclaimer':
+          'No price, availability, or sustainability claim is shown without verified evidence.',
+      'trace': {
+        'mock': true,
+        'fallback': true,
+      },
+    });
   }
 
   @override
@@ -602,6 +700,348 @@ class HttpAiGatewayClient extends AiGatewayClient {
       return null;
     } catch (_) {
       return null;
+    }
+  }
+
+  @override
+  Future<MindFlowParseResponseDto?> parseMindFlowInbox({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required String text,
+  }) async {
+    final payload = {
+      'user_id': userId,
+      'locale': locale,
+      'text': text,
+      'privacy_settings': {
+        'ai_enabled': privacySettings.aiEnabled,
+        'allowed_domains': privacySettings.aiAllowedWireDomains,
+        'allow_cross_domain_patterns':
+            privacySettings.aiAllowedWireDomains.length > 1,
+      },
+    };
+
+    try {
+      final response = await _httpClient
+          .post(
+            _endpoint('/v1/mindflow/inbox/parse'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        return _localMindFlowParse(
+          text: text,
+          privacySettings: privacySettings,
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return _localMindFlowParse(
+          text: text,
+          privacySettings: privacySettings,
+        );
+      }
+
+      return MindFlowParseResponseDto.fromGatewayJson(decoded);
+    } on TimeoutException {
+      return _localMindFlowParse(
+        text: text,
+        privacySettings: privacySettings,
+      );
+    } on SocketException {
+      return _localMindFlowParse(
+        text: text,
+        privacySettings: privacySettings,
+      );
+    } on http.ClientException {
+      return _localMindFlowParse(
+        text: text,
+        privacySettings: privacySettings,
+      );
+    } on FormatException {
+      return _localMindFlowParse(
+        text: text,
+        privacySettings: privacySettings,
+      );
+    } catch (_) {
+      return _localMindFlowParse(
+        text: text,
+        privacySettings: privacySettings,
+      );
+    }
+  }
+
+  @override
+  Future<DecisionPlanDto> fetchDecisionPlan({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> mentalLoadItems,
+  }) async {
+    final payload = {
+      'user_id': userId,
+      'locale': locale,
+      'mental_load_items': mentalLoadItems,
+      'privacy_settings': {
+        'ai_enabled': privacySettings.aiEnabled,
+        'allowed_domains': privacySettings.aiAllowedWireDomains,
+        'allow_cross_domain_patterns':
+            privacySettings.aiAllowedWireDomains.length > 1,
+      },
+      'constraints': {
+        'client': 'golife_flutter',
+        'trace_visible': true,
+        'fallback_enabled': true,
+      },
+      'max_decisions': 3,
+    };
+
+    try {
+      final response = await _httpClient
+          .post(
+            _endpoint('/v1/mindflow/decisions/daily'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        return _localDecisionPlan(
+          privacySettings: privacySettings,
+          mentalLoadItems: mentalLoadItems,
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return _localDecisionPlan(
+          privacySettings: privacySettings,
+          mentalLoadItems: mentalLoadItems,
+        );
+      }
+
+      return DecisionPlanDto.fromGatewayJson(decoded);
+    } on TimeoutException {
+      return _localDecisionPlan(
+        privacySettings: privacySettings,
+        mentalLoadItems: mentalLoadItems,
+      );
+    } on SocketException {
+      return _localDecisionPlan(
+        privacySettings: privacySettings,
+        mentalLoadItems: mentalLoadItems,
+      );
+    } on http.ClientException {
+      return _localDecisionPlan(
+        privacySettings: privacySettings,
+        mentalLoadItems: mentalLoadItems,
+      );
+    } on FormatException {
+      return _localDecisionPlan(
+        privacySettings: privacySettings,
+        mentalLoadItems: mentalLoadItems,
+      );
+    } catch (_) {
+      return _localDecisionPlan(
+        privacySettings: privacySettings,
+        mentalLoadItems: mentalLoadItems,
+      );
+    }
+  }
+
+  @override
+  Future<ShoppingPlanDto> optimizeShoppingList({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> shoppingNeeds,
+    List<Map<String, Object?>> pantryContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> financeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> wardrobeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> homememoryContext = const <Map<String, Object?>>[],
+  }) async {
+    final payload = {
+      'user_id': userId,
+      'locale': locale,
+      'shopping_needs': shoppingNeeds,
+      'pantry_context': pantryContext,
+      'finance_context': financeContext,
+      'wardrobe_context': wardrobeContext,
+      'homememory_context': homememoryContext,
+      'privacy_settings': {
+        'ai_enabled': privacySettings.aiEnabled,
+        'allowed_domains': privacySettings.aiAllowedWireDomains,
+        'allow_cross_domain_patterns':
+            privacySettings.aiAllowedWireDomains.length > 1,
+      },
+    };
+
+    try {
+      final response = await _httpClient
+          .post(
+            _endpoint('/v1/shopping/list/optimize'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        return _localShoppingPlan(
+          privacySettings: privacySettings,
+          shoppingNeeds: shoppingNeeds,
+          pantryContext: pantryContext,
+          financeContext: financeContext,
+          wardrobeContext: wardrobeContext,
+          homememoryContext: homememoryContext,
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return _localShoppingPlan(
+          privacySettings: privacySettings,
+          shoppingNeeds: shoppingNeeds,
+          pantryContext: pantryContext,
+          financeContext: financeContext,
+          wardrobeContext: wardrobeContext,
+          homememoryContext: homememoryContext,
+        );
+      }
+
+      return ShoppingPlanDto.fromGatewayJson(decoded);
+    } on TimeoutException {
+      return _localShoppingPlan(
+        privacySettings: privacySettings,
+        shoppingNeeds: shoppingNeeds,
+        pantryContext: pantryContext,
+        financeContext: financeContext,
+        wardrobeContext: wardrobeContext,
+        homememoryContext: homememoryContext,
+      );
+    } on SocketException {
+      return _localShoppingPlan(
+        privacySettings: privacySettings,
+        shoppingNeeds: shoppingNeeds,
+        pantryContext: pantryContext,
+        financeContext: financeContext,
+        wardrobeContext: wardrobeContext,
+        homememoryContext: homememoryContext,
+      );
+    } on http.ClientException {
+      return _localShoppingPlan(
+        privacySettings: privacySettings,
+        shoppingNeeds: shoppingNeeds,
+        pantryContext: pantryContext,
+        financeContext: financeContext,
+        wardrobeContext: wardrobeContext,
+        homememoryContext: homememoryContext,
+      );
+    } on FormatException {
+      return _localShoppingPlan(
+        privacySettings: privacySettings,
+        shoppingNeeds: shoppingNeeds,
+        pantryContext: pantryContext,
+        financeContext: financeContext,
+        wardrobeContext: wardrobeContext,
+        homememoryContext: homememoryContext,
+      );
+    } catch (_) {
+      return _localShoppingPlan(
+        privacySettings: privacySettings,
+        shoppingNeeds: shoppingNeeds,
+        pantryContext: pantryContext,
+        financeContext: financeContext,
+        wardrobeContext: wardrobeContext,
+        homememoryContext: homememoryContext,
+      );
+    }
+  }
+
+  @override
+  Future<ProductEvidenceCardDto?> fetchProductEvidence({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required String productName,
+    String? merchantName,
+  }) async {
+    final payload = {
+      'user_id': userId,
+      'locale': locale,
+      'product_name': productName,
+      'merchant_name': merchantName,
+      'privacy_settings': {
+        'ai_enabled': privacySettings.aiEnabled,
+        'allowed_domains': privacySettings.aiAllowedWireDomains,
+        'allow_cross_domain_patterns':
+            privacySettings.aiAllowedWireDomains.length > 1,
+      },
+    };
+
+    try {
+      final response = await _httpClient
+          .post(
+            _endpoint('/v1/shopping/product/evidence'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        return await _fallbackClient.fetchProductEvidence(
+          locale: locale,
+          privacySettings: privacySettings,
+          productName: productName,
+          merchantName: merchantName,
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return await _fallbackClient.fetchProductEvidence(
+          locale: locale,
+          privacySettings: privacySettings,
+          productName: productName,
+          merchantName: merchantName,
+        );
+      }
+
+      return ProductEvidenceCardDto.fromJson(decoded);
+    } on TimeoutException {
+      return _fallbackClient.fetchProductEvidence(
+        locale: locale,
+        privacySettings: privacySettings,
+        productName: productName,
+        merchantName: merchantName,
+      );
+    } on SocketException {
+      return _fallbackClient.fetchProductEvidence(
+        locale: locale,
+        privacySettings: privacySettings,
+        productName: productName,
+        merchantName: merchantName,
+      );
+    } on http.ClientException {
+      return _fallbackClient.fetchProductEvidence(
+        locale: locale,
+        privacySettings: privacySettings,
+        productName: productName,
+        merchantName: merchantName,
+      );
+    } on FormatException {
+      return _fallbackClient.fetchProductEvidence(
+        locale: locale,
+        privacySettings: privacySettings,
+        productName: productName,
+        merchantName: merchantName,
+      );
+    } catch (_) {
+      return _fallbackClient.fetchProductEvidence(
+        locale: locale,
+        privacySettings: privacySettings,
+        productName: productName,
+        merchantName: merchantName,
+      );
     }
   }
 
@@ -927,4 +1367,302 @@ List<LifeEvent> _eventsEligibleForAi({
     return permission == DataPermission.aiAllowed &&
         event.privacyLevel == DataPermission.aiAllowed.storageKey;
   }).toList(growable: false);
+}
+
+MindFlowParseResponseDto _localMindFlowParse({
+  required String text,
+  required PrivacySettings privacySettings,
+}) {
+  final items = text
+      .split(RegExp(r'\s*,\s*'))
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .take(4)
+      .toList(growable: false);
+  final nowIso = DateTime.now().toUtc().toIso8601String();
+  return MindFlowParseResponseDto(
+    items: items.asMap().entries.map((entry) {
+      final classification = _classifyCaptureLocally(
+        privacySettings: privacySettings,
+        text: entry.value,
+        trace: const {'mock': true},
+      );
+      return MentalLoadItemDto(
+        itemId: 'mindflow-${entry.key}-${DateTime.now().microsecondsSinceEpoch}',
+        userId: 'local-user',
+        sourceEventId: null,
+        type: _mentalLoadTypeForDomain(classification.domain),
+        domain: classification.domain,
+        title: entry.value,
+        summary: classification.rationale,
+        urgencyScore: classification.domain == 'task' ? 0.76 : 0.62,
+        effortScore: classification.domain == 'pantry' ? 0.82 : 0.68,
+        confidence: classification.confidence,
+        state: 'needs_confirmation',
+        dueHint: null,
+        amountHint: null,
+        currencyHint: null,
+        evidenceRefs: <String>[classification.eventType],
+        privacyLevel:
+            privacySettings.permissionForWireDomain(classification.domain).storageKey,
+        requiresConfirmation: true,
+        createdAtIso: nowIso,
+        updatedAtIso: nowIso,
+        trace: {
+          ...classification.trace,
+          'event_type': classification.eventType,
+        },
+      );
+    }).toList(growable: false),
+    trace: const {
+      'mock': true,
+      'clientFallback': true,
+      'parser': 'deterministic_mindflow',
+    },
+  );
+}
+
+DecisionPlanDto _localDecisionPlan({
+  required PrivacySettings privacySettings,
+  required List<Map<String, Object?>> mentalLoadItems,
+}) {
+  final allowedDomains = privacySettings.aiAllowedWireDomains;
+  final blockedDomains = <String>[
+    'task',
+    'habit',
+    'week',
+    'finance',
+    'pantry',
+    'wardrobe',
+    'mission',
+  ].where((domain) => !allowedDomains.contains(domain)).toList(growable: false);
+  final nowIso = DateTime.now().toUtc().toIso8601String();
+  final normalizedItems = mentalLoadItems
+      .map((item) => MentalLoadItemDto.fromJson(Map<String, dynamic>.from(item)))
+      .toList(growable: false);
+  final selected = normalizedItems.take(3).toList(growable: false);
+  return DecisionPlanDto(
+    decisions: selected.asMap().entries.map((entry) {
+      final item = entry.value;
+      final evidence = <String>[
+        if (item.summary.isNotEmpty) item.summary,
+        if (item.dueHint != null) 'Due hint: ${item.dueHint}',
+      ];
+      return DecisionCardDto(
+        decisionId: 'decision-${entry.key}-${item.itemId}',
+        userId: item.userId,
+        title: item.title,
+        recommendedAction: _localActionForMentalLoad(item),
+        alternatives: const <String>[
+          'Postpone and create a reminder',
+          'Keep local only for now',
+        ],
+        domainTargets: <String>[item.domain],
+        sourceItems: <String>[item.itemId],
+        evidence: evidence,
+        confidence: item.confidence,
+        uncertainty: 'Local fallback generated this decision from on-device context only.',
+        privacySummary: PrivacySummaryDto(
+          aiEnabled: privacySettings.aiEnabled,
+          sentEventCount: allowedDomains.length,
+          blockedEventCount: blockedDomains.length,
+          allowedDomains: allowedDomains,
+          blockedDomains: blockedDomains,
+          localOnlyCollections: const <String>[
+            'Journal entries',
+            'Quick notes',
+            'Owned items',
+            'Purchase proofs',
+          ],
+          trace: const {'clientFallback': true},
+        ),
+        confirmationRequired: true,
+        actionContract: ActionContractDto(
+          actionType: 'review_and_confirm',
+          requiresConfirmation: true,
+          destructive: false,
+          external: false,
+          payloadPreview: {
+            'item_id': item.itemId,
+            'domain': item.domain,
+          },
+          forbiddenActions: const <String>[
+            'external_action_without_confirmation',
+          ],
+        ),
+        status: 'shown',
+        evidenceStatus:
+            evidence.isEmpty ? 'insufficient_verified_data' : 'local_only',
+        rankingScore: item.urgencyScore,
+        createdAtIso: nowIso,
+        updatedAtIso: nowIso,
+        trace: {
+          ...item.trace,
+          'mock': true,
+          'clientFallback': true,
+        },
+      );
+    }).toList(growable: false),
+    trace: {
+      'mock': true,
+      'clientFallback': true,
+      'decision_count': selected.length,
+    },
+  );
+}
+
+ShoppingPlanDto _localShoppingPlan({
+  required PrivacySettings privacySettings,
+  required List<Map<String, Object?>> shoppingNeeds,
+  required List<Map<String, Object?>> pantryContext,
+  required List<Map<String, Object?>> financeContext,
+  required List<Map<String, Object?>> wardrobeContext,
+  required List<Map<String, Object?>> homememoryContext,
+}) {
+  final normalizedNeeds = shoppingNeeds
+      .map((item) => ShoppingNeedDto.fromJson(Map<String, dynamic>.from(item)))
+      .toList(growable: false);
+  final needs = normalizedNeeds.isEmpty
+      ? <ShoppingNeedDto>[
+          ShoppingNeedDto(
+            needId: 'shopping-fallback',
+            userId: 'local-user',
+            needType: 'pantry_restock',
+            title: 'Review what you already have before adding new purchases.',
+            sourceDomain: 'shopping',
+            sourceEventIds: const <String>[],
+            urgencyScore: 0.55,
+            budgetHint: null,
+            currency: null,
+            sustainabilityPreference: null,
+            state: 'draft',
+            createdAtIso: DateTime.now().toUtc().toIso8601String(),
+            updatedAtIso: DateTime.now().toUtc().toIso8601String(),
+            trace: const {'clientFallback': true},
+          ),
+        ]
+      : normalizedNeeds;
+  final evidence = needs.map((need) {
+    return ProductEvidenceCardDto(
+      id: 'evidence-${need.needId}',
+      userId: need.userId,
+      productName: need.title,
+      brand: null,
+      merchantName: null,
+      price: null,
+      currency: need.currency,
+      source: null,
+      checkedAtIso: null,
+      reviewSummary: 'Local-first recommendation. External claims are blocked.',
+      sustainabilityStatus: 'insufficient_verified_data',
+      confidence: 0.4,
+      disclaimer:
+          'No price, availability, or sustainability claim is shown without verified evidence.',
+      trace: const {
+        'clientFallback': true,
+        'evidence_status': 'insufficient_verified_data',
+      },
+    );
+  }).toList(growable: false);
+  final decisions = needs.take(3).map((need) {
+    return DecisionCardDto(
+      decisionId: 'shopping-decision-${need.needId}',
+      userId: need.userId,
+      title: 'Use existing context before buying: ${need.title}',
+      recommendedAction:
+          'Check pantry, budget, and owned items before confirming this need.',
+      alternatives: const <String>[
+        'Postpone the purchase',
+        'Create reminder instead',
+      ],
+      domainTargets: <String>[need.sourceDomain, 'shopping'],
+      sourceItems: <String>[need.needId],
+      evidence: const <String>[
+        'Existing-item-first fallback applied locally.',
+      ],
+      confidence: 0.58,
+      uncertainty:
+          'External source claims are blocked in fallback mode and sustainability is not verified.',
+      privacySummary: PrivacySummaryDto(
+        aiEnabled: privacySettings.aiEnabled,
+        sentEventCount: 0,
+        blockedEventCount: 0,
+        allowedDomains: privacySettings.aiAllowedWireDomains,
+        blockedDomains: const <String>[],
+        localOnlyCollections: const <String>[
+          'Pantry',
+          'Finance',
+          'HomeMemory',
+        ],
+        trace: {
+          'pantry_context_count': pantryContext.length,
+          'finance_context_count': financeContext.length,
+          'wardrobe_context_count': wardrobeContext.length,
+          'homememory_context_count': homememoryContext.length,
+        },
+      ),
+      confirmationRequired: true,
+      actionContract: ActionContractDto(
+        actionType: 'confirm_shopping_need',
+        requiresConfirmation: true,
+        destructive: false,
+        external: false,
+        payloadPreview: {'need_id': need.needId},
+        forbiddenActions: const <String>[
+          'external_action_without_confirmation',
+        ],
+      ),
+      status: 'shown',
+      evidenceStatus: 'insufficient_verified_data',
+      rankingScore: need.urgencyScore,
+      createdAtIso: DateTime.now().toUtc().toIso8601String(),
+      updatedAtIso: DateTime.now().toUtc().toIso8601String(),
+      trace: const {'clientFallback': true},
+    );
+  }).toList(growable: false);
+  return ShoppingPlanDto(
+    needs: needs,
+    productEvidence: evidence,
+    decisions: decisions,
+    trace: const {
+      'mock': true,
+      'clientFallback': true,
+      'shopping_need_count': 1,
+    },
+  );
+}
+
+String _mentalLoadTypeForDomain(String domain) {
+  switch (domain) {
+    case 'finance':
+      return 'money';
+    case 'pantry':
+    case 'wardrobe':
+      return 'shopping';
+    case 'week':
+      return 'calendar';
+    case 'habit':
+      return 'reminder';
+    case 'task':
+      return 'task';
+    default:
+      return 'note';
+  }
+}
+
+String _localActionForMentalLoad(MentalLoadItemDto item) {
+  switch (item.domain) {
+    case 'task':
+      return 'Finish the smallest visible next step for this task.';
+    case 'pantry':
+      return 'Use what you already have before adding a purchase.';
+    case 'finance':
+      return 'Review whether this spend is still necessary today.';
+    case 'wardrobe':
+      return 'Compare this purchase against existing items first.';
+    case 'week':
+      return 'Block a time slot or postpone this intentionally.';
+    default:
+      return 'Review and confirm the next safe action.';
+  }
 }

@@ -99,6 +99,44 @@ class HomeMemoryScreen extends StatelessWidget {
               ),
             ],
           ),
+          if (controller.homeMemoryMentalLoadItems.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _HomeMemoryDerivedPanel(
+              title: _homeMemorySignalsTitle(l10n),
+              body: _homeMemorySignalsBody(l10n),
+              children: controller.homeMemoryMentalLoadItems
+                  .take(3)
+                  .map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        '- ${item.title}: ${item.summary}',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+          ],
+          if (controller.homeMemoryDecisionCards.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            _HomeMemoryDerivedPanel(
+              title: _homeMemoryGeneratedDecisionsTitle(l10n),
+              body: _homeMemoryGeneratedDecisionsBody(l10n),
+              children: controller.homeMemoryDecisionCards
+                  .take(3)
+                  .map(
+                    (card) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        '- ${card.title}: ${card.recommendedAction}',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+          ],
           const SizedBox(height: 20),
           Wrap(
             spacing: 8,
@@ -178,6 +216,98 @@ class HomeMemoryScreen extends StatelessWidget {
     );
   }
 }
+
+class _HomeMemoryDerivedPanel extends StatelessWidget {
+  const _HomeMemoryDerivedPanel({
+    required this.title,
+    required this.body,
+    required this.children,
+  });
+
+  final String title;
+  final String body;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F0E4),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(body, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+String _homeMemorySignalsTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Derived review signals',
+      es: 'Senales de revision derivadas',
+      ptBr: 'Sinais de revisao derivados',
+      ptPt: 'Sinais de revisao derivados',
+      fr: 'Signaux de revision derives',
+      it: 'Segnali di revisione derivati',
+      de: 'Abgeleitete Pruefsignale',
+      ja: 'Derived review signals',
+      zhHans: 'Derived review signals',
+      zhHant: 'Derived review signals',
+    );
+
+String _homeMemorySignalsBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Warranty, maintenance, and claim events can become local mental-load items before any external action is considered.',
+      es: 'Garantias, mantenimiento y reclamaciones pueden convertirse en carga mental local antes de considerar cualquier accion externa.',
+      ptBr: 'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
+      ptPt: 'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
+      fr: 'Garantie, maintenance et reclamations peuvent devenir une charge mentale locale avant toute action externe.',
+      it: 'Garanzie, manutenzione e reclami possono diventare carico mentale locale prima di qualsiasi azione esterna.',
+      de: 'Garantie-, Wartungs- und Reklamationsereignisse koennen zuerst als lokale mentale Last sichtbar werden.',
+      ja: 'Derived review signals',
+      zhHans: 'Derived review signals',
+      zhHant: 'Derived review signals',
+    );
+
+String _homeMemoryGeneratedDecisionsTitle(AppLocalizations l10n) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: 'Generated decisions',
+      es: 'Decisiones generadas',
+      ptBr: 'Decisoes geradas',
+      ptPt: 'Decisoes geradas',
+      fr: 'Decisions generees',
+      it: 'Decisioni generate',
+      de: 'Generierte Entscheidungen',
+      ja: 'Generated decisions',
+      zhHans: 'Generated decisions',
+      zhHant: 'Generated decisions',
+    );
+
+String _homeMemoryGeneratedDecisionsBody(AppLocalizations l10n) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: 'GoLife can turn HomeMemory signals into decision cards while still requiring human confirmation for anything external.',
+      es: 'GoLife puede convertir senales de HomeMemory en tarjetas de decision, manteniendo la confirmacion humana para cualquier accion externa.',
+      ptBr: 'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
+      ptPt: 'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
+      fr: 'GoLife peut transformer les signaux HomeMemory en cartes de decision tout en exigeant une confirmation humaine pour toute action externe.',
+      it: 'GoLife puo trasformare i segnali di HomeMemory in decisioni, mantenendo la conferma umana per qualsiasi azione esterna.',
+      de: 'GoLife kann HomeMemory-Signale in Entscheidungskarten umwandeln und verlangt weiterhin menschliche Bestaetigung fuer externe Aktionen.',
+      ja: 'Generated decisions',
+      zhHans: 'Generated decisions',
+      zhHant: 'Generated decisions',
+    );
 
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({

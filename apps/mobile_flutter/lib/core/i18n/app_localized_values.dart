@@ -20,6 +20,42 @@ extension LocalizedDomainKey on DomainKey {
         return l10n.domainPantry;
       case DomainKey.wardrobe:
         return l10n.domainWardrobe;
+      case DomainKey.calendar:
+        return l10n.navCalendar;
+      case DomainKey.journal:
+        return l10n.navJournal;
+      case DomainKey.recipes:
+        return l10n.navRecipes;
+      case DomainKey.homememory:
+        return l10n.homeMemoryTitle;
+      case DomainKey.shopping:
+        return pickLocalizedValue(
+          l10n.localeName,
+          en: 'Shopping',
+          es: 'Shopping',
+          ptBr: 'Shopping',
+          ptPt: 'Shopping',
+          fr: 'Achats',
+          it: 'Shopping',
+          de: 'Einkaufen',
+          ja: 'Shopping',
+          zhHans: 'Shopping',
+          zhHant: 'Shopping',
+        );
+      case DomainKey.decisions:
+        return pickLocalizedValue(
+          l10n.localeName,
+          en: 'Decisions',
+          es: 'Decisiones',
+          ptBr: 'Decisoes',
+          ptPt: 'Decisoes',
+          fr: 'Decisions',
+          it: 'Decisioni',
+          de: 'Entscheidungen',
+          ja: 'Decisions',
+          zhHans: 'Decisions',
+          zhHant: 'Decisions',
+        );
       case DomainKey.copilot:
         return l10n.domainCopilot;
     }
@@ -80,11 +116,59 @@ extension LocalizedMissionFeedbackStatus on MissionFeedbackStatus {
 extension LocalizedGoLifeController on GoLifeController {
   List<String> localizedEncryptedCollectionLabels(AppLocalizations l10n) {
     return <String>[
-      'Life events',
-      'Daily missions',
-      'Daily risks',
+      pickLocalizedValue(
+        l10n.localeName,
+        en: 'Life events',
+        es: 'Eventos de vida',
+        ptBr: 'Eventos de vida',
+        ptPt: 'Eventos de vida',
+        fr: 'Evenements de vie',
+        it: 'Eventi di vita',
+        de: 'Lebensereignisse',
+        ja: 'Life events',
+        zhHans: 'Life events',
+        zhHant: 'Life events',
+      ),
+      pickLocalizedValue(
+        l10n.localeName,
+        en: 'Daily missions',
+        es: 'Misiones diarias',
+        ptBr: 'Missoes diarias',
+        ptPt: 'Missoes diarias',
+        fr: 'Missions quotidiennes',
+        it: 'Missioni giornaliere',
+        de: 'Tagesmissionen',
+        ja: 'Daily missions',
+        zhHans: 'Daily missions',
+        zhHant: 'Daily missions',
+      ),
+      pickLocalizedValue(
+        l10n.localeName,
+        en: 'Daily risks',
+        es: 'Riesgos diarios',
+        ptBr: 'Riscos diarios',
+        ptPt: 'Riscos diarios',
+        fr: 'Risques du jour',
+        it: 'Rischi giornalieri',
+        de: 'Tagesrisiken',
+        ja: 'Daily risks',
+        zhHans: 'Daily risks',
+        zhHant: 'Daily risks',
+      ),
       l10n.collectionFinanceRecords,
-      'Calendar items',
+      pickLocalizedValue(
+        l10n.localeName,
+        en: 'Calendar items',
+        es: 'Items de calendario',
+        ptBr: 'Itens do calendario',
+        ptPt: 'Itens do calendario',
+        fr: 'Elements du calendrier',
+        it: 'Elementi del calendario',
+        de: 'Kalendereintraege',
+        ja: 'Calendar items',
+        zhHans: 'Calendar items',
+        zhHant: 'Calendar items',
+      ),
       l10n.collectionJournalEntries,
       l10n.collectionQuickNotes,
       l10n.collectionOwnedItems,
@@ -264,6 +348,43 @@ extension LocalizedGoLifeController on GoLifeController {
       return evidenceRefs;
     }
     return mission.evidence;
+  }
+}
+
+T pickLocalizedValue<T>(
+  String localeName, {
+  required T en,
+  T? es,
+  T? ptBr,
+  T? ptPt,
+  T? fr,
+  T? it,
+  T? de,
+  T? ja,
+  T? zhHans,
+  T? zhHant,
+}) {
+  switch (normalizeLocaleTag(localeName)) {
+    case 'es':
+      return es ?? en;
+    case 'pt-BR':
+      return ptBr ?? ptPt ?? en;
+    case 'pt-PT':
+      return ptPt ?? ptBr ?? en;
+    case 'fr':
+      return fr ?? en;
+    case 'it':
+      return it ?? en;
+    case 'de':
+      return de ?? en;
+    case 'ja':
+      return ja ?? en;
+    case 'zh-Hans':
+      return zhHans ?? zhHant ?? en;
+    case 'zh-Hant':
+      return zhHant ?? zhHans ?? en;
+    default:
+      return en;
   }
 }
 
@@ -833,19 +954,25 @@ T _pickLocale<T>(
   required T en,
   required T es,
   required T ptBr,
+  T? ptPt,
+  T? fr,
+  T? it,
+  T? de,
   required T ja,
   required T zhHans,
+  T? zhHant,
 }) {
-  switch (normalizeLocaleTag(localeName)) {
-    case 'es':
-      return es;
-    case 'pt-BR':
-      return ptBr;
-    case 'ja':
-      return ja;
-    case 'zh-Hans':
-      return zhHans;
-    default:
-      return en;
-  }
+  return pickLocalizedValue(
+    localeName,
+    en: en,
+    es: es,
+    ptBr: ptBr,
+    ptPt: ptPt,
+    fr: fr,
+    it: it,
+    de: de,
+    ja: ja,
+    zhHans: zhHans,
+    zhHant: zhHant,
+  );
 }

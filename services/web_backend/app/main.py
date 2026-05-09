@@ -34,6 +34,9 @@ from app.schemas import (
     HomeMemorySummary,
     IncidentRow,
     InternalRoutingConfig,
+    MindFlowDecisionQuality,
+    MindFlowOpenLoops,
+    MindFlowSummary,
     MissionAuditUpsert,
     MobileRuntimeConfig,
     ModelCatalogEntry,
@@ -63,6 +66,9 @@ from app.schemas import (
     SafetyAuditRecord,
     SafetyAuditUpsert,
     SecuritySummary,
+    ShoppingClaimsSummary,
+    ShoppingEvidenceQuality,
+    ShoppingSummary,
     UserManagementRow,
     UserPrivacySummary,
     UserSummary,
@@ -606,6 +612,45 @@ def create_app(
             limit=min(max(limit, 1), 100),
             offset=max(offset, 0),
         )
+
+    @app.get("/admin/mindflow/summary", response_model=MindFlowSummary)
+    async def mindflow_summary(_: None = Depends(require_admin)) -> MindFlowSummary:
+        return resolved_repository.get_mindflow_summary()
+
+    @app.get(
+        "/admin/mindflow/decision-quality",
+        response_model=MindFlowDecisionQuality,
+    )
+    async def mindflow_decision_quality(
+        _: None = Depends(require_admin),
+    ) -> MindFlowDecisionQuality:
+        return resolved_repository.get_mindflow_decision_quality()
+
+    @app.get("/admin/mindflow/open-loops", response_model=MindFlowOpenLoops)
+    async def mindflow_open_loops(_: None = Depends(require_admin)) -> MindFlowOpenLoops:
+        return resolved_repository.get_mindflow_open_loops()
+
+    @app.get("/admin/shopping/summary", response_model=ShoppingSummary)
+    async def shopping_summary(_: None = Depends(require_admin)) -> ShoppingSummary:
+        return resolved_repository.get_shopping_summary()
+
+    @app.get(
+        "/admin/shopping/evidence-quality",
+        response_model=ShoppingEvidenceQuality,
+    )
+    async def shopping_evidence_quality(
+        _: None = Depends(require_admin),
+    ) -> ShoppingEvidenceQuality:
+        return resolved_repository.get_shopping_evidence_quality()
+
+    @app.get(
+        "/admin/shopping/sustainability-claims",
+        response_model=ShoppingClaimsSummary,
+    )
+    async def shopping_claims_summary(
+        _: None = Depends(require_admin),
+    ) -> ShoppingClaimsSummary:
+        return resolved_repository.get_shopping_claims_summary()
 
     @app.get("/admin/quality/summary", response_model=QualitySummary)
     async def quality_summary(_: None = Depends(require_admin)) -> QualitySummary:

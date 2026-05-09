@@ -3,6 +3,15 @@ from __future__ import annotations
 from app.capture_parser import classify_capture_request, parse_capture_request
 from app.feedback_store import MissionFeedbackStore
 from app.graphs.golife_graph import run_suggestion_graph
+from app.graphs.mindflow_graph import (
+    run_decision_plan_graph,
+    run_mindflow_parse_graph,
+)
+from app.graphs.shopping_graph import (
+    run_extract_shopping_needs_graph,
+    run_product_evidence_graph,
+    run_shopping_plan_graph,
+)
 from app.guardrails import enforce_task_rewrite_privacy
 from app.proof_parser import parse_purchase_proof_request
 from app.providers.base import LLMProvider
@@ -11,9 +20,17 @@ from app.schemas import (
     EventClassificationResponse,
     EventParseRequest,
     EventParseResponse,
+    DecisionPlanRequest,
+    DecisionPlanResponse,
     ParsedEventItem,
+    MindFlowParseRequest,
+    MindFlowParseResponse,
+    ProductEvidenceCard,
+    ProductEvidenceRequest,
     ProofParseRequest,
     ProofParseResponse,
+    ShoppingPlanRequest,
+    ShoppingPlanResponse,
     SuggestionEvidence,
     SuggestionRequest,
     SuggestionResponse,
@@ -472,6 +489,71 @@ async def run_proof_parse_semantic(
             "has_date": bool(provider_result.get("purchase_date")),
             "has_warranty_hint": provider_result.get("warranty_months") is not None,
         },
+    )
+
+
+async def run_mindflow_parse(
+    request: MindFlowParseRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> MindFlowParseResponse:
+    return await run_mindflow_parse_graph(
+        request,
+        settings=settings,
+        provider=provider,
+    )
+
+
+async def run_decision_plan(
+    request: DecisionPlanRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> DecisionPlanResponse:
+    return await run_decision_plan_graph(
+        request,
+        settings=settings,
+        provider=provider,
+    )
+
+
+async def run_shopping_needs_extract(
+    request: ShoppingPlanRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> ShoppingPlanResponse:
+    return await run_extract_shopping_needs_graph(
+        request,
+        settings=settings,
+        provider=provider,
+    )
+
+
+async def run_shopping_plan(
+    request: ShoppingPlanRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> ShoppingPlanResponse:
+    return await run_shopping_plan_graph(
+        request,
+        settings=settings,
+        provider=provider,
+    )
+
+
+async def run_product_evidence(
+    request: ProductEvidenceRequest,
+    *,
+    settings: Settings,
+    provider: LLMProvider,
+) -> ProductEvidenceCard:
+    return await run_product_evidence_graph(
+        request,
+        settings=settings,
+        provider=provider,
     )
 
 

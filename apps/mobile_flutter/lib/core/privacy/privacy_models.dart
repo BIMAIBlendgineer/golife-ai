@@ -5,6 +5,12 @@ enum DomainKey {
   finance,
   pantry,
   wardrobe,
+  calendar,
+  journal,
+  recipes,
+  homememory,
+  shopping,
+  decisions,
   copilot,
 }
 
@@ -29,6 +35,18 @@ extension DomainKeyX on DomainKey {
         return 'pantry';
       case DomainKey.wardrobe:
         return 'wardrobe';
+      case DomainKey.calendar:
+        return 'calendar';
+      case DomainKey.journal:
+        return 'journal';
+      case DomainKey.recipes:
+        return 'recipes';
+      case DomainKey.homememory:
+        return 'homememory';
+      case DomainKey.shopping:
+        return 'shopping';
+      case DomainKey.decisions:
+        return 'decisions';
       case DomainKey.copilot:
         return 'copilot';
     }
@@ -48,6 +66,18 @@ extension DomainKeyX on DomainKey {
         return 'Pantry';
       case DomainKey.wardrobe:
         return 'Closet';
+      case DomainKey.calendar:
+        return 'Calendar';
+      case DomainKey.journal:
+        return 'Journal';
+      case DomainKey.recipes:
+        return 'Recipes';
+      case DomainKey.homememory:
+        return 'HomeMemory';
+      case DomainKey.shopping:
+        return 'Shopping';
+      case DomainKey.decisions:
+        return 'Decisions';
       case DomainKey.copilot:
         return 'Copilot';
     }
@@ -67,6 +97,18 @@ extension DomainKeyX on DomainKey {
         return 'pantry';
       case DomainKey.wardrobe:
         return 'wardrobe';
+      case DomainKey.calendar:
+        return 'calendar';
+      case DomainKey.journal:
+        return 'journal';
+      case DomainKey.recipes:
+        return 'recipe';
+      case DomainKey.homememory:
+        return 'homememory';
+      case DomainKey.shopping:
+        return 'shopping';
+      case DomainKey.decisions:
+        return 'decision';
       case DomainKey.copilot:
         return 'mission';
     }

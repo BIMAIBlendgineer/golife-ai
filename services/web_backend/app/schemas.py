@@ -22,6 +22,10 @@ RoutingCapability = Literal[
     "task_rewrite",
     "semantic_classify",
     "weekly_summary",
+    "mindflow_parse",
+    "decision_plan",
+    "shopping_plan",
+    "product_evidence",
 ]
 RoutingConfigSource = Literal["live", "cached", "fallback"]
 OpenRouterKeyStatus = Literal["healthy", "degraded", "disabled", "unknown"]
@@ -45,6 +49,14 @@ class DashboardMetrics(BaseModel):
     ai_cost_per_active_user_usd: float = Field(ge=0.0)
     safety_intervention_rate: float = Field(ge=0.0, le=1.0)
     privacy_concern_rate: float = Field(ge=0.0, le=1.0)
+    mental_load_items_per_active_user: float = Field(ge=0.0)
+    decision_acceptance_rate: float = Field(ge=0.0, le=1.0)
+    decision_completion_rate: float = Field(ge=0.0, le=1.0)
+    decision_postpone_rate: float = Field(ge=0.0, le=1.0)
+    shopping_need_conversion_rate: float = Field(ge=0.0, le=1.0)
+    shopping_claims_with_evidence_rate: float = Field(ge=0.0, le=1.0)
+    insufficient_sustainability_data_rate: float = Field(ge=0.0, le=1.0)
+    privacy_filtered_decision_rate: float = Field(ge=0.0, le=1.0)
     active_key_count: int = Field(default=0, ge=0)
     disabled_key_count: int = Field(default=0, ge=0)
     routing_snapshot_age_seconds: int | None = Field(default=None, ge=0)
@@ -371,6 +383,64 @@ class QualitySummary(BaseModel):
     safety_interventions: int = Field(ge=0)
     high_cost_anomalies: int = Field(ge=0)
     support_escalations: int = Field(ge=0)
+
+
+class MindFlowSummary(BaseModel):
+    mental_load_items_per_active_user: float = Field(ge=0.0)
+    decision_acceptance_rate: float = Field(ge=0.0, le=1.0)
+    decision_completion_rate: float = Field(ge=0.0, le=1.0)
+    decision_postpone_rate: float = Field(ge=0.0, le=1.0)
+    privacy_filtered_decision_rate: float = Field(ge=0.0, le=1.0)
+    open_loop_count: int = Field(ge=0)
+    open_loop_rate: float = Field(ge=0.0, le=1.0)
+    fallback_rate: float = Field(ge=0.0, le=1.0)
+
+
+class MindFlowDecisionQuality(BaseModel):
+    generated_count: int = Field(ge=0)
+    accepted_count: int = Field(ge=0)
+    completed_count: int = Field(ge=0)
+    rejected_count: int = Field(ge=0)
+    postponed_count: int = Field(ge=0)
+    repeated_count: int = Field(ge=0)
+    acceptance_rate: float = Field(ge=0.0, le=1.0)
+    completion_rate: float = Field(ge=0.0, le=1.0)
+    rejection_rate: float = Field(ge=0.0, le=1.0)
+    postpone_rate: float = Field(ge=0.0, le=1.0)
+
+
+class MindFlowOpenLoops(BaseModel):
+    total_open_loops: int = Field(ge=0)
+    mental_load_items: int = Field(ge=0)
+    pending_decisions: int = Field(ge=0)
+    pending_shopping_needs: int = Field(ge=0)
+    warranty_review_needs: int = Field(ge=0)
+
+
+class ShoppingSummary(BaseModel):
+    shopping_need_conversion_rate: float = Field(ge=0.0, le=1.0)
+    shopping_claims_with_evidence_rate: float = Field(ge=0.0, le=1.0)
+    insufficient_sustainability_data_rate: float = Field(ge=0.0, le=1.0)
+    needs_detected: int = Field(ge=0)
+    plans_generated: int = Field(ge=0)
+    external_sources_enabled: bool
+    product_evidence_enabled: bool
+
+
+class ShoppingEvidenceQuality(BaseModel):
+    verified_count: int = Field(ge=0)
+    partial_count: int = Field(ge=0)
+    insufficient_count: int = Field(ge=0)
+    not_checked_count: int = Field(ge=0)
+    verified_rate: float = Field(ge=0.0, le=1.0)
+    insufficient_rate: float = Field(ge=0.0, le=1.0)
+
+
+class ShoppingClaimsSummary(BaseModel):
+    unverified_price_attempts: int = Field(ge=0)
+    unverified_sustainability_attempts: int = Field(ge=0)
+    no_availability_claim_count: int = Field(ge=0)
+    blocked_external_sources: bool
 
 
 class QualityBreakdownRow(BaseModel):

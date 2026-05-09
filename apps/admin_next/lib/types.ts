@@ -15,6 +15,14 @@ export type DashboardMetrics = {
   ai_cost_per_active_user_usd: number;
   safety_intervention_rate: number;
   privacy_concern_rate: number;
+  mental_load_items_per_active_user: number;
+  decision_acceptance_rate: number;
+  decision_completion_rate: number;
+  decision_postpone_rate: number;
+  shopping_need_conversion_rate: number;
+  shopping_claims_with_evidence_rate: number;
+  insufficient_sustainability_data_rate: number;
+  privacy_filtered_decision_rate: number;
   active_key_count: number;
   disabled_key_count: number;
   routing_snapshot_age_seconds: number | null;
@@ -360,6 +368,64 @@ export type FeatureFlag = {
   updated_at: string;
 };
 
+export type MindFlowSummary = {
+  mental_load_items_per_active_user: number;
+  decision_acceptance_rate: number;
+  decision_completion_rate: number;
+  decision_postpone_rate: number;
+  privacy_filtered_decision_rate: number;
+  open_loop_count: number;
+  open_loop_rate: number;
+  fallback_rate: number;
+};
+
+export type MindFlowDecisionQuality = {
+  generated_count: number;
+  accepted_count: number;
+  completed_count: number;
+  rejected_count: number;
+  postponed_count: number;
+  repeated_count: number;
+  acceptance_rate: number;
+  completion_rate: number;
+  rejection_rate: number;
+  postpone_rate: number;
+};
+
+export type MindFlowOpenLoops = {
+  total_open_loops: number;
+  mental_load_items: number;
+  pending_decisions: number;
+  pending_shopping_needs: number;
+  warranty_review_needs: number;
+};
+
+export type ShoppingSummary = {
+  shopping_need_conversion_rate: number;
+  shopping_claims_with_evidence_rate: number;
+  insufficient_sustainability_data_rate: number;
+  needs_detected: number;
+  plans_generated: number;
+  external_sources_enabled: boolean;
+  product_evidence_enabled: boolean;
+};
+
+export type ShoppingEvidenceQuality = {
+  verified_count: number;
+  partial_count: number;
+  insufficient_count: number;
+  not_checked_count: number;
+  verified_rate: number;
+  insufficient_rate: number;
+};
+
+export type ShoppingClaimsSummary = {
+  unverified_price_attempts: number;
+  unverified_sustainability_attempts: number;
+  no_availability_claim_count: number;
+  blocked_external_sources: boolean;
+};
+
 export type ModelSettingsSnapshot = {
   active_provider: string;
   primary_model: string;
@@ -382,12 +448,18 @@ export type OpenRouterApiKeyRecord = {
   updated_at: string;
 };
 
+export type RoutingCapability =
+  | "daily_plan"
+  | "task_rewrite"
+  | "semantic_classify"
+  | "weekly_summary"
+  | "mindflow_parse"
+  | "decision_plan"
+  | "shopping_plan"
+  | "product_evidence";
+
 export type RoutingProfile = {
-  capability:
-    | "daily_plan"
-    | "task_rewrite"
-    | "semantic_classify"
-    | "weekly_summary";
+  capability: RoutingCapability;
   strategy: "quality_first";
   min_context_length: number;
   required_parameters: string[];
@@ -418,11 +490,7 @@ export type ModelCatalogEntry = {
 };
 
 export type ModelSelectionSnapshot = {
-  capability:
-    | "daily_plan"
-    | "task_rewrite"
-    | "semantic_classify"
-    | "weekly_summary";
+  capability: RoutingCapability;
   rank_index: number;
   model_id: string;
   score: number;

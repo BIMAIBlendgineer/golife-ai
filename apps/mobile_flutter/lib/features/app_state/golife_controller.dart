@@ -8,9 +8,11 @@ import '../../core/ai_client/mappers/mission_mapper.dart';
 import '../../core/export/local_export_service.dart';
 import '../../core/export/submission_asset_vault.dart';
 import '../../core/i18n/app_locale.dart';
+import '../../core/i18n/app_localized_values.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
 import '../../core/lifegraph/lifegraph_repository.dart';
+import '../../core/mindflow/mindflow_mappers.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/runtime/app_runtime_config.dart';
 import '../../core/runtime/runtime_config_client.dart';
@@ -27,11 +29,17 @@ import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
+import '../../domains/mindflow/action_contract.dart';
+import '../../domains/mindflow/decision_card.dart';
+import '../../domains/mindflow/mental_load_item.dart';
+import '../../domains/mindflow/privacy_summary.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/recipes/recipe_rescue.dart';
+import '../../domains/shopping/product_evidence_card.dart';
+import '../../domains/shopping/shopping_need.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -84,6 +92,10 @@ class GoLifeController extends ChangeNotifier {
   List<MaintenanceReminder> _maintenanceReminders = <MaintenanceReminder>[];
   List<ClaimDraft> _claimDrafts = <ClaimDraft>[];
   List<EvidenceAttachment> _evidenceAttachments = <EvidenceAttachment>[];
+  List<MentalLoadItem> _mentalLoadItems = <MentalLoadItem>[];
+  List<DecisionCard> _decisionCards = <DecisionCard>[];
+  List<ShoppingNeed> _shoppingNeeds = <ShoppingNeed>[];
+  List<ProductEvidenceCard> _productEvidenceCards = <ProductEvidenceCard>[];
   bool _sensitiveLocalEncryptionEnabled = false;
   AppLocalePreference _localePreference = AppLocalePreference.system;
   AppProfilePreferences _profilePreferences = AppProfilePreferences.defaults();
@@ -181,6 +193,26 @@ class GoLifeController extends ChangeNotifier {
       List<ClaimDraft>.unmodifiable(_claimDrafts);
   List<EvidenceAttachment> get evidenceAttachments =>
       List<EvidenceAttachment>.unmodifiable(_evidenceAttachments);
+  List<MentalLoadItem> get mentalLoadItems =>
+      List<MentalLoadItem>.unmodifiable(_mentalLoadItems);
+  List<DecisionCard> get decisionCards =>
+      List<DecisionCard>.unmodifiable(_decisionCards);
+  List<ShoppingNeed> get shoppingNeeds =>
+      List<ShoppingNeed>.unmodifiable(_shoppingNeeds);
+  List<ProductEvidenceCard> get productEvidenceCards =>
+      List<ProductEvidenceCard>.unmodifiable(_productEvidenceCards);
+  ProductEvidenceCard? productEvidenceForTitle(String title) {
+    final lowered = title.toLowerCase();
+    for (final item in _productEvidenceCards) {
+      if (item.productName.toLowerCase() == lowered ||
+          lowered.contains(item.productName.toLowerCase()) ||
+          item.productName.toLowerCase().contains(lowered)) {
+        return item;
+      }
+    }
+    return null;
+  }
+
   bool get sensitiveLocalEncryptionEnabled => _sensitiveLocalEncryptionEnabled;
   AppLocalePreference get localePreference => _localePreference;
   AppProfilePreferences get profilePreferences => _profilePreferences;
@@ -201,6 +233,10 @@ class GoLifeController extends ChangeNotifier {
         'Purchase proofs',
         'Claim drafts',
         'Evidence attachments',
+        'Mental load items',
+        'Decision cards',
+        'Shopping needs',
+        'Product evidence cards',
       ];
   List<String> get alwaysLocalCollectionLabels => const <String>[
         'Privacy settings',
@@ -210,6 +246,10 @@ class GoLifeController extends ChangeNotifier {
         'Purchase proofs',
         'Claim drafts',
         'Evidence attachments',
+        'Mental load items',
+        'Decision cards',
+        'Shopping needs',
+        'Product evidence cards',
         'Runtime config cache',
         'Device encryption key',
       ];
@@ -263,6 +303,64 @@ class GoLifeController extends ChangeNotifier {
     final items = List<MaintenanceReminder>.from(_maintenanceReminders);
     items.sort((left, right) => left.dueDate.compareTo(right.dueDate));
     return List<MaintenanceReminder>.unmodifiable(items.take(5).toList());
+  }
+
+  List<MentalLoadItem> get pendingMentalLoadItems {
+    final items = _mentalLoadItems
+        .where((item) => item.state != 'completed' && item.state != 'rejected')
+        .toList(growable: false);
+    return List<MentalLoadItem>.unmodifiable(items);
+  }
+
+  MentalLoadItem? get primaryMentalLoadItem =>
+      pendingMentalLoadItems.isEmpty ? null : pendingMentalLoadItems.first;
+
+  List<DecisionCard> get activeDecisionCards {
+    final cards = _decisionCards
+        .where(
+            (card) => card.status != 'completed' && card.status != 'rejected')
+        .toList(growable: false);
+    return List<DecisionCard>.unmodifiable(cards);
+  }
+
+  DecisionCard? get primaryDecisionCard =>
+      activeDecisionCards.isEmpty ? null : activeDecisionCards.first;
+
+  List<DecisionCard> get homeMemoryDecisionCards =>
+      List<DecisionCard>.unmodifiable(
+        activeDecisionCards
+            .where((card) => card.domainTargets.contains('homememory'))
+            .toList(growable: false),
+      );
+
+  List<DecisionCard> get secondaryDecisionCards {
+    final cards = activeDecisionCards;
+    if (cards.length <= 1) {
+      return const <DecisionCard>[];
+    }
+    return List<DecisionCard>.unmodifiable(
+        cards.skip(1).toList(growable: false));
+  }
+
+  List<ShoppingNeed> get activeShoppingNeeds {
+    final needs = _shoppingNeeds
+        .where((need) => need.state != 'fulfilled' && need.state != 'rejected')
+        .toList(growable: false);
+    return List<ShoppingNeed>.unmodifiable(needs);
+  }
+
+  bool get hasShoppingAlert => activeShoppingNeeds.isNotEmpty;
+
+  List<MentalLoadItem> get homeMemoryMentalLoadItems =>
+      List<MentalLoadItem>.unmodifiable(
+        pendingMentalLoadItems
+            .where((item) => item.domain == 'homememory')
+            .toList(growable: false),
+      );
+
+  bool featureFlagEnabled(String key, {bool fallback = true}) {
+    final runtimeValue = _runtimeConfig?.featureFlags[key];
+    return runtimeValue ?? fallback;
   }
 
   List<ClaimDraft> get activeClaimDrafts {
@@ -368,8 +466,14 @@ class GoLifeController extends ChangeNotifier {
     _maintenanceReminders = await _localStore.loadMaintenanceReminders();
     _claimDrafts = await _localStore.loadClaimDrafts();
     _evidenceAttachments = await _localStore.loadEvidenceAttachments();
+    _mentalLoadItems = await _localStore.loadMentalLoadItems();
+    _decisionCards = await _localStore.loadDecisionCards();
+    _shoppingNeeds = await _localStore.loadShoppingNeeds();
+    _productEvidenceCards = await _localStore.loadProductEvidenceCards();
     await _seedDomainEntitiesIfNeeded();
     await _refreshMissionPlan();
+    await refreshDecisionPlan(notify: false);
+    await refreshShoppingPlan(notify: false);
     await refreshRuntimeConfig(refreshMissionPlan: true, notify: false);
     _isReady = true;
     notifyListeners();
@@ -394,6 +498,8 @@ class GoLifeController extends ChangeNotifier {
     _applyRuntimeConfig();
     if (refreshMissionPlan) {
       await _refreshMissionPlan();
+      await refreshDecisionPlan(notify: false);
+      await refreshShoppingPlan(notify: false);
     }
     if (notify) {
       notifyListeners();
@@ -630,26 +736,45 @@ class GoLifeController extends ChangeNotifier {
 
     for (final draft in drafts) {
       await _persistDomainEntityFromDraft(draft);
+      final event = LifeEventFactory.create(
+        domain: draft.domain.wireName,
+        type: draft.eventType,
+        summary: draft.text,
+        privacyLevel: draft.privacyLevel,
+        payload: {
+          'summary': draft.text,
+          'capturedFrom': 'capture_screen',
+          'rationale': draft.rationale,
+          'confidence': draft.confidence,
+          'hints': draft.hints,
+          'multiCapture': drafts.length > 1,
+        },
+      );
       await _recordEvent(
-        event: LifeEventFactory.create(
-          domain: draft.domain.wireName,
-          type: draft.eventType,
-          summary: draft.text,
-          privacyLevel: draft.privacyLevel,
-          payload: {
-            'summary': draft.text,
-            'capturedFrom': 'capture_screen',
-            'rationale': draft.rationale,
-            'hints': draft.hints,
-            'multiCapture': drafts.length > 1,
-          },
-        ),
+        event: event,
         refreshPlan: false,
         notifyAfter: false,
       );
+      await _upsertMentalLoadItem(
+        mentalLoadItemFromDraft(
+          draft,
+          userId: 'local-user',
+          sourceEventId: event.eventId,
+        ),
+      );
+      final shoppingNeed = _deriveShoppingNeedFromDraft(
+        draft,
+        sourceEventId: event.eventId,
+      );
+      if (shoppingNeed != null) {
+        await _upsertShoppingNeed(shoppingNeed);
+      }
+      await _createReminderCandidateIfNeeded(draft);
     }
 
     await _refreshMissionPlan();
+    await refreshDecisionPlan(notify: false);
+    await refreshShoppingPlan(notify: false);
     notifyListeners();
   }
 
@@ -714,6 +839,183 @@ class GoLifeController extends ChangeNotifier {
     await _refreshMissionPlan();
     notifyListeners();
     return summary;
+  }
+
+  Future<void> refreshDecisionPlan({bool notify = true}) async {
+    final dto = await _aiGatewayClient.fetchDecisionPlan(
+      locale: currentLocaleTag,
+      privacySettings: _privacySettings,
+      mentalLoadItems: _mentalLoadItems
+          .map((item) => Map<String, Object?>.from(item.toJson()))
+          .toList(growable: false),
+    );
+    final remoteCards =
+        dto.decisions.map(_decisionCardFromDto).toList(growable: false);
+    final nextCards =
+        remoteCards.isNotEmpty ? remoteCards : _buildLocalDecisionFallback();
+    _decisionCards = nextCards;
+    await _localStore.saveDecisionCards(_decisionCards);
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshShoppingPlan({bool notify = true}) async {
+    final derivedNeeds = _deriveLocalShoppingNeeds();
+    if (derivedNeeds.isNotEmpty) {
+      _shoppingNeeds = _mergeById(
+        _shoppingNeeds,
+        derivedNeeds,
+        (item) => item.id,
+      );
+      await _localStore.saveShoppingNeeds(_shoppingNeeds);
+    }
+
+    final dto = await _aiGatewayClient.optimizeShoppingList(
+      locale: currentLocaleTag,
+      privacySettings: _privacySettings,
+      shoppingNeeds: _shoppingNeeds
+          .map((item) => Map<String, Object?>.from(item.toJson()))
+          .toList(growable: false),
+      pantryContext: _pantryItems
+          .map((item) => Map<String, Object?>.from(item.toJson()))
+          .toList(growable: false),
+      financeContext: _expenses
+          .map((item) => Map<String, Object?>.from(item.toJson()))
+          .toList(growable: false),
+      wardrobeContext: _purchaseIntentions
+          .map((item) => Map<String, Object?>.from(item.toJson()))
+          .toList(growable: false),
+      homememoryContext: <Map<String, Object?>>[
+        ..._ownedItems.map((item) => Map<String, Object?>.from(item.toJson())),
+        ..._purchaseProofs
+            .map((item) => Map<String, Object?>.from(item.toJson())),
+      ],
+    );
+
+    final nextNeeds =
+        dto.needs.map(_shoppingNeedFromDto).toList(growable: false);
+    if (nextNeeds.isNotEmpty) {
+      _shoppingNeeds = _mergeById(
+        _shoppingNeeds,
+        nextNeeds,
+        (item) => item.id,
+      );
+      await _localStore.saveShoppingNeeds(_shoppingNeeds);
+    }
+
+    final evidenceCards = dto.productEvidence
+        .map(_productEvidenceCardFromDto)
+        .toList(growable: false);
+    if (evidenceCards.isNotEmpty) {
+      for (final card in evidenceCards) {
+        await _upsertProductEvidenceCard(card);
+      }
+    }
+
+    final shoppingDecisions =
+        dto.decisions.map(_decisionCardFromDto).toList(growable: false);
+    if (shoppingDecisions.isNotEmpty) {
+      _decisionCards = _mergeById(
+        _decisionCards,
+        shoppingDecisions,
+        (item) => item.id,
+      );
+      await _localStore.saveDecisionCards(_decisionCards);
+    }
+
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchProductEvidenceForNeed(
+    ShoppingNeed need, {
+    bool notify = true,
+  }) async {
+    if (!featureFlagEnabled('shopping_external_sources', fallback: false)) {
+      await _upsertProductEvidenceCard(
+        ProductEvidenceCard(
+          id: 'evidence-flag-${need.id}',
+          userId: need.userId,
+          productName: need.title,
+          brand: null,
+          merchantName: null,
+          price: need.budgetHint,
+          currency: need.currency,
+          source: 'external_sources_disabled',
+          checkedAtIso: DateTime.now().toUtc().toIso8601String(),
+          reviewSummary: null,
+          sustainabilityStatus: 'insufficient_verified_data',
+          confidence: 0.0,
+          disclaimer: 'External shopping evidence is disabled by feature flag.',
+          trace: const <String, Object?>{
+            'feature_flag_blocked': true,
+          },
+        ),
+      );
+      if (notify) {
+        notifyListeners();
+      }
+      return;
+    }
+
+    final dto = await _aiGatewayClient.fetchProductEvidence(
+      locale: currentLocaleTag,
+      privacySettings: _privacySettings,
+      productName: need.title,
+    );
+    if (dto == null) {
+      return;
+    }
+    await _upsertProductEvidenceCard(_productEvidenceCardFromDto(dto));
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  Future<void> acceptDecisionCard(String id) async {
+    await _updateDecisionCardStatus(id, 'accepted');
+  }
+
+  Future<void> completeDecisionCard(String id) async {
+    await _updateDecisionCardStatus(id, 'completed');
+  }
+
+  Future<void> postponeDecisionCard(String id) async {
+    await _updateDecisionCardStatus(id, 'postponed');
+  }
+
+  Future<void> rejectDecisionCard(String id) async {
+    await _updateDecisionCardStatus(id, 'rejected');
+  }
+
+  Future<String?> createReminderFromDecisionCard(String id) async {
+    final card = _decisionCards.firstWhere(
+      (item) => item.id == id,
+      orElse: () => primaryDecisionCard ?? _buildFallbackDecisionCard(),
+    );
+    final start = DateTime.now().toUtc().add(const Duration(hours: 2));
+    final calendarItem = CalendarItem(
+      id: _entityId('calendar'),
+      title: card.title,
+      startIso: start.toIso8601String(),
+      endIso: start.add(const Duration(minutes: 30)).toIso8601String(),
+      location: 'MindFlow',
+      energy: 'steady',
+    );
+    await _upsertCalendarItem(calendarItem);
+    await _recordEvent(
+      event: calendarItem.toLifeEvent(
+        'decision_reminder_created',
+        privacyLevel: _privacyLevelForDomain('calendar'),
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    await _updateDecisionCardStatus(id, 'scheduled', notifyAfter: false);
+    notifyListeners();
+    return _controllerText('reminder_created');
   }
 
   Future<String?> completeTaskById(String id) async {
@@ -1587,9 +1889,60 @@ class GoLifeController extends ChangeNotifier {
         refreshPlan: false,
         notifyAfter: false,
       );
+      await _upsertMentalLoadItem(
+        _homeMemoryMentalLoadItem(
+          id: 'mental-maintenance-${reminder.id}',
+          type: 'maintenance_due',
+          title: reminder.title,
+          summary: _controllerText('maintenance_due_summary', {
+            'item': ownedItem.displayName,
+          }),
+          urgencyScore: 0.74,
+          dueHint: reminder.dueDate,
+          privacyLevel: ownedItem.privacyLevel,
+          sourceEventId: reminder.id,
+          trace: <String, Object?>{
+            'owned_item_id': ownedItem.id,
+            'derived_from': 'maintenance_scheduled',
+          },
+        ),
+      );
     }
 
+    if (warrantyRecord != null) {
+      await _upsertMentalLoadItem(
+        _homeMemoryMentalLoadItem(
+          id: 'mental-warranty-${ownedItem.id}',
+          type: 'warranty_review',
+          title: _controllerText('warranty_review_title', {
+            'item': ownedItem.displayName,
+          }),
+          summary: _controllerText('warranty_review_summary', {
+            'date': warrantyRecord.warrantyUntil ?? '',
+          }),
+          urgencyScore: 0.68,
+          dueHint: warrantyRecord.warrantyUntil,
+          privacyLevel: ownedItem.privacyLevel,
+          sourceEventId: warrantyRecord.id,
+          trace: <String, Object?>{
+            'owned_item_id': ownedItem.id,
+            'derived_from': 'warranty_detected',
+            'warranty_until': warrantyRecord.warrantyUntil,
+          },
+        ),
+      );
+    }
+
+    await _upsertProductEvidenceCard(
+      _productEvidenceCardFromPurchaseProof(
+        ownedItem: ownedItem,
+        proof: purchaseProof,
+      ),
+    );
+
     await _refreshMissionPlan();
+    await refreshDecisionPlan(notify: false);
+    await refreshShoppingPlan(notify: false);
     notifyListeners();
     return _controllerText('purchase_proof_saved');
   }
@@ -1664,6 +2017,28 @@ class GoLifeController extends ChangeNotifier {
         },
       ),
     );
+    await _upsertMentalLoadItem(
+      _homeMemoryMentalLoadItem(
+        id: 'mental-maintenance-${reminder.id}',
+        type: 'maintenance_due',
+        title: reminder.title,
+        summary: _controllerText('maintenance_due_summary', {
+          'item': target?.displayName ?? title.trim(),
+        }),
+        urgencyScore: 0.72,
+        dueHint: reminder.dueDate,
+        privacyLevel: target?.privacyLevel ?? 'local_only',
+        sourceEventId: reminder.id,
+        trace: <String, Object?>{
+          'owned_item_id': ownedItemId,
+          'derived_from': 'maintenance_scheduled',
+          'due_date': reminder.dueDate,
+        },
+      ),
+    );
+    await refreshDecisionPlan(notify: false);
+    await refreshShoppingPlan(notify: false);
+    notifyListeners();
     return _controllerText(id == null
         ? 'maintenance_reminder_saved'
         : 'maintenance_reminder_updated');
@@ -1740,6 +2115,26 @@ class GoLifeController extends ChangeNotifier {
         },
       ),
     );
+    await _upsertMentalLoadItem(
+      _homeMemoryMentalLoadItem(
+        id: 'mental-claim-${claimDraft.id}',
+        type: 'claim_candidate',
+        title: _controllerText('claim_candidate_title', {
+          'item': item?.displayName ?? title,
+        }),
+        summary: _controllerText('claim_candidate_summary'),
+        urgencyScore: 0.78,
+        privacyLevel: claimDraft.privacyLevel,
+        sourceEventId: claimDraft.id,
+        trace: <String, Object?>{
+          'owned_item_id': ownedItemId,
+          'derived_from': 'claim_draft_created',
+        },
+      ),
+    );
+    await refreshDecisionPlan(notify: false);
+    await refreshShoppingPlan(notify: false);
+    notifyListeners();
     return _controllerText(
       id == null ? 'claim_draft_saved' : 'claim_draft_updated',
     );
@@ -1850,6 +2245,10 @@ class GoLifeController extends ChangeNotifier {
           'purchase_proofs',
           'claim_drafts',
           'evidence_attachments',
+          'mental_load_items',
+          'decision_cards',
+          'shopping_needs',
+          'product_evidence_cards',
         ],
       },
       'submission_assets': {
@@ -1905,6 +2304,15 @@ class GoLifeController extends ChangeNotifier {
       'evidence_attachments': _evidenceAttachments
           .map((item) => item.toJson())
           .toList(growable: false),
+      'mental_load_items':
+          _mentalLoadItems.map((item) => item.toJson()).toList(growable: false),
+      'decision_cards':
+          _decisionCards.map((item) => item.toJson()).toList(growable: false),
+      'shopping_needs':
+          _shoppingNeeds.map((item) => item.toJson()).toList(growable: false),
+      'product_evidence_cards': _productEvidenceCards
+          .map((item) => item.toJson())
+          .toList(growable: false),
     };
   }
 
@@ -1957,6 +2365,10 @@ class GoLifeController extends ChangeNotifier {
     _maintenanceReminders = <MaintenanceReminder>[];
     _claimDrafts = <ClaimDraft>[];
     _evidenceAttachments = <EvidenceAttachment>[];
+    _mentalLoadItems = <MentalLoadItem>[];
+    _decisionCards = <DecisionCard>[];
+    _shoppingNeeds = <ShoppingNeed>[];
+    _productEvidenceCards = <ProductEvidenceCard>[];
     notifyListeners();
   }
 
@@ -1964,9 +2376,13 @@ class GoLifeController extends ChangeNotifier {
     _dailyMissions = <DailyMission>[];
     _cachedDailyRisks = <DailyRisk>[];
     _missionFeedback = <MissionFeedback>[];
+    _decisionCards = <DecisionCard>[];
+    _productEvidenceCards = <ProductEvidenceCard>[];
     await _localStore.saveDailyMissions(_dailyMissions);
     await _localStore.saveDailyRisks(_cachedDailyRisks);
     await _localStore.saveMissionFeedback(_missionFeedback);
+    await _localStore.saveDecisionCards(_decisionCards);
+    await _localStore.saveProductEvidenceCards(_productEvidenceCards);
     notifyListeners();
   }
 
@@ -2095,6 +2511,345 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.saveDailyRisks(_cachedDailyRisks);
   }
 
+  DecisionCard _decisionCardFromDto(DecisionCardDto dto) {
+    return DecisionCard(
+      id: dto.decisionId,
+      userId: dto.userId,
+      title: dto.title,
+      recommendedAction: dto.recommendedAction,
+      alternatives: dto.alternatives,
+      domainTargets: dto.domainTargets,
+      sourceItems: dto.sourceItems,
+      evidence: dto.evidence,
+      confidence: dto.confidence,
+      uncertainty: dto.uncertainty,
+      privacySummary: PrivacySummary(
+        aiEnabled: dto.privacySummary.aiEnabled,
+        sentEventCount: dto.privacySummary.sentEventCount,
+        blockedEventCount: dto.privacySummary.blockedEventCount,
+        allowedDomains: dto.privacySummary.allowedDomains,
+        blockedDomains: dto.privacySummary.blockedDomains,
+        localOnlyCollections: dto.privacySummary.localOnlyCollections,
+        trace: dto.privacySummary.trace,
+      ),
+      confirmationRequired: dto.confirmationRequired,
+      actionContract: ActionContract(
+        actionType: dto.actionContract.actionType,
+        requiresConfirmation: dto.actionContract.requiresConfirmation,
+        destructive: dto.actionContract.destructive,
+        external: dto.actionContract.external,
+        payloadPreview: dto.actionContract.payloadPreview,
+        forbiddenActions: dto.actionContract.forbiddenActions,
+      ),
+      status: dto.status,
+      evidenceStatus: dto.evidenceStatus,
+      rankingScore: dto.rankingScore,
+      createdAtIso: dto.createdAtIso,
+      updatedAtIso: dto.updatedAtIso,
+      trace: dto.trace,
+    );
+  }
+
+  ShoppingNeed _shoppingNeedFromDto(ShoppingNeedDto dto) {
+    return ShoppingNeed(
+      id: dto.needId,
+      userId: dto.userId,
+      needType: dto.needType,
+      title: dto.title,
+      sourceDomain: dto.sourceDomain,
+      sourceEventIds: dto.sourceEventIds,
+      urgencyScore: dto.urgencyScore,
+      budgetHint: dto.budgetHint,
+      currency: dto.currency,
+      sustainabilityPreference: dto.sustainabilityPreference,
+      state: dto.state,
+      createdAtIso: dto.createdAtIso,
+      updatedAtIso: dto.updatedAtIso,
+      trace: dto.trace,
+    );
+  }
+
+  ProductEvidenceCard _productEvidenceCardFromDto(ProductEvidenceCardDto dto) {
+    return ProductEvidenceCard(
+      id: dto.id,
+      userId: dto.userId,
+      productName: dto.productName,
+      brand: dto.brand,
+      merchantName: dto.merchantName,
+      price: dto.price,
+      currency: dto.currency,
+      source: dto.source,
+      checkedAtIso: dto.checkedAtIso,
+      reviewSummary: dto.reviewSummary,
+      sustainabilityStatus: dto.sustainabilityStatus,
+      confidence: dto.confidence,
+      disclaimer: dto.disclaimer,
+      trace: dto.trace,
+    );
+  }
+
+  List<DecisionCard> _buildLocalDecisionFallback() {
+    if (_dailyMissions.isNotEmpty) {
+      return _dailyMissions
+          .map(
+            (mission) => decisionCardFromMission(
+              mission,
+              privacySettings: _privacySettings,
+              sentEventCount: aiEligibleEventCount,
+              blockedEventCount: blockedFromAiEvents.length,
+              localOnlyCollections: alwaysLocalCollectionLabels,
+            ),
+          )
+          .toList(growable: false);
+    }
+    if (_mentalLoadItems.isEmpty) {
+      return const <DecisionCard>[];
+    }
+    return <DecisionCard>[_buildFallbackDecisionCard()];
+  }
+
+  DecisionCard _buildFallbackDecisionCard() {
+    final source = _mentalLoadItems.isEmpty ? null : _mentalLoadItems.first;
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    return DecisionCard(
+      id: source?.id ?? 'decision-local-fallback',
+      userId: 'local-user',
+      title: source?.title ?? 'Review your top pending item',
+      recommendedAction: source?.summary ??
+          'Decide whether to act now, postpone, or keep this local.',
+      alternatives: const <String>[
+        'Postpone until later today',
+        'Keep it as a local reminder',
+      ],
+      domainTargets:
+          source == null ? const <String>['decision'] : <String>[source.domain],
+      sourceItems: source == null ? const <String>[] : <String>[source.id],
+      evidence: source == null ? const <String>[] : source.evidenceRefs,
+      confidence: source?.confidence ?? 0.58,
+      uncertainty:
+          'Generated locally because no remote decision plan was available.',
+      privacySummary: PrivacySummary(
+        aiEnabled: _privacySettings.aiEnabled,
+        sentEventCount: aiEligibleEventCount,
+        blockedEventCount: blockedFromAiEvents.length,
+        allowedDomains: _privacySettings.aiAllowedWireDomains,
+        blockedDomains: DomainKey.values
+            .where(
+                (domain) => !_privacySettings.aiAllowedDomains.contains(domain))
+            .map((domain) => domain.wireName)
+            .toList(growable: false),
+        localOnlyCollections: alwaysLocalCollectionLabels,
+        trace: const <String, Object?>{'provider': 'local'},
+      ),
+      confirmationRequired: true,
+      actionContract: ActionContract(
+        actionType: 'review_and_confirm',
+        requiresConfirmation: true,
+        destructive: false,
+        external: false,
+        payloadPreview: source == null
+            ? const <String, Object?>{}
+            : <String, Object?>{'mental_load_item_id': source.id},
+        forbiddenActions: const <String>[
+          'external_action_without_confirmation',
+        ],
+      ),
+      status: 'draft',
+      evidenceStatus: source == null || source.evidenceRefs.isEmpty
+          ? 'insufficient_verified_data'
+          : 'local_only',
+      rankingScore: source?.urgencyScore ?? 0.58,
+      createdAtIso: nowIso,
+      updatedAtIso: nowIso,
+      trace: const <String, Object?>{
+        'clientFallback': true,
+        'fallbackReason': 'local_decision_fallback',
+      },
+    );
+  }
+
+  List<ShoppingNeed> _deriveLocalShoppingNeeds() {
+    final derived = <ShoppingNeed>[
+      for (final item in _mentalLoadItems)
+        if (item.domain == 'shopping' ||
+            item.domain == 'pantry' ||
+            item.domain == 'wardrobe' ||
+            item.domain == 'homememory')
+          ShoppingNeed(
+            id: 'need-from-${item.id}',
+            userId: item.userId,
+            needType: item.type == 'shopping' ? 'restock' : item.type,
+            title: item.title,
+            sourceDomain: item.domain,
+            sourceEventIds: item.sourceEventId == null
+                ? const <String>[]
+                : <String>[item.sourceEventId!],
+            urgencyScore: item.urgencyScore,
+            budgetHint: item.amountHint,
+            currency: item.currencyHint,
+            sustainabilityPreference:
+                item.trace['sustainability_preference']?.toString(),
+            state: item.state == 'completed' ? 'fulfilled' : 'draft',
+            createdAtIso: item.createdAtIso,
+            updatedAtIso: item.updatedAtIso,
+            trace: <String, Object?>{
+              ...item.trace,
+              'derived_from': 'mental_load_item',
+            },
+          ),
+      for (final item in _purchaseIntentions)
+        ShoppingNeed(
+          id: 'need-purchase-${item.id}',
+          userId: 'local-user',
+          needType: 'compare_before_buying',
+          title: item.label,
+          sourceDomain: 'wardrobe',
+          sourceEventIds: const <String>[],
+          urgencyScore: 0.44,
+          budgetHint: null,
+          currency: null,
+          sustainabilityPreference: 'reuse_first',
+          state: 'draft',
+          createdAtIso: DateTime.now().toUtc().toIso8601String(),
+          updatedAtIso: DateTime.now().toUtc().toIso8601String(),
+          trace: const <String, Object?>{
+            'derived_from': 'purchase_intention',
+          },
+        ),
+      for (final item in warrantyEndingSoonItems)
+        ShoppingNeed(
+          id: 'need-warranty-${item.id}',
+          userId: item.userId,
+          needType: 'replacement_research',
+          title: 'Review replacement options for ${item.displayName}',
+          sourceDomain: 'homememory',
+          sourceEventIds: const <String>[],
+          urgencyScore: 0.72,
+          budgetHint: item.purchasePrice,
+          currency: item.currency,
+          sustainabilityPreference: 'repair_or_replace_if_needed',
+          state: 'draft',
+          createdAtIso: item.updatedAt,
+          updatedAtIso: item.updatedAt,
+          trace: const <String, Object?>{
+            'derived_from': 'warranty_ending_soon',
+          },
+        ),
+    ];
+    return _dedupeById(derived, (item) => item.id);
+  }
+
+  ShoppingNeed? _deriveShoppingNeedFromDraft(
+    CaptureDraftItem draft, {
+    required String sourceEventId,
+  }) {
+    final domain = draft.domain;
+    if (domain != DomainKey.finance &&
+        domain != DomainKey.pantry &&
+        domain != DomainKey.wardrobe &&
+        domain != DomainKey.shopping &&
+        domain != DomainKey.homememory) {
+      return null;
+    }
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    final needType = switch (domain) {
+      DomainKey.finance => 'budget_check',
+      DomainKey.pantry => 'restock',
+      DomainKey.wardrobe => 'compare_before_buying',
+      DomainKey.shopping => 'shopping',
+      DomainKey.homememory => 'replacement_research',
+      _ => 'shopping',
+    };
+    return ShoppingNeed(
+      id: 'need-${draft.id}',
+      userId: 'local-user',
+      needType: needType,
+      title: draft.text,
+      sourceDomain: domain.wireName,
+      sourceEventIds: <String>[sourceEventId],
+      urgencyScore: draft.confidence,
+      budgetHint: draft.hints['amount'] is num
+          ? (draft.hints['amount'] as num).toDouble()
+          : null,
+      currency: draft.hints['currency']?.toString(),
+      sustainabilityPreference:
+          draft.hints['sustainability_preference']?.toString(),
+      state: 'draft',
+      createdAtIso: nowIso,
+      updatedAtIso: nowIso,
+      trace: <String, Object?>{
+        'derived_from': 'capture_draft',
+        'draft_domain': domain.wireName,
+      },
+    );
+  }
+
+  Future<void> _createReminderCandidateIfNeeded(CaptureDraftItem draft) async {
+    final dueHint = draft.hints['time_hint']?.toString() ??
+        draft.hints['expiry_hint']?.toString();
+    if (dueHint == null || dueHint.isEmpty) {
+      return;
+    }
+    final title = 'Reminder: ${draft.text}';
+    final exists = _calendarItems.any((item) => item.title == title);
+    if (exists) {
+      return;
+    }
+    final start = DateTime.now().toUtc().add(
+          dueHint.contains('today')
+              ? const Duration(hours: 4)
+              : const Duration(days: 1),
+        );
+    await _upsertCalendarItem(
+      CalendarItem(
+        id: _entityId('calendar'),
+        title: title,
+        startIso: start.toIso8601String(),
+        endIso: start.add(const Duration(minutes: 30)).toIso8601String(),
+        location: dueHint,
+        energy: 'steady',
+      ),
+    );
+  }
+
+  Future<void> _updateDecisionCardStatus(
+    String id,
+    String status, {
+    bool notifyAfter = true,
+  }) async {
+    final current = _decisionCards.firstWhere(
+      (item) => item.id == id,
+      orElse: () => _buildFallbackDecisionCard(),
+    );
+    final updated = current.copyWith(
+      status: status,
+      updatedAtIso: DateTime.now().toUtc().toIso8601String(),
+      trace: <String, Object?>{
+        ...current.trace,
+        'last_local_action': status,
+      },
+    );
+    await _upsertDecisionCard(updated);
+    await _recordEvent(
+      event: LifeEventFactory.create(
+        domain: 'decision',
+        type: 'decision_$status',
+        summary: updated.title,
+        privacyLevel: _privacyLevelForDomain('decision'),
+        payload: <String, Object?>{
+          'decision_id': updated.id,
+          'status': status,
+          'recommended_action': updated.recommendedAction,
+        },
+      ),
+      refreshPlan: false,
+      notifyAfter: false,
+    );
+    if (notifyAfter) {
+      notifyListeners();
+    }
+  }
+
   void _applyRuntimeConfig() {
     final config = _runtimeConfig;
     if (config == null) {
@@ -2200,7 +2955,8 @@ class GoLifeController extends ChangeNotifier {
     for (final feedback in _missionFeedback) {
       final trace = feedback.trace;
       final mapped = trace['learning_keys_by_suggestion_id'];
-      if (mapped is Map && mapped[feedback.missionId]?.toString() == learningKey) {
+      if (mapped is Map &&
+          mapped[feedback.missionId]?.toString() == learningKey) {
         return true;
       }
     }
@@ -2309,6 +3065,20 @@ class GoLifeController extends ChangeNotifier {
       case 'week':
         await _upsertWeekPlan(_weekPlanFromCapture(draft));
         return;
+      case 'calendar':
+        await _upsertCalendarItem(_calendarItemFromCapture(draft));
+        return;
+      case 'journal':
+        await _upsertQuickNote(_quickNoteFromCapture(draft));
+        return;
+      case 'recipe':
+        await _upsertRecipeRescue(_recipeRescueFromCapture(draft));
+        return;
+      case 'shopping':
+      case 'homememory':
+      case 'decision':
+      case 'mission':
+        return;
     }
   }
 
@@ -2391,6 +3161,42 @@ class GoLifeController extends ChangeNotifier {
           focus: draft.text,
         ),
       ],
+    );
+  }
+
+  CalendarItem _calendarItemFromCapture(CaptureDraftItem draft) {
+    final start = DateTime.now().toUtc().add(const Duration(hours: 2));
+    return CalendarItem(
+      id: _entityId('calendar'),
+      title: draft.text,
+      startIso: start.toIso8601String(),
+      endIso: start.add(const Duration(minutes: 30)).toIso8601String(),
+      location: 'Captured',
+      energy: 'steady',
+    );
+  }
+
+  QuickNote _quickNoteFromCapture(CaptureDraftItem draft) {
+    return QuickNote(
+      id: _entityId('note'),
+      text: draft.text,
+      createdAtIso: DateTime.now().toUtc().toIso8601String(),
+      privacyLevel: draft.privacyLevel,
+    );
+  }
+
+  RecipeRescue _recipeRescueFromCapture(CaptureDraftItem draft) {
+    return RecipeRescue(
+      id: _entityId('recipe'),
+      title: draft.text,
+      summary: draft.rationale,
+      ingredientNames: draft.text
+          .split(RegExp(r',| y | and ', caseSensitive: false))
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .take(4)
+          .toList(growable: false),
+      estimatedMinutes: 20,
     );
   }
 
@@ -2632,6 +3438,92 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.upsertEvidenceAttachment(evidenceAttachment);
   }
 
+  Future<void> _upsertMentalLoadItem(MentalLoadItem item) async {
+    _mentalLoadItems = _upsertById(_mentalLoadItems, item, (value) => value.id);
+    await _localStore.upsertMentalLoadItem(item);
+  }
+
+  Future<void> _upsertDecisionCard(DecisionCard card) async {
+    _decisionCards = _upsertById(_decisionCards, card, (value) => value.id);
+    await _localStore.upsertDecisionCard(card);
+  }
+
+  Future<void> _upsertShoppingNeed(ShoppingNeed need) async {
+    _shoppingNeeds = _upsertById(_shoppingNeeds, need, (value) => value.id);
+    await _localStore.upsertShoppingNeed(need);
+  }
+
+  Future<void> _upsertProductEvidenceCard(ProductEvidenceCard card) async {
+    _productEvidenceCards =
+        _upsertById(_productEvidenceCards, card, (value) => value.id);
+    await _localStore.upsertProductEvidenceCard(card);
+  }
+
+  MentalLoadItem _homeMemoryMentalLoadItem({
+    required String id,
+    required String type,
+    required String title,
+    required String summary,
+    required double urgencyScore,
+    required String privacyLevel,
+    required String sourceEventId,
+    String? dueHint,
+    double effortScore = 0.24,
+    bool requiresConfirmation = true,
+    Map<String, Object?> trace = const <String, Object?>{},
+  }) {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    return MentalLoadItem(
+      id: id,
+      userId: 'local-user',
+      domain: 'homememory',
+      type: type,
+      title: title,
+      summary: summary,
+      sourceEventId: sourceEventId,
+      urgencyScore: urgencyScore,
+      effortScore: effortScore,
+      confidence: 0.72,
+      state: 'pending',
+      dueHint: dueHint,
+      createdAtIso: nowIso,
+      updatedAtIso: nowIso,
+      privacyLevel: privacyLevel,
+      requiresConfirmation: requiresConfirmation,
+      evidenceRefs:
+          sourceEventId.isEmpty ? const <String>[] : <String>[sourceEventId],
+      amountHint: null,
+      currencyHint: null,
+      trace: trace,
+    );
+  }
+
+  ProductEvidenceCard _productEvidenceCardFromPurchaseProof({
+    required OwnedItem ownedItem,
+    required PurchaseProof proof,
+  }) {
+    return ProductEvidenceCard(
+      id: 'evidence-proof-${proof.id}',
+      userId: proof.userId,
+      productName: ownedItem.displayName,
+      brand: ownedItem.brand.isEmpty ? null : ownedItem.brand,
+      merchantName: proof.merchantName.isEmpty ? null : proof.merchantName,
+      price: proof.totalAmount,
+      currency: proof.currency,
+      source: 'local_purchase_proof',
+      checkedAtIso: proof.createdAt,
+      reviewSummary: proof.rawText,
+      sustainabilityStatus: 'local_only',
+      confidence: 0.56,
+      disclaimer: _controllerText('purchase_proof_evidence_disclaimer'),
+      trace: <String, Object?>{
+        'derived_from': 'purchase_proof',
+        'owned_item_id': ownedItem.id,
+        'proof_id': proof.id,
+      },
+    );
+  }
+
   String _taskNotesFromHints(Map<String, Object?> hints) {
     final dueHint = hints['time_hint']?.toString();
     if (dueHint == null || dueHint.isEmpty) {
@@ -2759,6 +3651,13 @@ class GoLifeController extends ChangeNotifier {
           ptBr: 'Missao marcada como concluida.',
           ja: 'ミッションを完了として記録しました。',
           zhHans: '任务已标记为完成。',
+        ),
+      'reminder_created' => _localizedControllerString(
+          en: 'Reminder created from this decision.',
+          es: 'Recordatorio creado a partir de esta decision.',
+          ptBr: 'Lembrete criado a partir desta decisao.',
+          ja: 'ã“ã®æ±ºå®šã‹ã‚‰ãƒªãƒžã‚¤ãƒ³ãƒ€ãƒ¼ã‚’ä½œæˆã—ã¾ã—ãŸã€‚',
+          zhHans: 'å·²æ ¹æ®æ­¤å†³ç­–åˆ›å»ºæé†’ã€‚',
         ),
       'task_completed' => _localizedControllerString(
           en: 'Task completed: {title}.',
@@ -3033,6 +3932,39 @@ class GoLifeController extends ChangeNotifier {
           ja: '保証期限前に確認する',
           zhHans: '在保修到期前检查',
         ),
+      'maintenance_due_summary' => _localizedControllerString(
+          en: 'Maintenance due for {item}.',
+          es: 'Mantenimiento pendiente para {item}.',
+          ptBr: 'Manutencao pendente para {item}.',
+          ptPt: 'Manutencao pendente para {item}.',
+          fr: 'Maintenance a prevoir pour {item}.',
+          it: 'Manutenzione prevista per {item}.',
+          de: 'Wartung faellig fuer {item}.',
+          ja: 'Maintenance due for {item}.',
+          zhHans: 'Maintenance due for {item}.',
+        ),
+      'warranty_review_title' => _localizedControllerString(
+          en: 'Review warranty for {item}',
+          es: 'Revisar garantia de {item}',
+          ptBr: 'Revisar garantia de {item}',
+          ptPt: 'Rever garantia de {item}',
+          fr: 'Verifier la garantie de {item}',
+          it: 'Controlla la garanzia di {item}',
+          de: 'Garantie fuer {item} pruefen',
+          ja: 'Review warranty for {item}',
+          zhHans: 'Review warranty for {item}',
+        ),
+      'warranty_review_summary' => _localizedControllerString(
+          en: 'Warranty review suggested before {date}.',
+          es: 'Conviene revisar la garantia antes de {date}.',
+          ptBr: 'Vale revisar a garantia antes de {date}.',
+          ptPt: 'Vale a pena rever a garantia antes de {date}.',
+          fr: 'Verifier la garantie avant {date}.',
+          it: 'Controlla la garanzia prima di {date}.',
+          de: 'Garantie vor {date} pruefen.',
+          ja: 'Warranty review suggested before {date}.',
+          zhHans: 'Warranty review suggested before {date}.',
+        ),
       'claim_draft_default_title' => _localizedControllerString(
           en: 'Draft claim',
           es: 'Borrador de reclamacion',
@@ -3040,12 +3972,50 @@ class GoLifeController extends ChangeNotifier {
           ja: '申し立て下書き',
           zhHans: '申诉草稿',
         ),
+      'claim_candidate_title' => _localizedControllerString(
+          en: 'Claim candidate for {item}',
+          es: 'Posible reclamacion para {item}',
+          ptBr: 'Possivel reclamacao para {item}',
+          ptPt: 'Possivel reclamacao para {item}',
+          fr: 'Reclamation potentielle pour {item}',
+          it: 'Possibile reclamo per {item}',
+          de: 'Moegliche Reklamation fuer {item}',
+          ja: 'Claim candidate for {item}',
+          zhHans: 'Claim candidate for {item}',
+        ),
+      'claim_candidate_summary' => _localizedControllerString(
+          en: 'Drafted locally. Verify warranty, seller policy, and next steps before sending.',
+          es: 'Borrador generado en local. Verifica garantia, politica del vendedor y siguientes pasos antes de enviarlo.',
+          ptBr:
+              'Rascunho gerado localmente. Verifique garantia, politica do vendedor e proximos passos antes de enviar.',
+          ptPt:
+              'Rascunho gerado localmente. Verifica a garantia, a politica do vendedor e os proximos passos antes de enviar.',
+          fr: 'Brouillon genere en local. Verifie la garantie, la politique du vendeur et les prochaines etapes avant envoi.',
+          it: 'Bozza generata in locale. Verifica garanzia, politica del venditore e prossimi passi prima di inviare.',
+          de: 'Lokal erstellter Entwurf. Vor dem Senden Garantie, Haendlerregeln und naechste Schritte pruefen.',
+          ja: 'Claim drafted locally. Verify details before sending.',
+          zhHans: 'Claim drafted locally. Verify details before sending.',
+        ),
       'claim_draft_title_for_item' => _localizedControllerString(
           en: 'Claim draft for {item}',
           es: 'Borrador de reclamacion para {item}',
           ptBr: 'Rascunho de reclamacao para {item}',
           ja: '{item} の申し立て下書き',
           zhHans: '{item} 的申诉草稿',
+        ),
+      'purchase_proof_evidence_disclaimer' => _localizedControllerString(
+          en: 'Derived from a local purchase proof. Verify product details and sustainability claims with the seller.',
+          es: 'Derivado de un comprobante local. Verifica detalles del producto y claims de sostenibilidad con el vendedor.',
+          ptBr:
+              'Derivado de um comprovante local. Verifique detalhes do produto e claims de sustentabilidade com o vendedor.',
+          ptPt:
+              'Derivado de um comprovativo local. Verifica detalhes do produto e claims de sustentabilidade com o vendedor.',
+          fr: 'Derive d une preuve d achat locale. Verifie les details produit et les claims de durabilite avec le vendeur.',
+          it: 'Derivato da una prova di acquisto locale. Verifica dettagli prodotto e claim di sostenibilita con il venditore.',
+          de: 'Aus lokalem Kaufbeleg abgeleitet. Produktdetails und Nachhaltigkeitsaussagen mit dem Haendler pruefen.',
+          ja: 'Derived from local purchase proof. Verify details with the seller.',
+          zhHans:
+              'Derived from local purchase proof. Verify details with the seller.',
         ),
       'claim_disclaimer' => _localizedControllerString(
           en: 'No legal advice. Verify warranty and seller policies. Send outside the app.',
@@ -3212,21 +4182,25 @@ class GoLifeController extends ChangeNotifier {
     required String en,
     required String es,
     required String ptBr,
+    String? ptPt,
+    String? fr,
+    String? it,
+    String? de,
     required String ja,
     required String zhHans,
   }) {
-    switch (normalizeLocaleTag(currentLocaleTag)) {
-      case 'es':
-        return es;
-      case 'pt-BR':
-        return ptBr;
-      case 'ja':
-        return ja;
-      case 'zh-Hans':
-        return zhHans;
-      default:
-        return en;
-    }
+    return pickLocalizedValue(
+      currentLocaleTag,
+      en: en,
+      es: es,
+      ptBr: ptBr,
+      ptPt: ptPt,
+      fr: fr,
+      it: it,
+      de: de,
+      ja: ja,
+      zhHans: zhHans,
+    );
   }
 
   double? _extractFirstAmount(String text) {
@@ -3264,4 +4238,31 @@ List<T> _removeById<T>(
   return List<T>.unmodifiable(
     values.where((item) => idOf(item) != id).toList(growable: false),
   );
+}
+
+List<T> _mergeById<T>(
+  List<T> current,
+  List<T> incoming,
+  String Function(T value) idOf,
+) {
+  var next = current;
+  for (final item in incoming) {
+    next = _upsertById(next, item, idOf);
+  }
+  return next;
+}
+
+List<T> _dedupeById<T>(
+  List<T> values,
+  String Function(T value) idOf,
+) {
+  final seen = <String>{};
+  final next = <T>[];
+  for (final item in values) {
+    final id = idOf(item);
+    if (seen.add(id)) {
+      next.add(item);
+    }
+  }
+  return List<T>.unmodifiable(next);
 }

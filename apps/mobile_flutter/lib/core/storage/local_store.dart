@@ -8,12 +8,16 @@ import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
+import '../../domains/mindflow/decision_card.dart';
+import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/recipes/recipe_rescue.dart';
+import '../../domains/shopping/product_evidence_card.dart';
+import '../../domains/shopping/shopping_need.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -76,6 +80,22 @@ abstract class LocalStore {
   Future<List<ClaimDraft>> loadClaimDrafts() async => const <ClaimDraft>[];
   Future<List<EvidenceAttachment>> loadEvidenceAttachments() async =>
       const <EvidenceAttachment>[];
+  Future<List<MentalLoadItem>> loadMentalLoadItems() async =>
+      const <MentalLoadItem>[];
+  Future<void> saveMentalLoadItems(List<MentalLoadItem> items) async {}
+  Future<void> upsertMentalLoadItem(MentalLoadItem item) async {}
+  Future<List<DecisionCard>> loadDecisionCards() async =>
+      const <DecisionCard>[];
+  Future<void> saveDecisionCards(List<DecisionCard> cards) async {}
+  Future<void> upsertDecisionCard(DecisionCard card) async {}
+  Future<List<ShoppingNeed>> loadShoppingNeeds() async =>
+      const <ShoppingNeed>[];
+  Future<void> saveShoppingNeeds(List<ShoppingNeed> needs) async {}
+  Future<void> upsertShoppingNeed(ShoppingNeed need) async {}
+  Future<List<ProductEvidenceCard>> loadProductEvidenceCards() async =>
+      const <ProductEvidenceCard>[];
+  Future<void> saveProductEvidenceCards(List<ProductEvidenceCard> cards) async {}
+  Future<void> upsertProductEvidenceCard(ProductEvidenceCard card) async {}
 
   Future<void> upsertTask(GoTask task) async {}
   Future<void> upsertHabit(Habit habit) async {}
@@ -108,6 +128,10 @@ abstract class LocalStore {
   Future<void> deleteQuickNote(String id) async {}
   Future<void> deleteCalendarItem(String id) async {}
   Future<void> deleteRecipeRescue(String id) async {}
+  Future<void> deleteMentalLoadItem(String id) async {}
+  Future<void> deleteDecisionCard(String id) async {}
+  Future<void> deleteShoppingNeed(String id) async {}
+  Future<void> deleteProductEvidenceCard(String id) async {}
 
   Future<void> deleteAllData() async {}
 }

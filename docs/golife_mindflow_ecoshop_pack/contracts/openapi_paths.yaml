@@ -1,0 +1,100 @@
+paths:
+  /v1/mindflow/inbox/parse:
+    post:
+      summary: Parse free-form input into MentalLoadItems
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MindFlowParseRequest'
+      responses:
+        '200':
+          description: Parsed mental load items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MindFlowParseResponse'
+
+  /v1/mindflow/decisions/daily:
+    post:
+      summary: Generate daily DecisionCards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionPlanRequest'
+      responses:
+        '200':
+          description: Decision plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DecisionPlanResponse'
+
+  /v1/mindflow/decisions/{decision_id}/explain:
+    post:
+      summary: Explain a decision card
+      parameters:
+        - in: path
+          name: decision_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Explanation payload
+
+  /v1/mindflow/reminders/propose:
+    post:
+      summary: Propose reminders from mental load items
+      responses:
+        '200':
+          description: Reminder candidates
+
+  /v1/shopping/needs/extract:
+    post:
+      summary: Extract shopping needs from local context
+      responses:
+        '200':
+          description: Shopping needs
+
+  /v1/shopping/list/optimize:
+    post:
+      summary: Build a privacy-safe shopping plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShoppingPlanRequest'
+      responses:
+        '200':
+          description: Shopping plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShoppingPlanResponse'
+
+  /v1/shopping/product/evidence:
+    post:
+      summary: Create or retrieve product evidence card
+      responses:
+        '200':
+          description: Product evidence card
+
+components:
+  schemas:
+    MindFlowParseRequest:
+      type: object
+    MindFlowParseResponse:
+      type: object
+    DecisionPlanRequest:
+      type: object
+    DecisionPlanResponse:
+      type: object
+    ShoppingPlanRequest:
+      type: object
+    ShoppingPlanResponse:
+      type: object

@@ -27,16 +27,24 @@ from app.operational_payloads import (
 from app.providers.base import LLMProvider
 from app.providers.factory import build_provider
 from app.schemas import (
+    DecisionPlanRequest,
+    DecisionPlanResponse,
     EventClassificationRequest,
     EventClassificationResponse,
     EventParseRequest,
     EventParseResponse,
     MissionFeedbackRequest,
     MissionFeedbackResponse,
+    MindFlowParseRequest,
+    MindFlowParseResponse,
+    ProductEvidenceCard,
+    ProductEvidenceRequest,
     ProofParseRequest,
     ProofParseResponse,
     ReflectionSafetyRequest,
     ReflectionSafetyResponse,
+    ShoppingPlanRequest,
+    ShoppingPlanResponse,
     SuggestionRequest,
     SuggestionResponse,
     TaskRewriteRequest,
@@ -44,13 +52,18 @@ from app.schemas import (
 )
 from app.settings import Settings, get_settings
 from app.use_cases import (
+    run_decision_plan,
     run_domain_suggestions,
     run_event_classification,
     run_event_classification_semantic,
     run_event_parse,
     run_event_parse_semantic,
+    run_mindflow_parse,
+    run_product_evidence,
     run_proof_parse,
     run_proof_parse_semantic,
+    run_shopping_needs_extract,
+    run_shopping_plan,
     run_suggestions,
     run_task_rewrite,
 )
@@ -372,6 +385,72 @@ def create_app(
             ),
         )
         return response
+
+    @app.post("/v1/mindflow/inbox/parse", response_model=MindFlowParseResponse)
+    async def parse_mindflow_inbox(
+        payload: MindFlowParseRequest,
+        request: Request,
+    ) -> MindFlowParseResponse:
+        enforce_safe_capture_input(
+            EventParseRequest.model_validate(payload.model_dump()),
+            region=request.app.state.settings.crisis_resources_region,
+            catalog_path=request.app.state.settings.crisis_resources_catalog_path,
+        )
+        return await run_mindflow_parse(
+            payload,
+            settings=request.app.state.settings,
+            provider=request.app.state.provider,
+        )
+
+    @app.post(
+        "/v1/mindflow/decisions/daily",
+        response_model=DecisionPlanResponse,
+    )
+    async def daily_decision_plan(
+        payload: DecisionPlanRequest,
+        request: Request,
+    ) -> DecisionPlanResponse:
+        return await run_decision_plan(
+            payload,
+            settings=request.app.state.settings,
+            provider=request.app.state.provider,
+        )
+
+    @app.post("/v1/shopping/needs/extract", response_model=ShoppingPlanResponse)
+    async def extract_shopping_needs(
+        payload: ShoppingPlanRequest,
+        request: Request,
+    ) -> ShoppingPlanResponse:
+        return await run_shopping_needs_extract(
+            payload,
+            settings=request.app.state.settings,
+            provider=request.app.state.provider,
+        )
+
+    @app.post("/v1/shopping/list/optimize", response_model=ShoppingPlanResponse)
+    async def optimize_shopping_list(
+        payload: ShoppingPlanRequest,
+        request: Request,
+    ) -> ShoppingPlanResponse:
+        return await run_shopping_plan(
+            payload,
+            settings=request.app.state.settings,
+            provider=request.app.state.provider,
+        )
+
+    @app.post(
+        "/v1/shopping/product/evidence",
+        response_model=ProductEvidenceCard,
+    )
+    async def product_evidence(
+        payload: ProductEvidenceRequest,
+        request: Request,
+    ) -> ProductEvidenceCard:
+        return await run_product_evidence(
+            payload,
+            settings=request.app.state.settings,
+            provider=request.app.state.provider,
+        )
 
     @app.post("/v1/proofs/parse", response_model=ProofParseResponse)
     async def parse_proof(

@@ -41,6 +41,34 @@ CAPABILITY_DEFAULTS: dict[RoutingCapability, dict[str, Any]] = {
         "preferred_min_throughput_tokens_per_second": 10.0,
         "retry_policy": {"key_retries": 2, "parse_retries": 1},
     },
+    "mindflow_parse": {
+        "min_context_length": 8000,
+        "required_parameters": ["response_format"],
+        "preferred_max_latency_seconds": 3.0,
+        "preferred_min_throughput_tokens_per_second": 40.0,
+        "retry_policy": {"key_retries": 2, "parse_retries": 1},
+    },
+    "decision_plan": {
+        "min_context_length": 24000,
+        "required_parameters": ["response_format", "temperature", "max_tokens"],
+        "preferred_max_latency_seconds": 6.0,
+        "preferred_min_throughput_tokens_per_second": 18.0,
+        "retry_policy": {"key_retries": 2, "parse_retries": 1},
+    },
+    "shopping_plan": {
+        "min_context_length": 24000,
+        "required_parameters": ["response_format", "temperature", "max_tokens"],
+        "preferred_max_latency_seconds": 6.0,
+        "preferred_min_throughput_tokens_per_second": 18.0,
+        "retry_policy": {"key_retries": 2, "parse_retries": 1},
+    },
+    "product_evidence": {
+        "min_context_length": 12000,
+        "required_parameters": ["response_format"],
+        "preferred_max_latency_seconds": 4.0,
+        "preferred_min_throughput_tokens_per_second": 25.0,
+        "retry_policy": {"key_retries": 2, "parse_retries": 1},
+    },
 }
 
 CAPABILITY_ENDPOINTS: dict[RoutingCapability, tuple[str, ...]] = {
@@ -54,6 +82,13 @@ CAPABILITY_ENDPOINTS: dict[RoutingCapability, tuple[str, ...]] = {
     "task_rewrite": ("/v1/tasks/rewrite",),
     "semantic_classify": ("/v1/events/classify",),
     "weekly_summary": (),
+    "mindflow_parse": ("/v1/mindflow/inbox/parse",),
+    "decision_plan": ("/v1/mindflow/decisions/daily",),
+    "shopping_plan": (
+        "/v1/shopping/needs/extract",
+        "/v1/shopping/list/optimize",
+    ),
+    "product_evidence": ("/v1/shopping/product/evidence",),
 }
 
 VENDOR_PRIORS: tuple[tuple[str, float], ...] = (
@@ -88,7 +123,7 @@ def build_default_routing_profiles(now: datetime | None = None) -> list[RoutingP
                     "preferred_min_throughput_tokens_per_second"
                 ],
                 retry_policy=dict(defaults["retry_policy"]),
-                enabled=(capability != "semantic_classify"),
+                enabled=(capability not in {"semantic_classify", "product_evidence"}),
                 updated_at=current,
             )
         )
@@ -262,4 +297,3 @@ def rank_models_for_capability(
             )
         )
     return snapshots
-
