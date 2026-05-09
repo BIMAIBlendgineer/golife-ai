@@ -13,6 +13,9 @@ import {
   fallbackIncidents,
   fallbackModelCatalog,
   fallbackModelSelections,
+  fallbackMindFlowDecisionQuality,
+  fallbackMindFlowOpenLoops,
+  fallbackMindFlowSummary,
   fallbackMissions,
   fallbackModelSettings,
   fallbackOpenRouterByokKeys,
@@ -28,6 +31,9 @@ import {
   fallbackRoutingProfiles,
   fallbackSafety,
   fallbackSecuritySummary,
+  fallbackShoppingClaimsSummary,
+  fallbackShoppingEvidenceQuality,
+  fallbackShoppingSummary,
   fallbackSupportRequests,
   fallbackUserManagement,
   fallbackUserPrivacyById,
@@ -55,6 +61,9 @@ import type {
   HomeMemoryParserUsageRow,
   HomeMemorySummary,
   IncidentRow,
+  MindFlowDecisionQuality,
+  MindFlowOpenLoops,
+  MindFlowSummary,
   ModelCatalogEntry,
   MissionAuditRecord,
   ModelSettingsSnapshot,
@@ -73,6 +82,9 @@ import type {
   RoutingProfile,
   SafetyAuditRecord,
   SecuritySummary,
+  ShoppingClaimsSummary,
+  ShoppingEvidenceQuality,
+  ShoppingSummary,
   StorageSummary,
   StorageUsageRow,
   SupportRequest,
@@ -584,6 +596,52 @@ export async function getHomeMemoryParserUsage(params?: {
       next_offset:
         offset + limit < fallbackHomeMemoryParserUsage.items.length ? offset + limit : null,
     },
+  });
+}
+
+export async function getMindFlowSummary(): Promise<AdminFetchResult<MindFlowSummary>> {
+  return adminRequest("/admin/mindflow/summary", {
+    fallbackData: fallbackMindFlowSummary,
+  });
+}
+
+export async function getMindFlowDecisionQuality(): Promise<
+  AdminFetchResult<MindFlowDecisionQuality>
+> {
+  return adminRequest("/admin/mindflow/decision-quality", {
+    fallbackData: fallbackMindFlowDecisionQuality,
+  });
+}
+
+export async function getMindFlowOpenLoops(): Promise<
+  AdminFetchResult<MindFlowOpenLoops>
+> {
+  return adminRequest("/admin/mindflow/open-loops", {
+    fallbackData: fallbackMindFlowOpenLoops,
+  });
+}
+
+export async function getShoppingSummary(): Promise<
+  AdminFetchResult<ShoppingSummary>
+> {
+  return adminRequest("/admin/shopping/summary", {
+    fallbackData: fallbackShoppingSummary,
+  });
+}
+
+export async function getShoppingEvidenceQuality(): Promise<
+  AdminFetchResult<ShoppingEvidenceQuality>
+> {
+  return adminRequest("/admin/shopping/evidence-quality", {
+    fallbackData: fallbackShoppingEvidenceQuality,
+  });
+}
+
+export async function getShoppingClaimsSummary(): Promise<
+  AdminFetchResult<ShoppingClaimsSummary>
+> {
+  return adminRequest("/admin/shopping/sustainability-claims", {
+    fallbackData: fallbackShoppingClaimsSummary,
   });
 }
 

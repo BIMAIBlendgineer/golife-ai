@@ -15,11 +15,15 @@ import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/calendar/calendar_item.dart';
+import '../../domains/mindflow/decision_card.dart';
+import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/recipes/recipe_rescue.dart';
+import '../../domains/shopping/product_evidence_card.dart';
+import '../../domains/shopping/shopping_need.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -40,7 +44,7 @@ class SqliteLocalStore implements LocalStore {
         );
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 4;
+  static const _databaseVersion = 5;
   static const _privacyKey = 'privacy_settings';
   static const _localePreferenceKey = 'locale_preference';
   static const _profilePreferencesKey = 'profile_preferences';
@@ -77,6 +81,9 @@ class SqliteLocalStore implements LocalStore {
         }
         if (oldVersion < 4) {
           await _createHomeMemorySchema(db);
+        }
+        if (oldVersion < 5) {
+          await _createMindFlowSchema(db);
         }
       },
     );
@@ -890,6 +897,139 @@ class SqliteLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<MentalLoadItem>> loadMentalLoadItems() async {
+    final db = await _db;
+    final rows = await db.query(
+      'mental_load_items',
+      orderBy:
+          'state ASC, urgency_score DESC, effort_score ASC, updated_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => MentalLoadItem.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveMentalLoadItems(List<MentalLoadItem> items) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('mental_load_items');
+      for (final item in items) {
+        await _insertMentalLoadItem(txn, item);
+      }
+    });
+  }
+
+  @override
+  Future<void> upsertMentalLoadItem(MentalLoadItem item) async {
+    final db = await _db;
+    await _insertMentalLoadItem(db, item);
+  }
+
+  @override
+  Future<List<DecisionCard>> loadDecisionCards() async {
+    final db = await _db;
+    final rows = await db.query(
+      'decision_cards',
+      orderBy: 'status ASC, final_score DESC, updated_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => DecisionCard.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveDecisionCards(List<DecisionCard> cards) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('decision_cards');
+      for (final card in cards) {
+        await _insertDecisionCard(txn, card);
+      }
+    });
+  }
+
+  @override
+  Future<void> upsertDecisionCard(DecisionCard card) async {
+    final db = await _db;
+    await _insertDecisionCard(db, card);
+  }
+
+  @override
+  Future<List<ShoppingNeed>> loadShoppingNeeds() async {
+    final db = await _db;
+    final rows = await db.query(
+      'shopping_needs',
+      orderBy: 'state ASC, urgency_score DESC, updated_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => ShoppingNeed.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveShoppingNeeds(List<ShoppingNeed> needs) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('shopping_needs');
+      for (final need in needs) {
+        await _insertShoppingNeed(txn, need);
+      }
+    });
+  }
+
+  @override
+  Future<void> upsertShoppingNeed(ShoppingNeed need) async {
+    final db = await _db;
+    await _insertShoppingNeed(db, need);
+  }
+
+  @override
+  Future<List<ProductEvidenceCard>> loadProductEvidenceCards() async {
+    final db = await _db;
+    final rows = await db.query(
+      'product_evidence_cards',
+      orderBy: 'confidence DESC, checked_at_iso DESC, product_name ASC',
+    );
+    return rows
+        .map(
+          (row) => ProductEvidenceCard.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveProductEvidenceCards(List<ProductEvidenceCard> cards) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('product_evidence_cards');
+      for (final card in cards) {
+        await _insertProductEvidenceCard(txn, card);
+      }
+    });
+  }
+
+  @override
+  Future<void> upsertProductEvidenceCard(ProductEvidenceCard card) async {
+    final db = await _db;
+    await _insertProductEvidenceCard(db, card);
+  }
+
+  @override
   Future<void> deleteTask(String id) => _deleteEntityRow('tasks', id);
 
   @override
@@ -926,6 +1066,22 @@ class SqliteLocalStore implements LocalStore {
       _deleteEntityRow('recipe_rescues', id);
 
   @override
+  Future<void> deleteMentalLoadItem(String id) =>
+      _deleteEntityRow('mental_load_items', id);
+
+  @override
+  Future<void> deleteDecisionCard(String id) =>
+      _deleteEntityRow('decision_cards', id);
+
+  @override
+  Future<void> deleteShoppingNeed(String id) =>
+      _deleteEntityRow('shopping_needs', id);
+
+  @override
+  Future<void> deleteProductEvidenceCard(String id) =>
+      _deleteEntityRow('product_evidence_cards', id);
+
+  @override
   Future<void> deleteAllData() async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -950,6 +1106,10 @@ class SqliteLocalStore implements LocalStore {
       await txn.delete('maintenance_reminders');
       await txn.delete('claim_drafts');
       await txn.delete('evidence_attachments');
+      await txn.delete('mental_load_items');
+      await txn.delete('decision_cards');
+      await txn.delete('shopping_needs');
+      await txn.delete('product_evidence_cards');
       await txn.insert(
         'key_value',
         {
@@ -1081,6 +1241,49 @@ class SqliteLocalStore implements LocalStore {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_evidence_attachments_item ON evidence_attachments(owned_item_id)',
     );
+    await _createMindFlowSchema(db);
+  }
+
+  Future<void> _createMindFlowSchema(Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS mental_load_items (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, type TEXT NOT NULL, domain TEXT NOT NULL, state TEXT NOT NULL, urgency_score REAL NOT NULL, effort_score REAL NOT NULL, confidence REAL NOT NULL, privacy_level TEXT NOT NULL, created_at_iso TEXT NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_mental_load_user_state ON mental_load_items(user_id, state)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_mental_load_domain ON mental_load_items(domain)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_mental_load_priority ON mental_load_items(state, urgency_score, effort_score)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS decision_cards (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, status TEXT NOT NULL, final_score REAL NOT NULL, confidence REAL NOT NULL, created_at_iso TEXT NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_decision_cards_user_status ON decision_cards(user_id, status)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_decision_cards_score ON decision_cards(status, final_score)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS shopping_needs (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, need_type TEXT NOT NULL, state TEXT NOT NULL, urgency_score REAL NOT NULL, currency TEXT, created_at_iso TEXT NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_shopping_needs_user_state ON shopping_needs(user_id, state)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_shopping_needs_type ON shopping_needs(need_type)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS product_evidence_cards (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, product_name TEXT NOT NULL, brand TEXT, sustainability_status TEXT NOT NULL, checked_at_iso TEXT, confidence REAL NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_evidence_user_product ON product_evidence_cards(user_id, product_name)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_evidence_status ON product_evidence_cards(sustainability_status)',
+    );
   }
 
   Map<String, dynamic> _decodeJsonRow(Object? rawJson) {
@@ -1104,6 +1307,91 @@ class SqliteLocalStore implements LocalStore {
       table,
       where: 'id = ?',
       whereArgs: <Object?>[id],
+    );
+  }
+
+  Future<void> _insertMentalLoadItem(
+    DatabaseExecutor db,
+    MentalLoadItem item,
+  ) async {
+    await db.insert(
+      'mental_load_items',
+      {
+        'id': item.id,
+        'user_id': item.userId,
+        'type': item.type,
+        'domain': item.domain,
+        'state': item.state,
+        'urgency_score': item.urgencyScore,
+        'effort_score': item.effortScore,
+        'confidence': item.confidence,
+        'privacy_level': item.privacyLevel,
+        'created_at_iso': item.createdAtIso,
+        'updated_at_iso': item.updatedAtIso,
+        'json_blob': _encodeSensitiveJsonBlob(item.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> _insertDecisionCard(
+    DatabaseExecutor db,
+    DecisionCard card,
+  ) async {
+    await db.insert(
+      'decision_cards',
+      {
+        'id': card.id,
+        'user_id': card.userId,
+        'status': card.status,
+        'final_score': card.rankingScore,
+        'confidence': card.confidence,
+        'created_at_iso': card.createdAtIso,
+        'updated_at_iso': card.updatedAtIso,
+        'json_blob': _encodeSensitiveJsonBlob(card.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> _insertShoppingNeed(
+    DatabaseExecutor db,
+    ShoppingNeed need,
+  ) async {
+    await db.insert(
+      'shopping_needs',
+      {
+        'id': need.id,
+        'user_id': need.userId,
+        'need_type': need.needType,
+        'state': need.state,
+        'urgency_score': need.urgencyScore,
+        'currency': need.currency,
+        'created_at_iso': need.createdAtIso,
+        'updated_at_iso': need.updatedAtIso,
+        'json_blob': _encodeSensitiveJsonBlob(need.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> _insertProductEvidenceCard(
+    DatabaseExecutor db,
+    ProductEvidenceCard card,
+  ) async {
+    await db.insert(
+      'product_evidence_cards',
+      {
+        'id': card.id,
+        'user_id': card.userId,
+        'product_name': card.productName,
+        'brand': card.brand,
+        'sustainability_status': card.sustainabilityStatus,
+        'checked_at_iso': card.checkedAtIso,
+        'confidence': card.confidence,
+        'json_blob': _encodeSensitiveJsonBlob(card.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 

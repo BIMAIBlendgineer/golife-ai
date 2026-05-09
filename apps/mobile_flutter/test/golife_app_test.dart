@@ -68,6 +68,71 @@ class _FallbackAiGatewayClient extends AiGatewayClient {
   }
 
   @override
+  Future<DecisionPlanDto> fetchDecisionPlan({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> mentalLoadItems,
+  }) async {
+    return const DecisionPlanDto(
+      decisions: <DecisionCardDto>[],
+      trace: <String, Object?>{
+        'clientFallback': true,
+        'fallbackReason': 'no_connection',
+      },
+    );
+  }
+
+  @override
+  Future<ShoppingPlanDto> optimizeShoppingList({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required List<Map<String, Object?>> shoppingNeeds,
+    List<Map<String, Object?>> pantryContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> financeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> wardrobeContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> homememoryContext =
+        const <Map<String, Object?>>[],
+  }) async {
+    return const ShoppingPlanDto(
+      needs: <ShoppingNeedDto>[],
+      productEvidence: <ProductEvidenceCardDto>[],
+      decisions: <DecisionCardDto>[],
+      trace: <String, Object?>{
+        'clientFallback': true,
+        'fallbackReason': 'no_connection',
+      },
+    );
+  }
+
+  @override
+  Future<ProductEvidenceCardDto?> fetchProductEvidence({
+    String locale = 'en',
+    required PrivacySettings privacySettings,
+    required String productName,
+    String? merchantName,
+  }) async {
+    return const ProductEvidenceCardDto(
+      id: 'evidence-fallback',
+      userId: 'local-user',
+      productName: 'fallback',
+      brand: null,
+      merchantName: null,
+      price: null,
+      currency: null,
+      source: 'local_fallback',
+      checkedAtIso: null,
+      reviewSummary: null,
+      sustainabilityStatus: 'insufficient_verified_data',
+      confidence: 0,
+      disclaimer: 'Fallback evidence only.',
+      trace: <String, Object?>{
+        'clientFallback': true,
+        'fallbackReason': 'no_connection',
+      },
+    );
+  }
+
+  @override
   Future<void> submitMissionFeedback({
     String locale = 'en',
     required MissionFeedback feedback,
@@ -111,8 +176,7 @@ void main() {
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
-  testWidgets('supports a stored pt-BR locale preference',
-      (tester) async {
+  testWidgets('supports a stored pt-BR locale preference', (tester) async {
     final localStore = MemoryLocalStore();
     await localStore.saveLocalePreference('pt-BR');
 

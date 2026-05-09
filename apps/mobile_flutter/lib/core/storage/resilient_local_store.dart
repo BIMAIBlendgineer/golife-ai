@@ -11,11 +11,15 @@ import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
+import '../../domains/mindflow/decision_card.dart';
+import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/recipes/recipe_rescue.dart';
+import '../../domains/shopping/product_evidence_card.dart';
+import '../../domains/shopping/shopping_need.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -194,6 +198,54 @@ class ResilientLocalStore implements LocalStore {
       _run((store) => store.loadEvidenceAttachments());
 
   @override
+  Future<List<MentalLoadItem>> loadMentalLoadItems() =>
+      _run((store) => store.loadMentalLoadItems());
+
+  @override
+  Future<void> saveMentalLoadItems(List<MentalLoadItem> items) =>
+      _run((store) => store.saveMentalLoadItems(items));
+
+  @override
+  Future<void> upsertMentalLoadItem(MentalLoadItem item) =>
+      _run((store) => store.upsertMentalLoadItem(item));
+
+  @override
+  Future<List<DecisionCard>> loadDecisionCards() =>
+      _run((store) => store.loadDecisionCards());
+
+  @override
+  Future<void> saveDecisionCards(List<DecisionCard> cards) =>
+      _run((store) => store.saveDecisionCards(cards));
+
+  @override
+  Future<void> upsertDecisionCard(DecisionCard card) =>
+      _run((store) => store.upsertDecisionCard(card));
+
+  @override
+  Future<List<ShoppingNeed>> loadShoppingNeeds() =>
+      _run((store) => store.loadShoppingNeeds());
+
+  @override
+  Future<void> saveShoppingNeeds(List<ShoppingNeed> needs) =>
+      _run((store) => store.saveShoppingNeeds(needs));
+
+  @override
+  Future<void> upsertShoppingNeed(ShoppingNeed need) =>
+      _run((store) => store.upsertShoppingNeed(need));
+
+  @override
+  Future<List<ProductEvidenceCard>> loadProductEvidenceCards() =>
+      _run((store) => store.loadProductEvidenceCards());
+
+  @override
+  Future<void> saveProductEvidenceCards(List<ProductEvidenceCard> cards) =>
+      _run((store) => store.saveProductEvidenceCards(cards));
+
+  @override
+  Future<void> upsertProductEvidenceCard(ProductEvidenceCard card) =>
+      _run((store) => store.upsertProductEvidenceCard(card));
+
+  @override
   Future<void> upsertTask(GoTask task) =>
       _run((store) => store.upsertTask(task));
 
@@ -300,6 +352,22 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> deleteRecipeRescue(String id) =>
       _run((store) => store.deleteRecipeRescue(id));
+
+  @override
+  Future<void> deleteMentalLoadItem(String id) =>
+      _run((store) => store.deleteMentalLoadItem(id));
+
+  @override
+  Future<void> deleteDecisionCard(String id) =>
+      _run((store) => store.deleteDecisionCard(id));
+
+  @override
+  Future<void> deleteShoppingNeed(String id) =>
+      _run((store) => store.deleteShoppingNeed(id));
+
+  @override
+  Future<void> deleteProductEvidenceCard(String id) =>
+      _run((store) => store.deleteProductEvidenceCard(id));
 
   @override
   Future<void> deleteAllData() => _run((store) => store.deleteAllData());

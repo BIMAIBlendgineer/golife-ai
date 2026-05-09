@@ -352,3 +352,480 @@ double? _asDouble(Object? value) {
   }
   return double.tryParse(value?.toString() ?? '');
 }
+
+class PrivacySummaryDto {
+  const PrivacySummaryDto({
+    required this.aiEnabled,
+    required this.sentEventCount,
+    required this.blockedEventCount,
+    required this.allowedDomains,
+    required this.blockedDomains,
+    required this.localOnlyCollections,
+    required this.trace,
+  });
+
+  final bool aiEnabled;
+  final int sentEventCount;
+  final int blockedEventCount;
+  final List<String> allowedDomains;
+  final List<String> blockedDomains;
+  final List<String> localOnlyCollections;
+  final Map<String, Object?> trace;
+
+  factory PrivacySummaryDto.fromJson(Map<String, dynamic> json) {
+    return PrivacySummaryDto(
+      aiEnabled: json['ai_enabled'] == true,
+      sentEventCount: (json['sent_event_count'] as num?)?.toInt() ?? 0,
+      blockedEventCount: (json['blocked_event_count'] as num?)?.toInt() ?? 0,
+      allowedDomains: _stringList(json['allowed_domains']),
+      blockedDomains: _stringList(json['blocked_domains']),
+      localOnlyCollections: _stringList(json['local_only_collections']),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (json['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class ActionContractDto {
+  const ActionContractDto({
+    required this.actionType,
+    required this.requiresConfirmation,
+    required this.destructive,
+    required this.external,
+    required this.payloadPreview,
+    required this.forbiddenActions,
+  });
+
+  final String actionType;
+  final bool requiresConfirmation;
+  final bool destructive;
+  final bool external;
+  final Map<String, Object?> payloadPreview;
+  final List<String> forbiddenActions;
+
+  factory ActionContractDto.fromJson(Map<String, dynamic> json) {
+    return ActionContractDto(
+      actionType: (json['action_type'] ?? 'review').toString(),
+      requiresConfirmation: json['requires_confirmation'] != false,
+      destructive: json['destructive'] == true,
+      external: json['external'] == true,
+      payloadPreview: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (json['payload_preview'] as Map?)?.cast<String, dynamic>() ??
+              const {},
+        ),
+      ),
+      forbiddenActions: _stringList(json['forbidden_actions']),
+    );
+  }
+}
+
+class MentalLoadItemDto {
+  const MentalLoadItemDto({
+    required this.itemId,
+    required this.userId,
+    required this.sourceEventId,
+    required this.type,
+    required this.domain,
+    required this.title,
+    required this.summary,
+    required this.urgencyScore,
+    required this.effortScore,
+    required this.confidence,
+    required this.state,
+    required this.dueHint,
+    required this.amountHint,
+    required this.currencyHint,
+    required this.evidenceRefs,
+    required this.privacyLevel,
+    required this.requiresConfirmation,
+    required this.createdAtIso,
+    required this.updatedAtIso,
+    required this.trace,
+  });
+
+  final String itemId;
+  final String userId;
+  final String? sourceEventId;
+  final String type;
+  final String domain;
+  final String title;
+  final String summary;
+  final double urgencyScore;
+  final double effortScore;
+  final double confidence;
+  final String state;
+  final String? dueHint;
+  final double? amountHint;
+  final String? currencyHint;
+  final List<String> evidenceRefs;
+  final String privacyLevel;
+  final bool requiresConfirmation;
+  final String createdAtIso;
+  final String updatedAtIso;
+  final Map<String, Object?> trace;
+
+  factory MentalLoadItemDto.fromJson(Map<String, dynamic> json) {
+    return MentalLoadItemDto(
+      itemId: (json['item_id'] ?? json['id'] ?? '').toString(),
+      userId: (json['user_id'] ?? 'local-user').toString(),
+      sourceEventId: json['source_event_id']?.toString(),
+      type: (json['type'] ?? 'note').toString(),
+      domain: (json['domain'] ?? 'system').toString(),
+      title: (json['title'] ?? '').toString(),
+      summary: (json['summary'] ?? '').toString(),
+      urgencyScore: _asDouble(json['urgency_score']) ?? 0.0,
+      effortScore: _asDouble(json['effort_score']) ?? 0.0,
+      confidence: _asDouble(json['confidence']) ?? 0.0,
+      state: (json['state'] ?? 'inbox').toString(),
+      dueHint: json['due_hint']?.toString(),
+      amountHint: _asDouble(json['amount_hint']),
+      currencyHint: json['currency_hint']?.toString(),
+      evidenceRefs: _stringList(json['evidence_refs']),
+      privacyLevel: (json['privacy_level'] ?? 'local_only').toString(),
+      requiresConfirmation: json['requires_confirmation'] != false,
+      createdAtIso: (json['created_at_iso'] ?? '').toString(),
+      updatedAtIso: (json['updated_at_iso'] ?? '').toString(),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (json['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class DecisionCardDto {
+  const DecisionCardDto({
+    required this.decisionId,
+    required this.userId,
+    required this.title,
+    required this.recommendedAction,
+    required this.alternatives,
+    required this.domainTargets,
+    required this.sourceItems,
+    required this.evidence,
+    required this.confidence,
+    required this.uncertainty,
+    required this.privacySummary,
+    required this.confirmationRequired,
+    required this.actionContract,
+    required this.status,
+    required this.evidenceStatus,
+    required this.rankingScore,
+    required this.createdAtIso,
+    required this.updatedAtIso,
+    required this.trace,
+  });
+
+  final String decisionId;
+  final String userId;
+  final String title;
+  final String recommendedAction;
+  final List<String> alternatives;
+  final List<String> domainTargets;
+  final List<String> sourceItems;
+  final List<String> evidence;
+  final double confidence;
+  final String uncertainty;
+  final PrivacySummaryDto privacySummary;
+  final bool confirmationRequired;
+  final ActionContractDto actionContract;
+  final String status;
+  final String evidenceStatus;
+  final double rankingScore;
+  final String createdAtIso;
+  final String updatedAtIso;
+  final Map<String, Object?> trace;
+
+  factory DecisionCardDto.fromJson(Map<String, dynamic> json) {
+    final ranking = json['ranking'];
+    final finalScore =
+        ranking is Map ? _asDouble(ranking['final_score']) : null;
+    return DecisionCardDto(
+      decisionId: (json['decision_id'] ?? json['id'] ?? '').toString(),
+      userId: (json['user_id'] ?? 'local-user').toString(),
+      title: (json['title'] ?? '').toString(),
+      recommendedAction: (json['recommended_action'] ?? '').toString(),
+      alternatives: _stringList(json['alternatives']),
+      domainTargets: _stringList(json['domain_targets']),
+      sourceItems: _stringList(json['source_items']),
+      evidence: _evidenceClaims(json['evidence']),
+      confidence: _asDouble(json['confidence']) ?? 0.0,
+      uncertainty: (json['uncertainty'] ?? '').toString(),
+      privacySummary: PrivacySummaryDto.fromJson(
+        Map<String, dynamic>.from(
+          (json['privacy_summary'] as Map?) ?? const {},
+        ),
+      ),
+      confirmationRequired: json['confirmation_required'] != false,
+      actionContract: ActionContractDto.fromJson(
+        Map<String, dynamic>.from(
+          (json['action_contract'] as Map?) ?? const {},
+        ),
+      ),
+      status: (json['status'] ?? 'draft').toString(),
+      evidenceStatus: (json['evidence_status'] ??
+              (_evidenceClaims(json['evidence']).isEmpty
+                  ? 'insufficient_verified_data'
+                  : 'local_only'))
+          .toString(),
+      rankingScore: _asDouble(json['ranking_score']) ?? finalScore ?? 0.0,
+      createdAtIso: (json['created_at_iso'] ?? '').toString(),
+      updatedAtIso: (json['updated_at_iso'] ?? '').toString(),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (json['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class MindFlowParseResponseDto {
+  const MindFlowParseResponseDto({
+    required this.items,
+    required this.trace,
+  });
+
+  final List<MentalLoadItemDto> items;
+  final Map<String, Object?> trace;
+
+  factory MindFlowParseResponseDto.fromGatewayJson(
+    Map<String, dynamic> responseJson,
+  ) {
+    final rawItems = responseJson['items'] as List<dynamic>? ?? const [];
+    return MindFlowParseResponseDto(
+      items: rawItems
+          .whereType<Map>()
+          .map(
+            (item) => MentalLoadItemDto.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(growable: false),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class DecisionPlanDto {
+  const DecisionPlanDto({
+    required this.decisions,
+    required this.trace,
+  });
+
+  final List<DecisionCardDto> decisions;
+  final Map<String, Object?> trace;
+
+  factory DecisionPlanDto.fromGatewayJson(Map<String, dynamic> responseJson) {
+    final rawDecisions =
+        responseJson['decisions'] as List<dynamic>? ?? const [];
+    return DecisionPlanDto(
+      decisions: rawDecisions
+          .whereType<Map>()
+          .map(
+            (item) => DecisionCardDto.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(growable: false),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class ShoppingNeedDto {
+  const ShoppingNeedDto({
+    required this.needId,
+    required this.userId,
+    required this.needType,
+    required this.title,
+    required this.sourceDomain,
+    required this.sourceEventIds,
+    required this.urgencyScore,
+    required this.budgetHint,
+    required this.currency,
+    required this.sustainabilityPreference,
+    required this.state,
+    required this.createdAtIso,
+    required this.updatedAtIso,
+    required this.trace,
+  });
+
+  final String needId;
+  final String userId;
+  final String needType;
+  final String title;
+  final String sourceDomain;
+  final List<String> sourceEventIds;
+  final double urgencyScore;
+  final double? budgetHint;
+  final String? currency;
+  final String? sustainabilityPreference;
+  final String state;
+  final String createdAtIso;
+  final String updatedAtIso;
+  final Map<String, Object?> trace;
+
+  factory ShoppingNeedDto.fromJson(Map<String, dynamic> json) {
+    return ShoppingNeedDto(
+      needId: (json['need_id'] ?? json['id'] ?? '').toString(),
+      userId: (json['user_id'] ?? 'local-user').toString(),
+      needType: (json['need_type'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      sourceDomain: (json['source_domain'] ?? 'shopping').toString(),
+      sourceEventIds: _stringList(json['source_event_ids']),
+      urgencyScore: _asDouble(json['urgency_score']) ?? 0.0,
+      budgetHint: _asDouble(json['budget_hint']),
+      currency: json['currency']?.toString(),
+      sustainabilityPreference: json['sustainability_preference']?.toString(),
+      state: (json['state'] ?? 'draft').toString(),
+      createdAtIso: (json['created_at_iso'] ?? '').toString(),
+      updatedAtIso: (json['updated_at_iso'] ?? '').toString(),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (json['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class ProductEvidenceCardDto {
+  const ProductEvidenceCardDto({
+    required this.id,
+    required this.userId,
+    required this.productName,
+    required this.brand,
+    required this.merchantName,
+    required this.price,
+    required this.currency,
+    required this.source,
+    required this.checkedAtIso,
+    required this.reviewSummary,
+    required this.sustainabilityStatus,
+    required this.confidence,
+    required this.disclaimer,
+    required this.trace,
+  });
+
+  final String id;
+  final String userId;
+  final String productName;
+  final String? brand;
+  final String? merchantName;
+  final double? price;
+  final String? currency;
+  final String? source;
+  final String? checkedAtIso;
+  final String? reviewSummary;
+  final String sustainabilityStatus;
+  final double confidence;
+  final String disclaimer;
+  final Map<String, Object?> trace;
+
+  factory ProductEvidenceCardDto.fromJson(Map<String, dynamic> json) {
+    return ProductEvidenceCardDto(
+      id: (json['id'] ?? '${json['product_name'] ?? 'evidence'}').toString(),
+      userId: (json['user_id'] ?? 'local-user').toString(),
+      productName: (json['product_name'] ?? '').toString(),
+      brand: json['brand']?.toString(),
+      merchantName: json['merchant_name']?.toString(),
+      price: _asDouble(json['price']),
+      currency: json['currency']?.toString(),
+      source: json['source']?.toString(),
+      checkedAtIso: (json['checked_at_iso'] ?? json['checked_at'])?.toString(),
+      reviewSummary: json['review_summary']?.toString(),
+      sustainabilityStatus:
+          (json['sustainability_status'] ?? 'not_checked').toString(),
+      confidence: _asDouble(json['confidence']) ?? 0.0,
+      disclaimer: (json['disclaimer'] ?? '').toString(),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (json['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+class ShoppingPlanDto {
+  const ShoppingPlanDto({
+    required this.needs,
+    required this.productEvidence,
+    required this.decisions,
+    required this.trace,
+  });
+
+  final List<ShoppingNeedDto> needs;
+  final List<ProductEvidenceCardDto> productEvidence;
+  final List<DecisionCardDto> decisions;
+  final Map<String, Object?> trace;
+
+  factory ShoppingPlanDto.fromGatewayJson(Map<String, dynamic> responseJson) {
+    final rawNeeds = responseJson['needs'] as List<dynamic>? ?? const [];
+    final rawEvidence =
+        responseJson['product_evidence'] as List<dynamic>? ?? const [];
+    final rawDecisions =
+        responseJson['decisions'] as List<dynamic>? ?? const [];
+    return ShoppingPlanDto(
+      needs: rawNeeds
+          .whereType<Map>()
+          .map((item) =>
+              ShoppingNeedDto.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false),
+      productEvidence: rawEvidence
+          .whereType<Map>()
+          .map(
+            (item) => ProductEvidenceCardDto.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(growable: false),
+      decisions: rawDecisions
+          .whereType<Map>()
+          .map(
+            (item) => DecisionCardDto.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList(growable: false),
+      trace: _normalizeTrace(
+        Map<String, dynamic>.from(
+          (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      ),
+    );
+  }
+}
+
+List<String> _evidenceClaims(Object? raw) {
+  if (raw is List) {
+    return raw.map((item) {
+      if (item is Map && item['claim'] != null) {
+        return item['claim'].toString();
+      }
+      return item.toString();
+    }).toList(growable: false);
+  }
+  return const <String>[];
+}
+
+List<String> _stringList(Object? value) {
+  if (value is List) {
+    return value.map((item) => item.toString()).toList(growable: false);
+  }
+  return const <String>[];
+}

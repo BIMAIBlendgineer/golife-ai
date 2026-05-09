@@ -5,9 +5,11 @@ from fastapi import HTTPException
 from app.policy_engine import POLICY_VERSION, policy_engine
 from app.schemas import (
     AISuggestion,
+    DecisionCard,
     EventClassificationRequest,
     EventParseRequest,
     LifeEvent,
+    ProductEvidenceCard,
     ProofParseRequest,
     ReflectionSafetyRequest,
     ReflectionSafetyResponse,
@@ -222,3 +224,173 @@ def assess_reflection_safety(
     )
     response.trace.setdefault("policy_version", POLICY_VERSION)
     return response
+
+
+_UNSAFE_DECISION_PATTERNS = (
+    "authorization: bearer",
+    "client_secret",
+    "suicide",
+    "kill myself",
+    "lawsuit",
+    "diagnose",
+    "treatment",
+)
+_UNVERIFIED_PRICE_PATTERNS = (
+    "best price",
+    "cheapest",
+    "lowest price",
+    "available now",
+)
+_UNVERIFIED_SUSTAINABILITY_PATTERNS = (
+    "sustainable",
+    "eco-friendly",
+    "low carbon",
+    "fair trade",
+    "ethical",
+)
+
+
+def sanitize_decision_cards(
+    decisions: Iterable[DecisionCard],
+    *,
+    max_items: int,
+) -> tuple[list[DecisionCard], list[dict[str, str]]]:
+    accepted: list[DecisionCard] = []
+    rejected: list[dict[str, str]] = []
+
+    for decision in decisions:
+        searchable = " ".join(
+            [
+                decision.title,
+                decision.recommended_action,
+                decision.uncertainty,
+                " ".join(decision.alternatives),
+                " ".join(item.claim for item in decision.evidence),
+            ]
+        ).lower()
+        matched = next(
+            (pattern for pattern in _UNSAFE_DECISION_PATTERNS if pattern in searchable),
+            None,
+        )
+        if matched is not None:
+            if matched in {"authorization: bearer", "client_secret"}:
+                reason = "secret_exposure"
+            elif matched in {"suicide", "kill myself"}:
+                reason = "crisis_language"
+            elif matched == "lawsuit":
+                reason = "regulated_legal_advice"
+            else:
+                reason = "unsafe_clinical_guidance"
+            rejected.append(
+                {
+                    "decision_id": decision.decision_id,
+                    "reason": reason,
+                    "policy_id": "golife_mindflow_policy",
+                    "policy_version": POLICY_VERSION,
+                }
+            )
+            continue
+
+        merged_forbidden = list(
+            dict.fromkeys(
+                [
+                    *decision.action_contract.forbidden_actions,
+                    "external_action_without_confirmation",
+                ]
+            )
+        )
+        accepted.append(
+            decision.model_copy(
+                update={
+                    "confirmation_required": True,
+                    "action_contract": decision.action_contract.model_copy(
+                        update={
+                            "requires_confirmation": True,
+                            "external": False,
+                            "forbidden_actions": merged_forbidden,
+                        }
+                    ),
+                }
+            )
+        )
+        if len(accepted) >= max_items:
+            break
+
+    return accepted, rejected
+
+
+def sanitize_product_evidence_cards(
+    cards: Iterable[ProductEvidenceCard],
+) -> tuple[list[ProductEvidenceCard], list[dict[str, str]]]:
+    normalized: list[ProductEvidenceCard] = []
+    adjusted: list[dict[str, str]] = []
+
+    for card in cards:
+        review_summary = card.review_summary or ""
+        searchable = review_summary.lower()
+        price_claim = next(
+            (pattern for pattern in _UNVERIFIED_PRICE_PATTERNS if pattern in searchable),
+            None,
+        )
+        sustainability_claim = next(
+            (
+                pattern
+                for pattern in _UNVERIFIED_SUSTAINABILITY_PATTERNS
+                if pattern in searchable
+            ),
+            None,
+        )
+        verified_price_source = (
+            card.source is not None
+            and card.checked_at_iso is not None
+            and card.merchant_name is not None
+            and card.price is not None
+        )
+
+        next_card = card
+        if price_claim is not None and not verified_price_source:
+            adjusted.append(
+                {
+                    "card_id": card.id,
+                    "reason": "no_unverified_price_claim",
+                    "matched": price_claim,
+                }
+            )
+            next_card = next_card.model_copy(
+                update={
+                    "price": None,
+                    "merchant_name": None,
+                    "source": None,
+                    "checked_at_iso": None,
+                    "review_summary": "Verified price and availability data are not available yet.",
+                }
+            )
+
+        if sustainability_claim is not None and not next_card.source:
+            adjusted.append(
+                {
+                    "card_id": next_card.id,
+                    "reason": "no_unverified_sustainability_claim",
+                    "matched": sustainability_claim,
+                }
+            )
+            next_card = next_card.model_copy(
+                update={
+                    "sustainability_status": "insufficient_verified_data",
+                    "review_summary": "Sustainability data is not verified yet.",
+                }
+            )
+        elif next_card.sustainability_status not in {
+            "verified",
+            "partial",
+            "local_only",
+            "insufficient_verified_data",
+            "not_checked",
+        }:
+            next_card = next_card.model_copy(
+                update={"sustainability_status": "not_checked"}
+            )
+
+        normalized.append(next_card)
+
+    return normalized, adjusted

@@ -154,7 +154,8 @@ class CaptureParser {
     ];
 
     final normalized = _normalizeSafetyText(text);
-    final tokens = normalized.split(' ').where((token) => token.isNotEmpty).toList();
+    final tokens =
+        normalized.split(' ').where((token) => token.isNotEmpty).toList();
     final joinedTokens = _joinedTokenWindows(tokens);
     return _matchesSafetyTerms(normalized, joinedTokens, crisisTerms) ||
         _matchesSafetyTerms(normalized, joinedTokens, clinicalTerms);
@@ -211,8 +212,8 @@ class CaptureParser {
     for (final rune in translated.runes) {
       final character = String.fromCharCode(rune);
       final isAsciiAlphaNum = RegExp(r'[a-z0-9]').hasMatch(character);
-      final isCjkOrKana = rune >= 0x3040 && rune <= 0x30ff ||
-          rune >= 0x3400 && rune <= 0x9fff;
+      final isCjkOrKana =
+          rune >= 0x3040 && rune <= 0x30ff || rune >= 0x3400 && rune <= 0x9fff;
       sanitized.write(isAsciiAlphaNum || isCjkOrKana ? character : ' ');
     }
 
@@ -595,6 +596,18 @@ class CaptureParser {
 
   String _defaultEventType(DomainKey domain) {
     switch (domain) {
+      case DomainKey.calendar:
+        return 'calendar_block_captured';
+      case DomainKey.journal:
+        return 'journal_note_captured';
+      case DomainKey.recipes:
+        return 'recipe_note_captured';
+      case DomainKey.homememory:
+        return 'homememory_note_captured';
+      case DomainKey.shopping:
+        return 'shopping_need_captured';
+      case DomainKey.decisions:
+        return 'decision_note_captured';
       case DomainKey.tasks:
         return 'task_captured';
       case DomainKey.habits:

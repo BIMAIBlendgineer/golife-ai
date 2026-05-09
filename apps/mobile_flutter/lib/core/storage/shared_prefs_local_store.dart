@@ -12,12 +12,16 @@ import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
+import '../../domains/mindflow/decision_card.dart';
+import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/recipes/recipe_rescue.dart';
+import '../../domains/shopping/product_evidence_card.dart';
+import '../../domains/shopping/shopping_need.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -53,6 +57,10 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _maintenanceRemindersKey = 'golife.maintenance_reminders';
   static const _claimDraftsKey = 'golife.claim_drafts';
   static const _evidenceAttachmentsKey = 'golife.evidence_attachments';
+  static const _mentalLoadItemsKey = 'golife.mental_load_items';
+  static const _decisionCardsKey = 'golife.decision_cards';
+  static const _shoppingNeedsKey = 'golife.shopping_needs';
+  static const _productEvidenceCardsKey = 'golife.product_evidence_cards';
   static const _runtimeConfigKey = 'golife.runtime_config';
   static const _demoSeedEnabledKey = 'golife.demo_seed_enabled';
 
@@ -341,6 +349,92 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<MentalLoadItem>> loadMentalLoadItems() async {
+    return _loadList(
+      _mentalLoadItemsKey,
+      (item) => MentalLoadItem.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveMentalLoadItems(List<MentalLoadItem> items) async {
+    await _saveList(
+      _mentalLoadItemsKey,
+      items.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<void> upsertMentalLoadItem(MentalLoadItem item) async {
+    await _upsertEntity(_mentalLoadItemsKey, item.id, item.toJson());
+  }
+
+  @override
+  Future<List<DecisionCard>> loadDecisionCards() async {
+    return _loadList(
+      _decisionCardsKey,
+      (item) => DecisionCard.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveDecisionCards(List<DecisionCard> cards) async {
+    await _saveList(
+      _decisionCardsKey,
+      cards.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<void> upsertDecisionCard(DecisionCard card) async {
+    await _upsertEntity(_decisionCardsKey, card.id, card.toJson());
+  }
+
+  @override
+  Future<List<ShoppingNeed>> loadShoppingNeeds() async {
+    return _loadList(
+      _shoppingNeedsKey,
+      (item) => ShoppingNeed.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveShoppingNeeds(List<ShoppingNeed> needs) async {
+    await _saveList(
+      _shoppingNeedsKey,
+      needs.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<void> upsertShoppingNeed(ShoppingNeed need) async {
+    await _upsertEntity(_shoppingNeedsKey, need.id, need.toJson());
+  }
+
+  @override
+  Future<List<ProductEvidenceCard>> loadProductEvidenceCards() async {
+    return _loadList(
+      _productEvidenceCardsKey,
+      (item) => ProductEvidenceCard.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveProductEvidenceCards(
+    List<ProductEvidenceCard> cards,
+  ) async {
+    await _saveList(
+      _productEvidenceCardsKey,
+      cards.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<void> upsertProductEvidenceCard(ProductEvidenceCard card) async {
+    await _upsertEntity(_productEvidenceCardsKey, card.id, card.toJson());
+  }
+
+  @override
   Future<void> upsertTask(GoTask task) async {
     await _upsertEntity(_tasksKey, task.id, task.toJson());
   }
@@ -509,6 +603,26 @@ class SharedPrefsLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> deleteMentalLoadItem(String id) async {
+    await _deleteEntity(_mentalLoadItemsKey, id);
+  }
+
+  @override
+  Future<void> deleteDecisionCard(String id) async {
+    await _deleteEntity(_decisionCardsKey, id);
+  }
+
+  @override
+  Future<void> deleteShoppingNeed(String id) async {
+    await _deleteEntity(_shoppingNeedsKey, id);
+  }
+
+  @override
+  Future<void> deleteProductEvidenceCard(String id) async {
+    await _deleteEntity(_productEvidenceCardsKey, id);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_privacyKey);
@@ -534,6 +648,10 @@ class SharedPrefsLocalStore implements LocalStore {
     await prefs.remove(_maintenanceRemindersKey);
     await prefs.remove(_claimDraftsKey);
     await prefs.remove(_evidenceAttachmentsKey);
+    await prefs.remove(_mentalLoadItemsKey);
+    await prefs.remove(_decisionCardsKey);
+    await prefs.remove(_shoppingNeedsKey);
+    await prefs.remove(_productEvidenceCardsKey);
     await prefs.remove(_runtimeConfigKey);
     await prefs.setBool(_demoSeedEnabledKey, false);
   }

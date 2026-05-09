@@ -4,7 +4,22 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, model_validator
 
 PrivacyLevel = Literal["local_only", "sync_allowed", "ai_allowed"]
-Domain = Literal["task", "habit", "week", "finance", "pantry", "wardrobe", "mission", "system"]
+Domain = Literal[
+    "task",
+    "habit",
+    "week",
+    "finance",
+    "pantry",
+    "wardrobe",
+    "calendar",
+    "journal",
+    "recipe",
+    "homememory",
+    "shopping",
+    "decision",
+    "mission",
+    "system",
+]
 RecommendationType = Literal["mission", "plan_adjustment", "task_rewrite", "warning", "reflection"]
 SuggestionStatus = Literal["draft", "shown", "accepted", "rejected", "edited", "expired"]
 DayState = Literal["overloaded", "steady", "recovery", "unstructured", "unknown"]
@@ -139,6 +154,162 @@ class EventParseRequest(BaseModel):
 class EventParseResponse(BaseModel):
     items: list[ParsedEventItem] = Field(default_factory=list)
     trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class PrivacySummary(BaseModel):
+    ai_enabled: bool = False
+    sent_event_count: int = Field(default=0, ge=0)
+    blocked_event_count: int = Field(default=0, ge=0)
+    allowed_domains: list[Domain] = Field(default_factory=list)
+    blocked_domains: list[Domain] = Field(default_factory=list)
+    local_only_collections: list[str] = Field(default_factory=list)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class ActionContract(BaseModel):
+    action_type: str = Field(min_length=1)
+    requires_confirmation: bool = True
+    destructive: bool = False
+    external: bool = False
+    payload_preview: dict[str, Any] = Field(default_factory=dict)
+    forbidden_actions: list[str] = Field(default_factory=list)
+
+
+class MentalLoadItem(BaseModel):
+    item_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    source_event_id: str | None = None
+    type: str = Field(min_length=1)
+    domain: Domain
+    title: str = Field(min_length=1)
+    summary: str = Field(min_length=1)
+    urgency_score: float = Field(ge=0.0, le=1.0)
+    effort_score: float = Field(ge=0.0, le=1.0)
+    confidence: float = Field(ge=0.0, le=1.0)
+    state: str = Field(min_length=1)
+    due_hint: str | None = None
+    amount_hint: float | None = None
+    currency_hint: str | None = None
+    evidence_refs: list[str] = Field(default_factory=list)
+    privacy_level: PrivacyLevel = "local_only"
+    requires_confirmation: bool = True
+    created_at_iso: str = Field(min_length=1)
+    updated_at_iso: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class DecisionCard(BaseModel):
+    decision_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    recommended_action: str = Field(min_length=1)
+    alternatives: list[str] = Field(default_factory=list)
+    domain_targets: list[Domain] = Field(default_factory=list)
+    source_items: list[str] = Field(default_factory=list)
+    evidence: list[SuggestionEvidence] = Field(default_factory=list)
+    confidence: float = Field(ge=0.0, le=1.0)
+    uncertainty: str = Field(min_length=1)
+    privacy_summary: PrivacySummary = Field(default_factory=PrivacySummary)
+    confirmation_required: bool = True
+    action_contract: ActionContract
+    status: str = Field(default="draft", min_length=1)
+    evidence_status: str = Field(default="local_only", min_length=1)
+    ranking_score: float = Field(ge=0.0, le=1.0)
+    created_at_iso: str = Field(min_length=1)
+    updated_at_iso: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class ShoppingNeed(BaseModel):
+    need_id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    need_type: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    source_domain: Domain
+    source_event_ids: list[str] = Field(default_factory=list)
+    urgency_score: float = Field(ge=0.0, le=1.0)
+    budget_hint: float | None = None
+    currency: str | None = None
+    sustainability_preference: str | None = None
+    state: str = Field(default="draft", min_length=1)
+    created_at_iso: str = Field(min_length=1)
+    updated_at_iso: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProductEvidenceCard(BaseModel):
+    id: str = Field(min_length=1)
+    user_id: str = Field(min_length=1)
+    product_name: str = Field(min_length=1)
+    brand: str | None = None
+    merchant_name: str | None = None
+    price: float | None = None
+    currency: str | None = None
+    source: str | None = None
+    checked_at_iso: str | None = None
+    review_summary: str | None = None
+    sustainability_status: Literal[
+        "verified",
+        "partial",
+        "insufficient_verified_data",
+        "local_only",
+        "not_checked",
+    ] = "not_checked"
+    confidence: float = Field(ge=0.0, le=1.0)
+    disclaimer: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class MindFlowParseRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    locale: str = "en"
+    text: str = Field(min_length=1)
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+
+
+class MindFlowParseResponse(BaseModel):
+    items: list[MentalLoadItem] = Field(default_factory=list)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class DecisionPlanRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    locale: str = "en"
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+    mental_load_items: list[MentalLoadItem] = Field(default_factory=list)
+    constraints: dict[str, Any] = Field(default_factory=dict)
+    max_decisions: int = Field(default=3, ge=1, le=3)
+
+
+class DecisionPlanResponse(BaseModel):
+    decisions: list[DecisionCard] = Field(default_factory=list)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class ShoppingPlanRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    locale: str = "en"
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+    shopping_needs: list[ShoppingNeed] = Field(default_factory=list)
+    pantry_context: list[dict[str, Any]] = Field(default_factory=list)
+    finance_context: list[dict[str, Any]] = Field(default_factory=list)
+    wardrobe_context: list[dict[str, Any]] = Field(default_factory=list)
+    homememory_context: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ShoppingPlanResponse(BaseModel):
+    needs: list[ShoppingNeed] = Field(default_factory=list)
+    product_evidence: list[ProductEvidenceCard] = Field(default_factory=list)
+    decisions: list[DecisionCard] = Field(default_factory=list)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProductEvidenceRequest(BaseModel):
+    user_id: str = Field(min_length=1)
+    locale: str = "en"
+    privacy_settings: PrivacySettings = Field(default_factory=PrivacySettings)
+    product_name: str = Field(min_length=1)
+    merchant_name: str | None = None
 
 
 class ProofParseRequest(BaseModel):

@@ -9,11 +9,15 @@ import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
+import '../../domains/mindflow/decision_card.dart';
+import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/recipes/recipe_rescue.dart';
+import '../../domains/shopping/product_evidence_card.dart';
+import '../../domains/shopping/shopping_need.dart';
 import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
@@ -49,6 +53,11 @@ class MemoryLocalStore implements LocalStore {
       <MaintenanceReminder>[];
   final List<ClaimDraft> _claimDrafts = <ClaimDraft>[];
   final List<EvidenceAttachment> _evidenceAttachments = <EvidenceAttachment>[];
+  final List<MentalLoadItem> _mentalLoadItems = <MentalLoadItem>[];
+  final List<DecisionCard> _decisionCards = <DecisionCard>[];
+  final List<ShoppingNeed> _shoppingNeeds = <ShoppingNeed>[];
+  final List<ProductEvidenceCard> _productEvidenceCards =
+      <ProductEvidenceCard>[];
   AppRuntimeConfig? _runtimeConfig;
 
   @override
@@ -235,6 +244,74 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<List<MentalLoadItem>> loadMentalLoadItems() async {
+    return List<MentalLoadItem>.unmodifiable(_mentalLoadItems);
+  }
+
+  @override
+  Future<void> saveMentalLoadItems(List<MentalLoadItem> items) async {
+    _mentalLoadItems
+      ..clear()
+      ..addAll(items);
+  }
+
+  @override
+  Future<void> upsertMentalLoadItem(MentalLoadItem item) async {
+    _replaceById(_mentalLoadItems, item, (value) => value.id);
+  }
+
+  @override
+  Future<List<DecisionCard>> loadDecisionCards() async {
+    return List<DecisionCard>.unmodifiable(_decisionCards);
+  }
+
+  @override
+  Future<void> saveDecisionCards(List<DecisionCard> cards) async {
+    _decisionCards
+      ..clear()
+      ..addAll(cards);
+  }
+
+  @override
+  Future<void> upsertDecisionCard(DecisionCard card) async {
+    _replaceById(_decisionCards, card, (value) => value.id);
+  }
+
+  @override
+  Future<List<ShoppingNeed>> loadShoppingNeeds() async {
+    return List<ShoppingNeed>.unmodifiable(_shoppingNeeds);
+  }
+
+  @override
+  Future<void> saveShoppingNeeds(List<ShoppingNeed> needs) async {
+    _shoppingNeeds
+      ..clear()
+      ..addAll(needs);
+  }
+
+  @override
+  Future<void> upsertShoppingNeed(ShoppingNeed need) async {
+    _replaceById(_shoppingNeeds, need, (value) => value.id);
+  }
+
+  @override
+  Future<List<ProductEvidenceCard>> loadProductEvidenceCards() async {
+    return List<ProductEvidenceCard>.unmodifiable(_productEvidenceCards);
+  }
+
+  @override
+  Future<void> saveProductEvidenceCards(List<ProductEvidenceCard> cards) async {
+    _productEvidenceCards
+      ..clear()
+      ..addAll(cards);
+  }
+
+  @override
+  Future<void> upsertProductEvidenceCard(ProductEvidenceCard card) async {
+    _replaceById(_productEvidenceCards, card, (value) => value.id);
+  }
+
+  @override
   Future<void> upsertTask(GoTask task) async {
     _replaceById(_tasks, task, (item) => item.id);
   }
@@ -379,6 +456,26 @@ class MemoryLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> deleteMentalLoadItem(String id) async {
+    _removeById(_mentalLoadItems, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteDecisionCard(String id) async {
+    _removeById(_decisionCards, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteShoppingNeed(String id) async {
+    _removeById(_shoppingNeeds, id, (item) => item.id);
+  }
+
+  @override
+  Future<void> deleteProductEvidenceCard(String id) async {
+    _removeById(_productEvidenceCards, id, (item) => item.id);
+  }
+
+  @override
   Future<void> deleteAllData() async {
     _settings = PrivacySettings.defaults();
     _localePreference = null;
@@ -404,6 +501,10 @@ class MemoryLocalStore implements LocalStore {
     _maintenanceReminders.clear();
     _claimDrafts.clear();
     _evidenceAttachments.clear();
+    _mentalLoadItems.clear();
+    _decisionCards.clear();
+    _shoppingNeeds.clear();
+    _productEvidenceCards.clear();
     _runtimeConfig = null;
   }
 }

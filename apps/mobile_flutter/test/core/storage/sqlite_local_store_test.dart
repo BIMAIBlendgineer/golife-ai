@@ -13,9 +13,15 @@ import 'package:golife_flutter/domains/homememory/warranty_record.dart';
 import 'package:golife_flutter/domains/calendar/calendar_item.dart';
 import 'package:golife_flutter/domains/journal/journal_entry.dart';
 import 'package:golife_flutter/domains/journal/quick_note.dart';
+import 'package:golife_flutter/domains/mindflow/action_contract.dart';
+import 'package:golife_flutter/domains/mindflow/decision_card.dart';
+import 'package:golife_flutter/domains/mindflow/mental_load_item.dart';
+import 'package:golife_flutter/domains/mindflow/privacy_summary.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/missions/daily_risk.dart';
 import 'package:golife_flutter/domains/recipes/recipe_rescue.dart';
+import 'package:golife_flutter/domains/shopping/product_evidence_card.dart';
+import 'package:golife_flutter/domains/shopping/shopping_need.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -552,6 +558,239 @@ void main() {
     await deleteDatabase(databasePath);
   });
 
+  test('persists mindflow entities, encrypts blobs, and clears v5 tables',
+      () async {
+    final databaseName =
+        'golife_mindflow_${DateTime.now().microsecondsSinceEpoch}.db';
+    final store = SqliteLocalStore(
+      databaseName: databaseName,
+      encryptionSecretOverride: 'test-secret',
+    );
+
+    await store.upsertMentalLoadItem(
+      const MentalLoadItem(
+        id: 'mental-1',
+        userId: 'local-user',
+        sourceEventId: 'event-1',
+        type: 'renewal',
+        domain: 'homememory',
+        title: 'Review vacuum warranty',
+        summary: 'The warranty window closes soon.',
+        urgencyScore: 0.92,
+        effortScore: 0.35,
+        confidence: 0.88,
+        state: 'inbox',
+        dueHint: '2026-06-01',
+        amountHint: null,
+        currencyHint: null,
+        evidenceRefs: <String>['warranty-1'],
+        privacyLevel: 'local_only',
+        requiresConfirmation: false,
+        createdAtIso: '2026-05-01T08:00:00Z',
+        updatedAtIso: '2026-05-01T08:00:00Z',
+        trace: <String, Object?>{'provider': 'local'},
+      ),
+    );
+    await store.upsertDecisionCard(
+      const DecisionCard(
+        id: 'decision-1',
+        userId: 'local-user',
+        title: 'Handle the warranty before it expires',
+        recommendedAction: 'Create a reminder and gather the receipt.',
+        alternatives: <String>['Ignore it', 'Wait until next week'],
+        domainTargets: <String>['homememory', 'shopping'],
+        sourceItems: <String>['mental-1'],
+        evidence: <String>['Warranty ends in 30 days'],
+        confidence: 0.84,
+        uncertainty: 'Exact merchant process is unknown.',
+        privacySummary: PrivacySummary(
+          aiEnabled: false,
+          sentEventCount: 0,
+          blockedEventCount: 1,
+          allowedDomains: <String>[],
+          blockedDomains: <String>['homememory'],
+          localOnlyCollections: <String>['purchase_proofs'],
+          trace: <String, Object?>{'mode': 'local_only'},
+        ),
+        confirmationRequired: true,
+        actionContract: ActionContract(
+          actionType: 'review',
+          requiresConfirmation: true,
+          destructive: false,
+          external: false,
+          payloadPreview: <String, Object?>{'item_id': 'item-1'},
+          forbiddenActions: <String>['external_purchase'],
+        ),
+        status: 'proposed',
+        evidenceStatus: 'local_only',
+        rankingScore: 0.91,
+        createdAtIso: '2026-05-01T08:05:00Z',
+        updatedAtIso: '2026-05-01T08:05:00Z',
+        trace: <String, Object?>{'provider': 'local'},
+      ),
+    );
+    await store.upsertShoppingNeed(
+      const ShoppingNeed(
+        id: 'need-1',
+        userId: 'local-user',
+        needType: 'restock',
+        title: 'Replace dishwasher tablets',
+        sourceDomain: 'shopping',
+        sourceEventIds: <String>['event-2'],
+        urgencyScore: 0.74,
+        budgetHint: 18.5,
+        currency: 'EUR',
+        sustainabilityPreference: 'lower_packaging',
+        state: 'planned',
+        createdAtIso: '2026-05-01T08:10:00Z',
+        updatedAtIso: '2026-05-01T08:10:00Z',
+        trace: <String, Object?>{'provider': 'local'},
+      ),
+    );
+    await store.upsertProductEvidenceCard(
+      const ProductEvidenceCard(
+        id: 'evidence-1',
+        userId: 'local-user',
+        productName: 'Dishwasher tablets',
+        brand: 'EcoTabs',
+        merchantName: 'Local shop',
+        price: 13.99,
+        currency: 'EUR',
+        source: 'local_catalog',
+        checkedAtIso: '2026-05-01T08:12:00Z',
+        reviewSummary: 'Packaging appears recyclable.',
+        sustainabilityStatus: 'insufficient_verified_data',
+        confidence: 0.42,
+        disclaimer: 'No external sustainability verification available.',
+        trace: <String, Object?>{'provider': 'local'},
+      ),
+    );
+
+    expect(await store.loadMentalLoadItems(), hasLength(1));
+    expect(await store.loadDecisionCards(), hasLength(1));
+    expect(await store.loadShoppingNeeds(), hasLength(1));
+    expect(await store.loadProductEvidenceCards(), hasLength(1));
+
+    final databasePath = path.join(await getDatabasesPath(), databaseName);
+    final db = await openDatabase(databasePath, singleInstance: false);
+    final mentalBlob = (await db.query(
+      'mental_load_items',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final decisionBlob = (await db.query(
+      'decision_cards',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final needBlob = (await db.query(
+      'shopping_needs',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final evidenceBlob = (await db.query(
+      'product_evidence_cards',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+
+    expect(mentalBlob, isNot(contains('Review vacuum warranty')));
+    expect(decisionBlob, isNot(contains('gather the receipt')));
+    expect(needBlob, isNot(contains('Replace dishwasher tablets')));
+    expect(evidenceBlob, isNot(contains('Packaging appears recyclable')));
+
+    await db.close();
+    await store.deleteAllData();
+
+    expect(await store.loadMentalLoadItems(), isEmpty);
+    expect(await store.loadDecisionCards(), isEmpty);
+    expect(await store.loadShoppingNeeds(), isEmpty);
+    expect(await store.loadProductEvidenceCards(), isEmpty);
+
+    await deleteDatabase(databasePath);
+  });
+
+  test('upgrades v4 databases to v5 without losing existing rows', () async {
+    final databaseName =
+        'golife_v4_upgrade_${DateTime.now().microsecondsSinceEpoch}.db';
+    final databasePath = path.join(await getDatabasesPath(), databaseName);
+
+    final legacyDb = await openDatabase(
+      databasePath,
+      version: 4,
+      onCreate: (db, version) async {
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS key_value (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, status TEXT NOT NULL, priority TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS owned_items (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, category TEXT NOT NULL, warranty_until TEXT, privacy_level TEXT NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+      },
+    );
+    await legacyDb.insert(
+      'tasks',
+      <String, Object?>{
+        'id': 'task-legacy',
+        'status': 'inbox',
+        'priority': 'standard',
+        'json_blob':
+            '{"id":"task-legacy","title":"Legacy task","priority":"standard","status":"inbox","estimated_minutes":15}',
+      },
+    );
+    await legacyDb.insert(
+      'owned_items',
+      <String, Object?>{
+        'id': 'item-legacy',
+        'user_id': 'local-user',
+        'category': 'appliance',
+        'warranty_until': '2028-04-10',
+        'privacy_level': 'local_only',
+        'updated_at_iso': '2026-04-10T10:00:00Z',
+        'json_blob': 'encrypted:placeholder',
+      },
+    );
+    await legacyDb.close();
+
+    final store = SqliteLocalStore(
+      databaseName: databaseName,
+      encryptionSecretOverride: 'test-secret',
+    );
+
+    final tasks = await store.loadTasks();
+    expect(tasks, hasLength(1));
+    expect(tasks.single.title, 'Legacy task');
+
+    final migratedDb = await openDatabase(databasePath, singleInstance: false);
+    final tables = (await migratedDb.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('mental_load_items', 'decision_cards', 'shopping_needs', 'product_evidence_cards')",
+    ))
+        .map((row) => row['name'].toString())
+        .toSet();
+    expect(
+      tables,
+      containsAll(<String>[
+        'mental_load_items',
+        'decision_cards',
+        'shopping_needs',
+        'product_evidence_cards',
+      ]),
+    );
+    await migratedDb.close();
+
+    await deleteDatabase(databasePath);
+  });
+
   test('deletes individual entities without clearing unrelated tables',
       () async {
     final databaseName =
@@ -586,17 +825,44 @@ void main() {
         rescueHint: 'Use tonight.',
       ),
     );
+    await store.upsertMentalLoadItem(
+      const MentalLoadItem(
+        id: 'mental-1',
+        userId: 'local-user',
+        sourceEventId: 'event-1',
+        type: 'todo',
+        domain: 'shopping',
+        title: 'Replace soap',
+        summary: 'Soap is almost gone.',
+        urgencyScore: 0.7,
+        effortScore: 0.2,
+        confidence: 0.8,
+        state: 'inbox',
+        dueHint: null,
+        amountHint: null,
+        currencyHint: null,
+        evidenceRefs: <String>['event-1'],
+        privacyLevel: 'local_only',
+        requiresConfirmation: false,
+        createdAtIso: '2026-05-01T08:00:00Z',
+        updatedAtIso: '2026-05-01T08:00:00Z',
+        trace: <String, Object?>{},
+      ),
+    );
 
     expect(await store.loadTasks(), hasLength(1));
     expect(await store.loadExpenses(), hasLength(1));
     expect(await store.loadPantryItems(), hasLength(1));
+    expect(await store.loadMentalLoadItems(), hasLength(1));
 
     await store.deleteTask('task-1');
     await store.deleteExpense('expense-1');
+    await store.deleteMentalLoadItem('mental-1');
 
     expect(await store.loadTasks(), isEmpty);
     expect(await store.loadExpenses(), isEmpty);
     expect(await store.loadPantryItems(), hasLength(1));
+    expect(await store.loadMentalLoadItems(), isEmpty);
 
     await store.deletePantryItem('pantry-1');
     expect(await store.loadPantryItems(), isEmpty);

@@ -9,6 +9,9 @@ import type {
   HomeMemoryParserUsageRow,
   HomeMemorySummary,
   IncidentRow,
+  MindFlowDecisionQuality,
+  MindFlowOpenLoops,
+  MindFlowSummary,
   MissionAuditRecord,
   ModelCatalogEntry,
   ModelSettingsSnapshot,
@@ -28,6 +31,9 @@ import type {
   RoutingProfile,
   SafetyAuditRecord,
   SecuritySummary,
+  ShoppingClaimsSummary,
+  ShoppingEvidenceQuality,
+  ShoppingSummary,
   StorageSummary,
   StorageUsageRow,
   SupportRequest,
@@ -56,6 +62,14 @@ export const fallbackDashboard: DashboardMetrics = {
   ai_cost_per_active_user_usd: 2.6,
   safety_intervention_rate: 0.11,
   privacy_concern_rate: 1,
+  mental_load_items_per_active_user: 3.5,
+  decision_acceptance_rate: 0.62,
+  decision_completion_rate: 0.38,
+  decision_postpone_rate: 0.14,
+  shopping_need_conversion_rate: 0.71,
+  shopping_claims_with_evidence_rate: 0.78,
+  insufficient_sustainability_data_rate: 0.22,
+  privacy_filtered_decision_rate: 0.19,
   active_key_count: 2,
   disabled_key_count: 1,
   routing_snapshot_age_seconds: 480,
@@ -449,6 +463,48 @@ export const fallbackFeatureFlags: FeatureFlag[] = [
     description: "Split one capture into multiple entities and events.",
     updated_at: "2026-04-24T10:00:00Z",
   },
+  {
+    key: "mindflow_core_enabled",
+    enabled: true,
+    description: "Enable MindFlow parsing, summaries, and local open-loop tracking.",
+    updated_at: "2026-05-09T08:00:00Z",
+  },
+  {
+    key: "mindflow_decision_cards_enabled",
+    enabled: true,
+    description: "Expose generated decision cards in mobile and admin quality telemetry.",
+    updated_at: "2026-05-09T08:00:00Z",
+  },
+  {
+    key: "mindflow_reminder_candidates_enabled",
+    enabled: true,
+    description: "Allow reminder candidate derivation from MindFlow decisions.",
+    updated_at: "2026-05-09T08:00:00Z",
+  },
+  {
+    key: "shopping_domain_enabled",
+    enabled: true,
+    description: "Enable Shopping needs, list optimization, and operator metrics.",
+    updated_at: "2026-05-09T08:00:00Z",
+  },
+  {
+    key: "shopping_product_evidence_enabled",
+    enabled: true,
+    description: "Expose product evidence verification posture without raw merchant data.",
+    updated_at: "2026-05-09T08:00:00Z",
+  },
+  {
+    key: "shopping_external_sources_enabled",
+    enabled: false,
+    description: "Keep external shopping sources blocked until claim posture is ready.",
+    updated_at: "2026-05-09T08:00:00Z",
+  },
+  {
+    key: "sustainability_claims_enabled",
+    enabled: true,
+    description: "Permit sustainability summaries only when supported by verified evidence.",
+    updated_at: "2026-05-09T08:00:00Z",
+  },
 ];
 
 export const fallbackModelSettings: ModelSettingsSnapshot = {
@@ -760,6 +816,58 @@ export const fallbackRoutingProfiles: RoutingProfile[] = [
     enabled: true,
     updated_at: "2026-04-24T11:00:00Z",
   },
+  {
+    capability: "mindflow_parse",
+    strategy: "quality_first",
+    min_context_length: 16000,
+    required_parameters: ["response_format", "temperature", "max_tokens"],
+    preferred_max_latency_seconds: 3,
+    preferred_min_throughput_tokens_per_second: 35,
+    max_prompt_price_usd_per_million: null,
+    max_completion_price_usd_per_million: null,
+    retry_policy: { key_retries: 1, parse_retries: 1 },
+    enabled: true,
+    updated_at: "2026-05-09T08:05:00Z",
+  },
+  {
+    capability: "decision_plan",
+    strategy: "quality_first",
+    min_context_length: 32000,
+    required_parameters: ["response_format", "temperature", "max_tokens"],
+    preferred_max_latency_seconds: 5,
+    preferred_min_throughput_tokens_per_second: 22,
+    max_prompt_price_usd_per_million: null,
+    max_completion_price_usd_per_million: null,
+    retry_policy: { key_retries: 2, parse_retries: 1 },
+    enabled: true,
+    updated_at: "2026-05-09T08:05:00Z",
+  },
+  {
+    capability: "shopping_plan",
+    strategy: "quality_first",
+    min_context_length: 32000,
+    required_parameters: ["response_format", "temperature", "max_tokens"],
+    preferred_max_latency_seconds: 5,
+    preferred_min_throughput_tokens_per_second: 22,
+    max_prompt_price_usd_per_million: null,
+    max_completion_price_usd_per_million: null,
+    retry_policy: { key_retries: 2, parse_retries: 1 },
+    enabled: true,
+    updated_at: "2026-05-09T08:05:00Z",
+  },
+  {
+    capability: "product_evidence",
+    strategy: "quality_first",
+    min_context_length: 32000,
+    required_parameters: ["response_format", "temperature", "max_tokens"],
+    preferred_max_latency_seconds: 4,
+    preferred_min_throughput_tokens_per_second: 26,
+    max_prompt_price_usd_per_million: null,
+    max_completion_price_usd_per_million: null,
+    retry_policy: { key_retries: 1, parse_retries: 1 },
+    enabled: false,
+    updated_at: "2026-05-09T08:05:00Z",
+  },
 ];
 
 export const fallbackModelCatalog: ModelCatalogEntry[] = [
@@ -824,6 +932,42 @@ export const fallbackModelSelections: ModelSelectionSnapshot[] = [
     selection_reason: { model_name: "GPT-4.1 mini", quality_prior: 0.965 },
     generated_at: "2026-04-24T11:50:00Z",
     expires_at: "2026-04-24T17:50:00Z",
+  },
+  {
+    capability: "mindflow_parse",
+    rank_index: 0,
+    model_id: "openai/gpt-4.1-mini",
+    score: 0.954,
+    selection_reason: { model_name: "GPT-4.1 mini", safety_prior: 0.97 },
+    generated_at: "2026-05-09T08:10:00Z",
+    expires_at: "2026-05-09T14:10:00Z",
+  },
+  {
+    capability: "decision_plan",
+    rank_index: 0,
+    model_id: "anthropic/claude-sonnet-4",
+    score: 0.961,
+    selection_reason: { model_name: "Claude Sonnet 4", planning_prior: 0.98 },
+    generated_at: "2026-05-09T08:10:00Z",
+    expires_at: "2026-05-09T14:10:00Z",
+  },
+  {
+    capability: "shopping_plan",
+    rank_index: 0,
+    model_id: "anthropic/claude-sonnet-4",
+    score: 0.957,
+    selection_reason: { model_name: "Claude Sonnet 4", retrieval_prior: 0.96 },
+    generated_at: "2026-05-09T08:10:00Z",
+    expires_at: "2026-05-09T14:10:00Z",
+  },
+  {
+    capability: "product_evidence",
+    rank_index: 0,
+    model_id: "openai/gpt-4.1-mini",
+    score: 0.941,
+    selection_reason: { model_name: "GPT-4.1 mini", schema_prior: 0.97 },
+    generated_at: "2026-05-09T08:10:00Z",
+    expires_at: "2026-05-09T14:10:00Z",
   },
 ];
 
@@ -948,6 +1092,64 @@ export const fallbackHomeMemoryParserUsage: PaginatedResponse<HomeMemoryParserUs
   offset: 0,
   next_offset: null,
   fetched_at: "2026-04-26T09:00:00Z",
+};
+
+export const fallbackMindFlowSummary: MindFlowSummary = {
+  mental_load_items_per_active_user: 3.5,
+  decision_acceptance_rate: 0.62,
+  decision_completion_rate: 0.38,
+  decision_postpone_rate: 0.14,
+  privacy_filtered_decision_rate: 0.19,
+  open_loop_count: 14,
+  open_loop_rate: 0.58,
+  fallback_rate: 0.1,
+};
+
+export const fallbackMindFlowDecisionQuality: MindFlowDecisionQuality = {
+  generated_count: 24,
+  accepted_count: 15,
+  completed_count: 9,
+  rejected_count: 4,
+  postponed_count: 3,
+  repeated_count: 2,
+  acceptance_rate: 0.625,
+  completion_rate: 0.375,
+  rejection_rate: 0.1667,
+  postpone_rate: 0.125,
+};
+
+export const fallbackMindFlowOpenLoops: MindFlowOpenLoops = {
+  total_open_loops: 14,
+  mental_load_items: 7,
+  pending_decisions: 6,
+  pending_shopping_needs: 1,
+  warranty_review_needs: 0,
+};
+
+export const fallbackShoppingSummary: ShoppingSummary = {
+  shopping_need_conversion_rate: 0.71,
+  shopping_claims_with_evidence_rate: 0.78,
+  insufficient_sustainability_data_rate: 0.22,
+  needs_detected: 17,
+  plans_generated: 12,
+  external_sources_enabled: false,
+  product_evidence_enabled: true,
+};
+
+export const fallbackShoppingEvidenceQuality: ShoppingEvidenceQuality = {
+  verified_count: 8,
+  partial_count: 6,
+  insufficient_count: 4,
+  not_checked_count: 1,
+  verified_rate: 0.7368,
+  insufficient_rate: 0.2105,
+};
+
+export const fallbackShoppingClaimsSummary: ShoppingClaimsSummary = {
+  unverified_price_attempts: 2,
+  unverified_sustainability_attempts: 1,
+  no_availability_claim_count: 3,
+  blocked_external_sources: true,
 };
 
 export const fallbackQualitySummary: QualitySummary = {

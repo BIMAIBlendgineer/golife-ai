@@ -17,8 +17,10 @@ void main() {
   });
 
   test('maps stored locale preferences to exact Flutter locales', () {
-    expect(appLocalePreferenceFromStorage('pt-BR').locale, const Locale('pt', 'BR'));
-    expect(appLocalePreferenceFromStorage('pt-PT').locale, const Locale('pt', 'PT'));
+    expect(appLocalePreferenceFromStorage('pt-BR').locale,
+        const Locale('pt', 'BR'));
+    expect(appLocalePreferenceFromStorage('pt-PT').locale,
+        const Locale('pt', 'PT'));
     expect(
       appLocalePreferenceFromStorage('zh-Hans').locale,
       const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
@@ -27,5 +29,10 @@ void main() {
       appLocalePreferenceFromStorage('zh-Hant').locale,
       const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
     );
+  });
+
+  test('falls back to English for unsupported locale tags', () {
+    expect(normalizeLocaleTag('xx-YY'), 'en');
+    expect(normalizeLocaleTag(null), 'en');
   });
 }

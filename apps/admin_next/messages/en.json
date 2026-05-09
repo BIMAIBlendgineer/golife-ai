@@ -87,6 +87,11 @@
             "note": "Usefulness, fallback, parser confidence."
           },
           {
+            "href": "/mindflow",
+            "title": "MindFlow",
+            "note": "Mental load, decision flow, and open loops."
+          },
+          {
             "href": "/incidents",
             "title": "Incidents",
             "note": "Operational issues with safe summaries only."
@@ -105,6 +110,11 @@
             "href": "/billing",
             "title": "Billing",
             "note": "Plan mix, storage charges, xInsightAI posture."
+          },
+          {
+            "href": "/shopping",
+            "title": "Shopping",
+            "note": "Needs conversion, evidence posture, blocked claims."
           },
           {
             "href": "/storage",
@@ -809,6 +819,40 @@
       "emptyTitle": "No HomeMemory parser data",
       "emptyBody": "Proof parsing telemetry is not available in this environment yet."
     },
+    "mindflow": {
+      "eyebrow": "MindFlow",
+      "title": "Mental load, decisions, and open loops",
+      "description": "Operator view for whether MindFlow is turning capture into clear decisions without leaking raw personal text or overstepping confirmation boundaries.",
+      "badge": "Aggregate only",
+      "disclaimerTitle": "Private text excluded",
+      "disclaimerBody": "MindFlow admin telemetry is aggregate-only. Raw inbox text, personal notes, blocked fields, and decision rationale tied to a specific user are excluded.",
+      "mentalLoadLabel": "Mental load / active user",
+      "mentalLoadNote": "How much unresolved cognitive pressure the product is surfacing per weekly active user.",
+      "acceptanceLabel": "Decision acceptance",
+      "acceptanceNote": "Share of generated decision cards that users accept.",
+      "completionLabel": "Decision completion",
+      "completionNote": "How often accepted decisions become completed actions.",
+      "privacyFilterLabel": "Privacy-filtered decisions",
+      "privacyFilterNote": "Decision attempts where sensitive fields were blocked or reduced before planning.",
+      "openLoopsEyebrow": "Open loops",
+      "openLoopsTitle": "Unresolved pressure still visible to the user",
+      "openLoopsNote": "A healthy MindFlow loop reduces these counts over time without hiding the blocked cases.",
+      "decisionFlowEyebrow": "Decision flow",
+      "decisionFlowTitle": "Card throughput and operator trust posture",
+      "decisionFlowNote": "Completion, rejection, and repetition help distinguish useful decisions from noisy ones.",
+      "generatedLabel": "Generated",
+      "acceptedLabel": "Accepted",
+      "completedLabel": "Completed",
+      "rejectedLabel": "Rejected",
+      "postponedLabel": "Postponed",
+      "repeatedLabel": "Repeated",
+      "mentalLoadQueueLabel": "Mental load items",
+      "pendingDecisionsLabel": "Pending decisions",
+      "pendingShoppingLabel": "Pending shopping needs",
+      "warrantyReviewLabel": "Warranty reviews",
+      "fallbackTitle": "Fallback watch",
+      "fallbackBody": "MindFlow fallback should stay low enough that card quality does not drift toward generic local heuristics."
+    },
     "quality": {
       "eyebrow": "Quality",
       "title": "Mission, parser, safety, and cost quality",
@@ -834,6 +878,37 @@
       "tableMetric": "Metric",
       "tableValue": "Value",
       "tableSource": "Source"
+    },
+    "shopping": {
+      "eyebrow": "Shopping",
+      "title": "Need conversion, evidence, and claim posture",
+      "description": "Operator view for whether Shopping guidance is grounded in pantry-first behavior, verified evidence, and safe claim boundaries.",
+      "badge": "Claims guarded",
+      "disclaimerTitle": "No merchant text in admin",
+      "disclaimerBody": "Shopping admin telemetry is aggregate-only. Product titles, merchant names, price strings, and sustainability notes stay out of this surface.",
+      "needsLabel": "Needs detected",
+      "needsNote": "Shopping needs inferred from capture, pantry gaps, or proof flows.",
+      "plansLabel": "Plans generated",
+      "plansNote": "List optimization runs completed after a need was detected.",
+      "claimsCoverageLabel": "Claims with evidence",
+      "claimsCoverageNote": "Coverage rate for price and sustainability statements backed by evidence status.",
+      "insufficientLabel": "Insufficient sustainability",
+      "insufficientNote": "Cases where sustainability posture was withheld because evidence stayed incomplete.",
+      "evidenceEyebrow": "Evidence quality",
+      "evidenceTitle": "Verification posture across shopping evidence cards",
+      "evidenceNote": "Verified and partial evidence can inform guidance. Insufficient or unchecked states should remain visible to operators.",
+      "claimsEyebrow": "Claim controls",
+      "claimsTitle": "Blocked claims and external-source posture",
+      "claimsNote": "These counters show how often the system refused to imply price, availability, or sustainability certainty.",
+      "verifiedLabel": "Verified",
+      "partialLabel": "Partial",
+      "insufficientEvidenceLabel": "Insufficient",
+      "notCheckedLabel": "Not checked",
+      "externalSourcesLabel": "External sources",
+      "productEvidenceLabel": "Product evidence",
+      "priceClaimsBlockedLabel": "Price claims blocked",
+      "sustainabilityClaimsBlockedLabel": "Sustainability claims blocked",
+      "availabilityClaimsBlockedLabel": "Availability claims blocked"
     },
     "incidents": {
       "eyebrow": "Incidents",

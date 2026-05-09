@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/privacy/privacy_models.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/core/storage/resilient_local_store.dart';
+import 'package:golife_flutter/domains/mindflow/mental_load_item.dart';
 
 class _FailingLocalStore extends MemoryLocalStore {
   @override
@@ -47,5 +48,34 @@ void main() {
       reloaded.permissionFor(DomainKey.finance),
       DataPermission.aiAllowed,
     );
+
+    await store.upsertMentalLoadItem(
+      const MentalLoadItem(
+        id: 'mindflow-1',
+        userId: 'local-user',
+        sourceEventId: 'event-1',
+        type: 'follow_up',
+        domain: 'shopping',
+        title: 'Replace detergent soon',
+        summary: 'Supplies are nearly empty.',
+        urgencyScore: 0.7,
+        effortScore: 0.3,
+        confidence: 0.8,
+        state: 'inbox',
+        dueHint: 'this_week',
+        amountHint: null,
+        currencyHint: null,
+        evidenceRefs: <String>['event-1'],
+        privacyLevel: 'local_only',
+        requiresConfirmation: false,
+        createdAtIso: '2026-05-01T08:00:00Z',
+        updatedAtIso: '2026-05-01T08:00:00Z',
+        trace: <String, Object?>{'provider': 'local'},
+      ),
+    );
+
+    final mentalLoadItems = await store.loadMentalLoadItems();
+    expect(mentalLoadItems, hasLength(1));
+    expect(mentalLoadItems.single.title, 'Replace detergent soon');
   });
 }
