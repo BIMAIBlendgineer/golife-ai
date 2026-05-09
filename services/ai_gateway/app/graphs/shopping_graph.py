@@ -30,6 +30,35 @@ If evidence is missing, set sustainability_status='insufficient_verified_data'.
 Every purchase recommendation requires human confirmation.
 """
 
+_CONTEXT_DOMAIN_BY_FIELD = {
+    "pantry_context": "pantry",
+    "finance_context": "finance",
+    "wardrobe_context": "wardrobe",
+    "homememory_context": "homememory",
+}
+
+_SAFE_CONTEXT_KEYS = {
+    "id",
+    "name",
+    "title",
+    "label",
+    "product_name",
+    "category",
+    "quantity",
+    "quantity_label",
+    "unit",
+    "state",
+    "status",
+    "urgency_score",
+    "budget_hint",
+    "currency",
+    "sustainability_preference",
+    "purchase_date",
+    "warranty_until",
+    "need_type",
+    "amount",
+}
+
 
 def _utcnow_iso() -> str:
     return datetime.now(UTC).isoformat()
@@ -43,6 +72,7 @@ async def run_shopping_plan_graph(
 ) -> ShoppingPlanResponse:
     runtime_flags = await provider.runtime_flags()
     allowed_needs, blocked_needs = _filter_allowed_needs(request.shopping_needs, request)
+    safe_context, context_trace = build_privacy_safe_shopping_context(request)
     if not allowed_needs:
         return ShoppingPlanResponse(
             needs=[],
@@ -59,12 +89,14 @@ async def run_shopping_plan_graph(
                 "provider": provider.provider_name,
                 "privacy_filtered_count": len(blocked_needs),
                 "shopping_need_count": 0,
+                **context_trace,
                 "fallbackReason": "privacy_filtered",
             },
         )
 
     response: ShoppingPlanResponse | None = None
     provider_meta: dict[str, Any] = {}
+    provider_error: str | None = None
     if request.privacy_settings.ai_enabled and runtime_flags.get("shopping_plan"):
         try:
             provider_result = await provider.complete_json(
@@ -75,10 +107,10 @@ async def run_shopping_plan_graph(
                     "locale": request.locale,
                     "allowed_domains": request.privacy_settings.allowed_domains,
                     "shopping_needs": [item.model_dump(mode="json") for item in allowed_needs],
-                    "pantry_context": request.pantry_context,
-                    "finance_context": request.finance_context,
-                    "wardrobe_context": request.wardrobe_context,
-                    "homememory_context": request.homememory_context,
+                    "pantry_context": safe_context["pantry_context"],
+                    "finance_context": safe_context["finance_context"],
+                    "wardrobe_context": safe_context["wardrobe_context"],
+                    "homememory_context": safe_context["homememory_context"],
                 },
                 response_schema=ShoppingPlanResponse.model_json_schema(),
                 temperature=0.0,
@@ -90,11 +122,17 @@ async def run_shopping_plan_graph(
             )
             if isinstance(provider_result, dict):
                 provider_meta = dict(provider_result.get("_provider_meta", {}) or {})
-        except Exception:
+        except Exception as exc:
             response = None
+            provider_error = type(exc).__name__
 
     if response is None:
-        response = _build_local_shopping_response(request=request, allowed_needs=allowed_needs)
+        response = _build_local_shopping_response(
+            request=request,
+            allowed_needs=allowed_needs,
+            safe_context=safe_context,
+            context_trace=context_trace,
+        )
         response = response.model_copy(
             update={
                 "trace": {
@@ -117,7 +155,15 @@ async def run_shopping_plan_graph(
                 "provider_meta": provider_meta,
                 "privacy_filtered_count": len(blocked_needs),
                 "shopping_need_count": len(response.needs),
+                **context_trace,
                 "guardrail_review": {"rejected": guardrail_events},
+                **({"provider_error": provider_error} if provider_error is not None else {}),
+                **(
+                    {"fallbackReason": provider_error or "local_shopping_fallback"}
+                    if response.trace.get("clientFallback") is True
+                    and "fallbackReason" not in response.trace
+                    else {}
+                ),
             },
         }
     )
@@ -192,6 +238,57 @@ def _filter_allowed_needs(
             continue
         allowed.append(need)
     return allowed, blocked
+
+
+def build_privacy_safe_shopping_context(
+    request: ShoppingPlanRequest,
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    allowed_domains = set(request.privacy_settings.allowed_domains)
+    safe_context: dict[str, list[dict[str, Any]]] = {}
+    sent_by_field: dict[str, int] = {}
+    filtered_by_field: dict[str, int] = {}
+    redacted_by_field: dict[str, int] = {}
+    sent_count = 0
+    filtered_count = 0
+    redacted_count = 0
+
+    for field, domain in _CONTEXT_DOMAIN_BY_FIELD.items():
+        raw_items = list(getattr(request, field))
+        if allowed_domains and domain not in allowed_domains:
+            safe_context[field] = []
+            sent_by_field[field] = 0
+            filtered_by_field[field] = len(raw_items)
+            redacted_by_field[field] = 0
+            filtered_count += len(raw_items)
+            continue
+
+        sanitized_items: list[dict[str, Any]] = []
+        field_redacted = 0
+        for raw_item in raw_items:
+            safe_item, redacted_fields = _sanitize_context_item(raw_item)
+            field_redacted += redacted_fields
+            if safe_item:
+                sanitized_items.append(safe_item)
+        safe_context[field] = sanitized_items
+        sent_by_field[field] = len(sanitized_items)
+        filtered_by_field[field] = max(0, len(raw_items) - len(sanitized_items))
+        redacted_by_field[field] = field_redacted
+        sent_count += len(sanitized_items)
+        filtered_count += filtered_by_field[field]
+        redacted_count += field_redacted
+
+    return safe_context, {
+        "context_sent_count": sent_count,
+        "context_filtered_count": filtered_count,
+        "context_redacted_field_count": redacted_count,
+        "context_sent_by_field": sent_by_field,
+        "context_filtered_by_field": filtered_by_field,
+        "context_redacted_field_count_by_field": redacted_by_field,
+        "pantry_context_count": len(safe_context["pantry_context"]),
+        "finance_context_count": len(safe_context["finance_context"]),
+        "wardrobe_context_count": len(safe_context["wardrobe_context"]),
+        "homememory_context_count": len(safe_context["homememory_context"]),
+    }
 
 
 def _normalize_provider_shopping_response(
@@ -376,8 +473,10 @@ def _build_local_shopping_response(
     *,
     request: ShoppingPlanRequest,
     allowed_needs: list[ShoppingNeed],
+    safe_context: dict[str, list[dict[str, Any]]],
+    context_trace: dict[str, Any],
 ) -> ShoppingPlanResponse:
-    pantry_names = _context_names(request.pantry_context)
+    pantry_names = _context_names(safe_context["pantry_context"])
     needs = allowed_needs
     evidence_cards = [
         _local_evidence_for_need(need, pantry_names=pantry_names)
@@ -406,10 +505,7 @@ def _build_local_shopping_response(
                 "sanitize_purchase_claims",
                 "build_response",
             ],
-            "pantry_context_count": len(request.pantry_context),
-            "finance_context_count": len(request.finance_context),
-            "wardrobe_context_count": len(request.wardrobe_context),
-            "homememory_context_count": len(request.homememory_context),
+            **context_trace,
         },
     )
 
@@ -554,6 +650,27 @@ def _context_names(items: list[dict[str, Any]]) -> set[str]:
             if normalized:
                 names.add(normalized)
     return names
+
+
+def _sanitize_context_item(item: dict[str, Any]) -> tuple[dict[str, Any], int]:
+    safe_item: dict[str, Any] = {}
+    redacted_fields = 0
+    for key, value in item.items():
+        if key not in _SAFE_CONTEXT_KEYS:
+            redacted_fields += 1
+            continue
+        if value is None:
+            continue
+        if isinstance(value, str):
+            normalized = value.strip()
+            if normalized:
+                safe_item[key] = normalized
+            continue
+        if isinstance(value, (int, float, bool)):
+            safe_item[key] = value
+            continue
+        redacted_fields += 1
+    return safe_item, redacted_fields
 
 
 def _matches_existing_item(title: str, pantry_names: set[str]) -> bool:

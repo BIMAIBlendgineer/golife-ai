@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from copy import deepcopy
+
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -75,10 +77,12 @@ class _RecordingProvider(LLMProvider):
 
     def __init__(self) -> None:
         self.calls: list[str] = []
+        self.payloads: list[dict[str, object]] = []
 
     async def complete_json(self, **kwargs):
         user_payload = kwargs.get("user_payload", {})
         self.calls.append(str(user_payload.get("intent", "unknown")))
+        self.payloads.append(deepcopy(dict(user_payload)))
         intent = user_payload.get("intent")
         if intent == "mindflow_parse":
             return {
@@ -229,6 +233,60 @@ def test_mindflow_parse_respects_ai_disabled(tmp_path):
     assert all(item["privacy_level"] == "local_only" for item in payload["items"])
 
 
+def test_mindflow_parse_filters_private_items_before_provider(tmp_path):
+    provider = _RecordingProvider()
+    client = TestClient(create_app(settings=_settings(tmp_path), provider=provider))
+
+    response = client.post(
+        "/v1/mindflow/inbox/parse",
+        json={
+            "user_id": "user-1",
+            "locale": "en",
+            "text": "pay internet bill and private journal note",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert provider.calls == ["mindflow_parse"]
+    provider_payload = provider.payloads[0]
+    assert "text" not in provider_payload
+    assert provider_payload["mental_load_items"][0]["title"] == "pay internet bill"
+    assert len(provider_payload["mental_load_items"]) == 1
+    assert payload["trace"]["privacy_filtered_count"] == 1
+    assert payload["trace"]["allowed_item_count"] == 1
+    assert "private journal note" not in str(payload).lower()
+
+
+def test_mindflow_parse_returns_empty_when_all_items_are_privacy_filtered(tmp_path):
+    provider = _RecordingProvider()
+    client = TestClient(create_app(settings=_settings(tmp_path), provider=provider))
+
+    response = client.post(
+        "/v1/mindflow/inbox/parse",
+        json={
+            "user_id": "user-1",
+            "locale": "en",
+            "text": "private journal note",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["task"],
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert provider.calls == []
+    assert payload["items"] == []
+    assert payload["trace"]["fallbackReason"] == "privacy_filtered"
+    assert payload["trace"]["privacy_filtered_count"] == 1
+
+
 def test_decision_plan_filters_local_only_and_requires_confirmation(tmp_path):
     provider = _RecordingProvider()
     client = TestClient(create_app(settings=_settings(tmp_path), provider=provider))
@@ -356,6 +414,39 @@ def test_shopping_plan_guardrails_remove_unverified_price_and_sustainability_cla
     assert "best price" not in (evidence["review_summary"] or "").lower()
     assert "available now" not in (evidence["review_summary"] or "").lower()
     assert "eco-friendly" not in (evidence["review_summary"] or "").lower()
+
+
+def test_shopping_plan_filters_and_sanitizes_sensitive_contexts_before_provider(tmp_path):
+    provider = _RecordingProvider()
+    client = TestClient(create_app(settings=_settings(tmp_path), provider=provider))
+
+    response = client.post(
+        "/v1/shopping/list/optimize",
+        json={
+            "user_id": "user-1",
+            "locale": "en",
+            "privacy_settings": {
+                "ai_enabled": True,
+                "allowed_domains": ["shopping", "pantry"],
+            },
+            "shopping_needs": [_shopping_need("need-1")],
+            "pantry_context": [{"name": "milk", "raw_text": "local pantry note"}],
+            "finance_context": [{"label": "budget", "receipt_text": "private finance receipt"}],
+            "wardrobe_context": [{"title": "winter jacket", "file_ref": "file-1"}],
+            "homememory_context": [{"title": "Vacuum", "serial_number": "SN-123", "claim_body": "private"}],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert provider.calls == ["shopping_plan"]
+    provider_payload = provider.payloads[0]
+    assert provider_payload["pantry_context"] == [{"name": "milk"}]
+    assert provider_payload["finance_context"] == []
+    assert provider_payload["wardrobe_context"] == []
+    assert provider_payload["homememory_context"] == []
+    assert payload["trace"]["context_filtered_count"] > 0
+    assert payload["trace"]["context_redacted_field_count"] > 0
 
 
 def test_product_evidence_requires_disclaimer_and_no_best_price_claim(tmp_path):

@@ -76,36 +76,6 @@ async def run_mindflow_parse_graph(
         "ai_enabled": request.privacy_settings.ai_enabled,
     }
 
-    if request.privacy_settings.ai_enabled and runtime_flags.get("mindflow_parse"):
-        try:
-            provider_result = await provider.complete_json(
-                system_prompt=MINDFLOW_PARSE_SYSTEM_PROMPT,
-                user_payload={
-                    "intent": "mindflow_parse",
-                    "user_id": request.user_id,
-                    "locale": request.locale,
-                    "text": request.text,
-                    "allowed_domains": request.privacy_settings.allowed_domains,
-                },
-                response_schema=MindFlowParseResponse.model_json_schema(),
-                temperature=0.0,
-            )
-            items = _normalize_provider_mindflow_items(
-                provider_result,
-                request=request,
-            )
-            if items:
-                trace["provider_meta"] = (
-                    provider_result.get("_provider_meta", {})
-                    if isinstance(provider_result, dict)
-                    else {}
-                )
-                trace["parser"] = "semantic_openrouter"
-                trace["item_count"] = len(items)
-                return MindFlowParseResponse(items=items, trace=trace)
-        except Exception as exc:
-            trace["provider_error"] = type(exc).__name__
-
     parsed_items = parse_capture_request(
         EventParseRequest(
             user_id=request.user_id,
@@ -122,11 +92,70 @@ async def run_mindflow_parse_graph(
         )
         for index, raw_item in enumerate(parsed_items)
     ]
+    trace["parser"] = "deterministic_mindflow"
+    trace["local_item_count"] = len(items)
+
+    if not request.privacy_settings.ai_enabled:
+        trace["clientFallback"] = True
+        trace["fallbackReason"] = "deterministic_parser"
+        trace["item_count"] = len(items)
+        return MindFlowParseResponse(items=items, trace=trace)
+
+    allowed_items, blocked_items = _filter_allowed_mindflow_items(
+        items,
+        request=request,
+    )
+    trace["runtime_flag_enabled"] = runtime_flags.get("mindflow_parse", False)
+    trace["privacy_filtered_count"] = len(blocked_items)
+    trace["privacy_filtered_items"] = blocked_items
+    trace["allowed_item_count"] = len(allowed_items)
+
+    if not allowed_items:
+        trace["clientFallback"] = True
+        trace["fallbackReason"] = "privacy_filtered"
+        trace["item_count"] = 0
+        return MindFlowParseResponse(items=[], trace=trace)
+
+    if runtime_flags.get("mindflow_parse"):
+        try:
+            provider_result = await provider.complete_json(
+                system_prompt=MINDFLOW_PARSE_SYSTEM_PROMPT,
+                user_payload={
+                    "intent": "mindflow_parse",
+                    "user_id": request.user_id,
+                    "locale": request.locale,
+                    "allowed_domains": request.privacy_settings.allowed_domains,
+                    "mental_load_items": [
+                        item.model_dump(mode="json") for item in allowed_items
+                    ],
+                },
+                response_schema=MindFlowParseResponse.model_json_schema(),
+                temperature=0.0,
+            )
+            provider_items, provider_blocked = _filter_allowed_mindflow_items(
+                _normalize_provider_mindflow_items(
+                    provider_result,
+                    request=request,
+                ),
+                request=request,
+            )
+            trace["provider_blocked_count"] = len(provider_blocked)
+            if provider_items:
+                trace["provider_meta"] = (
+                    provider_result.get("_provider_meta", {})
+                    if isinstance(provider_result, dict)
+                    else {}
+                )
+                trace["parser"] = "semantic_openrouter"
+                trace["item_count"] = len(provider_items)
+                return MindFlowParseResponse(items=provider_items, trace=trace)
+        except Exception as exc:
+            trace["provider_error"] = type(exc).__name__
+
     trace["clientFallback"] = True
     trace["fallbackReason"] = trace.get("provider_error", "deterministic_parser")
-    trace["parser"] = "deterministic_mindflow"
-    trace["item_count"] = len(items)
-    return MindFlowParseResponse(items=items, trace=trace)
+    trace["item_count"] = len(allowed_items)
+    return MindFlowParseResponse(items=allowed_items, trace=trace)
 
 
 async def run_decision_plan_graph(
@@ -324,6 +353,37 @@ def _mental_load_from_parsed_item(
             "local_only_collections": _REMOTE_ONLY_COLLECTIONS,
         },
     )
+
+
+def _filter_allowed_mindflow_items(
+    items: list[MentalLoadItem],
+    *,
+    request: MindFlowParseRequest,
+) -> tuple[list[MentalLoadItem], list[dict[str, str]]]:
+    allowed_domains = set(request.privacy_settings.allowed_domains)
+    allowed: list[MentalLoadItem] = []
+    blocked: list[dict[str, str]] = []
+    for item in items:
+        if item.privacy_level != "ai_allowed":
+            blocked.append(
+                {
+                    "item_id": item.item_id,
+                    "domain": item.domain,
+                    "reason": "privacy_level",
+                }
+            )
+            continue
+        if allowed_domains and item.domain not in allowed_domains:
+            blocked.append(
+                {
+                    "item_id": item.item_id,
+                    "domain": item.domain,
+                    "reason": "domain_not_allowed",
+                }
+            )
+            continue
+        allowed.append(item)
+    return allowed, blocked
 
 
 def _filter_ai_allowed_items(

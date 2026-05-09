@@ -2,6 +2,8 @@
 
 Updated: 2026-05-09
 Current state: `release_candidate`
+production_ready = false
+store_ready = false
 
 ## 1. Release state labels
 
@@ -42,7 +44,7 @@ MindFlow Core + EcoShop Domain V1 is ready to move as `release_candidate`.
 ```text
 2026-05-09 apps/mobile_flutter flutter analyze lib test      PASS
 2026-05-09 apps/mobile_flutter flutter test                  PASS (65 tests)
-2026-05-09 services/ai_gateway python -m pytest tests        PASS (102 tests)
+2026-05-09 services/ai_gateway python -m pytest tests        PASS (105 tests)
 2026-05-09 services/web_backend python -m pytest tests       PASS (26 tests)
 2026-05-09 apps/admin_next npm run typecheck                 PASS
 2026-05-09 apps/admin_next npm run build                     PASS

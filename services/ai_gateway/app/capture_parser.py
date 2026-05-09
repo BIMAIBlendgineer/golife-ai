@@ -110,6 +110,18 @@ def _split_on_connector(text: str) -> list[str]:
             lowered,
             ["comprar", "jacket", "ropa", "jaqueta", "服", "衣服"],
         )
+        + _count_signals(
+            lowered,
+            [
+                "journal",
+                "diary",
+                "private note",
+                "personal note",
+                "note to self",
+                "reflection",
+                "reflect",
+            ],
+        )
     )
     if signal_count < 2 or (
         " y " not in lowered and " and " not in lowered and " e " not in lowered
@@ -136,6 +148,13 @@ def _clean_clause(text: str) -> str:
 
 def _classify_clause(clause: str) -> ParsedCaptureItem:
     lowered = clause.lower()
+    if _looks_like_journal(lowered):
+        return _build_clause(
+            clause,
+            "journal",
+            confidence=0.9,
+            rationale="Detected private note or journal wording.",
+        )
     if _looks_like_finance(lowered):
         return _build_clause(
             clause,
@@ -370,6 +389,21 @@ def _looks_like_habit(lowered: str) -> bool:
     )
 
 
+def _looks_like_journal(lowered: str) -> bool:
+    return any(
+        signal in lowered
+        for signal in (
+            "journal",
+            "diary",
+            "private note",
+            "personal note",
+            "note to self",
+            "reflection",
+            "reflect",
+        )
+    )
+
+
 def _looks_like_week(lowered: str) -> bool:
     return any(
         signal in lowered
@@ -406,5 +440,6 @@ def _default_event_type(domain: str) -> str:
         "finance": "expense_logged",
         "pantry": "ingredient_flagged",
         "wardrobe": "purchase_intention",
+        "journal": "journal_captured",
     }
     return defaults.get(domain, "task_captured")
