@@ -1,3 +1,5 @@
+import '../monetization/billing_runtime_models.dart';
+
 class AppRuntimeConfig {
   const AppRuntimeConfig({
     required this.schemaVersion,
@@ -6,6 +8,7 @@ class AppRuntimeConfig {
     required this.featureFlags,
     required this.friendlyCopy,
     required this.aiStatus,
+    required this.billing,
     required this.generatedAtIso,
   });
 
@@ -15,13 +18,14 @@ class AppRuntimeConfig {
   final Map<String, bool> featureFlags;
   final Map<String, String> friendlyCopy;
   final Map<String, Object?> aiStatus;
+  final MobileBillingConfig billing;
   final String generatedAtIso;
 
   factory AppRuntimeConfig.defaults({
     String gatewayBaseUrl = 'http://127.0.0.1:8000',
   }) {
     return AppRuntimeConfig(
-      schemaVersion: 1,
+      schemaVersion: 2,
       ttlSeconds: 21600,
       gatewayBaseUrl: gatewayBaseUrl,
       featureFlags: const <String, bool>{},
@@ -36,6 +40,7 @@ class AppRuntimeConfig {
             'Using the last trusted server configuration until a fresh one is available.',
       },
       aiStatus: const <String, Object?>{},
+      billing: MobileBillingConfig.disabledDefault(),
       generatedAtIso: '',
     );
   }
@@ -64,15 +69,22 @@ class AppRuntimeConfig {
                 MapEntry(key.toString(), _normalizeJsonValue(value)),
           )
         : const <String, Object?>{};
+    final rawBilling = json['billing'];
+    final billing = rawBilling is Map
+        ? MobileBillingConfig.fromJson(
+            Map<String, dynamic>.from(rawBilling.cast<String, Object?>()),
+          )
+        : MobileBillingConfig.disabledDefault();
 
     return AppRuntimeConfig(
-      schemaVersion: (json['schema_version'] as num?)?.toInt() ?? 1,
+      schemaVersion: (json['schema_version'] as num?)?.toInt() ?? 2,
       ttlSeconds: (json['ttl_seconds'] as num?)?.toInt() ?? 21600,
       gatewayBaseUrl:
           (json['gateway_base_url'] ?? 'http://127.0.0.1:8000').toString(),
       featureFlags: featureFlags,
       friendlyCopy: friendlyCopy,
       aiStatus: aiStatus,
+      billing: billing,
       generatedAtIso: (json['generated_at'] ?? '').toString(),
     );
   }
@@ -85,6 +97,7 @@ class AppRuntimeConfig {
       'feature_flags': featureFlags,
       'friendly_copy': friendlyCopy,
       'ai_status': aiStatus,
+      'billing': billing.toJson(),
       'generated_at': generatedAtIso,
     };
   }

@@ -1,6 +1,6 @@
 {
-  "releaseVersion": "commercial-premium-draft-2026-05-16",
-  "generatedAt": "2026-05-16T00:00:00Z",
+  "releaseVersion": "commercial-premium-billing-sandbox-2026-05-17",
+  "generatedAt": "2026-05-17T00:00:00Z",
   "scope": {
     "language": [
       "en",
@@ -39,16 +39,20 @@
     "androidEmulatorsDetected": 0
   },
   "billing": {
-    "status": "disabled",
-    "decisionDocument": "docs/operations/BILLING_DISABLED_DECISION.md",
-    "restorePurchases": false,
-    "renewalState": "disabled"
+    "status": "sandbox",
+    "decisionDocument": "docs/operations/BILLING_SANDBOX_DECISION.md",
+    "restorePurchases": true,
+    "renewalState": "sandbox_only",
+    "provider": "google_play",
+    "productionPurchasesEnabled": false
   },
   "entitlementRuntime": {
     "status": "pass",
-    "billingProvider": "disabled",
-    "restorePurchases": false,
-    "exportDeleteAlwaysAvailable": true
+    "billingProvider": "google_play",
+    "restorePurchases": true,
+    "exportDeleteAlwaysAvailable": true,
+    "sandboxOnly": true,
+    "productionPurchasesEnabled": false
   },
   "privacy": {
     "status": "pass",

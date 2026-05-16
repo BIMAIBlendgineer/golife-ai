@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     ]
     mobile_gateway_base_url: str = "http://127.0.0.1:8000"
     mobile_runtime_config_ttl_seconds: int = 21600
+    mobile_billing_mode: str = "google_play_sandbox"
+    mobile_google_play_package_name: str = "ai.golife.mobile"
+    mobile_google_play_premium_product_id: str = "golife_premium_monthly_sandbox"
+    mobile_google_play_pro_product_id: str = "golife_pro_monthly_sandbox"
+    mobile_google_play_service_account_json: str = ""
+    mobile_google_play_service_account_file: str = ""
 
     @property
     def resolved_operational_database(self) -> str:

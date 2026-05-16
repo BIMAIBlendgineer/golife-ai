@@ -88,6 +88,46 @@ def _artifact_status_is_blocking(section: dict) -> bool:
     return section.get("status") == "fail"
 
 
+def _billing_check(artifact: dict) -> tuple[bool, str]:
+    billing = artifact.get("billing", {})
+    status = billing.get("status")
+    if status in {"disabled", "pending"}:
+        return True, str(billing.get("decisionDocument", ""))
+    if status == "sandbox":
+        ok = (
+            billing.get("restorePurchases") is True
+            and billing.get("renewalState") == "sandbox_only"
+            and billing.get("provider") == "google_play"
+            and billing.get("productionPurchasesEnabled") is False
+            and _artifact_doc_exists(
+                Path(__file__).resolve().parents[2],
+                str(billing.get("decisionDocument", "")),
+            )
+        )
+        return ok, str(billing.get("decisionDocument", ""))
+    if status == "enabled":
+        return True, str(billing.get("decisionDocument", ""))
+    return False, str(billing.get("decisionDocument", ""))
+
+
+def _entitlement_runtime_check(section: dict, billing: dict) -> bool:
+    if section.get("status") != "pass":
+        return False
+    if section.get("exportDeleteAlwaysAvailable") is not True:
+        return False
+    provider = section.get("billingProvider")
+    if provider == "disabled":
+        return section.get("restorePurchases") is False
+    if provider == "google_play":
+        return (
+            billing.get("status") == "sandbox"
+            and section.get("restorePurchases") is True
+            and section.get("sandboxOnly") is True
+            and section.get("productionPurchasesEnabled") is False
+        )
+    return False
+
+
 def _render_markdown(report: dict[str, object]) -> str:
     lines = [
         f"## Release Gate: {report['status']}",
@@ -114,6 +154,7 @@ def main() -> int:
     legal = artifact.get("legal", {})
     store_assets = artifact.get("storeAssets", {})
     entitlement_runtime = artifact.get("entitlementRuntime", {})
+    billing = artifact.get("billing", {})
 
     legal_doc_paths = [
         legal.get("privacyPolicyDocument"),
@@ -136,6 +177,8 @@ def main() -> int:
         and _artifact_doc_exists(repo_root, screenshot_doc)
         and not _artifact_status_is_blocking(store_assets)
     )
+
+    billing_ok, billing_message = _billing_check(artifact)
 
     checks = {
         "artifact": {
@@ -187,18 +230,11 @@ def main() -> int:
             "message": str(artifact.get("gitleaks", {}).get("command", "")),
         },
         "billing": {
-            "status": artifact.get("billing", {}).get("status", "fail")
-            if artifact.get("billing", {}).get("status") in {"pass", "fail"}
-            else "pass",
-            "message": str(artifact.get("billing", {}).get("decisionDocument", "")),
+            "status": _status(billing_ok),
+            "message": billing_message,
         },
         "entitlement_runtime": {
-            "status": _status(
-                entitlement_runtime.get("status") == "pass"
-                and entitlement_runtime.get("billingProvider") == "disabled"
-                and entitlement_runtime.get("restorePurchases") is False
-                and entitlement_runtime.get("exportDeleteAlwaysAvailable") is True
-            ),
+            "status": _status(_entitlement_runtime_check(entitlement_runtime, billing)),
             "message": json.dumps(entitlement_runtime, sort_keys=True),
         },
     }

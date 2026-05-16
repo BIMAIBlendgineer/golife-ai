@@ -46,16 +46,32 @@ def main() -> int:
         passed = False
         reasons.append("missing billing.status")
 
-    if status in {"disabled", "pending"} and not decision_document:
+    if status in {"disabled", "pending", "sandbox"} and not decision_document:
         passed = False
         reasons.append("billing is not enabled but no decisionDocument was provided")
     if (
-        status in {"disabled", "pending"}
+        status in {"disabled", "pending", "sandbox"}
         and decision_document_path is not None
         and not decision_document_path.exists()
     ):
         passed = False
         reasons.append("billing decisionDocument does not exist")
+
+    if status == "sandbox":
+        if restore_purchases is not True:
+            passed = False
+            reasons.append("billing sandbox requires restorePurchases=true")
+        if renewal_state != "sandbox_only":
+            passed = False
+            reasons.append("billing sandbox requires renewalState=sandbox_only")
+        if billing.get("provider") != "google_play":
+            passed = False
+            reasons.append("billing sandbox requires provider=google_play")
+        if billing.get("productionPurchasesEnabled") is not False:
+            passed = False
+            reasons.append(
+                "billing sandbox requires productionPurchasesEnabled=false"
+            )
 
     if status == "enabled":
         if restore_purchases is not True:

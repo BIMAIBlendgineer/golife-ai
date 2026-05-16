@@ -1,13 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/ai_client/ai_gateway_client.dart';
+import 'package:golife_flutter/core/monetization/billing_provider_adapter.dart';
+import 'package:golife_flutter/core/monetization/billing_runtime_models.dart';
+import 'package:golife_flutter/core/monetization/billing_validation_client.dart';
 import 'package:golife_flutter/core/export/local_export_service.dart';
 import 'package:golife_flutter/core/export/submission_asset_vault.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
 import 'package:golife_flutter/core/privacy/privacy_models.dart';
+import 'package:golife_flutter/core/runtime/app_runtime_config.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
+import 'package:golife_flutter/domains/monetization/entitlement.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/tasks/go_task.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
@@ -90,6 +96,107 @@ class _NoopSubmissionAssetVault implements SubmissionAssetVault {
     String? sourcePath,
   }) async {
     return sourcePath;
+  }
+}
+
+class _FakeBillingProviderAdapter implements BillingProviderAdapter {
+  final StreamController<BillingPurchaseUpdate> _controller =
+      StreamController<BillingPurchaseUpdate>.broadcast();
+
+  @override
+  Stream<BillingPurchaseUpdate> get purchaseUpdates => _controller.stream;
+
+  @override
+  Future<BillingActionResult> initialize() async {
+    return const BillingActionResult(
+      statusCode: 'store_available',
+      message: 'Google Play sandbox available.',
+    );
+  }
+
+  @override
+  Future<List<BillingCatalogItem>> queryCatalog(
+    Iterable<BillingCatalogConfig> catalog,
+  ) async {
+    return catalog
+        .map(
+          (item) => BillingCatalogItem(
+            productId: item.productId,
+            plan: item.plan,
+            title: item.title,
+            description: item.description,
+            priceLabel: 'EUR 4.99',
+            trace: const <String, Object?>{'provider': 'google_play'},
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<BillingActionResult> buyProduct(String productId) async {
+    return BillingActionResult(
+      statusCode: 'purchase_started',
+      message: 'Sandbox purchase started.',
+      productId: productId,
+    );
+  }
+
+  @override
+  Future<BillingActionResult> restorePurchases() async {
+    return const BillingActionResult(
+      statusCode: 'restore_started',
+      message: 'Sandbox restore started.',
+    );
+  }
+
+  @override
+  Future<void> completePurchase(BillingPurchaseUpdate purchase) async {}
+
+  @override
+  Future<void> dispose() async {
+    await _controller.close();
+  }
+
+  void emitPurchased(String productId, {bool restored = false}) {
+    _controller.add(
+      BillingPurchaseUpdate(
+        productId: productId,
+        purchaseToken: 'sandbox-token-$productId',
+        purchaseId: 'purchase-$productId',
+        transactionDateIso: '2026-05-17T10:00:00Z',
+        statusCode: restored ? 'purchase_restored' : 'purchase_purchased',
+        restored: restored,
+        pendingCompletePurchase: false,
+        trace: const <String, Object?>{'provider': 'google_play'},
+        rawHandle: Object(),
+      ),
+    );
+  }
+}
+
+class _FakeBillingValidationClient implements BillingValidationClient {
+  const _FakeBillingValidationClient();
+
+  @override
+  Future<BillingValidationDecision?> validateGooglePlayPurchase({
+    required MobileBillingConfig config,
+    required BillingPurchaseUpdate purchase,
+  }) async {
+    return BillingValidationDecision(
+      verified: true,
+      plan: EntitlementPlan.premium,
+      quota: EntitlementQuota.premiumSandboxDefault,
+      billingProvider: entitlementBillingProviderGooglePlay,
+      renewalState: entitlementRenewalStateActive,
+      sandbox: true,
+      statusCode: 'validated',
+      message: 'Google Play sandbox purchase validated.',
+      validatedAtIso: '2026-05-17T10:01:00Z',
+      trace: <String, Object?>{
+        'mode': config.mode.storageKey,
+        'product_id': purchase.productId,
+      },
+    );
   }
 }
 
@@ -582,7 +689,8 @@ void main() {
       );
     });
 
-    test('stores metadata-only analytics events without raw capture text', () async {
+    test('stores metadata-only analytics events without raw capture text',
+        () async {
       final rawCapture =
           'Call landlord tomorrow morning and buy coffee for 4.50 before lunch';
 
@@ -624,6 +732,81 @@ void main() {
       expect(entitlementEvent.metadata.containsKey('purchaseToken'), isFalse);
       expect(analyticsJson, isNot(contains('Call landlord tomorrow morning')));
       expect(analyticsJson, isNot(contains('buy coffee for 4.50')));
+    });
+
+    test('validates Google Play sandbox purchases before activating premium',
+        () async {
+      final sandboxStore = MemoryLocalStore();
+      await sandboxStore.saveRuntimeConfig(
+        AppRuntimeConfig(
+          schemaVersion: 2,
+          ttlSeconds: 21600,
+          gatewayBaseUrl: 'http://127.0.0.1:8000',
+          featureFlags: const <String, bool>{},
+          friendlyCopy: const <String, String>{},
+          aiStatus: const <String, Object?>{},
+          billing: MobileBillingConfig(
+            enabled: true,
+            provider: entitlementBillingProviderGooglePlay,
+            mode: BillingRuntimeMode.googlePlaySandbox,
+            sandboxOnly: true,
+            productionPurchasesEnabled: false,
+            restorePurchases: true,
+            packageName: 'ai.golife.mobile',
+            validationPath: '/public/mobile/billing/google-play/validate',
+            decisionDocumentUrl: 'https://example.test/billing-sandbox',
+            publicMessage: 'Sandbox only.',
+            catalog: const <BillingCatalogConfig>[
+              BillingCatalogConfig(
+                productId: 'golife_premium_monthly_sandbox',
+                plan: EntitlementPlan.premium,
+                title: 'GoLife Premium Sandbox',
+                description: 'Sandbox premium plan',
+              ),
+            ],
+          ),
+          generatedAtIso: '2026-05-17T10:00:00Z',
+        ),
+      );
+      final fakeAdapter = _FakeBillingProviderAdapter();
+      final sandboxController = GoLifeController(
+        localStore: sandboxStore,
+        aiGatewayClient: MockAiGatewayClient(),
+        lifeGraphRepository:
+            LifeGraphRepository.seeded(localStore: sandboxStore),
+        localExportService: exportService,
+        submissionAssetVault: _NoopSubmissionAssetVault(),
+        billingProviderAdapter: fakeAdapter,
+        billingValidationClient: const _FakeBillingValidationClient(),
+      );
+      await sandboxController.bootstrap();
+
+      expect(sandboxController.billingRuntimeState.config.enabled, isTrue);
+      expect(sandboxController.billingRuntimeState.catalog, hasLength(1));
+
+      final purchaseResult = await sandboxController.buyBillingCatalogProduct(
+        'golife_premium_monthly_sandbox',
+      );
+      expect(purchaseResult.statusCode, 'purchase_started');
+
+      fakeAdapter.emitPurchased('golife_premium_monthly_sandbox');
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sandboxController.entitlement.plan, EntitlementPlan.premium);
+      expect(
+        sandboxController.entitlement.billingProvider,
+        entitlementBillingProviderGooglePlay,
+      );
+      expect(
+        sandboxController.analyticsEvents.any(
+          (event) => event.eventName == 'billing_purchase_validation',
+        ),
+        isTrue,
+      );
+
+      final exportedJson = await sandboxController.exportLocalDataJson();
+      expect(exportedJson, isNot(contains('sandbox-token')));
     });
   });
 }

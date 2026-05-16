@@ -42,6 +42,8 @@ abstract final class GoLifeLegalDocuments {
   static const String supportUrl = '$_repoBlobBase/docs/legal/SUPPORT.md';
   static const String billingDisabledDecisionUrl =
       '$_repoBlobBase/docs/operations/BILLING_DISABLED_DECISION.md';
+  static const String billingSandboxDecisionUrl =
+      '$_repoBlobBase/docs/operations/BILLING_SANDBOX_DECISION.md';
 
   static const List<LegalDocumentLink> publicLinks = <LegalDocumentLink>[
     LegalDocumentLink(

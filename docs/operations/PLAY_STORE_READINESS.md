@@ -11,9 +11,10 @@ Repo state has moved since the original audit:
 - repo-hosted public privacy policy, terms, and support pages now exist
 - the Privacy screen now exposes public legal links in-app
 - `flutter build appbundle --debug` now succeeds locally
+- Google Play Billing sandbox runtime now exists for internal Android testing
 - Android runner QA is still blocked by missing device/emulator evidence
 - screenshot capture and Play Console declarations remain manual closeout items
-- billing remains disabled in the current runtime baseline
+- production billing is still disabled in the current runtime baseline
 
 ## Decision
 
@@ -25,7 +26,7 @@ The main blockers are:
 
 - no verified Play Console package identity or developer verification state
 - no public privacy-policy URL
-- no Play Billing implementation for digital premium access
+- no production-ready Play Billing validation and entitlement closeout
 - no Android-device QA evidence
 - no device-level accessibility evidence
 - no final in-app public policy link
@@ -89,7 +90,7 @@ These were reviewed from Google-owned documentation during this phase:
 | If the app lets users create accounts, it must provide an in-app deletion path and associated data deletion path | verified | current mobile runtime is local-first and shows no end-user sign-up or login surface | conditional | keep out of scope unless account creation is introduced for sync or subscriptions |
 | Only necessary sensitive permissions may be requested, and broad file access is highly restricted | verified | Android manifest now exists and must stay minimal | review pending | validate final manifest and remove anything non-essential before submission |
 | AI-generated apps must prevent restricted content and provide in-app reporting/flagging for offensive AI output | verified | safety engine exists, mission feedback exists, and claims review is documented | repo-closed | keep mission feedback visible in the shipped build and verify the final support path in Play metadata |
-| Digital premium features sold in-app must use Google Play billing unless a policy exception clearly applies | verified | no Play Billing implementation exists | blocked | decide premium SKU model, then integrate Play Billing for digital entitlements |
+| Digital premium features sold in-app must use Google Play billing unless a policy exception clearly applies | verified | Google Play Billing sandbox runtime and backend validation now exist, but production billing is still off | blocked | complete live billing verification, restore QA, and production entitlement closeout |
 | Health apps declaration must be completed in Play Console for published apps | verified | repo contains habits, recovery, journal, and reflection surfaces, but no declaration answer set exists | blocked | complete declaration and keep store copy away from clinical positioning |
 | Financial-features declaration may be required if the shipped scope is interpreted as financial-product functionality | verified | repo contains expense tracking, finance reflections, and money-domain UI | manual review required | decide whether current scope triggers the declaration and prepare exact answers |
 | Play Console developer verification and store-contact data must be complete | verified | repo has placeholder support emails only | blocked | verify Play Console account, legal entity, support email, phone, and public contact data |
@@ -119,7 +120,7 @@ Unless a clearly documented policy exception applies in the target market, premi
 
 This is a release blocker because:
 
-- the repo currently has no Play Billing code
+- the repo now has Google Play Billing sandbox code, but no production-ready billing release closeout
 - the consumer plan boundary is now documented as `Free / Plus / Pro`
 - the mobile current-plan field is local product state until real entitlements exist
 

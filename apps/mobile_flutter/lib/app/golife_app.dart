@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../core/ai_client/ai_gateway_client.dart';
 import '../core/i18n/app_locale.dart';
 import '../core/lifegraph/lifegraph_repository.dart';
+import '../core/monetization/billing_validation_client.dart';
+import '../core/monetization/google_play_billing_adapter.dart';
 import '../core/runtime/runtime_config_client.dart';
 import '../core/storage/local_store.dart';
 import '../core/storage/memory_local_store.dart';
@@ -65,6 +67,10 @@ class _GoLifeAppState extends State<GoLifeApp> with WidgetsBindingObserver {
       lifeGraphRepository: widget.lifeGraphRepository ??
           LifeGraphRepository.seeded(localStore: resolvedLocalStore),
       runtimeConfigClient: RuntimeConfigClient(
+        baseUri: Uri.parse(runtimeConfigBaseUrl),
+      ),
+      billingProviderAdapter: GooglePlayBillingAdapter(),
+      billingValidationClient: GooglePlayBillingValidationClient(
         baseUri: Uri.parse(runtimeConfigBaseUrl),
       ),
     );

@@ -31,6 +31,8 @@ RoutingConfigSource = Literal["live", "cached", "fallback"]
 OpenRouterKeyStatus = Literal["healthy", "degraded", "disabled", "unknown"]
 OpenRouterKeyEventType = Literal["success", "failure", "disabled", "enabled", "created"]
 AdminLocale = Literal["en", "es", "pt-BR", "ja", "zh-Hans"]
+MobileBillingMode = Literal["disabled", "google_play_sandbox", "google_play_live"]
+MobileBillingProvider = Literal["disabled", "google_play"]
 T = TypeVar("T")
 
 
@@ -707,10 +709,61 @@ class InternalRoutingConfig(BaseModel):
 
 
 class MobileRuntimeConfig(BaseModel):
-    schema_version: int = Field(default=1, ge=1)
+    schema_version: int = Field(default=2, ge=1)
     ttl_seconds: int = Field(default=21600, ge=300)
     gateway_base_url: str = Field(min_length=1)
     feature_flags: dict[str, bool] = Field(default_factory=dict)
     friendly_copy: dict[str, str] = Field(default_factory=dict)
     ai_status: dict[str, Any] = Field(default_factory=dict)
+    billing: "MobileBillingConfig" = Field(default_factory=lambda: MobileBillingConfig())
     generated_at: datetime
+
+
+class MobileBillingCatalogEntry(BaseModel):
+    product_id: str = Field(min_length=1)
+    plan: Literal["premium", "pro"]
+    title: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+
+
+class MobileBillingConfig(BaseModel):
+    enabled: bool = False
+    provider: MobileBillingProvider = "disabled"
+    mode: MobileBillingMode = "disabled"
+    sandbox_only: bool = False
+    production_purchases_enabled: bool = False
+    restore_purchases: bool = False
+    package_name: str | None = None
+    validation_path: str = Field(
+        default="/public/mobile/billing/google-play/validate",
+        min_length=1,
+    )
+    decision_document_url: str = Field(min_length=1)
+    public_message: str = Field(min_length=1)
+    catalog: list[MobileBillingCatalogEntry] = Field(default_factory=list)
+
+
+class MobileBillingValidationRequest(BaseModel):
+    provider: MobileBillingProvider = "google_play"
+    mode: MobileBillingMode = "google_play_sandbox"
+    package_name: str = Field(min_length=1)
+    product_id: str = Field(min_length=1)
+    purchase_token: str = Field(min_length=1)
+    purchase_id: str | None = None
+    transaction_date_iso: str | None = None
+    restored: bool = False
+    purchase_status: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class MobileBillingValidationResponse(BaseModel):
+    verified: bool
+    plan: Literal["free", "premium", "pro"] = "free"
+    quota: dict[str, int] = Field(default_factory=dict)
+    billing_provider: MobileBillingProvider = "disabled"
+    renewal_state: str = Field(min_length=1)
+    sandbox: bool = False
+    status_code: str = Field(min_length=1)
+    message: str = Field(min_length=1)
+    validated_at_iso: datetime
+    trace: dict[str, Any] = Field(default_factory=dict)
