@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,24 +26,35 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
   String? _selectedDomain;
   _DateWindow _dateWindow = _DateWindow.all;
   _PrivacyFilter _privacyFilter = _PrivacyFilter.all;
+  Timer? _searchDebounce;
+  bool _viewTracked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _viewTracked) {
+        return;
+      }
+      _viewTracked = true;
+      unawaited(_trackLifeGraphViewed());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final allEvents = widget.controller.lifeEvents;
-    final viewModels = _buildViewModels(allEvents);
+    final analyticsSnapshot = _buildAnalyticsSnapshot(allEvents);
+    final viewModels = analyticsSnapshot.viewModels;
     final grouped = _groupByDate(viewModels);
-    final visibleEvidenceIds = <String>{
-      for (final item in viewModels)
-        ...item.evidenceItems.map((e) => e.evidenceId),
-    };
-    final visibleRelationIds = <String>{
-      for (final item in viewModels) ...item.relations.map((r) => r.relationId),
-    };
-    final visibleAuditIds = <String>{
-      for (final item in viewModels) ...item.auditEntries.map((a) => a.auditId),
-    };
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -92,7 +105,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
                 width: 220,
                 child: _MetricCard(
                   label: l10n.lifeGraphMetricEvidenceItems,
-                  value: visibleEvidenceIds.length.toString(),
+                  value: analyticsSnapshot.visibleEvidenceCount.toString(),
                   tone: const Color(0xFF6C5B3D),
                 ),
               ),
@@ -100,7 +113,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
                 width: 220,
                 child: _MetricCard(
                   label: l10n.lifeGraphMetricRelations,
-                  value: visibleRelationIds.length.toString(),
+                  value: analyticsSnapshot.visibleRelationCount.toString(),
                   tone: const Color(0xFF7A5167),
                 ),
               ),
@@ -108,7 +121,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
                 width: 220,
                 child: _MetricCard(
                   label: l10n.lifeGraphMetricAuditEntries,
-                  value: visibleAuditIds.length.toString(),
+                  value: analyticsSnapshot.visibleAuditCount.toString(),
                   tone: const Color(0xFF5D7A68),
                 ),
               ),
@@ -134,8 +147,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   key: const ValueKey<String>('lifegraph-search-field'),
-                  onChanged: (value) =>
-                      setState(() => _searchQuery = value.trim()),
+                  onChanged: _onSearchChanged,
                   decoration: InputDecoration(
                     hintText: l10n.lifeGraphSearchHint,
                     prefixIcon: const Icon(Icons.search_rounded),
@@ -156,14 +168,13 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
                     ChoiceChip(
                       label: Text(l10n.lifeGraphFilterAll),
                       selected: _selectedDomain == null,
-                      onSelected: (_) => setState(() => _selectedDomain = null),
+                      onSelected: (_) => _updateDomainFilter(null),
                     ),
                     for (final domain in _distinctDomains(allEvents))
                       ChoiceChip(
                         label: Text(domain.localizedDomainLabel(l10n)),
                         selected: _selectedDomain == domain,
-                        onSelected: (_) =>
-                            setState(() => _selectedDomain = domain),
+                        onSelected: (_) => _updateDomainFilter(domain),
                       ),
                   ],
                 ),
@@ -175,7 +186,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
                       ChoiceChip(
                         label: Text(_dateWindowLabel(window, l10n)),
                         selected: _dateWindow == window,
-                        onSelected: (_) => setState(() => _dateWindow = window),
+                        onSelected: (_) => _updateDateWindow(window),
                       ),
                   ],
                 ),
@@ -187,8 +198,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
                       ChoiceChip(
                         label: Text(_privacyFilterLabel(filter, l10n)),
                         selected: _privacyFilter == filter,
-                        onSelected: (_) =>
-                            setState(() => _privacyFilter = filter),
+                        onSelected: (_) => _updatePrivacyFilter(filter),
                       ),
                   ],
                 ),
@@ -255,6 +265,99 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
           ),
         )
         .toList(growable: false);
+  }
+
+  _LifeGraphAnalyticsSnapshot _buildAnalyticsSnapshot(List<LifeEvent> events) {
+    final viewModels = _buildViewModels(events);
+    final visibleEvidenceIds = <String>{
+      for (final item in viewModels)
+        ...item.evidenceItems.map((e) => e.evidenceId),
+    };
+    final visibleRelationIds = <String>{
+      for (final item in viewModels) ...item.relations.map((r) => r.relationId),
+    };
+    final visibleAuditIds = <String>{
+      for (final item in viewModels) ...item.auditEntries.map((a) => a.auditId),
+    };
+    return _LifeGraphAnalyticsSnapshot(
+      viewModels: viewModels,
+      visibleEvidenceCount: visibleEvidenceIds.length,
+      visibleRelationCount: visibleRelationIds.length,
+      visibleAuditCount: visibleAuditIds.length,
+    );
+  }
+
+  void _onSearchChanged(String value) {
+    final trimmed = value.trim();
+    setState(() => _searchQuery = trimmed);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted || trimmed.isEmpty) {
+        return;
+      }
+      unawaited(_trackLifeGraphSearchUsed());
+    });
+  }
+
+  void _updateDomainFilter(String? domain) {
+    setState(() => _selectedDomain = domain);
+    unawaited(_trackLifeGraphFiltered());
+  }
+
+  void _updateDateWindow(_DateWindow window) {
+    setState(() => _dateWindow = window);
+    unawaited(_trackLifeGraphFiltered());
+  }
+
+  void _updatePrivacyFilter(_PrivacyFilter filter) {
+    setState(() => _privacyFilter = filter);
+    unawaited(_trackLifeGraphFiltered());
+  }
+
+  Future<void> _trackLifeGraphViewed() async {
+    final allEvents = widget.controller.lifeEvents;
+    final snapshot = _buildAnalyticsSnapshot(allEvents);
+    await widget.controller.trackLifeGraphViewed(
+      resultCount: snapshot.viewModels.length,
+      eventCount: allEvents.length,
+      relationCount: snapshot.visibleRelationCount,
+      evidenceCount: snapshot.visibleEvidenceCount,
+      auditCount: snapshot.visibleAuditCount,
+      domainFilter: _selectedDomain,
+      privacyFilter: _privacyFilter.analyticsKey,
+      dateWindow: _dateWindow.analyticsKey,
+    );
+  }
+
+  Future<void> _trackLifeGraphFiltered() async {
+    final allEvents = widget.controller.lifeEvents;
+    final snapshot = _buildAnalyticsSnapshot(allEvents);
+    await widget.controller.trackLifeGraphFiltered(
+      resultCount: snapshot.viewModels.length,
+      eventCount: allEvents.length,
+      relationCount: snapshot.visibleRelationCount,
+      evidenceCount: snapshot.visibleEvidenceCount,
+      auditCount: snapshot.visibleAuditCount,
+      domainFilter: _selectedDomain,
+      privacyFilter: _privacyFilter.analyticsKey,
+      dateWindow: _dateWindow.analyticsKey,
+    );
+  }
+
+  Future<void> _trackLifeGraphSearchUsed() async {
+    final allEvents = widget.controller.lifeEvents;
+    final snapshot = _buildAnalyticsSnapshot(allEvents);
+    await widget.controller.trackLifeGraphSearchUsed(
+      resultCount: snapshot.viewModels.length,
+      eventCount: allEvents.length,
+      relationCount: snapshot.visibleRelationCount,
+      evidenceCount: snapshot.visibleEvidenceCount,
+      auditCount: snapshot.visibleAuditCount,
+      domainFilter: _selectedDomain,
+      privacyFilter: _privacyFilter.analyticsKey,
+      dateWindow: _dateWindow.analyticsKey,
+      queryLengthBucket: _queryLengthBucket(_searchQuery),
+    );
   }
 
   bool _matchesFilters(LifeEvent event) {
@@ -579,6 +682,20 @@ class _LifeGraphEventViewModel {
   }
 }
 
+class _LifeGraphAnalyticsSnapshot {
+  const _LifeGraphAnalyticsSnapshot({
+    required this.viewModels,
+    required this.visibleEvidenceCount,
+    required this.visibleRelationCount,
+    required this.visibleAuditCount,
+  });
+
+  final List<_LifeGraphEventViewModel> viewModels;
+  final int visibleEvidenceCount;
+  final int visibleRelationCount;
+  final int visibleAuditCount;
+}
+
 enum _DateWindow {
   all,
   last7Days,
@@ -591,6 +708,47 @@ enum _PrivacyFilter {
   localOnly,
   syncAllowed,
   aiAllowed,
+}
+
+extension on _DateWindow {
+  String get analyticsKey {
+    switch (this) {
+      case _DateWindow.all:
+        return 'all';
+      case _DateWindow.last7Days:
+        return 'last_7_days';
+      case _DateWindow.last30Days:
+        return 'last_30_days';
+      case _DateWindow.last90Days:
+        return 'last_90_days';
+    }
+  }
+}
+
+extension on _PrivacyFilter {
+  String get analyticsKey {
+    switch (this) {
+      case _PrivacyFilter.all:
+        return 'all';
+      case _PrivacyFilter.localOnly:
+        return DataPermission.localOnly.storageKey;
+      case _PrivacyFilter.syncAllowed:
+        return DataPermission.syncAllowed.storageKey;
+      case _PrivacyFilter.aiAllowed:
+        return DataPermission.aiAllowed.storageKey;
+    }
+  }
+}
+
+String _queryLengthBucket(String query) {
+  final length = query.trim().length;
+  if (length <= 50) {
+    return '1_50';
+  }
+  if (length <= 200) {
+    return '51_200';
+  }
+  return '200_plus';
 }
 
 String _dateWindowLabel(_DateWindow value, AppLocalizations l10n) {

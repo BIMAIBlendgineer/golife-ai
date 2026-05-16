@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/ai_client/ai_gateway_client.dart';
 import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
+import '../../core/analytics/local_analytics_repository.dart';
 import '../../core/export/local_export_service.dart';
 import '../../core/export/submission_asset_vault.dart';
 import '../../core/i18n/app_locale.dart';
@@ -58,6 +59,7 @@ class GoLifeController extends ChangeNotifier {
     RuntimeConfigClient? runtimeConfigClient,
     LocalExportService? localExportService,
     SubmissionAssetVault? submissionAssetVault,
+    LocalAnalyticsRepository? localAnalyticsRepository,
   })  : _localStore = localStore,
         _aiGatewayClient = aiGatewayClient,
         _lifeGraphRepository = lifeGraphRepository,
@@ -65,7 +67,10 @@ class GoLifeController extends ChangeNotifier {
         _localExportService =
             localExportService ?? ProtectedLocalExportService(),
         _submissionAssetVault =
-            submissionAssetVault ?? ProtectedSubmissionAssetVault();
+            submissionAssetVault ?? ProtectedSubmissionAssetVault(),
+        _localAnalyticsRepository =
+            localAnalyticsRepository ??
+                LocalAnalyticsRepository(localStore: localStore);
 
   final LocalStore _localStore;
   final AiGatewayClient _aiGatewayClient;
@@ -73,8 +78,8 @@ class GoLifeController extends ChangeNotifier {
   final RuntimeConfigClient? _runtimeConfigClient;
   final LocalExportService _localExportService;
   final SubmissionAssetVault _submissionAssetVault;
+  final LocalAnalyticsRepository _localAnalyticsRepository;
   final CaptureParser _captureParser = const CaptureParser();
-  static const int _maxAnalyticsEvents = 500;
 
   bool _isReady = false;
   PrivacySettings _privacySettings = PrivacySettings.defaults();
@@ -497,7 +502,7 @@ class GoLifeController extends ChangeNotifier {
     _evidenceItems = await _localStore.loadEvidenceItems();
     _lifeGraphRelations = await _localStore.loadLifeGraphRelations();
     _privacyAuditEntries = await _localStore.loadPrivacyAuditEntries();
-    _analyticsEvents = await _localStore.loadAnalyticsEvents();
+    _analyticsEvents = await _localAnalyticsRepository.loadEvents();
     _mentalLoadItems = await _localStore.loadMentalLoadItems();
     _decisionCards = await _localStore.loadDecisionCards();
     _shoppingNeeds = await _localStore.loadShoppingNeeds();
@@ -613,7 +618,7 @@ class GoLifeController extends ChangeNotifier {
     );
     await _localStore.savePrivacyAuditEntries(_privacyAuditEntries);
     await _recordAnalyticsEvent(
-      'privacy_setting_changed',
+      'event_privacy_changed',
       source: 'privacy_event',
       metadata: <String, Object?>{
         'scope': 'event',
@@ -2556,6 +2561,8 @@ class GoLifeController extends ChangeNotifier {
           .toList(growable: false),
       'analytics_events':
           _analyticsEvents.map((item) => item.toJson()).toList(growable: false),
+      'analytics_summary':
+          _localAnalyticsRepository.buildSummary(_analyticsEvents),
       'tasks': _tasks.map((item) => item.toJson()).toList(growable: false),
       'habits': _habits.map((item) => item.toJson()).toList(growable: false),
       'expenses':
@@ -2774,24 +2781,125 @@ class GoLifeController extends ChangeNotifier {
     return domains;
   }
 
+  Future<void> trackMissionViewed(DailyMission mission) {
+    final missionSet = currentMissionSet;
+    return _recordAnalyticsEvent(
+      'mission_viewed',
+      source: 'dashboard',
+      metadata: <String, Object?>{
+        'mission_id': mission.id,
+        'mission_set_id': missionSet?.missionSetId,
+        'recommendation_type': mission.recommendationType,
+        'domain_targets': mission.domainTargets,
+        'source_state': (mission.trace['sourceState'] ??
+                mission.trace['source_state'] ??
+                missionSet?.sourceState.storageKey)
+            ?.toString(),
+        'fallback_used': mission.trace['fallbackUsed'] == true ||
+            mission.trace['fallback_used'] == true ||
+            mission.trace['clientFallback'] == true ||
+            mission.trace['mock'] == true ||
+            missionSet?.rankingTrace['fallbackUsed'] == true,
+      },
+    );
+  }
+
+  Future<void> trackLifeGraphViewed({
+    required int resultCount,
+    required int eventCount,
+    required int relationCount,
+    required int evidenceCount,
+    required int auditCount,
+    String? domainFilter,
+    required String privacyFilter,
+    required String dateWindow,
+  }) {
+    return _recordAnalyticsEvent(
+      'lifegraph_viewed',
+      source: 'lifegraph_screen',
+      metadata: <String, Object?>{
+        'domain_filter': domainFilter ?? 'all',
+        'privacy_filter': privacyFilter,
+        'date_window': dateWindow,
+        'result_count': resultCount,
+        'event_count': eventCount,
+        'relation_count': relationCount,
+        'evidence_count': evidenceCount,
+        'audit_count': auditCount,
+      },
+    );
+  }
+
+  Future<void> trackLifeGraphFiltered({
+    required int resultCount,
+    required int eventCount,
+    required int relationCount,
+    required int evidenceCount,
+    required int auditCount,
+    String? domainFilter,
+    required String privacyFilter,
+    required String dateWindow,
+  }) {
+    return _recordAnalyticsEvent(
+      'lifegraph_filtered',
+      source: 'lifegraph_screen',
+      metadata: <String, Object?>{
+        'domain_filter': domainFilter ?? 'all',
+        'privacy_filter': privacyFilter,
+        'date_window': dateWindow,
+        'result_count': resultCount,
+        'event_count': eventCount,
+        'relation_count': relationCount,
+        'evidence_count': evidenceCount,
+        'audit_count': auditCount,
+      },
+    );
+  }
+
+  Future<void> trackLifeGraphSearchUsed({
+    required int resultCount,
+    required int eventCount,
+    required int relationCount,
+    required int evidenceCount,
+    required int auditCount,
+    String? domainFilter,
+    required String privacyFilter,
+    required String dateWindow,
+    required String queryLengthBucket,
+  }) {
+    return _recordAnalyticsEvent(
+      'lifegraph_search_used',
+      source: 'lifegraph_screen',
+      metadata: <String, Object?>{
+        'domain_filter': domainFilter ?? 'all',
+        'privacy_filter': privacyFilter,
+        'date_window': dateWindow,
+        'result_count': resultCount,
+        'event_count': eventCount,
+        'relation_count': relationCount,
+        'evidence_count': evidenceCount,
+        'audit_count': auditCount,
+        'query_length_bucket': queryLengthBucket,
+      },
+    );
+  }
+
   Future<void> _recordAnalyticsEvent(
     String eventName, {
     required String source,
     Map<String, Object?> metadata = const <String, Object?>{},
   }) async {
-    final nextEvent = AnalyticsEvent(
-      eventId: 'analytics-${DateTime.now().microsecondsSinceEpoch}',
-      eventName: eventName,
-      timestampIso: DateTime.now().toUtc().toIso8601String(),
-      locale: currentLocaleTag,
-      source: source,
-      metadata: metadata,
-    ).sanitized();
-    _analyticsEvents = <AnalyticsEvent>[
-      nextEvent,
-      ..._analyticsEvents,
-    ].take(_maxAnalyticsEvents).toList(growable: false);
-    await _localStore.saveAnalyticsEvents(_analyticsEvents);
+    _analyticsEvents = await _localAnalyticsRepository.appendEvent(
+      _analyticsEvents,
+      AnalyticsEvent(
+        eventId: 'analytics-${DateTime.now().microsecondsSinceEpoch}',
+        eventName: eventName,
+        timestampIso: DateTime.now().toUtc().toIso8601String(),
+        locale: currentLocaleTag,
+        source: source,
+        metadata: metadata,
+      ),
+    );
   }
 
   Map<String, Object?> _missionFeedbackAnalyticsMetadata(
