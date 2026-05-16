@@ -171,7 +171,16 @@ void main() {
       expect(decoded['life_events'], isA<List<dynamic>>());
       expect(decoded['tasks'], isA<List<dynamic>>());
       expect(decoded['mission_sets'], isA<List<dynamic>>());
+      expect(decoded['analytics_events'], isA<List<dynamic>>());
+      expect(decoded['analytics_summary'], isA<Map<String, dynamic>>());
       expect((decoded['mission_sets'] as List<dynamic>), isNotEmpty);
+      expect(
+        (decoded['analytics_events'] as List<dynamic>)
+            .whereType<Map<String, dynamic>>()
+            .map((item) => item['event_name'])
+            .contains('export_requested'),
+        isTrue,
+      );
       expect(fileExport.fileName, 'golife_local_export_20260504T100000Z');
       expect(exportService.lastBaseFileName, 'golife_local_export');
       final exportedFileJson =
@@ -179,6 +188,25 @@ void main() {
       expect(exportedFileJson['tasks'], decoded['tasks']);
       expect(exportedFileJson['life_events'], decoded['life_events']);
       expect(exportedFileJson['mission_sets'], decoded['mission_sets']);
+      final exportedFileAnalytics =
+          (exportedFileJson['analytics_events'] as List<dynamic>)
+              .whereType<Map<String, dynamic>>()
+              .toList(growable: false);
+      final analyticsSummary =
+          exportedFileJson['analytics_summary'] as Map<String, dynamic>;
+      expect(
+        exportedFileAnalytics.length,
+        greaterThanOrEqualTo(
+          (decoded['analytics_events'] as List<dynamic>).length,
+        ),
+      );
+      expect(
+        exportedFileAnalytics
+            .map((item) => item['event_name'])
+            .contains('export_requested'),
+        isTrue,
+      );
+      expect(analyticsSummary['total_events'], greaterThan(0));
 
       await controller.deleteAllLocalData();
 
@@ -328,6 +356,7 @@ void main() {
       expect(encryptedCollections, contains('claim_drafts'));
       expect(encryptedCollections, contains('evidence_attachments'));
       expect(encryptedCollections, contains('privacy_audit_entries'));
+      expect(encryptedCollections, contains('analytics_events'));
       expect(decoded['mission_sets'], isA<List<dynamic>>());
       expect(decoded['evidence_items'], isA<List<dynamic>>());
       expect(decoded['lifegraph_relations'], isA<List<dynamic>>());
@@ -538,6 +567,56 @@ void main() {
       expect(controller.privacyAuditEntries, hasLength(1));
       expect(
           controller.privacyAuditEntries.single.eventId, targetEvent.eventId);
+      expect(
+        controller.analyticsEvents.any(
+          (event) => event.eventName == 'privacy_setting_changed',
+        ),
+        isTrue,
+      );
+      expect(
+        controller.analyticsEvents.any(
+          (event) => event.eventName == 'event_privacy_changed',
+        ),
+        isTrue,
+      );
+    });
+
+    test('stores metadata-only analytics events without raw capture text', () async {
+      final rawCapture =
+          'Call landlord tomorrow morning and buy coffee for 4.50 before lunch';
+
+      final drafts = await controller.prepareCaptureDrafts(text: rawCapture);
+      await controller.captureDrafts(drafts);
+
+      final missionSetEvent = controller.analyticsEvents.firstWhere(
+        (event) => event.eventName == 'mission_set_generated',
+      );
+      final captureEvent = controller.analyticsEvents.firstWhere(
+        (event) => event.eventName == 'capture_created',
+      );
+
+      final exported = jsonDecode(await controller.exportLocalDataJson())
+          as Map<String, dynamic>;
+      final analyticsJson = jsonEncode(exported['analytics_events']);
+
+      expect(
+        controller.analyticsEvents.any(
+          (event) => event.eventName == 'capture_parsed',
+        ),
+        isTrue,
+      );
+      expect(
+        controller.analyticsEvents.any(
+          (event) => event.eventName == 'capture_created',
+        ),
+        isTrue,
+      );
+      expect(missionSetEvent.metadata.containsKey('title'), isFalse);
+      expect(missionSetEvent.metadata.containsKey('body'), isFalse);
+      expect(captureEvent.metadata.containsKey('text'), isFalse);
+      expect(captureEvent.metadata.containsKey('payload'), isFalse);
+      expect(analyticsJson, isNot(contains('Call landlord tomorrow morning')));
+      expect(analyticsJson, isNot(contains('buy coffee for 4.50')));
     });
   });
 }

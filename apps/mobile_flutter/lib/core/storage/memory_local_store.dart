@@ -1,4 +1,5 @@
 import '../../domains/missions/mission_feedback.dart';
+import '../../domains/analytics/analytics_event.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
 import '../../domains/homememory/claim_draft.dart';
@@ -44,6 +45,7 @@ class MemoryLocalStore implements LocalStore {
   final List<EvidenceItem> _evidenceItems = <EvidenceItem>[];
   final List<LifeGraphRelation> _lifeGraphRelations = <LifeGraphRelation>[];
   final List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
+  final List<AnalyticsEvent> _analyticsEvents = <AnalyticsEvent>[];
   final List<GoTask> _tasks = <GoTask>[];
   final List<Habit> _habits = <Habit>[];
   final List<ExpenseRecord> _expenses = <ExpenseRecord>[];
@@ -217,6 +219,18 @@ class MemoryLocalStore implements LocalStore {
     _privacyAuditEntries
       ..clear()
       ..addAll(entries);
+  }
+
+  @override
+  Future<List<AnalyticsEvent>> loadAnalyticsEvents() async {
+    return List<AnalyticsEvent>.unmodifiable(_analyticsEvents);
+  }
+
+  @override
+  Future<void> saveAnalyticsEvents(List<AnalyticsEvent> events) async {
+    _analyticsEvents
+      ..clear()
+      ..addAll(events);
   }
 
   @override
@@ -545,6 +559,7 @@ class MemoryLocalStore implements LocalStore {
     _evidenceItems.clear();
     _lifeGraphRelations.clear();
     _privacyAuditEntries.clear();
+    _analyticsEvents.clear();
     _tasks.clear();
     _habits.clear();
     _expenses.clear();

@@ -394,6 +394,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   void _showExplanationSheet(BuildContext context, DailyMission mission) {
+    controller.trackMissionViewed(mission);
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFFFFF8EF),

@@ -6,6 +6,7 @@ import '../../domains/homememory/maintenance_reminder.dart';
 import '../../domains/homememory/owned_item.dart';
 import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
+import '../../domains/analytics/analytics_event.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/mindflow/decision_card.dart';
@@ -78,6 +79,10 @@ abstract class LocalStore {
   Future<void> savePrivacyAuditEntries(
     List<PrivacyAuditEntry> entries,
   ) async {}
+
+  Future<List<AnalyticsEvent>> loadAnalyticsEvents() async =>
+      const <AnalyticsEvent>[];
+  Future<void> saveAnalyticsEvents(List<AnalyticsEvent> events) async {}
 
   Future<List<GoTask>> loadTasks() async => const <GoTask>[];
   Future<List<Habit>> loadHabits() async => const <Habit>[];

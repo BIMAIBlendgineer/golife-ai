@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/ai_client/ai_gateway_client.dart';
 import '../../core/ai_client/dto/ai_gateway_dto.dart';
 import '../../core/ai_client/mappers/mission_mapper.dart';
+import '../../core/analytics/local_analytics_repository.dart';
 import '../../core/export/local_export_service.dart';
 import '../../core/export/submission_asset_vault.dart';
 import '../../core/i18n/app_locale.dart';
@@ -20,6 +21,7 @@ import '../../core/runtime/runtime_config_client.dart';
 import '../../core/settings/app_profile_preferences.dart';
 import '../../core/storage/local_store.dart';
 import '../../domains/calendar/calendar_item.dart';
+import '../../domains/analytics/analytics_event.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
 import '../../domains/homememory/claim_draft.dart';
@@ -57,6 +59,7 @@ class GoLifeController extends ChangeNotifier {
     RuntimeConfigClient? runtimeConfigClient,
     LocalExportService? localExportService,
     SubmissionAssetVault? submissionAssetVault,
+    LocalAnalyticsRepository? localAnalyticsRepository,
   })  : _localStore = localStore,
         _aiGatewayClient = aiGatewayClient,
         _lifeGraphRepository = lifeGraphRepository,
@@ -64,7 +67,10 @@ class GoLifeController extends ChangeNotifier {
         _localExportService =
             localExportService ?? ProtectedLocalExportService(),
         _submissionAssetVault =
-            submissionAssetVault ?? ProtectedSubmissionAssetVault();
+            submissionAssetVault ?? ProtectedSubmissionAssetVault(),
+        _localAnalyticsRepository =
+            localAnalyticsRepository ??
+                LocalAnalyticsRepository(localStore: localStore);
 
   final LocalStore _localStore;
   final AiGatewayClient _aiGatewayClient;
@@ -72,6 +78,7 @@ class GoLifeController extends ChangeNotifier {
   final RuntimeConfigClient? _runtimeConfigClient;
   final LocalExportService _localExportService;
   final SubmissionAssetVault _submissionAssetVault;
+  final LocalAnalyticsRepository _localAnalyticsRepository;
   final CaptureParser _captureParser = const CaptureParser();
 
   bool _isReady = false;
@@ -100,6 +107,7 @@ class GoLifeController extends ChangeNotifier {
   List<EvidenceItem> _evidenceItems = <EvidenceItem>[];
   List<LifeGraphRelation> _lifeGraphRelations = <LifeGraphRelation>[];
   List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
+  List<AnalyticsEvent> _analyticsEvents = <AnalyticsEvent>[];
   List<MentalLoadItem> _mentalLoadItems = <MentalLoadItem>[];
   List<DecisionCard> _decisionCards = <DecisionCard>[];
   List<ShoppingNeed> _shoppingNeeds = <ShoppingNeed>[];
@@ -179,6 +187,8 @@ class GoLifeController extends ChangeNotifier {
       List<LifeGraphRelation>.unmodifiable(_lifeGraphRelations);
   List<PrivacyAuditEntry> get privacyAuditEntries =>
       List<PrivacyAuditEntry>.unmodifiable(_privacyAuditEntries);
+  List<AnalyticsEvent> get analyticsEvents =>
+      List<AnalyticsEvent>.unmodifiable(_analyticsEvents);
   List<MissionFeedback> get missionFeedbackHistory =>
       List<MissionFeedback>.unmodifiable(_missionFeedback);
   List<DailyRisk> get dailyRisks =>
@@ -492,6 +502,7 @@ class GoLifeController extends ChangeNotifier {
     _evidenceItems = await _localStore.loadEvidenceItems();
     _lifeGraphRelations = await _localStore.loadLifeGraphRelations();
     _privacyAuditEntries = await _localStore.loadPrivacyAuditEntries();
+    _analyticsEvents = await _localAnalyticsRepository.loadEvents();
     _mentalLoadItems = await _localStore.loadMentalLoadItems();
     _decisionCards = await _localStore.loadDecisionCards();
     _shoppingNeeds = await _localStore.loadShoppingNeeds();
@@ -541,8 +552,23 @@ class GoLifeController extends ChangeNotifier {
     DomainKey domain,
     DataPermission permission,
   ) async {
+    final previousPermission = _privacySettings.permissionFor(domain);
+    if (previousPermission == permission) {
+      return;
+    }
     _privacySettings = _privacySettings.copyWithPermission(domain, permission);
     await _localStore.savePrivacySettings(_privacySettings);
+    await _recordAnalyticsEvent(
+      'privacy_setting_changed',
+      source: 'privacy_settings',
+      metadata: <String, Object?>{
+        'scope': 'domain',
+        'domain': domain.storageKey,
+        'old_permission': previousPermission.storageKey,
+        'new_permission': permission.storageKey,
+        'ai_enabled_domain_count': _privacySettings.aiAllowedDomains.length,
+      },
+    );
     await _refreshMissionPlan();
     notifyListeners();
   }
@@ -591,6 +617,21 @@ class GoLifeController extends ChangeNotifier {
       (item) => item.auditId,
     );
     await _localStore.savePrivacyAuditEntries(_privacyAuditEntries);
+    await _recordAnalyticsEvent(
+      'event_privacy_changed',
+      source: 'privacy_event',
+      metadata: <String, Object?>{
+        'scope': 'event',
+        'event_id': eventId,
+        'domain': currentEvent.domain,
+        'old_permission': currentEvent.privacyLevel,
+        'new_permission': nextPrivacyLevel,
+        'was_ai_eligible': _eventEligibleForAi(currentEvent),
+        'is_ai_eligible': permission == DataPermission.aiAllowed &&
+            _privacySettings.permissionForWireDomain(currentEvent.domain) ==
+                DataPermission.aiAllowed,
+      },
+    );
     await _syncDerivedEvidenceItems(notifyStore: true);
     await _rebuildDerivedLifeGraphRelations(notifyStore: true);
     await _refreshMissionPlan();
@@ -760,7 +801,34 @@ class GoLifeController extends ChangeNotifier {
       forcedDomain: forcedDomain,
     );
 
+    if (localDrafts.isEmpty) {
+      await _recordAnalyticsEvent(
+        'capture_parsed',
+        source: 'capture_parser',
+        metadata: <String, Object?>{
+          'parser': 'safety_blocked',
+          'draft_count': 0,
+          'forced_domain': forcedDomain?.storageKey,
+          'remote': false,
+          'fallback_used': false,
+        },
+      );
+      return const <CaptureDraftItem>[];
+    }
+
     if (forcedDomain != null || localDrafts.length != 1) {
+      await _recordAnalyticsEvent(
+        'capture_parsed',
+        source: 'capture_parser',
+        metadata: <String, Object?>{
+          'parser': forcedDomain != null ? 'forced_local' : 'multi_local',
+          'draft_count': localDrafts.length,
+          'forced_domain': forcedDomain?.storageKey,
+          'remote': false,
+          'fallback_used': false,
+          'domains': _captureDraftDomains(localDrafts),
+        },
+      );
       return localDrafts;
     }
 
@@ -771,19 +839,104 @@ class GoLifeController extends ChangeNotifier {
         text: trimmed,
       );
       if (parsed != null && parsed.items.isNotEmpty) {
-        return _captureParser.parse(
+        final gatewayDrafts = _captureParser.parse(
           text: trimmed,
           privacySettings: _privacySettings,
           gatewayItems: parsed.items,
         );
+        await _recordAnalyticsEvent(
+          'capture_parsed',
+          source: 'capture_gateway',
+          metadata: <String, Object?>{
+            'parser': 'gateway_parse',
+            'draft_count': gatewayDrafts.length,
+            'remote': true,
+            'fallback_used': false,
+            'domains': _captureDraftDomains(gatewayDrafts),
+          },
+        );
+        return gatewayDrafts;
       }
       final classification = await classifyCaptureText(trimmed);
-      return _captureParser.parse(
+      if (classification == null) {
+        await _recordAnalyticsEvent(
+          'capture_parsed',
+          source: 'capture_parser',
+          metadata: <String, Object?>{
+            'parser': 'local_fallback',
+            'draft_count': localDrafts.length,
+            'remote': false,
+            'fallback_used': true,
+            'domains': _captureDraftDomains(localDrafts),
+            'reason_code': 'classification_unavailable',
+          },
+        );
+        await _recordAnalyticsEvent(
+          'fallback_used',
+          source: 'capture_parser',
+          metadata: const <String, Object?>{
+            'operation': 'capture_classification',
+            'reason_code': 'classification_unavailable',
+          },
+        );
+        return localDrafts;
+      }
+      final classifiedDrafts = _captureParser.parse(
         text: trimmed,
         privacySettings: _privacySettings,
         gatewayClassification: classification,
       );
+      final classificationFallback = classification.trace['clientFallback'] ==
+              true ||
+          classification.trace['mock'] == true ||
+          classification.trace['mock_mode'] == true;
+      await _recordAnalyticsEvent(
+        'capture_parsed',
+        source: classificationFallback
+            ? 'capture_parser'
+            : 'capture_classification',
+        metadata: <String, Object?>{
+          'parser': classificationFallback
+              ? 'classification_fallback'
+              : 'gateway_classification',
+          'draft_count': classifiedDrafts.length,
+          'remote': !classificationFallback,
+          'fallback_used': classificationFallback,
+          'domains': _captureDraftDomains(classifiedDrafts),
+        },
+      );
+      if (classificationFallback) {
+        await _recordAnalyticsEvent(
+          'fallback_used',
+          source: 'capture_parser',
+          metadata: const <String, Object?>{
+            'operation': 'capture_classification',
+            'reason_code': 'classification_fallback',
+          },
+        );
+      }
+      return classifiedDrafts;
     } catch (_) {
+      await _recordAnalyticsEvent(
+        'capture_parsed',
+        source: 'capture_parser',
+        metadata: <String, Object?>{
+          'parser': 'local_fallback',
+          'draft_count': localDrafts.length,
+          'remote': false,
+          'fallback_used': true,
+          'domains': _captureDraftDomains(localDrafts),
+          'reason_code': 'gateway_parse_exception',
+        },
+      );
+      await _recordAnalyticsEvent(
+        'fallback_used',
+        source: 'capture_parser',
+        metadata: const <String, Object?>{
+          'operation': 'capture_parse',
+          'reason_code': 'gateway_parse_exception',
+        },
+      );
       return localDrafts;
     }
   }
@@ -853,6 +1006,21 @@ class GoLifeController extends ChangeNotifier {
       await _createReminderCandidateIfNeeded(draft);
     }
 
+    await _recordAnalyticsEvent(
+      'capture_created',
+      source: 'capture_screen',
+      metadata: <String, Object?>{
+        'draft_count': drafts.length,
+        'multi_capture': drafts.length > 1,
+        'domains': _captureDraftDomains(drafts),
+        'ai_allowed_draft_count': drafts
+            .where(
+              (draft) =>
+                  draft.privacyLevel == DataPermission.aiAllowed.storageKey,
+            )
+            .length,
+      },
+    );
     await _refreshMissionPlan();
     await refreshDecisionPlan(notify: false);
     await refreshShoppingPlan(notify: false);
@@ -2280,6 +2448,13 @@ class GoLifeController extends ChangeNotifier {
   }
 
   Future<String> exportLocalDataJson() async {
+    await _recordAnalyticsEvent(
+      'export_requested',
+      source: 'local_export',
+      metadata: const <String, Object?>{
+        'export_format': 'json',
+      },
+    );
     final snapshot = await _buildLocalDataSnapshot();
     return const JsonEncoder.withIndent('  ').convert(snapshot);
   }
@@ -2287,6 +2462,16 @@ class GoLifeController extends ChangeNotifier {
   Future<LocalExportResult> exportLocalDataFile() async {
     final assetEntries = await _submissionAssetVault
         .collectManifestEntries(_submissionAssetRefs);
+    await _recordAnalyticsEvent(
+      'export_requested',
+      source: 'local_export',
+      metadata: <String, Object?>{
+        'export_format': 'bundle',
+        'asset_count': assetEntries.length,
+        'included_asset_count':
+            assetEntries.where((entry) => entry.available).length,
+      },
+    );
     final snapshot = await _buildLocalDataSnapshot(assetEntries: assetEntries);
     final jsonPayload = const JsonEncoder.withIndent('  ').convert(snapshot);
     final exportAssets = assetEntries
@@ -2337,6 +2522,7 @@ class GoLifeController extends ChangeNotifier {
           'claim_drafts',
           'evidence_attachments',
           'privacy_audit_entries',
+          'analytics_events',
           'mental_load_items',
           'decision_cards',
           'shopping_needs',
@@ -2373,6 +2559,10 @@ class GoLifeController extends ChangeNotifier {
       'privacy_audit_entries': _privacyAuditEntries
           .map((item) => item.toJson())
           .toList(growable: false),
+      'analytics_events':
+          _analyticsEvents.map((item) => item.toJson()).toList(growable: false),
+      'analytics_summary':
+          _localAnalyticsRepository.buildSummary(_analyticsEvents),
       'tasks': _tasks.map((item) => item.toJson()).toList(growable: false),
       'habits': _habits.map((item) => item.toJson()).toList(growable: false),
       'expenses':
@@ -2440,6 +2630,15 @@ class GoLifeController extends ChangeNotifier {
   }
 
   Future<void> deleteAllLocalData() async {
+    await _recordAnalyticsEvent(
+      'delete_requested',
+      source: 'local_delete',
+      metadata: <String, Object?>{
+        'event_count': totalEventCount,
+        'mission_set_count': _missionSets.length,
+        'analytics_event_count': _analyticsEvents.length,
+      },
+    );
     await _localStore.saveDemoSeedEnabled(false);
     await _localStore.deleteAllData();
     await _lifeGraphRepository.clear();
@@ -2471,6 +2670,7 @@ class GoLifeController extends ChangeNotifier {
     _evidenceItems = <EvidenceItem>[];
     _lifeGraphRelations = <LifeGraphRelation>[];
     _privacyAuditEntries = <PrivacyAuditEntry>[];
+    _analyticsEvents = <AnalyticsEvent>[];
     _mentalLoadItems = <MentalLoadItem>[];
     _decisionCards = <DecisionCard>[];
     _shoppingNeeds = <ShoppingNeed>[];
@@ -2575,6 +2775,176 @@ class GoLifeController extends ChangeNotifier {
         .toList(growable: false);
   }
 
+  List<String> _captureDraftDomains(List<CaptureDraftItem> drafts) {
+    final domains = drafts.map((draft) => draft.domain.wireName).toSet().toList()
+      ..sort();
+    return domains;
+  }
+
+  Future<void> trackMissionViewed(DailyMission mission) {
+    final missionSet = currentMissionSet;
+    return _recordAnalyticsEvent(
+      'mission_viewed',
+      source: 'dashboard',
+      metadata: <String, Object?>{
+        'mission_id': mission.id,
+        'mission_set_id': missionSet?.missionSetId,
+        'recommendation_type': mission.recommendationType,
+        'domain_targets': mission.domainTargets,
+        'source_state': (mission.trace['sourceState'] ??
+                mission.trace['source_state'] ??
+                missionSet?.sourceState.storageKey)
+            ?.toString(),
+        'fallback_used': mission.trace['fallbackUsed'] == true ||
+            mission.trace['fallback_used'] == true ||
+            mission.trace['clientFallback'] == true ||
+            mission.trace['mock'] == true ||
+            missionSet?.rankingTrace['fallbackUsed'] == true,
+      },
+    );
+  }
+
+  Future<void> trackLifeGraphViewed({
+    required int resultCount,
+    required int eventCount,
+    required int relationCount,
+    required int evidenceCount,
+    required int auditCount,
+    String? domainFilter,
+    required String privacyFilter,
+    required String dateWindow,
+  }) {
+    return _recordAnalyticsEvent(
+      'lifegraph_viewed',
+      source: 'lifegraph_screen',
+      metadata: <String, Object?>{
+        'domain_filter': domainFilter ?? 'all',
+        'privacy_filter': privacyFilter,
+        'date_window': dateWindow,
+        'result_count': resultCount,
+        'event_count': eventCount,
+        'relation_count': relationCount,
+        'evidence_count': evidenceCount,
+        'audit_count': auditCount,
+      },
+    );
+  }
+
+  Future<void> trackLifeGraphFiltered({
+    required int resultCount,
+    required int eventCount,
+    required int relationCount,
+    required int evidenceCount,
+    required int auditCount,
+    String? domainFilter,
+    required String privacyFilter,
+    required String dateWindow,
+  }) {
+    return _recordAnalyticsEvent(
+      'lifegraph_filtered',
+      source: 'lifegraph_screen',
+      metadata: <String, Object?>{
+        'domain_filter': domainFilter ?? 'all',
+        'privacy_filter': privacyFilter,
+        'date_window': dateWindow,
+        'result_count': resultCount,
+        'event_count': eventCount,
+        'relation_count': relationCount,
+        'evidence_count': evidenceCount,
+        'audit_count': auditCount,
+      },
+    );
+  }
+
+  Future<void> trackLifeGraphSearchUsed({
+    required int resultCount,
+    required int eventCount,
+    required int relationCount,
+    required int evidenceCount,
+    required int auditCount,
+    String? domainFilter,
+    required String privacyFilter,
+    required String dateWindow,
+    required String queryLengthBucket,
+  }) {
+    return _recordAnalyticsEvent(
+      'lifegraph_search_used',
+      source: 'lifegraph_screen',
+      metadata: <String, Object?>{
+        'domain_filter': domainFilter ?? 'all',
+        'privacy_filter': privacyFilter,
+        'date_window': dateWindow,
+        'result_count': resultCount,
+        'event_count': eventCount,
+        'relation_count': relationCount,
+        'evidence_count': evidenceCount,
+        'audit_count': auditCount,
+        'query_length_bucket': queryLengthBucket,
+      },
+    );
+  }
+
+  Future<void> _recordAnalyticsEvent(
+    String eventName, {
+    required String source,
+    Map<String, Object?> metadata = const <String, Object?>{},
+  }) async {
+    _analyticsEvents = await _localAnalyticsRepository.appendEvent(
+      _analyticsEvents,
+      AnalyticsEvent(
+        eventId: 'analytics-${DateTime.now().microsecondsSinceEpoch}',
+        eventName: eventName,
+        timestampIso: DateTime.now().toUtc().toIso8601String(),
+        locale: currentLocaleTag,
+        source: source,
+        metadata: metadata,
+      ),
+    );
+  }
+
+  Map<String, Object?> _missionFeedbackAnalyticsMetadata(
+    DailyMission mission,
+    MissionFeedback feedback,
+  ) {
+    final missionSet = currentMissionSet;
+    final sourceState = (mission.trace['sourceState'] ??
+            mission.trace['source_state'] ??
+            missionSet?.sourceState.storageKey)
+        ?.toString();
+    final fallbackUsed = mission.trace['fallbackUsed'] == true ||
+        mission.trace['fallback_used'] == true ||
+        mission.trace['clientFallback'] == true ||
+        mission.trace['mock'] == true ||
+        missionSet?.rankingTrace['fallbackUsed'] == true;
+    return <String, Object?>{
+      'mission_id': mission.id,
+      'mission_set_id': missionSet?.missionSetId,
+      'feedback_status': feedback.status.storageKey,
+      'recommendation_type': mission.recommendationType,
+      'domain_targets': mission.domainTargets,
+      'source_state': sourceState,
+      'fallback_used': fallbackUsed,
+      if (feedback.rejectionReasonCategory != null)
+        'rejection_reason': feedback.rejectionReasonCategory!.storageKey,
+      if (feedback.effortFeedback != null)
+        'effort_feedback': feedback.effortFeedback!.storageKey,
+      'repeated_flag': feedback.repeatedFlag,
+    };
+  }
+
+  String _fallbackReasonCode(Map<String, Object?> trace) {
+    final rawValue = (trace['fallbackReason'] ??
+            trace['fallback_reason'] ??
+            trace['sourceState'] ??
+            trace['source_state'] ??
+            'fallback')
+        .toString()
+        .trim()
+        .toLowerCase();
+    final normalized = rawValue.replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    return normalized.replaceAll(RegExp(r'^_+|_+$'), '');
+  }
+
   Future<LifeEvent> _recordEvent({
     LifeEvent? event,
     String? domain,
@@ -2644,6 +3014,34 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.saveDailyMissions(_dailyMissions);
     await _localStore.saveDailyRisks(_cachedDailyRisks);
     await _localStore.saveMissionSets(_missionSets);
+    await _recordAnalyticsEvent(
+      'mission_set_generated',
+      source: 'mission_planner',
+      metadata: <String, Object?>{
+        'mission_set_id': dto.missionSetId,
+        'date': dto.date,
+        'source_state': dto.sourceState.storageKey,
+        'fallback_used': dto.fallbackUsed,
+        'policy_version': dto.policyVersion,
+        'ranking_version': dto.rankingVersion,
+        'mission_count': _dailyMissions.length,
+        'risk_count': _cachedDailyRisks.length,
+        'ai_eligible_event_count': aiEligibleEvents.length,
+        'blocked_event_count': blockedFromAiEvents.length,
+      },
+    );
+    if (dto.fallbackUsed || dto.sourceState != MissionSourceState.live) {
+      await _recordAnalyticsEvent(
+        'fallback_used',
+        source: 'mission_planner',
+        metadata: <String, Object?>{
+          'operation': 'daily_plan',
+          'mission_set_id': dto.missionSetId,
+          'source_state': dto.sourceState.storageKey,
+          'reason_code': _fallbackReasonCode(dto.trace),
+        },
+      );
+    }
   }
 
   DecisionCard _decisionCardFromDto(DecisionCardDto dto) {
@@ -3032,6 +3430,41 @@ class GoLifeController extends ChangeNotifier {
       feedback,
     ];
     await _localStore.saveMissionFeedback(_missionFeedback);
+    final analyticsMetadata = _missionFeedbackAnalyticsMetadata(
+      targetMission,
+      feedback,
+    );
+    await _recordAnalyticsEvent(
+      'feedback_submitted',
+      source: 'mission_feedback',
+      metadata: analyticsMetadata,
+    );
+    switch (status) {
+      case MissionFeedbackStatus.accepted:
+        await _recordAnalyticsEvent(
+          'mission_accepted',
+          source: 'mission_feedback',
+          metadata: analyticsMetadata,
+        );
+        break;
+      case MissionFeedbackStatus.completed:
+        await _recordAnalyticsEvent(
+          'mission_completed',
+          source: 'mission_feedback',
+          metadata: analyticsMetadata,
+        );
+        break;
+      case MissionFeedbackStatus.rejected:
+        await _recordAnalyticsEvent(
+          'mission_rejected',
+          source: 'mission_feedback',
+          metadata: analyticsMetadata,
+        );
+        break;
+      case MissionFeedbackStatus.useful:
+      case MissionFeedbackStatus.edited:
+        break;
+    }
 
     try {
       await _aiGatewayClient.submitMissionFeedback(

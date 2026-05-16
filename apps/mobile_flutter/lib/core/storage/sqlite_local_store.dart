@@ -12,6 +12,7 @@ import '../../domains/homememory/maintenance_reminder.dart';
 import '../../domains/homememory/owned_item.dart';
 import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
+import '../../domains/analytics/analytics_event.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/calendar/calendar_item.dart';
@@ -48,7 +49,7 @@ class SqliteLocalStore implements LocalStore {
         );
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 6;
+  static const _databaseVersion = 7;
   static const _privacyKey = 'privacy_settings';
   static const _localePreferenceKey = 'locale_preference';
   static const _profilePreferencesKey = 'profile_preferences';
@@ -91,6 +92,9 @@ class SqliteLocalStore implements LocalStore {
         }
         if (oldVersion < 6) {
           await _createCommercialSnapshotSchema(db);
+        }
+        if (oldVersion < 7) {
+          await _createAnalyticsSchema(db);
         }
       },
     );
@@ -567,6 +571,43 @@ class SqliteLocalStore implements LocalStore {
             'new_privacy_level': entry.newPrivacyLevel,
             'changed_at_iso': entry.changedAt,
             'json_blob': _encodeSensitiveJsonBlob(entry.toJson()),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  @override
+  Future<List<AnalyticsEvent>> loadAnalyticsEvents() async {
+    final db = await _db;
+    final rows = await db.query(
+      'analytics_events',
+      orderBy: 'timestamp_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => AnalyticsEvent.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveAnalyticsEvents(List<AnalyticsEvent> events) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('analytics_events');
+      for (final event in events) {
+        await txn.insert(
+          'analytics_events',
+          {
+            'event_id': event.eventId,
+            'event_name': event.eventName,
+            'timestamp_iso': event.timestampIso,
+            'source': event.source,
+            'json_blob': _encodeSensitiveJsonBlob(event.toJson()),
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -1254,6 +1295,7 @@ class SqliteLocalStore implements LocalStore {
       await txn.delete('evidence_items');
       await txn.delete('lifegraph_relations');
       await txn.delete('privacy_audit_entries');
+      await txn.delete('analytics_events');
       await txn.delete('tasks');
       await txn.delete('habits');
       await txn.delete('expenses');
@@ -1490,6 +1532,19 @@ class SqliteLocalStore implements LocalStore {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_privacy_audit_event_time ON privacy_audit_entries(event_id, changed_at_iso DESC)',
+    );
+    await _createAnalyticsSchema(db);
+  }
+
+  Future<void> _createAnalyticsSchema(Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS analytics_events (event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL, timestamp_iso TEXT NOT NULL, source TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_analytics_events_name_time ON analytics_events(event_name, timestamp_iso DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_analytics_events_source_time ON analytics_events(source, timestamp_iso DESC)',
     );
   }
 

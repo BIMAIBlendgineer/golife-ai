@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../domains/calendar/calendar_item.dart';
+import '../../domains/analytics/analytics_event.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
 import '../../domains/homememory/claim_draft.dart';
@@ -170,6 +171,14 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> savePrivacyAuditEntries(List<PrivacyAuditEntry> entries) =>
       _run((store) => store.savePrivacyAuditEntries(entries));
+
+  @override
+  Future<List<AnalyticsEvent>> loadAnalyticsEvents() =>
+      _run((store) => store.loadAnalyticsEvents());
+
+  @override
+  Future<void> saveAnalyticsEvents(List<AnalyticsEvent> events) =>
+      _run((store) => store.saveAnalyticsEvents(events));
 
   @override
   Future<List<GoTask>> loadTasks() => _run((store) => store.loadTasks());
