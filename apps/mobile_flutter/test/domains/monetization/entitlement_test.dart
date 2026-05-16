@@ -2,6 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/domains/monetization/entitlement.dart';
 
 void main() {
+  test('builds disabled-safe default entitlement', () {
+    final entitlement = Entitlement.disabledSafeDefault();
+
+    expect(entitlement.plan, EntitlementPlan.free);
+    expect(entitlement.billingProvider, entitlementBillingProviderDisabled);
+    expect(entitlement.renewalState, entitlementRenewalStateDisabled);
+    expect(entitlement.trialStatus, entitlementTrialStatusNotStarted);
+    expect(entitlement.quota.dailyMissionRefreshes, greaterThan(0));
+    expect(entitlement.billingDisabled, isTrue);
+  });
+
   test('parses entitlement contract fields', () {
     final entitlement = Entitlement.fromJson({
       'plan': 'premium',

@@ -14,6 +14,7 @@ import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
 import '../../core/lifegraph/lifegraph_repository.dart';
 import '../../core/lifegraph/lifegraph_relation.dart';
+import '../../core/monetization/entitlement_service.dart';
 import '../../core/mindflow/mindflow_mappers.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/runtime/app_runtime_config.dart';
@@ -40,6 +41,7 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
@@ -60,6 +62,7 @@ class GoLifeController extends ChangeNotifier {
     LocalExportService? localExportService,
     SubmissionAssetVault? submissionAssetVault,
     LocalAnalyticsRepository? localAnalyticsRepository,
+    EntitlementService? entitlementService,
   })  : _localStore = localStore,
         _aiGatewayClient = aiGatewayClient,
         _lifeGraphRepository = lifeGraphRepository,
@@ -70,7 +73,9 @@ class GoLifeController extends ChangeNotifier {
             submissionAssetVault ?? ProtectedSubmissionAssetVault(),
         _localAnalyticsRepository =
             localAnalyticsRepository ??
-                LocalAnalyticsRepository(localStore: localStore);
+                LocalAnalyticsRepository(localStore: localStore),
+        _entitlementService =
+            entitlementService ?? EntitlementService(localStore: localStore);
 
   final LocalStore _localStore;
   final AiGatewayClient _aiGatewayClient;
@@ -79,6 +84,7 @@ class GoLifeController extends ChangeNotifier {
   final LocalExportService _localExportService;
   final SubmissionAssetVault _submissionAssetVault;
   final LocalAnalyticsRepository _localAnalyticsRepository;
+  final EntitlementService _entitlementService;
   final CaptureParser _captureParser = const CaptureParser();
 
   bool _isReady = false;
@@ -108,6 +114,7 @@ class GoLifeController extends ChangeNotifier {
   List<LifeGraphRelation> _lifeGraphRelations = <LifeGraphRelation>[];
   List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
   List<AnalyticsEvent> _analyticsEvents = <AnalyticsEvent>[];
+  Entitlement _entitlement = Entitlement.disabledSafeDefault();
   List<MentalLoadItem> _mentalLoadItems = <MentalLoadItem>[];
   List<DecisionCard> _decisionCards = <DecisionCard>[];
   List<ShoppingNeed> _shoppingNeeds = <ShoppingNeed>[];
@@ -116,6 +123,7 @@ class GoLifeController extends ChangeNotifier {
   AppLocalePreference _localePreference = AppLocalePreference.system;
   AppProfilePreferences _profilePreferences = AppProfilePreferences.defaults();
   String _deviceLocaleTag = 'en';
+  final Set<String> _sessionAnalyticsMarkers = <String>{};
 
   final GoTask criticalTask = const GoTask(
     id: 'task-rent-receipt',
@@ -189,6 +197,7 @@ class GoLifeController extends ChangeNotifier {
       List<PrivacyAuditEntry>.unmodifiable(_privacyAuditEntries);
   List<AnalyticsEvent> get analyticsEvents =>
       List<AnalyticsEvent>.unmodifiable(_analyticsEvents);
+  Entitlement get entitlement => _entitlement;
   List<MissionFeedback> get missionFeedbackHistory =>
       List<MissionFeedback>.unmodifiable(_missionFeedback);
   List<DailyRisk> get dailyRisks =>
@@ -254,6 +263,7 @@ class GoLifeController extends ChangeNotifier {
         'Daily missions',
         'Daily risks',
         'Mission sets',
+        'Entitlement state',
         'LifeGraph relations',
         'Finance records',
         'Calendar items',
@@ -272,6 +282,7 @@ class GoLifeController extends ChangeNotifier {
       ];
   List<String> get alwaysLocalCollectionLabels => const <String>[
         'Privacy settings',
+        'Entitlement state',
         'Journal entries',
         'Quick notes',
         'Owned items',
@@ -298,6 +309,13 @@ class GoLifeController extends ChangeNotifier {
 
   int get totalEventCount => lifeEvents.length;
   int get aiEligibleEventCount => lifeEvents.where(_eventEligibleForAi).length;
+  EntitlementGateResult entitlementGateForFeature(EntitlementFeature feature) {
+    return _entitlementService.gateForFeature(
+      feature,
+      entitlement: _entitlement,
+      analyticsEvents: _analyticsEvents,
+    );
+  }
   List<LifeEvent> get aiEligibleEvents => List<LifeEvent>.unmodifiable(
         lifeEvents.where(_eventEligibleForAi).toList(growable: false),
       );
@@ -503,10 +521,25 @@ class GoLifeController extends ChangeNotifier {
     _lifeGraphRelations = await _localStore.loadLifeGraphRelations();
     _privacyAuditEntries = await _localStore.loadPrivacyAuditEntries();
     _analyticsEvents = await _localAnalyticsRepository.loadEvents();
+    _entitlement = await _entitlementService.loadEntitlement();
     _mentalLoadItems = await _localStore.loadMentalLoadItems();
     _decisionCards = await _localStore.loadDecisionCards();
     _shoppingNeeds = await _localStore.loadShoppingNeeds();
     _productEvidenceCards = await _localStore.loadProductEvidenceCards();
+    await _recordAnalyticsEvent(
+      'entitlement_loaded',
+      source: 'entitlement_runtime',
+      metadata: <String, Object?>{
+        'plan': _entitlement.plan.storageKey,
+        'billing_provider': _entitlement.billingProvider,
+        'renewal_state': _entitlement.renewalState,
+        'trial_status': _entitlement.trialStatus,
+        'daily_mission_refreshes':
+            _entitlement.quota.dailyMissionRefreshes,
+        'ai_assisted_captures': _entitlement.quota.aiAssistedCaptures,
+        'export_bundles': _entitlement.quota.exportBundles,
+      },
+    );
     if (_dailyMissions.isEmpty && _missionSets.isNotEmpty) {
       _dailyMissions = _missionSets.first.missions;
     }
@@ -827,6 +860,35 @@ class GoLifeController extends ChangeNotifier {
           'remote': false,
           'fallback_used': false,
           'domains': _captureDraftDomains(localDrafts),
+        },
+      );
+      return localDrafts;
+    }
+
+    final aiCaptureGate = await _recordFeatureGateChecked(
+      EntitlementFeature.aiAssistedCaptures,
+      source: 'capture_parser',
+      trigger: 'prepare_capture',
+    );
+    if (!aiCaptureGate.allowed) {
+      await _recordAnalyticsEvent(
+        'capture_parsed',
+        source: 'capture_parser',
+        metadata: <String, Object?>{
+          'parser': 'local_fallback',
+          'draft_count': localDrafts.length,
+          'remote': false,
+          'fallback_used': true,
+          'domains': _captureDraftDomains(localDrafts),
+          'reason_code': 'entitlement_ai_capture_quota',
+        },
+      );
+      await _recordAnalyticsEvent(
+        'fallback_used',
+        source: 'capture_parser',
+        metadata: const <String, Object?>{
+          'operation': 'capture_parse',
+          'reason_code': 'entitlement_ai_capture_quota',
         },
       );
       return localDrafts;
@@ -2462,6 +2524,11 @@ class GoLifeController extends ChangeNotifier {
   Future<LocalExportResult> exportLocalDataFile() async {
     final assetEntries = await _submissionAssetVault
         .collectManifestEntries(_submissionAssetRefs);
+    await _recordFeatureGateChecked(
+      EntitlementFeature.exportBundles,
+      source: 'local_export',
+      trigger: 'bundle_export',
+    );
     await _recordAnalyticsEvent(
       'export_requested',
       source: 'local_export',
@@ -2503,6 +2570,7 @@ class GoLifeController extends ChangeNotifier {
       'profile_preferences': _profilePreferences.toJson(),
       'privacy_settings': _privacySettings.toJson(),
       'runtime_config': _runtimeConfig?.toJson(),
+      'entitlement': _entitlement.toJson(),
       'storage_security': {
         'sensitive_local_encryption': _sensitiveLocalEncryptionEnabled,
         'submission_assets_stored_separately': true,
@@ -2523,6 +2591,7 @@ class GoLifeController extends ChangeNotifier {
           'evidence_attachments',
           'privacy_audit_entries',
           'analytics_events',
+          'entitlement_state',
           'mental_load_items',
           'decision_cards',
           'shopping_needs',
@@ -2671,10 +2740,12 @@ class GoLifeController extends ChangeNotifier {
     _lifeGraphRelations = <LifeGraphRelation>[];
     _privacyAuditEntries = <PrivacyAuditEntry>[];
     _analyticsEvents = <AnalyticsEvent>[];
+    _entitlement = Entitlement.disabledSafeDefault();
     _mentalLoadItems = <MentalLoadItem>[];
     _decisionCards = <DecisionCard>[];
     _shoppingNeeds = <ShoppingNeed>[];
     _productEvidenceCards = <ProductEvidenceCard>[];
+    _sessionAnalyticsMarkers.clear();
     notifyListeners();
   }
 
@@ -2882,6 +2953,84 @@ class GoLifeController extends ChangeNotifier {
         'query_length_bucket': queryLengthBucket,
       },
     );
+  }
+
+  Future<void> trackBillingDisabledViewed() {
+    return _recordSessionAnalyticsEvent(
+      marker: 'billing_disabled_viewed',
+      eventName: 'billing_disabled_viewed',
+      source: 'billing_settings',
+      metadata: <String, Object?>{
+        'plan': _entitlement.plan.storageKey,
+        'billing_provider': _entitlement.billingProvider,
+        'renewal_state': _entitlement.renewalState,
+        'export_delete_always_available': true,
+      },
+    );
+  }
+
+  Future<void> trackRestoreUnavailableViewed() {
+    return _recordSessionAnalyticsEvent(
+      marker: 'restore_unavailable_viewed',
+      eventName: 'restore_unavailable_viewed',
+      source: 'billing_settings',
+      metadata: const <String, Object?>{
+        'restore_purchases': false,
+        'billing_provider': entitlementBillingProviderDisabled,
+      },
+    );
+  }
+
+  Future<void> trackEntitlementGateViewed(EntitlementFeature feature) {
+    return _recordFeatureGateChecked(
+      feature,
+      source: 'billing_settings',
+      trigger: 'plan_billing_card',
+      oncePerSession: true,
+    );
+  }
+
+  Future<void> _recordSessionAnalyticsEvent({
+    required String marker,
+    required String eventName,
+    required String source,
+    Map<String, Object?> metadata = const <String, Object?>{},
+  }) async {
+    if (_sessionAnalyticsMarkers.contains(marker)) {
+      return;
+    }
+    _sessionAnalyticsMarkers.add(marker);
+    await _recordAnalyticsEvent(
+      eventName,
+      source: source,
+      metadata: metadata,
+    );
+  }
+
+  Future<EntitlementGateResult> _recordFeatureGateChecked(
+    EntitlementFeature feature, {
+    required String source,
+    String? trigger,
+    bool oncePerSession = false,
+  }) async {
+    final marker = 'feature_gate_checked:${feature.storageKey}:$source:$trigger';
+    final result = entitlementGateForFeature(feature);
+    if (!oncePerSession || !_sessionAnalyticsMarkers.contains(marker)) {
+      if (oncePerSession) {
+        _sessionAnalyticsMarkers.add(marker);
+      }
+      await _recordAnalyticsEvent(
+        'feature_gate_checked',
+        source: source,
+        metadata: <String, Object?>{
+          ...result.toAnalyticsMetadata(),
+          'plan': _entitlement.plan.storageKey,
+          'billing_provider': _entitlement.billingProvider,
+          if (trigger != null) 'trigger': trigger,
+        },
+      );
+    }
+    return result;
   }
 
   Future<void> _recordAnalyticsEvent(

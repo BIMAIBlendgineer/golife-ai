@@ -9,6 +9,9 @@ void main() {
         'body': 'Mission body',
         'rawText': 'Captured free text',
         'fileRef': 'files/receipt.jpg',
+        'price': 9.99,
+        'receipt': 'receipt blob',
+        'purchaseToken': 'token-123',
         'domain': 'finance',
         'trace': <String, Object?>{
           'merchantName': 'Amazon',
@@ -21,6 +24,9 @@ void main() {
     expect(sanitized.containsKey('body'), isFalse);
     expect(sanitized.containsKey('rawText'), isFalse);
     expect(sanitized.containsKey('fileRef'), isFalse);
+    expect(sanitized.containsKey('price'), isFalse);
+    expect(sanitized.containsKey('receipt'), isFalse);
+    expect(sanitized.containsKey('purchaseToken'), isFalse);
     expect(sanitized['domain'], 'finance');
     expect(sanitized['has_text'], true);
     expect(sanitized['text_length_bucket'], '1_50');
