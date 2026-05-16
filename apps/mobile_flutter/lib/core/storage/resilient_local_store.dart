@@ -16,7 +16,10 @@ import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
+import '../../domains/missions/mission_set.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/privacy/evidence_item.dart';
+import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/shopping/product_evidence_card.dart';
 import '../../domains/shopping/shopping_need.dart';
@@ -24,6 +27,7 @@ import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
+import '../lifegraph/lifegraph_relation.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
 import '../settings/app_profile_preferences.dart';
@@ -134,6 +138,38 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> saveDailyRisks(List<DailyRisk> risks) =>
       _run((store) => store.saveDailyRisks(risks));
+
+  @override
+  Future<List<MissionSet>> loadMissionSets() =>
+      _run((store) => store.loadMissionSets());
+
+  @override
+  Future<void> saveMissionSets(List<MissionSet> missionSets) =>
+      _run((store) => store.saveMissionSets(missionSets));
+
+  @override
+  Future<List<EvidenceItem>> loadEvidenceItems() =>
+      _run((store) => store.loadEvidenceItems());
+
+  @override
+  Future<void> saveEvidenceItems(List<EvidenceItem> evidenceItems) =>
+      _run((store) => store.saveEvidenceItems(evidenceItems));
+
+  @override
+  Future<List<LifeGraphRelation>> loadLifeGraphRelations() =>
+      _run((store) => store.loadLifeGraphRelations());
+
+  @override
+  Future<void> saveLifeGraphRelations(List<LifeGraphRelation> relations) =>
+      _run((store) => store.saveLifeGraphRelations(relations));
+
+  @override
+  Future<List<PrivacyAuditEntry>> loadPrivacyAuditEntries() =>
+      _run((store) => store.loadPrivacyAuditEntries());
+
+  @override
+  Future<void> savePrivacyAuditEntries(List<PrivacyAuditEntry> entries) =>
+      _run((store) => store.savePrivacyAuditEntries(entries));
 
   @override
   Future<List<GoTask>> loadTasks() => _run((store) => store.loadTasks());

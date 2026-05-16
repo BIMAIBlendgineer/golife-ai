@@ -18,7 +18,10 @@ import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../domains/missions/mission_set.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/privacy/evidence_item.dart';
+import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/shopping/product_evidence_card.dart';
 import '../../domains/shopping/shopping_need.dart';
@@ -26,6 +29,7 @@ import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
+import '../lifegraph/lifegraph_relation.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
 import '../settings/app_profile_preferences.dart';
@@ -41,6 +45,10 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _missionFeedbackKey = 'golife.mission_feedback';
   static const _missionsKey = 'golife.missions';
   static const _risksKey = 'golife.daily_risks';
+  static const _missionSetsKey = 'golife.mission_sets';
+  static const _evidenceItemsKey = 'golife.evidence_items';
+  static const _lifeGraphRelationsKey = 'golife.lifegraph_relations';
+  static const _privacyAuditEntriesKey = 'golife.privacy_audit_entries';
   static const _tasksKey = 'golife.tasks';
   static const _habitsKey = 'golife.habits';
   static const _expensesKey = 'golife.expenses';
@@ -217,6 +225,70 @@ class SharedPrefsLocalStore implements LocalStore {
     await _saveList(
       _risksKey,
       risks.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<List<MissionSet>> loadMissionSets() async {
+    return _loadList(
+      _missionSetsKey,
+      (item) => MissionSet.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveMissionSets(List<MissionSet> missionSets) async {
+    await _saveList(
+      _missionSetsKey,
+      missionSets.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<List<EvidenceItem>> loadEvidenceItems() async {
+    return _loadList(
+      _evidenceItemsKey,
+      (item) => EvidenceItem.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveEvidenceItems(List<EvidenceItem> evidenceItems) async {
+    await _saveList(
+      _evidenceItemsKey,
+      evidenceItems.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<List<LifeGraphRelation>> loadLifeGraphRelations() async {
+    return _loadList(
+      _lifeGraphRelationsKey,
+      (item) => LifeGraphRelation.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveLifeGraphRelations(List<LifeGraphRelation> relations) async {
+    await _saveList(
+      _lifeGraphRelationsKey,
+      relations.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<List<PrivacyAuditEntry>> loadPrivacyAuditEntries() async {
+    return _loadList(
+      _privacyAuditEntriesKey,
+      (item) => PrivacyAuditEntry.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> savePrivacyAuditEntries(List<PrivacyAuditEntry> entries) async {
+    await _saveList(
+      _privacyAuditEntriesKey,
+      entries.map((item) => item.toJson()).toList(growable: false),
     );
   }
 
@@ -632,6 +704,10 @@ class SharedPrefsLocalStore implements LocalStore {
     await prefs.remove(_missionFeedbackKey);
     await prefs.remove(_missionsKey);
     await prefs.remove(_risksKey);
+    await prefs.remove(_missionSetsKey);
+    await prefs.remove(_evidenceItemsKey);
+    await prefs.remove(_lifeGraphRelationsKey);
+    await prefs.remove(_privacyAuditEntriesKey);
     await prefs.remove(_tasksKey);
     await prefs.remove(_habitsKey);
     await prefs.remove(_expensesKey);

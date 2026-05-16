@@ -6,6 +6,7 @@ import 'package:golife_flutter/core/ai_client/ai_gateway_client.dart';
 import 'package:golife_flutter/core/export/local_export_service.dart';
 import 'package:golife_flutter/core/export/submission_asset_vault.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
+import 'package:golife_flutter/core/privacy/privacy_models.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/tasks/go_task.dart';
@@ -169,12 +170,15 @@ void main() {
 
       expect(decoded['life_events'], isA<List<dynamic>>());
       expect(decoded['tasks'], isA<List<dynamic>>());
+      expect(decoded['mission_sets'], isA<List<dynamic>>());
+      expect((decoded['mission_sets'] as List<dynamic>), isNotEmpty);
       expect(fileExport.fileName, 'golife_local_export_20260504T100000Z');
       expect(exportService.lastBaseFileName, 'golife_local_export');
       final exportedFileJson =
           jsonDecode(exportService.lastPayload!) as Map<String, dynamic>;
       expect(exportedFileJson['tasks'], decoded['tasks']);
       expect(exportedFileJson['life_events'], decoded['life_events']);
+      expect(exportedFileJson['mission_sets'], decoded['mission_sets']);
 
       await controller.deleteAllLocalData();
 
@@ -290,6 +294,19 @@ void main() {
         ),
         isTrue,
       );
+      expect(controller.evidenceItems, isNotEmpty);
+      expect(
+        controller.evidenceItems
+            .any((item) => item.sourceType == 'purchase_proof'),
+        isTrue,
+      );
+      expect(controller.lifeGraphRelations, isNotEmpty);
+      expect(
+        controller.lifeGraphRelations.any(
+          (relation) => relation.relationType == 'homememory.proof_attachment',
+        ),
+        isTrue,
+      );
 
       final exportedJson = await controller.exportLocalDataJson();
       final decoded = jsonDecode(exportedJson) as Map<String, dynamic>;
@@ -302,11 +319,18 @@ void main() {
       expect(encryptedCollections, contains('life_events'));
       expect(encryptedCollections, contains('missions'));
       expect(encryptedCollections, contains('daily_risks'));
+      expect(encryptedCollections, contains('mission_sets'));
+      expect(encryptedCollections, contains('lifegraph_relations'));
       expect(encryptedCollections, contains('calendar_items'));
+      expect(encryptedCollections, contains('evidence_items'));
       expect(encryptedCollections, contains('owned_items'));
       expect(encryptedCollections, contains('purchase_proofs'));
       expect(encryptedCollections, contains('claim_drafts'));
       expect(encryptedCollections, contains('evidence_attachments'));
+      expect(encryptedCollections, contains('privacy_audit_entries'));
+      expect(decoded['mission_sets'], isA<List<dynamic>>());
+      expect(decoded['evidence_items'], isA<List<dynamic>>());
+      expect(decoded['lifegraph_relations'], isA<List<dynamic>>());
     });
 
     test(
@@ -490,6 +514,30 @@ void main() {
         isFalse,
       );
       expect(controller.totalEventCount, greaterThan(0));
+    });
+
+    test('updates event privacy and records a local audit entry', () async {
+      final targetEvent = controller.lifeEvents.firstWhere(
+        (event) => event.domain == 'finance',
+      );
+
+      await controller.updatePermission(
+        DomainKey.finance,
+        DataPermission.aiAllowed,
+      );
+      await controller.updateEventPrivacy(
+        targetEvent.eventId,
+        DataPermission.aiAllowed,
+      );
+
+      final updatedEvent = controller.lifeEvents.firstWhere(
+        (event) => event.eventId == targetEvent.eventId,
+      );
+
+      expect(updatedEvent.privacyLevel, DataPermission.aiAllowed.storageKey);
+      expect(controller.privacyAuditEntries, hasLength(1));
+      expect(
+          controller.privacyAuditEntries.single.eventId, targetEvent.eventId);
     });
   });
 }
