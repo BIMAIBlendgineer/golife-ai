@@ -1,11 +1,14 @@
+from datetime import UTC, datetime
 from functools import lru_cache
 from statistics import mean
 from typing import Any, TypedDict
+from uuid import uuid4
 
 from langgraph.graph import END, StateGraph
 
 from app.guardrails import filter_ai_events, sanitize_suggestions
 from app.learning_memory import build_learning_key
+from app.policy_engine import POLICY_VERSION
 from app.providers.base import LLMProvider
 from app.schemas import (
     AISuggestion,
@@ -28,6 +31,8 @@ Write titles, bodies, evidence, and uncertainty in the locale requested in `user
 Do not mix languages unless the user input already mixes them.
 Return an object with a top-level `suggestions` array using the requested schema.
 """
+
+RANKING_VERSION = "mission_ranker_v1"
 
 
 class MissionGraphState(TypedDict, total=False):
@@ -957,6 +962,21 @@ def build_response(state: MissionGraphState) -> MissionGraphState:
         state,
         state.get("ranked_candidates", []),
     )
+    provider_meta = state.get("provider_meta", {})
+    used_local_mock = bool(
+        state["settings"].resolved_mock_mode
+        or state["provider"].provider_name == "mock"
+        or provider_meta.get("mock") is True
+    )
+    fallback_used = bool(used_local_mock or synthesized_count > 0 or not state.get("consent_granted"))
+    if used_local_mock:
+        source_state = "local"
+    elif fallback_used:
+        source_state = "degraded"
+    else:
+        source_state = "live"
+    mission_date = datetime.now(UTC).date().isoformat()
+    mission_set_id = f"mission-set-{mission_date}-{uuid4().hex[:8]}"
     learning_keys_by_suggestion_id = {
         suggestion.suggestion_id: _suggestion_learning_key(suggestion)
         for suggestion in ranked_candidates
@@ -971,21 +991,38 @@ def build_response(state: MissionGraphState) -> MissionGraphState:
     )
     trace.update(
         {
+            "missionSetId": mission_set_id,
+            "date": mission_date,
+            "sourceState": source_state,
+            "fallbackUsed": fallback_used,
+            "policyVersion": POLICY_VERSION,
+            "rankingVersion": RANKING_VERSION,
             "active_provider": state["provider"].provider_name,
             "configured_provider": state["settings"].llm_provider,
             "mock_mode": state["settings"].resolved_mock_mode,
             "filtered_events": state.get("filtered_events", []),
-            "provider_meta": state.get("provider_meta", {}),
+            "provider_meta": provider_meta,
             "mission_memory": state.get("feedback_summary", {}).get(
                 "memory_profile",
                 {},
             ),
             "learning_keys_by_suggestion_id": learning_keys_by_suggestion_id,
-            "ranking_model": "deterministic_v2",
+            "ranking_model": RANKING_VERSION,
+            "policyBlocks": [
+                item.get("reason")
+                for item in state.get("trace", {}).get("guardrail_review", {}).get("rejected", [])
+                if isinstance(item, dict) and item.get("reason")
+            ],
         }
     )
     return {
         "response": SuggestionResponse(
+            mission_set_id=mission_set_id,
+            date=mission_date,
+            source_state=source_state,  # type: ignore[arg-type]
+            fallback_used=fallback_used,
+            policy_version=POLICY_VERSION,
+            ranking_version=RANKING_VERSION,
             suggestions=ranked_candidates,
             trace=trace,
         )

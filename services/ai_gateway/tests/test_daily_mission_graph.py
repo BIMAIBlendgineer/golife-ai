@@ -49,6 +49,11 @@ def test_daily_mission_graph_tasks_and_habits(client):
     assert 'feedback_learning' in data['trace']['nodes']
     assert 'build_response' in data['trace']['nodes']
     assert data['trace']['assess_risks']['risk_count'] >= 1
+    assert data['mission_set_id']
+    assert data['date']
+    assert data['source_state'] in {'live', 'local', 'degraded'}
+    assert data['policy_version'] == 'policy_v1'
+    assert data['ranking_version'] == 'mission_ranker_v1'
 
 
 def test_daily_mission_graph_finance_and_pantry(client):
@@ -217,6 +222,8 @@ def test_daily_mission_graph_synthesizes_missing_third_suggestion():
     data = response.json()
     assert len(data['suggestions']) == 3
     assert data['trace']['build_response']['synthesized_count'] == 1
+    assert data['fallback_used'] is True
+    assert data['source_state'] == 'degraded'
 
 
 def test_daily_mission_graph_adds_structured_ranking(client):

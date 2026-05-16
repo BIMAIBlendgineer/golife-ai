@@ -19,7 +19,7 @@ PolicyAction = Literal[
     "metadata_only",
 ]
 
-POLICY_VERSION = "2026-05-04.2"
+POLICY_VERSION = "policy_v1"
 INPUT_POLICY_ID = "golife_input_policy"
 OUTPUT_POLICY_ID = "golife_output_policy"
 REFLECTION_POLICY_ID = "golife_reflection_policy"

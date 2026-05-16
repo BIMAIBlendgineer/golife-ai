@@ -1,3 +1,5 @@
+import '../../../domains/missions/mission_set.dart';
+
 class MissionRankingDto {
   const MissionRankingDto({
     required this.impactScore,
@@ -144,10 +146,22 @@ class MissionSuggestionDto {
 
 class MissionPlanDto {
   const MissionPlanDto({
+    required this.missionSetId,
+    required this.date,
+    required this.sourceState,
+    required this.fallbackUsed,
+    required this.policyVersion,
+    required this.rankingVersion,
     required this.suggestions,
     required this.trace,
   });
 
+  final String missionSetId;
+  final String date;
+  final MissionSourceState sourceState;
+  final bool fallbackUsed;
+  final String? policyVersion;
+  final String? rankingVersion;
   final List<MissionSuggestionDto> suggestions;
   final Map<String, Object?> trace;
 
@@ -159,18 +173,36 @@ class MissionPlanDto {
   }
 
   MissionPlanDto mergeTrace(Map<String, Object?> extraTrace) {
+    final fallbackUsed =
+        this.fallbackUsed || extraTrace['clientFallback'] == true;
     final mergedTrace = <String, Object?>{
       ...trace,
+      'missionSetId': missionSetId,
+      'date': date,
+      'sourceState': fallbackUsed
+          ? MissionSourceState.fallback.storageKey
+          : sourceState.storageKey,
+      'fallbackUsed': fallbackUsed,
+      if (policyVersion != null) 'policyVersion': policyVersion,
+      if (rankingVersion != null) 'rankingVersion': rankingVersion,
       ...extraTrace,
     };
 
     return MissionPlanDto(
+      missionSetId: missionSetId,
+      date: date,
+      sourceState: fallbackUsed ? MissionSourceState.fallback : sourceState,
+      fallbackUsed: fallbackUsed,
+      policyVersion:
+          policyVersion ?? _stringOrNull(mergedTrace['policyVersion']),
+      rankingVersion:
+          rankingVersion ?? _stringOrNull(mergedTrace['rankingVersion']),
       suggestions: suggestions
           .map(
             (suggestion) => suggestion.copyWith(
               trace: <String, Object?>{
                 ...suggestion.trace,
-                ...extraTrace,
+                ...mergedTrace,
               },
             ),
           )
@@ -182,11 +214,47 @@ class MissionPlanDto {
   factory MissionPlanDto.fromGatewayJson(Map<String, dynamic> responseJson) {
     final rawSuggestions =
         responseJson['suggestions'] as List<dynamic>? ?? const [];
-    final trace = _normalizeTrace(
+    final baseTrace = _normalizeTrace(
       Map<String, dynamic>.from(
         (responseJson['trace'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
     );
+    final missionSetId = _stringOrNull(
+          responseJson['mission_set_id'] ?? responseJson['missionSetId'],
+        ) ??
+        'mission-set-local';
+    final date = _stringOrNull(responseJson['date']) ?? _todayIsoDate();
+    final policyVersion = _stringOrNull(
+      responseJson['policy_version'] ??
+          responseJson['policyVersion'] ??
+          baseTrace['policyVersion'] ??
+          baseTrace['policy_version'],
+    );
+    final rankingVersion = _stringOrNull(
+      responseJson['ranking_version'] ??
+          responseJson['rankingVersion'] ??
+          baseTrace['rankingVersion'] ??
+          baseTrace['ranking_version'],
+    );
+    final fallbackUsed = responseJson['fallback_used'] == true ||
+        responseJson['fallbackUsed'] == true ||
+        baseTrace['fallbackUsed'] == true ||
+        baseTrace['fallback_used'] == true ||
+        baseTrace['clientFallback'] == true;
+    final sourceState = _resolveMissionSourceState(
+      responseJson: responseJson,
+      trace: baseTrace,
+      fallbackUsed: fallbackUsed,
+    );
+    final trace = <String, Object?>{
+      ...baseTrace,
+      'missionSetId': missionSetId,
+      'date': date,
+      'sourceState': sourceState.storageKey,
+      'fallbackUsed': fallbackUsed,
+      if (policyVersion != null) 'policyVersion': policyVersion,
+      if (rankingVersion != null) 'rankingVersion': rankingVersion,
+    };
 
     final suggestions = <MissionSuggestionDto>[];
     for (final item in rawSuggestions) {
@@ -206,10 +274,37 @@ class MissionPlanDto {
     }
 
     return MissionPlanDto(
+      missionSetId: missionSetId,
+      date: date,
+      sourceState: sourceState,
+      fallbackUsed: fallbackUsed,
+      policyVersion: policyVersion,
+      rankingVersion: rankingVersion,
       suggestions: suggestions,
       trace: trace,
     );
   }
+}
+
+MissionSourceState _resolveMissionSourceState({
+  required Map<String, dynamic> responseJson,
+  required Map<String, Object?> trace,
+  required bool fallbackUsed,
+}) {
+  final rawValue = responseJson['source_state'] ??
+      responseJson['sourceState'] ??
+      trace['sourceState'] ??
+      trace['source_state'];
+  if (rawValue is String && rawValue.trim().isNotEmpty) {
+    return missionSourceStateFromStorage(rawValue);
+  }
+  if (trace['clientFallback'] == true || fallbackUsed) {
+    return MissionSourceState.fallback;
+  }
+  if (trace['mock'] == true || trace['mock_mode'] == true) {
+    return MissionSourceState.local;
+  }
+  return MissionSourceState.live;
 }
 
 class CaptureClassificationDto {
@@ -351,6 +446,21 @@ double? _asDouble(Object? value) {
     return value.toDouble();
   }
   return double.tryParse(value?.toString() ?? '');
+}
+
+String? _stringOrNull(Object? value) {
+  if (value == null) {
+    return null;
+  }
+  final normalized = value.toString().trim();
+  return normalized.isEmpty ? null : normalized;
+}
+
+String _todayIsoDate() {
+  final now = DateTime.now().toUtc();
+  return '${now.year.toString().padLeft(4, '0')}-'
+      '${now.month.toString().padLeft(2, '0')}-'
+      '${now.day.toString().padLeft(2, '0')}';
 }
 
 class PrivacySummaryDto {

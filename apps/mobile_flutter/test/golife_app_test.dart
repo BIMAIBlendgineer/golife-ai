@@ -12,6 +12,7 @@ import 'package:golife_flutter/core/privacy/privacy_models.dart';
 import 'package:golife_flutter/core/settings/app_profile_preferences.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/domains/missions/mission_feedback.dart';
+import 'package:golife_flutter/domains/missions/mission_set.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
 import 'package:golife_flutter/features/dashboard/dashboard_screen.dart';
 import 'package:golife_flutter/l10n/app_localizations.dart';
@@ -24,6 +25,12 @@ class _FallbackAiGatewayClient extends AiGatewayClient {
     required List<LifeEvent> lifeEvents,
   }) async {
     return MissionPlanDto(
+      missionSetId: 'mission-set-offline-test',
+      date: '2026-05-16',
+      sourceState: MissionSourceState.fallback,
+      fallbackUsed: true,
+      policyVersion: 'policy_v1',
+      rankingVersion: 'mission_ranker_v1',
       suggestions: [
         MissionSuggestionDto(
           id: 'mission-offline-1',
@@ -45,6 +52,8 @@ class _FallbackAiGatewayClient extends AiGatewayClient {
       trace: const {
         'clientFallback': true,
         'fallbackReason': 'no_connection',
+        'sourceState': 'fallback',
+        'fallbackUsed': true,
       },
     );
   }
@@ -176,9 +185,9 @@ void main() {
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
-  testWidgets('supports a stored pt-BR locale preference', (tester) async {
+  testWidgets('limits productive supported locales to EN and ES',
+      (tester) async {
     final localStore = MemoryLocalStore();
-    await localStore.saveLocalePreference('pt-BR');
 
     await tester.pumpWidget(
       GoLifeApp(
@@ -191,7 +200,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    expect(app.locale, const Locale('pt', 'BR'));
+    expect(app.supportedLocales, const <Locale>[Locale('en'), Locale('es')]);
   });
 
   testWidgets('uses stored dark theme preference', (tester) async {
