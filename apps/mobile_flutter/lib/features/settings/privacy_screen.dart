@@ -7,6 +7,7 @@ import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/app_localized_values.dart';
 import '../../core/legal/legal_document_registry.dart';
 import '../../core/lifegraph/life_event.dart';
+import '../../core/monetization/billing_runtime_models.dart';
 import '../../core/monetization/entitlement_service.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/settings/app_profile_preferences.dart';
@@ -665,6 +666,8 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final entitlement = controller.entitlement;
+    final billingState = controller.billingRuntimeState;
+    final billingConfig = billingState.config;
     final missionRefreshGate = controller.entitlementGateForFeature(
       EntitlementFeature.dailyMissionRefreshes,
     );
@@ -684,7 +687,9 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
           Text(l10n.billingPlanTitle, style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
-            l10n.billingPlanBody,
+            billingConfig.enabled
+                ? l10n.billingPlanBodySandbox
+                : l10n.billingPlanBody,
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -694,20 +699,42 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
           ),
           _BillingFactRow(
             label: l10n.billingProviderLabel,
-            value: l10n.billingDisabledLabel,
+            value: _billingProviderLabel(billingState, l10n),
+          ),
+          _BillingFactRow(
+            label: l10n.billingModeLabel,
+            value: _billingModeLabel(billingState, l10n),
           ),
           _BillingFactRow(
             label: l10n.billingRenewalStateLabel,
-            value: l10n.billingRenewalDisabled,
+            value: _billingRenewalLabel(entitlement.renewalState, l10n),
+          ),
+          _BillingFactRow(
+            label: l10n.billingStatusLabel,
+            value: _billingStatusCodeLabel(billingState.statusCode),
           ),
           _BillingFactRow(
             label: l10n.billingRestoreLabel,
-            value: l10n.billingRestoreUnavailable,
+            value: billingConfig.restorePurchases
+                ? l10n.billingRestoreAvailable
+                : l10n.billingRestoreUnavailable,
           ),
           _BillingFactRow(
             label: l10n.billingExportDeleteLabel,
             value: l10n.billingExportDeleteAlwaysAvailable,
           ),
+          if (billingState.lastValidatedAtIso != null)
+            _BillingFactRow(
+              label: l10n.billingLastValidatedLabel,
+              value: billingState.lastValidatedAtIso!,
+            ),
+          if (billingConfig.enabled) ...[
+            const SizedBox(height: 8),
+            Text(
+              l10n.billingSandboxInternalOnly,
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: 14),
           Text(
             l10n.billingFeatureGatesTitle,
@@ -727,6 +754,37 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
             gate: exportGate,
             forceAlwaysAvailable: true,
           ),
+          if (billingConfig.enabled) ...[
+            const SizedBox(height: 14),
+            Text(
+              l10n.billingCatalogTitle,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            if (billingState.catalog.isEmpty)
+              Text(
+                l10n.billingCatalogEmpty,
+                style: theme.textTheme.bodyMedium,
+              )
+            else
+              for (final item in billingState.catalog)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _BillingCatalogCard(
+                    item: item,
+                    purchaseLabel: l10n.billingPurchaseSandbox,
+                    onPurchase: () => _buyCatalogItem(context, item),
+                  ),
+                ),
+            const SizedBox(height: 8),
+            if (billingConfig.restorePurchases)
+              FilledButton.tonalIcon(
+                key: const ValueKey<String>('billing-restore-purchases'),
+                onPressed: () => _restorePurchases(context),
+                icon: const Icon(Icons.restore_rounded),
+                label: Text(l10n.billingRestoreNow),
+              ),
+          ],
           const SizedBox(height: 14),
           Wrap(
             spacing: 8,
@@ -752,7 +810,8 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
   }
 
   Future<void> _openDecisionDocument(BuildContext context) async {
-    final url = GoLifeLegalDocuments.billingDisabledDecisionUrl;
+    final url =
+        widget.controller.billingRuntimeState.config.decisionDocumentUrl;
     if (widget.onOpenExternalUrl != null) {
       await widget.onOpenExternalUrl!(url);
       return;
@@ -773,7 +832,9 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     bool useFallbackMessage = false,
   }) async {
     await Clipboard.setData(
-      const ClipboardData(text: GoLifeLegalDocuments.billingDisabledDecisionUrl),
+      ClipboardData(
+          text:
+              widget.controller.billingRuntimeState.config.decisionDocumentUrl),
     );
     if (!context.mounted) {
       return;
@@ -785,6 +846,69 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
               ? AppLocalizations.of(context)!.privacyLegalOpenFallback
               : AppLocalizations.of(context)!.privacyLegalCopied,
         ),
+      ),
+    );
+  }
+
+  Future<void> _buyCatalogItem(
+    BuildContext context,
+    BillingCatalogItem item,
+  ) async {
+    final result =
+        await widget.controller.buyBillingCatalogProduct(item.productId);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message)),
+    );
+  }
+
+  Future<void> _restorePurchases(BuildContext context) async {
+    final result = await widget.controller.restoreBillingPurchases();
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message)),
+    );
+  }
+}
+
+class _BillingCatalogCard extends StatelessWidget {
+  const _BillingCatalogCard({
+    required this.item,
+    required this.purchaseLabel,
+    required this.onPurchase,
+  });
+
+  final BillingCatalogItem item;
+  final String purchaseLabel;
+  final Future<void> Function() onPurchase;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(theme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(item.title, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(item.description, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          Text(item.priceLabel, style: theme.textTheme.bodyLarge),
+          const SizedBox(height: 12),
+          FilledButton.tonalIcon(
+            key: ValueKey<String>('billing-buy-${item.productId}'),
+            onPressed: onPurchase,
+            icon: const Icon(Icons.play_circle_outline_rounded),
+            label: Text(purchaseLabel),
+          ),
+        ],
       ),
     );
   }
@@ -1384,4 +1508,58 @@ String _entitlementPlanLabel(
     case EntitlementPlan.pro:
       return l10n.billingPlanPro;
   }
+}
+
+String _billingProviderLabel(
+  BillingRuntimeState billingState,
+  AppLocalizations l10n,
+) {
+  if (billingState.config.provider == entitlementBillingProviderGooglePlay) {
+    return l10n.billingProviderGooglePlay;
+  }
+  return l10n.billingDisabledLabel;
+}
+
+String _billingModeLabel(
+  BillingRuntimeState billingState,
+  AppLocalizations l10n,
+) {
+  switch (billingState.config.mode) {
+    case BillingRuntimeMode.googlePlaySandbox:
+      return l10n.billingModeGooglePlaySandbox;
+    case BillingRuntimeMode.googlePlayLive:
+      return l10n.billingModeGooglePlayLive;
+    case BillingRuntimeMode.disabled:
+      return l10n.billingDisabledLabel;
+  }
+}
+
+String _billingRenewalLabel(
+  String renewalState,
+  AppLocalizations l10n,
+) {
+  switch (renewalState) {
+    case entitlementRenewalStatePending:
+      return l10n.billingRenewalPending;
+    case entitlementRenewalStateActive:
+      return l10n.billingRenewalActive;
+    case entitlementRenewalStateGrace:
+      return l10n.billingRenewalGrace;
+    case entitlementRenewalStatePaused:
+      return l10n.billingRenewalPaused;
+    case entitlementRenewalStateExpired:
+      return l10n.billingRenewalExpired;
+    case entitlementRenewalStateRefunded:
+      return l10n.billingRenewalRefunded;
+    case entitlementRenewalStateDisabled:
+    default:
+      return l10n.billingRenewalDisabled;
+  }
+}
+
+String _billingStatusCodeLabel(String statusCode) {
+  if (statusCode.trim().isEmpty) {
+    return 'unknown';
+  }
+  return statusCode.replaceAll('_', ' ');
 }

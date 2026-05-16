@@ -298,13 +298,23 @@ class AppLocalizationsZh extends AppLocalizations {
       'This release includes a safe local entitlement runtime. Real purchases, restore, and renewal handling stay disabled.';
 
   @override
+  String get billingPlanBodySandbox =>
+      'This release includes Google Play Billing sandbox for internal Android testing. Premium access only activates after backend verification succeeds.';
+
+  @override
   String get billingCurrentPlanLabel => 'Current plan';
 
   @override
   String get billingProviderLabel => 'Billing provider';
 
   @override
+  String get billingModeLabel => 'Billing mode';
+
+  @override
   String get billingRenewalStateLabel => 'Renewal state';
+
+  @override
+  String get billingStatusLabel => 'Sandbox status';
 
   @override
   String get billingRestoreLabel => 'Restore purchases';
@@ -316,13 +326,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get billingDisabledLabel => 'Disabled in this release';
 
   @override
+  String get billingProviderGooglePlay => 'Google Play';
+
+  @override
+  String get billingModeGooglePlaySandbox => 'Google Play sandbox';
+
+  @override
+  String get billingModeGooglePlayLive => 'Google Play live';
+
+  @override
   String get billingRenewalDisabled => 'Disabled';
+
+  @override
+  String get billingRenewalPending => 'Pending';
+
+  @override
+  String get billingRenewalActive => 'Active';
+
+  @override
+  String get billingRenewalGrace => 'Grace period';
+
+  @override
+  String get billingRenewalPaused => 'Paused';
+
+  @override
+  String get billingRenewalExpired => 'Expired';
+
+  @override
+  String get billingRenewalRefunded => 'Refunded';
+
+  @override
+  String get billingRestoreAvailable => 'Available in this sandbox release';
 
   @override
   String get billingRestoreUnavailable => 'Unavailable in this release';
 
   @override
   String get billingExportDeleteAlwaysAvailable => 'Always available';
+
+  @override
+  String get billingLastValidatedLabel => 'Last validated';
 
   @override
   String get billingFeatureGatesTitle => 'Feature gates';
@@ -350,6 +393,23 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get billingGateQuotaExhausted =>
       'Quota exhausted, local fallback stays available';
+
+  @override
+  String get billingCatalogTitle => 'Sandbox catalog';
+
+  @override
+  String get billingCatalogEmpty =>
+      'No Google Play sandbox products are available on this device right now.';
+
+  @override
+  String get billingSandboxInternalOnly =>
+      'Sandbox purchases are for internal Android testing only. Export and delete stay available regardless of plan state.';
+
+  @override
+  String get billingPurchaseSandbox => 'Start sandbox purchase';
+
+  @override
+  String get billingRestoreNow => 'Restore sandbox purchases';
 
   @override
   String get billingDecisionOpen => 'Open billing decision';

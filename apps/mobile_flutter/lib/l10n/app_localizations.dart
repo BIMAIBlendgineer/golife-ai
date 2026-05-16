@@ -684,6 +684,12 @@ abstract class AppLocalizations {
   /// **'This release includes a safe local entitlement runtime. Real purchases, restore, and renewal handling stay disabled.'**
   String get billingPlanBody;
 
+  /// No description provided for @billingPlanBodySandbox.
+  ///
+  /// In en, this message translates to:
+  /// **'This release includes Google Play Billing sandbox for internal Android testing. Premium access only activates after backend verification succeeds.'**
+  String get billingPlanBodySandbox;
+
   /// No description provided for @billingCurrentPlanLabel.
   ///
   /// In en, this message translates to:
@@ -696,11 +702,23 @@ abstract class AppLocalizations {
   /// **'Billing provider'**
   String get billingProviderLabel;
 
+  /// No description provided for @billingModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing mode'**
+  String get billingModeLabel;
+
   /// No description provided for @billingRenewalStateLabel.
   ///
   /// In en, this message translates to:
   /// **'Renewal state'**
   String get billingRenewalStateLabel;
+
+  /// No description provided for @billingStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sandbox status'**
+  String get billingStatusLabel;
 
   /// No description provided for @billingRestoreLabel.
   ///
@@ -720,11 +738,71 @@ abstract class AppLocalizations {
   /// **'Disabled in this release'**
   String get billingDisabledLabel;
 
+  /// No description provided for @billingProviderGooglePlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Play'**
+  String get billingProviderGooglePlay;
+
+  /// No description provided for @billingModeGooglePlaySandbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Play sandbox'**
+  String get billingModeGooglePlaySandbox;
+
+  /// No description provided for @billingModeGooglePlayLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Play live'**
+  String get billingModeGooglePlayLive;
+
   /// No description provided for @billingRenewalDisabled.
   ///
   /// In en, this message translates to:
   /// **'Disabled'**
   String get billingRenewalDisabled;
+
+  /// No description provided for @billingRenewalPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get billingRenewalPending;
+
+  /// No description provided for @billingRenewalActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get billingRenewalActive;
+
+  /// No description provided for @billingRenewalGrace.
+  ///
+  /// In en, this message translates to:
+  /// **'Grace period'**
+  String get billingRenewalGrace;
+
+  /// No description provided for @billingRenewalPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get billingRenewalPaused;
+
+  /// No description provided for @billingRenewalExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get billingRenewalExpired;
+
+  /// No description provided for @billingRenewalRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded'**
+  String get billingRenewalRefunded;
+
+  /// No description provided for @billingRestoreAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available in this sandbox release'**
+  String get billingRestoreAvailable;
 
   /// No description provided for @billingRestoreUnavailable.
   ///
@@ -737,6 +815,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Always available'**
   String get billingExportDeleteAlwaysAvailable;
+
+  /// No description provided for @billingLastValidatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last validated'**
+  String get billingLastValidatedLabel;
 
   /// No description provided for @billingFeatureGatesTitle.
   ///
@@ -785,6 +869,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quota exhausted, local fallback stays available'**
   String get billingGateQuotaExhausted;
+
+  /// No description provided for @billingCatalogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sandbox catalog'**
+  String get billingCatalogTitle;
+
+  /// No description provided for @billingCatalogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No Google Play sandbox products are available on this device right now.'**
+  String get billingCatalogEmpty;
+
+  /// No description provided for @billingSandboxInternalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Sandbox purchases are for internal Android testing only. Export and delete stay available regardless of plan state.'**
+  String get billingSandboxInternalOnly;
+
+  /// No description provided for @billingPurchaseSandbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Start sandbox purchase'**
+  String get billingPurchaseSandbox;
+
+  /// No description provided for @billingRestoreNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore sandbox purchases'**
+  String get billingRestoreNow;
 
   /// No description provided for @billingDecisionOpen.
   ///
