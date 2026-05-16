@@ -18,6 +18,7 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
@@ -179,6 +180,14 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> saveAnalyticsEvents(List<AnalyticsEvent> events) =>
       _run((store) => store.saveAnalyticsEvents(events));
+
+  @override
+  Future<Entitlement> loadEntitlement() =>
+      _run((store) => store.loadEntitlement());
+
+  @override
+  Future<void> saveEntitlement(Entitlement entitlement) =>
+      _run((store) => store.saveEntitlement(entitlement));
 
   @override
   Future<List<GoTask>> loadTasks() => _run((store) => store.loadTasks());

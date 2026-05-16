@@ -20,6 +20,7 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
@@ -51,6 +52,7 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _lifeGraphRelationsKey = 'golife.lifegraph_relations';
   static const _privacyAuditEntriesKey = 'golife.privacy_audit_entries';
   static const _analyticsEventsKey = 'golife.analytics_events';
+  static const _entitlementKey = 'golife.entitlement_state';
   static const _tasksKey = 'golife.tasks';
   static const _habitsKey = 'golife.habits';
   static const _expensesKey = 'golife.expenses';
@@ -308,6 +310,24 @@ class SharedPrefsLocalStore implements LocalStore {
       _analyticsEventsKey,
       events.map((item) => item.toJson()).toList(growable: false),
     );
+  }
+
+  @override
+  Future<Entitlement> loadEntitlement() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawJson = prefs.getString(_entitlementKey);
+    if (rawJson == null || rawJson.isEmpty) {
+      return Entitlement.disabledSafeDefault();
+    }
+    return Entitlement.fromJson(
+      Map<String, dynamic>.from(jsonDecode(rawJson) as Map),
+    );
+  }
+
+  @override
+  Future<void> saveEntitlement(Entitlement entitlement) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_entitlementKey, jsonEncode(entitlement.toJson()));
   }
 
   @override
@@ -727,6 +747,7 @@ class SharedPrefsLocalStore implements LocalStore {
     await prefs.remove(_lifeGraphRelationsKey);
     await prefs.remove(_privacyAuditEntriesKey);
     await prefs.remove(_analyticsEventsKey);
+    await prefs.remove(_entitlementKey);
     await prefs.remove(_tasksKey);
     await prefs.remove(_habitsKey);
     await prefs.remove(_expensesKey);

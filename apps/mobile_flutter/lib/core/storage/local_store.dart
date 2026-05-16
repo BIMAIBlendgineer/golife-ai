@@ -16,6 +16,7 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
@@ -83,6 +84,10 @@ abstract class LocalStore {
   Future<List<AnalyticsEvent>> loadAnalyticsEvents() async =>
       const <AnalyticsEvent>[];
   Future<void> saveAnalyticsEvents(List<AnalyticsEvent> events) async {}
+
+  Future<Entitlement> loadEntitlement() async =>
+      Entitlement.disabledSafeDefault();
+  Future<void> saveEntitlement(Entitlement entitlement) async {}
 
   Future<List<GoTask>> loadTasks() async => const <GoTask>[];
   Future<List<Habit>> loadHabits() async => const <Habit>[];
