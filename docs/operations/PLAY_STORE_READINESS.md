@@ -4,6 +4,17 @@ Date checked: `2026-05-08`
 Branch: `release/play-store-readiness`
 Scope: Google Play publication gate for `apps/mobile_flutter`
 
+## Update on 2026-05-16
+
+Repo state has moved since the original audit:
+
+- repo-hosted public privacy policy, terms, and support pages now exist
+- the Privacy screen now exposes public legal links in-app
+- `flutter build appbundle --debug` now succeeds locally
+- Android runner QA is still blocked by missing device/emulator evidence
+- screenshot capture and Play Console declarations remain manual closeout items
+- billing remains disabled in the current runtime baseline
+
 ## Decision
 
 Current decision: `blocked`

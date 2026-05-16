@@ -4,6 +4,9 @@
     "README_START_HERE.md",
     "docs/marketing/**/*.md",
     "docs/product/STORE_METADATA.md",
+    "docs/legal/**/*.md",
+    "docs/operations/STORE_SUBMISSION_PACKET.md",
+    "docs/operations/STORE_SCREENSHOT_CHECKLIST.md",
     "apps/mobile_flutter/lib/l10n/app_en.arb",
     "apps/mobile_flutter/lib/l10n/app_es.arb",
     "apps/mobile_flutter/lib/core/i18n/app_localized_values.dart"

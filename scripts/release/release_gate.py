@@ -14,6 +14,7 @@ REQUIRED_ARTIFACT_KEYS = [
     "deviceQa",
     "billing",
     "privacy",
+    "legal",
     "storeAssets",
     "mockDisabled",
     "readyEndpoint",
@@ -76,6 +77,16 @@ def _run_store_copy_lint(repo_root: Path) -> tuple[bool, dict]:
     return completed.returncode == 0, payload
 
 
+def _artifact_doc_exists(repo_root: Path, raw_path: str | None) -> bool:
+    if not raw_path:
+        return False
+    return (repo_root / raw_path).resolve().exists()
+
+
+def _artifact_status_is_blocking(section: dict) -> bool:
+    return section.get("status") == "fail"
+
+
 def _render_markdown(report: dict[str, object]) -> str:
     lines = [
         f"## Release Gate: {report['status']}",
@@ -98,6 +109,31 @@ def main() -> int:
     support_runbook = repo_root / "docs/operations/COMMERCIAL_SUPPORT_RUNBOOK.md"
     data_map = repo_root / "docs/compliance/DATA_MAP.md"
     store_lint_ok, store_lint_report = _run_store_copy_lint(repo_root)
+    device_qa = artifact.get("deviceQa", {})
+    legal = artifact.get("legal", {})
+    store_assets = artifact.get("storeAssets", {})
+
+    legal_doc_paths = [
+        legal.get("privacyPolicyDocument"),
+        legal.get("termsDocument"),
+        legal.get("supportDocument"),
+    ]
+    legal_docs_ok = all(_artifact_doc_exists(repo_root, path) for path in legal_doc_paths)
+    legal_urls_ok = all(
+        str(legal.get(key, "")).startswith("https://")
+        for key in ("privacyPolicyUrl", "termsUrl", "supportUrl")
+    )
+
+    device_qa_doc = str(device_qa.get("checklist", ""))
+    device_qa_ok = _artifact_doc_exists(repo_root, device_qa_doc) and not _artifact_status_is_blocking(device_qa)
+
+    store_packet_doc = str(store_assets.get("packetDocument", ""))
+    screenshot_doc = str(store_assets.get("screenshotChecklist", ""))
+    store_assets_ok = (
+        _artifact_doc_exists(repo_root, store_packet_doc)
+        and _artifact_doc_exists(repo_root, screenshot_doc)
+        and not _artifact_status_is_blocking(store_assets)
+    )
 
     checks = {
         "artifact": {
@@ -123,6 +159,18 @@ def main() -> int:
         "privacy_data_map": {
             "status": _status(data_map.exists()),
             "message": data_map.relative_to(repo_root).as_posix(),
+        },
+        "device_qa": {
+            "status": _status(device_qa_ok),
+            "message": f"{device_qa.get('status', 'missing')} - {device_qa_doc}",
+        },
+        "legal": {
+            "status": _status(legal_docs_ok and legal_urls_ok),
+            "message": legal.get("privacyPolicyDocument", ""),
+        },
+        "store_assets": {
+            "status": _status(store_assets_ok),
+            "message": f"{store_assets.get('status', 'missing')} - {store_packet_doc}",
         },
         "mock_disabled": {
             "status": artifact.get("mockDisabled", {}).get("status", "fail"),

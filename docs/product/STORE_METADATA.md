@@ -50,12 +50,14 @@
 
 ## Support Metadata
 
-- Support email: `support@golife.local`
-- Privacy email: `privacy@golife.local`
-- Operations owner: `ops@golife.local`
+- Public support URL: `https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/SUPPORT.md`
+- Public privacy policy URL: `https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/PRIVACY_POLICY.md`
+- Public terms URL: `https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/TERMS_OF_SERVICE.md`
+- Store operator contact email: configure outside the repo before submission
 
 ## Visual Notes
 
 - Tone: grounded, warm, operational
 - Avoid generic AI-assistant language
 - Highlight local-first and privacy controls early
+- Release locale scope: `en`, `es`
