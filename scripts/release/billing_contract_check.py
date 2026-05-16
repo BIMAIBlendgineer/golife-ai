@@ -35,6 +35,9 @@ def main() -> int:
     decision_document = str(billing.get("decisionDocument", "")).strip()
     restore_purchases = billing.get("restorePurchases")
     renewal_state = billing.get("renewalState")
+    decision_document_path = (
+        (repo_root / decision_document).resolve() if decision_document else None
+    )
 
     passed = True
     reasons: list[str] = []
@@ -46,6 +49,13 @@ def main() -> int:
     if status in {"disabled", "pending"} and not decision_document:
         passed = False
         reasons.append("billing is not enabled but no decisionDocument was provided")
+    if (
+        status in {"disabled", "pending"}
+        and decision_document_path is not None
+        and not decision_document_path.exists()
+    ):
+        passed = False
+        reasons.append("billing decisionDocument does not exist")
 
     if status == "enabled":
         if restore_purchases is not True:
@@ -60,6 +70,11 @@ def main() -> int:
         "artifact": artifact_path.relative_to(repo_root).as_posix(),
         "billing_status": status,
         "decision_document": decision_document or None,
+        "decision_document_exists": (
+            decision_document_path.exists()
+            if decision_document_path is not None
+            else False
+        ),
         "reasons": reasons,
     }
 

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/domains/privacy/evidence_item.dart';
+import 'package:golife_flutter/domains/privacy/privacy_job.dart';
 
 void main() {
   test('parses evidence item contract fields', () {
@@ -18,5 +19,21 @@ void main() {
     expect(item.privacyClass, EvidencePrivacyClass.aiAllowed);
     expect(item.allowedForAi, isTrue);
     expect(item.hash, 'abc123');
+  });
+
+  test('parses privacy job trace fields', () {
+    final job = PrivacyJob.fromJson({
+      'job_id': 'privacy-job-1',
+      'kind': 'export',
+      'status': 'completed',
+      'audit_ref': 'audit-123',
+      'trace': {
+        'sourceState': 'local',
+      },
+    });
+
+    expect(job.jobId, 'privacy-job-1');
+    expect(job.auditRef, 'audit-123');
+    expect(job.trace['sourceState'], 'local');
   });
 }

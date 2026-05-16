@@ -202,7 +202,7 @@ class MissionPlanDto {
             (suggestion) => suggestion.copyWith(
               trace: <String, Object?>{
                 ...suggestion.trace,
-                ...extraTrace,
+                ...mergedTrace,
               },
             ),
           )
