@@ -1,0 +1,41 @@
+{
+  "include_globs": [
+    "README.md",
+    "README_START_HERE.md",
+    "docs/marketing/**/*.md",
+    "docs/product/STORE_METADATA.md",
+    "apps/mobile_flutter/lib/l10n/app_en.arb",
+    "apps/mobile_flutter/lib/l10n/app_es.arb",
+    "apps/mobile_flutter/lib/core/i18n/app_localized_values.dart"
+  ],
+  "exclude_globs": [
+    "**/test/**",
+    "**/tests/**"
+  ],
+  "banned_phrases": [
+    "therapy",
+    "medical advice",
+    "diagnosis",
+    "financial advice",
+    "legal advice",
+    "enterprise-ready",
+    "bank automation",
+    "calendar automation suite"
+  ],
+  "allow_regexes": [
+    "(?i)\\b(no|not|without|sin)\\b.{0,40}\\btherapy\\b",
+    "(?i)\\b(no|not|without|sin)\\b.{0,40}\\bmedical advice\\b",
+    "(?i)\\b(no|not|without|sin)\\b.{0,40}\\blegal advice\\b",
+    "(?i)\\b(no|not|without|sin)\\b.{0,40}\\bfinancial advice\\b",
+    "(?i)\\bdoes not diagnose\\b",
+    "(?i)\\bno diagnosis\\b",
+    "(?i)\\bnot enterprise-ready\\b",
+    "(?i)\\bbefore any enterprise-ready claim\\b",
+    "(?i)\\bno enterprise-ready claim\\b",
+    "(?i)\\bdo not claim\\b",
+    "(?i)\\bdo not market\\b.{0,80}\\b(advice|diagnosis|therapy|enterprise-ready)\\b",
+    "(?i)\\bdo not\\b.{0,80}\\bregulated financial advice\\b",
+    "(?i)\\bmust not\\b.{0,40}\\b(advice|diagnosis|therapy|enterprise-ready)\\b",
+    "(?i)\\bwithout turning into therapy\\b"
+  ]
+}

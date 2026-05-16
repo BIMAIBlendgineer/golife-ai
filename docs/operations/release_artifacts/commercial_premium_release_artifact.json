@@ -1,0 +1,71 @@
+{
+  "releaseVersion": "commercial-premium-draft-2026-05-16",
+  "generatedAt": "2026-05-16T00:00:00Z",
+  "scope": {
+    "language": [
+      "en",
+      "es"
+    ],
+    "mode": "local-first premium",
+    "claimsBounded": true,
+    "metadataOnlyAdmin": true,
+    "notes": [
+      "No medical, legal, financial, therapy, enterprise, banking, or calendar-suite claims.",
+      "Source state and fallback visibility are part of the contract surface."
+    ]
+  },
+  "ci": {
+    "status": "pending",
+    "requiredJobs": [
+      "ai-gateway-test",
+      "web-backend-test",
+      "mobile-flutter-analyze",
+      "mobile-flutter-test",
+      "admin-lint",
+      "admin-typecheck",
+      "admin-build",
+      "gitleaks",
+      "billing-contract-test",
+      "store-copy-lint",
+      "release-gate"
+    ]
+  },
+  "deviceQa": {
+    "status": "pending",
+    "checklist": "docs/operations/FINAL_RELEASE_READINESS_CHECKLIST.md"
+  },
+  "billing": {
+    "status": "disabled",
+    "decisionDocument": "docs/golife_ai_commercialization_implementation_pack/07_SPEC_BILLING_IMPLEMENTATION.md",
+    "restorePurchases": false,
+    "renewalState": "disabled"
+  },
+  "privacy": {
+    "status": "pass",
+    "dataMapDocument": "docs/compliance/DATA_MAP.md",
+    "exportDeleteAlwaysAvailable": true,
+    "metadataOnlyAdmin": true
+  },
+  "storeAssets": {
+    "status": "pending",
+    "lintConfig": "scripts/release/store_copy_lint_config.json",
+    "languageScope": [
+      "en",
+      "es"
+    ]
+  },
+  "mockDisabled": {
+    "status": "pass",
+    "document": "services/ai_gateway/app/settings.py"
+  },
+  "readyEndpoint": {
+    "status": "pass",
+    "path": "/ready",
+    "document": "services/ai_gateway/app/main.py"
+  },
+  "gitleaks": {
+    "status": "pass",
+    "command": "gitleaks git --redact",
+    "result": "no leaks found"
+  }
+}
