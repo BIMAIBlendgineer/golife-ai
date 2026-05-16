@@ -1,7 +1,78 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/ai_client/dto/ai_gateway_dto.dart';
+import 'package:golife_flutter/domains/missions/mission_set.dart';
 
 void main() {
+  group('Mission DTOs', () {
+    test('parses mission set contract fields from gateway JSON', () {
+      final plan = MissionPlanDto.fromGatewayJson({
+        'mission_set_id': 'mission-set-2026-05-16',
+        'date': '2026-05-16',
+        'source_state': 'live',
+        'fallback_used': false,
+        'policy_version': 'policy_v1',
+        'ranking_version': 'mission_ranker_v1',
+        'suggestions': [
+          {
+            'suggestion_id': 'mission-1',
+            'title': 'Close one task block',
+            'domain_targets': ['task'],
+            'recommendation_type': 'mission',
+            'body': 'Finish one visible task block.',
+            'evidence': [
+              {'claim': 'Task evidence exists.'},
+            ],
+            'confidence': 0.81,
+            'uncertainty': 'medium',
+            'requires_confirmation': true,
+          },
+        ],
+        'trace': {
+          'active_provider': 'openrouter',
+        },
+      });
+
+      expect(plan.missionSetId, 'mission-set-2026-05-16');
+      expect(plan.date, '2026-05-16');
+      expect(plan.sourceState, MissionSourceState.live);
+      expect(plan.fallbackUsed, isFalse);
+      expect(plan.policyVersion, 'policy_v1');
+      expect(plan.rankingVersion, 'mission_ranker_v1');
+      expect(plan.trace['sourceState'], 'live');
+    });
+
+    test('mergeTrace upgrades plan to client fallback source state', () {
+      final plan = MissionPlanDto.fromGatewayJson({
+        'mission_set_id': 'mission-set-2026-05-16',
+        'date': '2026-05-16',
+        'source_state': 'live',
+        'suggestions': [
+          {
+            'suggestion_id': 'mission-1',
+            'title': 'Close one task block',
+            'domain_targets': ['task'],
+            'recommendation_type': 'mission',
+            'body': 'Finish one visible task block.',
+            'evidence': [
+              {'claim': 'Task evidence exists.'},
+            ],
+            'confidence': 0.81,
+            'uncertainty': 'medium',
+            'requires_confirmation': true,
+          },
+        ],
+        'trace': const {},
+      }).mergeTrace(const {
+        'clientFallback': true,
+        'fallbackReason': 'no_connection',
+      });
+
+      expect(plan.sourceState, MissionSourceState.fallback);
+      expect(plan.fallbackUsed, isTrue);
+      expect(plan.trace['fallbackReason'], 'no_connection');
+    });
+  });
+
   group('MindFlow DTOs', () {
     test('parses MindFlow parse responses from gateway JSON', () {
       final response = MindFlowParseResponseDto.fromGatewayJson({

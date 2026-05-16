@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../domains/missions/mission_feedback.dart';
+import '../../domains/missions/mission_set.dart';
 import '../lifegraph/life_event.dart';
 import '../privacy/privacy_models.dart';
 import 'dto/ai_gateway_dto.dart';
@@ -64,7 +65,8 @@ abstract class AiGatewayClient {
     List<Map<String, Object?>> pantryContext = const <Map<String, Object?>>[],
     List<Map<String, Object?>> financeContext = const <Map<String, Object?>>[],
     List<Map<String, Object?>> wardrobeContext = const <Map<String, Object?>>[],
-    List<Map<String, Object?>> homememoryContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> homememoryContext =
+        const <Map<String, Object?>>[],
   });
 
   Future<ProductEvidenceCardDto?> fetchProductEvidence({
@@ -94,6 +96,12 @@ class MockAiGatewayClient extends AiGatewayClient {
 
     if (allowedDomains.isEmpty) {
       return MissionPlanDto(
+        missionSetId: 'mission-set-local-empty',
+        date: _todayIsoDate(),
+        sourceState: MissionSourceState.local,
+        fallbackUsed: true,
+        policyVersion: 'policy_v1',
+        rankingVersion: 'mission_ranker_v1',
         suggestions: [
           MissionSuggestionDto(
             id: 'mission-paused',
@@ -116,6 +124,10 @@ class MockAiGatewayClient extends AiGatewayClient {
         trace: const {
           'mock': true,
           'allowedDomains': <String>[],
+          'sourceState': 'local',
+          'fallbackUsed': true,
+          'policyVersion': 'policy_v1',
+          'rankingVersion': 'mission_ranker_v1',
         },
       );
     }
@@ -367,7 +379,8 @@ class MockAiGatewayClient extends AiGatewayClient {
     List<Map<String, Object?>> pantryContext = const <Map<String, Object?>>[],
     List<Map<String, Object?>> financeContext = const <Map<String, Object?>>[],
     List<Map<String, Object?>> wardrobeContext = const <Map<String, Object?>>[],
-    List<Map<String, Object?>> homememoryContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> homememoryContext =
+        const <Map<String, Object?>>[],
   }) async {
     return _localShoppingPlan(
       privacySettings: privacySettings,
@@ -859,7 +872,8 @@ class HttpAiGatewayClient extends AiGatewayClient {
     List<Map<String, Object?>> pantryContext = const <Map<String, Object?>>[],
     List<Map<String, Object?>> financeContext = const <Map<String, Object?>>[],
     List<Map<String, Object?>> wardrobeContext = const <Map<String, Object?>>[],
-    List<Map<String, Object?>> homememoryContext = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> homememoryContext =
+        const <Map<String, Object?>>[],
   }) async {
     final payload = {
       'user_id': userId,
@@ -1155,18 +1169,36 @@ MissionPlanDto _plan({
   required List<LifeEvent> lifeEvents,
   required List<MissionSuggestionDto> suggestions,
 }) {
+  final date = _todayIsoDate();
   final trace = <String, Object?>{
     'mock': true,
     'allowedDomains': allowedDomains,
     'eventCount': lifeEvents.length,
     'planSize': suggestions.length,
+    'sourceState': 'local',
+    'fallbackUsed': true,
+    'policyVersion': 'policy_v1',
+    'rankingVersion': 'mission_ranker_v1',
   };
   return MissionPlanDto(
+    missionSetId: 'mission-set-local-$date',
+    date: date,
+    sourceState: MissionSourceState.local,
+    fallbackUsed: true,
+    policyVersion: 'policy_v1',
+    rankingVersion: 'mission_ranker_v1',
     suggestions: suggestions
         .map((suggestion) => suggestion.copyWith(trace: trace))
         .toList(growable: false),
     trace: trace,
   );
+}
+
+String _todayIsoDate() {
+  final now = DateTime.now().toUtc();
+  return '${now.year.toString().padLeft(4, '0')}-'
+      '${now.month.toString().padLeft(2, '0')}-'
+      '${now.day.toString().padLeft(2, '0')}';
 }
 
 MissionSuggestionDto _mission({
@@ -1388,7 +1420,8 @@ MindFlowParseResponseDto _localMindFlowParse({
         trace: const {'mock': true},
       );
       return MentalLoadItemDto(
-        itemId: 'mindflow-${entry.key}-${DateTime.now().microsecondsSinceEpoch}',
+        itemId:
+            'mindflow-${entry.key}-${DateTime.now().microsecondsSinceEpoch}',
         userId: 'local-user',
         sourceEventId: null,
         type: _mentalLoadTypeForDomain(classification.domain),
@@ -1403,8 +1436,9 @@ MindFlowParseResponseDto _localMindFlowParse({
         amountHint: null,
         currencyHint: null,
         evidenceRefs: <String>[classification.eventType],
-        privacyLevel:
-            privacySettings.permissionForWireDomain(classification.domain).storageKey,
+        privacyLevel: privacySettings
+            .permissionForWireDomain(classification.domain)
+            .storageKey,
         requiresConfirmation: true,
         createdAtIso: nowIso,
         updatedAtIso: nowIso,
@@ -1438,7 +1472,8 @@ DecisionPlanDto _localDecisionPlan({
   ].where((domain) => !allowedDomains.contains(domain)).toList(growable: false);
   final nowIso = DateTime.now().toUtc().toIso8601String();
   final normalizedItems = mentalLoadItems
-      .map((item) => MentalLoadItemDto.fromJson(Map<String, dynamic>.from(item)))
+      .map(
+          (item) => MentalLoadItemDto.fromJson(Map<String, dynamic>.from(item)))
       .toList(growable: false);
   final selected = normalizedItems.take(3).toList(growable: false);
   return DecisionPlanDto(
@@ -1461,7 +1496,8 @@ DecisionPlanDto _localDecisionPlan({
         sourceItems: <String>[item.itemId],
         evidence: evidence,
         confidence: item.confidence,
-        uncertainty: 'Local fallback generated this decision from on-device context only.',
+        uncertainty:
+            'Local fallback generated this decision from on-device context only.',
         privacySummary: PrivacySummaryDto(
           aiEnabled: privacySettings.aiEnabled,
           sentEventCount: allowedDomains.length,
