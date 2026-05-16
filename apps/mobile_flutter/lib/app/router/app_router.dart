@@ -6,6 +6,7 @@ import '../../features/copilot/copilot_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/domains/domain_screens.dart';
 import '../../features/homememory/homememory_screen.dart';
+import '../../features/lifegraph/lifegraph_screen.dart';
 import '../../features/mindflow/mindflow_screens.dart';
 import '../../features/settings/privacy_screen.dart';
 import '../shell/app_shell_scaffold.dart';
@@ -31,6 +32,11 @@ GoRouter buildAppRouter(GoLifeController controller) {
           GoRoute(
             path: '/capture',
             builder: (context, state) => CaptureScreen(controller: controller),
+          ),
+          GoRoute(
+            path: '/lifegraph',
+            builder: (context, state) =>
+                LifeGraphScreen(controller: controller),
           ),
           GoRoute(
             path: '/week',

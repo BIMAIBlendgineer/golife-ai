@@ -371,6 +371,8 @@ class AppDestination {
         return l10n.navDashboard;
       case AppDestinationKind.capture:
         return l10n.navCapture;
+      case AppDestinationKind.lifegraph:
+        return l10n.navLifeGraph;
       case AppDestinationKind.week:
         return l10n.navWeek;
       case AppDestinationKind.tasks:
@@ -400,6 +402,7 @@ class AppDestination {
 enum AppDestinationKind {
   dashboard,
   capture,
+  lifegraph,
   week,
   tasks,
   habits,
@@ -422,6 +425,10 @@ const appDestinations = [
       kind: AppDestinationKind.capture,
       path: '/capture',
       icon: Icons.add_circle_outline_rounded),
+  AppDestination(
+      kind: AppDestinationKind.lifegraph,
+      path: '/lifegraph',
+      icon: Icons.timeline_rounded),
   AppDestination(
       kind: AppDestinationKind.week,
       path: '/week',
