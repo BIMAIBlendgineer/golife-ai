@@ -4,6 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, model_validator
 
 PrivacyLevel = Literal["local_only", "sync_allowed", "ai_allowed"]
+SourceState = Literal["live", "fallback", "offline", "local", "degraded"]
 Domain = Literal[
     "task",
     "habit",
@@ -35,6 +36,11 @@ FeedbackRejectionCategory = Literal[
     "unknown",
 ]
 EffortFeedback = Literal["low", "balanced", "high", "unknown"]
+EntitlementPlan = Literal["free", "premium", "pro"]
+BillingProvider = Literal["disabled", "google_play", "app_store", "stripe", "manual"]
+RenewalState = Literal["disabled", "trial", "active", "grace_period", "cancelled", "refunded", "expired"]
+PrivacyJobKind = Literal["export", "delete"]
+PrivacyJobStatus = Literal["queued", "running", "completed", "failed"]
 
 
 class PrivacySettings(BaseModel):
@@ -115,7 +121,46 @@ class SuggestionRequest(BaseModel):
         return self
 
 
+class EvidenceItem(BaseModel):
+    evidence_id: str = Field(min_length=1)
+    source_type: str = Field(min_length=1)
+    local_payload_ref: str | None = None
+    privacy_class: Literal["local_only", "private", "ai_allowed", "blocked"] = "local_only"
+    allowed_for_ai: bool = False
+    created_at: datetime
+    hash: str = Field(min_length=1)
+
+
+class EntitlementQuota(BaseModel):
+    daily_mission_refreshes: int = Field(default=0, ge=0)
+    ai_assisted_captures: int = Field(default=0, ge=0)
+    export_bundles: int = Field(default=0, ge=0)
+
+
+class EntitlementContract(BaseModel):
+    plan: EntitlementPlan = "free"
+    quota: EntitlementQuota = Field(default_factory=EntitlementQuota)
+    trial_status: str = Field(default="not_started", min_length=1)
+    billing_provider: BillingProvider = "disabled"
+    renewal_state: RenewalState = "disabled"
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
+class PrivacyJob(BaseModel):
+    job_id: str = Field(min_length=1)
+    kind: PrivacyJobKind
+    status: PrivacyJobStatus
+    audit_ref: str = Field(min_length=1)
+    trace: dict[str, Any] = Field(default_factory=dict)
+
+
 class SuggestionResponse(BaseModel):
+    mission_set_id: str = Field(min_length=1)
+    date: str = Field(min_length=1)
+    source_state: SourceState = "local"
+    fallback_used: bool = False
+    policy_version: str = Field(min_length=1)
+    ranking_version: str = Field(min_length=1)
     suggestions: list[AISuggestion] = Field(default_factory=list)
     trace: dict[str, Any] = Field(default_factory=dict)
 
