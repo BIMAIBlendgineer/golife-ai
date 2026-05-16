@@ -320,5 +320,11 @@ void main() {
       find.textContaining('mission_ranker_v1', findRichText: true),
       findsWidgets,
     );
+    expect(
+      controller.analyticsEvents.any(
+        (event) => event.eventName == 'mission_viewed',
+      ),
+      isTrue,
+    );
   });
 }

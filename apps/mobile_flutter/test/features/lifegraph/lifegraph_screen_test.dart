@@ -64,6 +64,12 @@ void main() {
     expect(find.text('LifeGraph'), findsWidgets);
     expect(find.text('Search and filters'), findsOneWidget);
     expect(find.text('Timeline'), findsOneWidget);
+    expect(
+      controller.analyticsEvents.any(
+        (event) => event.eventName == 'lifegraph_viewed',
+      ),
+      isTrue,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -93,6 +99,7 @@ void main() {
       find.byKey(const ValueKey<String>('lifegraph-search-field')),
       'coffee',
     );
+    await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
 
     expect(find.text('Coffee and sandwich purchase recorded'), findsOneWidget);
@@ -102,5 +109,25 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('Changed at:'), findsOneWidget);
+    expect(
+      controller.analyticsEvents.any(
+        (event) => event.eventName == 'lifegraph_search_used',
+      ),
+      isTrue,
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Money').first,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Money').first);
+    await tester.pumpAndSettle();
+
+    final filteredEvents = controller.analyticsEvents
+        .where((event) => event.eventName == 'lifegraph_filtered')
+        .toList(growable: false);
+    expect(filteredEvents, isNotEmpty);
+    expect(filteredEvents.first.metadata['domain_filter'], 'finance');
   });
 }
