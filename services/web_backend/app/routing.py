@@ -5,6 +5,7 @@ from typing import Any
 
 from app.schemas import (
     AIInvocationRecord,
+    MobileBillingConfig,
     MobileRuntimeConfig,
     ModelCatalogEntry,
     ModelSelectionSnapshot,
@@ -151,11 +152,12 @@ def build_mobile_runtime_config(
     ttl_seconds: int,
     feature_flags: dict[str, bool],
     ai_status: dict[str, Any],
+    billing: MobileBillingConfig,
     now: datetime | None = None,
 ) -> MobileRuntimeConfig:
     generated_at = now or utcnow()
     return MobileRuntimeConfig(
-        schema_version=1,
+        schema_version=2,
         ttl_seconds=ttl_seconds,
         gateway_base_url=gateway_base_url,
         feature_flags=feature_flags,
@@ -166,6 +168,7 @@ def build_mobile_runtime_config(
             "runtime_config_stale": "Using the last trusted server configuration until a fresh one is available.",
         },
         ai_status=ai_status,
+        billing=billing,
         generated_at=generated_at,
     )
 

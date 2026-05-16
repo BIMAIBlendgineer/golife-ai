@@ -8,6 +8,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.crypto import SecretBox
+from app.google_play_billing import GooglePlayBillingValidator
 from app.openrouter_client import fetch_openrouter_model_catalog
 from app.repository import OperationalRepository
 from app.routing import (
@@ -39,6 +40,10 @@ from app.schemas import (
     MindFlowSummary,
     MissionAuditUpsert,
     MobileRuntimeConfig,
+    MobileBillingCatalogEntry,
+    MobileBillingConfig,
+    MobileBillingValidationRequest,
+    MobileBillingValidationResponse,
     ModelCatalogEntry,
     ModelSelectionSnapshot,
     ModelSettingsSnapshot,
@@ -95,18 +100,21 @@ def create_app(
         seed_demo_data=resolved_settings.seed_demo_data,
     )
     secret_box = SecretBox(resolved_settings.openrouter_keys_master_key)
+    billing_validator = GooglePlayBillingValidator(settings=resolved_settings)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         try:
             yield
         finally:
+            await billing_validator.aclose()
             resolved_repository.close()
 
     app = FastAPI(title="GoLife Web Backend", version="0.2.0", lifespan=lifespan)
     app.state.settings = resolved_settings
     app.state.repository = resolved_repository
     app.state.secret_box = secret_box
+    app.state.google_play_billing_validator = billing_validator
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved_settings.cors_origins,
@@ -272,11 +280,66 @@ def create_app(
                 {snapshot.capability for snapshot in snapshots}
             ),
         }
+        billing_mode = resolved_settings.mobile_billing_mode
+        if billing_mode in {"google_play_sandbox", "google_play_live"}:
+            decision_document_url = (
+                "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/"
+                "docs/operations/BILLING_SANDBOX_DECISION.md"
+            )
+            billing_config = MobileBillingConfig(
+                enabled=True,
+                provider="google_play",
+                mode=billing_mode,
+                sandbox_only=(billing_mode == "google_play_sandbox"),
+                production_purchases_enabled=False,
+                restore_purchases=True,
+                package_name=resolved_settings.mobile_google_play_package_name,
+                validation_path="/public/mobile/billing/google-play/validate",
+                decision_document_url=decision_document_url,
+                public_message=(
+                    "Google Play Billing sandbox is available for internal Android testing. "
+                    "Premium access only activates after backend verification succeeds."
+                ),
+                catalog=[
+                    MobileBillingCatalogEntry(
+                        product_id=resolved_settings.mobile_google_play_premium_product_id,
+                        plan="premium",
+                        title="GoLife Premium Sandbox",
+                        description="Internal Google Play sandbox monthly premium plan.",
+                    ),
+                    MobileBillingCatalogEntry(
+                        product_id=resolved_settings.mobile_google_play_pro_product_id,
+                        plan="pro",
+                        title="GoLife Pro Sandbox",
+                        description="Internal Google Play sandbox monthly pro plan.",
+                    ),
+                ],
+            )
+        else:
+            billing_config = MobileBillingConfig(
+                enabled=False,
+                provider="disabled",
+                mode="disabled",
+                sandbox_only=False,
+                production_purchases_enabled=False,
+                restore_purchases=False,
+                package_name=None,
+                validation_path="/public/mobile/billing/google-play/validate",
+                decision_document_url=(
+                    "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/"
+                    "docs/operations/BILLING_DISABLED_DECISION.md"
+                ),
+                public_message=(
+                    "Billing remains disabled in this release. Export and delete stay available."
+                ),
+                catalog=[],
+            )
         return build_mobile_runtime_config(
             gateway_base_url=resolved_settings.mobile_gateway_base_url,
             ttl_seconds=resolved_settings.mobile_runtime_config_ttl_seconds,
             feature_flags=feature_flags_map(),
             ai_status=ai_status,
+            billing=billing_config,
         )
 
     @app.get("/health", response_model=AdminHealth)
@@ -286,6 +349,15 @@ def create_app(
     @app.get("/public/mobile/runtime-config", response_model=MobileRuntimeConfig)
     async def public_mobile_runtime_config() -> MobileRuntimeConfig:
         return build_runtime_config()
+
+    @app.post(
+        "/public/mobile/billing/google-play/validate",
+        response_model=MobileBillingValidationResponse,
+    )
+    async def public_mobile_billing_google_play_validate(
+        payload: MobileBillingValidationRequest,
+    ) -> MobileBillingValidationResponse:
+        return await billing_validator.validate(payload)
 
     @app.get("/admin/dashboard", response_model=DashboardMetrics)
     async def dashboard(_: None = Depends(require_admin)) -> DashboardMetrics:
