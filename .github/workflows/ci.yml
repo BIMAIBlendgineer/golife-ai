@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  ai-gateway:
+  ai-gateway-test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,7 +30,7 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
-  web-backend:
+  web-backend-test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -45,7 +45,7 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
-  admin-next:
+  admin-lint:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,12 +61,42 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+
+  admin-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/admin_next
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/admin_next/package-lock.json
+      - name: Install dependencies
+        run: npm ci
       - name: Typecheck
         run: npm run typecheck
+
+  admin-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/admin_next
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/admin_next/package-lock.json
+      - name: Install dependencies
+        run: npm ci
       - name: Build
         run: npm run build
 
-  flutter:
+  mobile-flutter-analyze:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -81,10 +111,24 @@ jobs:
         run: flutter pub get
       - name: Flutter analyze
         run: flutter analyze
+
+  mobile-flutter-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Flutter pub get
+        run: flutter pub get
       - name: Flutter test
         run: flutter test
 
-  secret-scan:
+  gitleaks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -167,3 +211,44 @@ jobs:
           done
       - name: Run load smoke
         run: python ../../scripts/performance/ai_gateway_load_smoke.py --base-url http://127.0.0.1:8000 --requests 60 --concurrency 10 --max-p95-ms 2000 --max-error-rate 0.0
+
+  store-copy-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run store copy lint
+        run: python scripts/release/store_copy_lint.py
+
+  billing-contract-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate billing contract state
+        run: python scripts/release/billing_contract_check.py
+
+  release-gate:
+    runs-on: ubuntu-latest
+    needs:
+      - ai-gateway-test
+      - web-backend-test
+      - mobile-flutter-analyze
+      - mobile-flutter-test
+      - admin-lint
+      - admin-typecheck
+      - admin-build
+      - gitleaks
+      - billing-contract-test
+      - store-copy-lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run release gate
+        run: python scripts/release/release_gate.py --format json
