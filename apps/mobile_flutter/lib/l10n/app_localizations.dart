@@ -672,6 +672,78 @@ abstract class AppLocalizations {
   /// **'Audit entries'**
   String get privacyMetricAuditEntries;
 
+  /// No description provided for @privacyLegalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Store and legal'**
+  String get privacyLegalTitle;
+
+  /// No description provided for @privacyLegalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Public privacy, terms, and support URLs for this release live here and are also referenced in the release artifact.'**
+  String get privacyLegalBody;
+
+  /// No description provided for @privacyLegalPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyLegalPolicyTitle;
+
+  /// No description provided for @privacyLegalPolicyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Public policy for local storage, AI permissions, analytics boundaries, export, and delete.'**
+  String get privacyLegalPolicyBody;
+
+  /// No description provided for @privacyLegalTermsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of service'**
+  String get privacyLegalTermsTitle;
+
+  /// No description provided for @privacyLegalTermsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Product scope, limits, fallback behavior, and the current billing-disabled baseline.'**
+  String get privacyLegalTermsBody;
+
+  /// No description provided for @privacyLegalSupportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get privacyLegalSupportTitle;
+
+  /// No description provided for @privacyLegalSupportBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Public support path for bugs, privacy issues, and store review questions.'**
+  String get privacyLegalSupportBody;
+
+  /// No description provided for @privacyLegalOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get privacyLegalOpen;
+
+  /// No description provided for @privacyLegalCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy URL'**
+  String get privacyLegalCopy;
+
+  /// No description provided for @privacyLegalCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Public URL copied.'**
+  String get privacyLegalCopied;
+
+  /// No description provided for @privacyLegalOpenFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the link. The URL was copied instead.'**
+  String get privacyLegalOpenFallback;
+
   /// No description provided for @lifeGraphOpenTimeline.
   ///
   /// In en, this message translates to:

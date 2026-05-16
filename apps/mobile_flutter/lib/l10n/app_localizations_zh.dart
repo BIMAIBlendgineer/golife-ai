@@ -291,6 +291,47 @@ class AppLocalizationsZh extends AppLocalizations {
   String get privacyMetricAuditEntries => 'Audit entries';
 
   @override
+  String get privacyLegalTitle => 'Store and legal';
+
+  @override
+  String get privacyLegalBody =>
+      'Public privacy, terms, and support URLs for this release live here and are also referenced in the release artifact.';
+
+  @override
+  String get privacyLegalPolicyTitle => 'Privacy policy';
+
+  @override
+  String get privacyLegalPolicyBody =>
+      'Public policy for local storage, AI permissions, analytics boundaries, export, and delete.';
+
+  @override
+  String get privacyLegalTermsTitle => 'Terms of service';
+
+  @override
+  String get privacyLegalTermsBody =>
+      'Product scope, limits, fallback behavior, and the current billing-disabled baseline.';
+
+  @override
+  String get privacyLegalSupportTitle => 'Support';
+
+  @override
+  String get privacyLegalSupportBody =>
+      'Public support path for bugs, privacy issues, and store review questions.';
+
+  @override
+  String get privacyLegalOpen => 'Open link';
+
+  @override
+  String get privacyLegalCopy => 'Copy URL';
+
+  @override
+  String get privacyLegalCopied => 'Public URL copied.';
+
+  @override
+  String get privacyLegalOpenFallback =>
+      'Could not open the link. The URL was copied instead.';
+
+  @override
   String get lifeGraphOpenTimeline => 'Open LifeGraph timeline';
 
   @override

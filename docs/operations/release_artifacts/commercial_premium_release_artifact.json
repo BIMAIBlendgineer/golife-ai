@@ -31,8 +31,12 @@
     ]
   },
   "deviceQa": {
-    "status": "pending",
-    "checklist": "docs/operations/FINAL_RELEASE_READINESS_CHECKLIST.md"
+    "status": "manual_closeout_required",
+    "checklist": "docs/operations/DEVICE_QA_CLOSEOUT.md",
+    "bundleBuildVerified": true,
+    "bundlePath": "apps/mobile_flutter/build/app/outputs/bundle/debug/app-debug.aab",
+    "androidDevicesDetected": 0,
+    "androidEmulatorsDetected": 0
   },
   "billing": {
     "status": "disabled",
@@ -46,13 +50,24 @@
     "exportDeleteAlwaysAvailable": true,
     "metadataOnlyAdmin": true
   },
+  "legal": {
+    "status": "pass",
+    "privacyPolicyDocument": "docs/legal/PRIVACY_POLICY.md",
+    "termsDocument": "docs/legal/TERMS_OF_SERVICE.md",
+    "supportDocument": "docs/legal/SUPPORT.md",
+    "privacyPolicyUrl": "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/PRIVACY_POLICY.md",
+    "termsUrl": "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/TERMS_OF_SERVICE.md",
+    "supportUrl": "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/SUPPORT.md"
+  },
   "storeAssets": {
-    "status": "pending",
+    "status": "manual_closeout_required",
     "lintConfig": "scripts/release/store_copy_lint_config.json",
-    "languageScope": [
-      "en",
-      "es"
-    ]
+    "languageScope": ["en", "es"],
+    "packetDocument": "docs/operations/STORE_SUBMISSION_PACKET.md",
+    "screenshotChecklist": "docs/operations/STORE_SCREENSHOT_CHECKLIST.md",
+    "privacyPolicyUrl": "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/PRIVACY_POLICY.md",
+    "termsUrl": "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/TERMS_OF_SERVICE.md",
+    "supportUrl": "https://github.com/BIMAIBlendgineer/golife-ai/blob/main/docs/legal/SUPPORT.md"
   },
   "mockDisabled": {
     "status": "pass",
