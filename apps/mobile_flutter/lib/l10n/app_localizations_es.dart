@@ -29,6 +29,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navCapture => 'Capturar';
 
   @override
+  String get navLifeGraph => 'LifeGraph';
+
+  @override
   String get navWeek => 'Semana';
 
   @override
@@ -296,6 +299,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get privacyMetricAuditEntries => 'Entradas de auditoria';
 
   @override
+  String get lifeGraphOpenTimeline => 'Abrir timeline de LifeGraph';
+
+  @override
   String get dataControls => 'Controles de datos';
 
   @override
@@ -374,6 +380,93 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get privacyAuditEmpty => 'Todavia no hay entradas de auditoria local.';
+
+  @override
+  String get lifeGraphTitle => 'LifeGraph';
+
+  @override
+  String get lifeGraphIntro =>
+      'Recorre la linea de tiempo local de eventos, inspecciona evidencias y relaciones enlazadas, y verifica como los cambios de privacidad afectan lo que el sistema puede usar.';
+
+  @override
+  String get lifeGraphMetricVisibleEvents => 'Eventos visibles';
+
+  @override
+  String get lifeGraphMetricEvidenceItems => 'Evidencias asociadas';
+
+  @override
+  String get lifeGraphMetricRelations => 'Relaciones asociadas';
+
+  @override
+  String get lifeGraphMetricAuditEntries => 'Entradas de auditoria asociadas';
+
+  @override
+  String get lifeGraphFiltersTitle => 'Busqueda y filtros';
+
+  @override
+  String get lifeGraphFiltersBody =>
+      'Filtra el grafo local por dominio, ventana de fecha, nivel de privacidad y texto del resumen.';
+
+  @override
+  String get lifeGraphSearchHint => 'Busca por resumen, dominio, tipo u origen';
+
+  @override
+  String get lifeGraphFilterDomainTitle => 'Dominio';
+
+  @override
+  String get lifeGraphFilterDateTitle => 'Fecha';
+
+  @override
+  String get lifeGraphFilterPrivacyTitle => 'Privacidad';
+
+  @override
+  String get lifeGraphFilterAll => 'Todo';
+
+  @override
+  String get lifeGraphFilterDate7d => '7d';
+
+  @override
+  String get lifeGraphFilterDate30d => '30d';
+
+  @override
+  String get lifeGraphFilterDate90d => '90d';
+
+  @override
+  String get lifeGraphTimelineTitle => 'Timeline';
+
+  @override
+  String get lifeGraphTimelineBody =>
+      'Los eventos se agrupan por dia para que puedas inspeccionar el grafo como una historia local navegable, no como un blob plano de export.';
+
+  @override
+  String get lifeGraphNoEvents =>
+      'No hay eventos que coincidan con los filtros actuales.';
+
+  @override
+  String lifeGraphDateGroupTitle(Object date, int count) {
+    return '$date | $count eventos';
+  }
+
+  @override
+  String get lifeGraphEvidenceTitle => 'Evidencia enlazada';
+
+  @override
+  String get lifeGraphEvidenceEmpty =>
+      'Este evento no tiene evidencia enlazada.';
+
+  @override
+  String get lifeGraphRelationsTitle => 'Relaciones enlazadas';
+
+  @override
+  String get lifeGraphRelationsEmpty =>
+      'Este evento no tiene relaciones enlazadas.';
+
+  @override
+  String get lifeGraphAuditNone =>
+      'Todavia no hay cambios de privacidad por evento registrados para este evento.';
+
+  @override
+  String get lifeGraphOpenPrivacyAudit => 'Abrir auditoria de privacidad';
 
   @override
   String get permissionLocal => 'Local';

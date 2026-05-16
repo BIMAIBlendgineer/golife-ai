@@ -150,6 +150,12 @@ abstract class AppLocalizations {
   /// **'Capture'**
   String get navCapture;
 
+  /// No description provided for @navLifeGraph.
+  ///
+  /// In en, this message translates to:
+  /// **'LifeGraph'**
+  String get navLifeGraph;
+
   /// No description provided for @navWeek.
   ///
   /// In en, this message translates to:
@@ -666,6 +672,12 @@ abstract class AppLocalizations {
   /// **'Audit entries'**
   String get privacyMetricAuditEntries;
 
+  /// No description provided for @lifeGraphOpenTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Open LifeGraph timeline'**
+  String get lifeGraphOpenTimeline;
+
   /// No description provided for @dataControls.
   ///
   /// In en, this message translates to:
@@ -803,6 +815,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No local privacy audit entries yet.'**
   String get privacyAuditEmpty;
+
+  /// No description provided for @lifeGraphTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'LifeGraph'**
+  String get lifeGraphTitle;
+
+  /// No description provided for @lifeGraphIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse the local event timeline, inspect linked evidence and relations, and verify how privacy changes affect what the system can use.'**
+  String get lifeGraphIntro;
+
+  /// No description provided for @lifeGraphMetricVisibleEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible events'**
+  String get lifeGraphMetricVisibleEvents;
+
+  /// No description provided for @lifeGraphMetricEvidenceItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched evidence'**
+  String get lifeGraphMetricEvidenceItems;
+
+  /// No description provided for @lifeGraphMetricRelations.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched relations'**
+  String get lifeGraphMetricRelations;
+
+  /// No description provided for @lifeGraphMetricAuditEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Matched audit entries'**
+  String get lifeGraphMetricAuditEntries;
+
+  /// No description provided for @lifeGraphFiltersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search and filters'**
+  String get lifeGraphFiltersTitle;
+
+  /// No description provided for @lifeGraphFiltersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter the local graph by domain, date window, privacy level, and summary text.'**
+  String get lifeGraphFiltersBody;
+
+  /// No description provided for @lifeGraphSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search summary, domain, type, or source'**
+  String get lifeGraphSearchHint;
+
+  /// No description provided for @lifeGraphFilterDomainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Domain'**
+  String get lifeGraphFilterDomainTitle;
+
+  /// No description provided for @lifeGraphFilterDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get lifeGraphFilterDateTitle;
+
+  /// No description provided for @lifeGraphFilterPrivacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get lifeGraphFilterPrivacyTitle;
+
+  /// No description provided for @lifeGraphFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get lifeGraphFilterAll;
+
+  /// No description provided for @lifeGraphFilterDate7d.
+  ///
+  /// In en, this message translates to:
+  /// **'7d'**
+  String get lifeGraphFilterDate7d;
+
+  /// No description provided for @lifeGraphFilterDate30d.
+  ///
+  /// In en, this message translates to:
+  /// **'30d'**
+  String get lifeGraphFilterDate30d;
+
+  /// No description provided for @lifeGraphFilterDate90d.
+  ///
+  /// In en, this message translates to:
+  /// **'90d'**
+  String get lifeGraphFilterDate90d;
+
+  /// No description provided for @lifeGraphTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get lifeGraphTimelineTitle;
+
+  /// No description provided for @lifeGraphTimelineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Events stay grouped by day so you can inspect the graph as a navigable local history, not a flat export blob.'**
+  String get lifeGraphTimelineBody;
+
+  /// No description provided for @lifeGraphNoEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No events match the current filters.'**
+  String get lifeGraphNoEvents;
+
+  /// No description provided for @lifeGraphDateGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} | {count} events'**
+  String lifeGraphDateGroupTitle(Object date, int count);
+
+  /// No description provided for @lifeGraphEvidenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked evidence'**
+  String get lifeGraphEvidenceTitle;
+
+  /// No description provided for @lifeGraphEvidenceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked evidence for this event.'**
+  String get lifeGraphEvidenceEmpty;
+
+  /// No description provided for @lifeGraphRelationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked relations'**
+  String get lifeGraphRelationsTitle;
+
+  /// No description provided for @lifeGraphRelationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked relations for this event.'**
+  String get lifeGraphRelationsEmpty;
+
+  /// No description provided for @lifeGraphAuditNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No event-level privacy changes recorded for this event yet.'**
+  String get lifeGraphAuditNone;
+
+  /// No description provided for @lifeGraphOpenPrivacyAudit.
+  ///
+  /// In en, this message translates to:
+  /// **'Open privacy audit'**
+  String get lifeGraphOpenPrivacyAudit;
 
   /// No description provided for @permissionLocal.
   ///

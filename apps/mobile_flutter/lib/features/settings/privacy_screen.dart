@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/app_localized_values.dart';
@@ -154,6 +155,15 @@ class PrivacyScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => context.go('/lifegraph'),
+              icon: const Icon(Icons.timeline_rounded),
+              label: Text(l10n.lifeGraphOpenTimeline),
+            ),
           ),
           const SizedBox(height: 24),
           Container(
