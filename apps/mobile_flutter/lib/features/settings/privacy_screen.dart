@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/app_localized_values.dart';
+import '../../core/legal/legal_document_registry.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/settings/app_profile_preferences.dart';
@@ -11,9 +14,14 @@ import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
 
 class PrivacyScreen extends StatelessWidget {
-  const PrivacyScreen({super.key, required this.controller});
+  const PrivacyScreen({
+    super.key,
+    required this.controller,
+    this.onOpenExternalUrl,
+  });
 
   final GoLifeController controller;
+  final Future<void> Function(String url)? onOpenExternalUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +174,29 @@ class PrivacyScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
+          Text(
+            l10n.privacyLegalTitle,
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.privacyLegalBody,
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final item in _legalCards(l10n))
+                _LegalDocumentCard(
+                  item: item,
+                  onOpen: (url) => _openExternalUrl(context, url),
+                  onCopy: (url) => _copyExternalUrl(context, url),
+                ),
+            ],
+          ),
+          const SizedBox(height: 24),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -272,6 +303,77 @@ class PrivacyScreen extends StatelessWidget {
     );
   }
 
+  List<_LegalDocumentCardModel> _legalCards(AppLocalizations l10n) {
+    return GoLifeLegalDocuments.publicLinks
+        .map(
+          (link) => _LegalDocumentCardModel(
+            id: link.id,
+            url: link.url,
+            title: _legalTitle(link.id, l10n),
+            body: _legalBody(link.id, l10n),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  String _legalTitle(LegalDocumentId id, AppLocalizations l10n) {
+    switch (id) {
+      case LegalDocumentId.privacyPolicy:
+        return l10n.privacyLegalPolicyTitle;
+      case LegalDocumentId.termsOfService:
+        return l10n.privacyLegalTermsTitle;
+      case LegalDocumentId.support:
+        return l10n.privacyLegalSupportTitle;
+    }
+  }
+
+  String _legalBody(LegalDocumentId id, AppLocalizations l10n) {
+    switch (id) {
+      case LegalDocumentId.privacyPolicy:
+        return l10n.privacyLegalPolicyBody;
+      case LegalDocumentId.termsOfService:
+        return l10n.privacyLegalTermsBody;
+      case LegalDocumentId.support:
+        return l10n.privacyLegalSupportBody;
+    }
+  }
+
+  Future<void> _openExternalUrl(BuildContext context, String url) async {
+    if (onOpenExternalUrl != null) {
+      await onOpenExternalUrl!(url);
+      return;
+    }
+
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (opened || !context.mounted) {
+      return;
+    }
+    await _copyExternalUrl(context, url, useFallbackMessage: true);
+  }
+
+  Future<void> _copyExternalUrl(
+    BuildContext context,
+    String url, {
+    bool useFallbackMessage = false,
+  }) async {
+    await Clipboard.setData(ClipboardData(text: url));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          useFallbackMessage
+              ? AppLocalizations.of(context)!.privacyLegalOpenFallback
+              : AppLocalizations.of(context)!.privacyLegalCopied,
+        ),
+      ),
+    );
+  }
+
   Future<void> _exportLocalJson(BuildContext context) async {
     final exportResult = await controller.exportLocalDataFile();
     if (!context.mounted) {
@@ -349,6 +451,76 @@ class PrivacyScreen extends StatelessWidget {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.clearAiHistoryDone)),
+    );
+  }
+}
+
+class _LegalDocumentCardModel {
+  const _LegalDocumentCardModel({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.url,
+  });
+
+  final LegalDocumentId id;
+  final String title;
+  final String body;
+  final String url;
+}
+
+class _LegalDocumentCard extends StatelessWidget {
+  const _LegalDocumentCard({
+    required this.item,
+    required this.onOpen,
+    required this.onCopy,
+  });
+
+  final _LegalDocumentCardModel item;
+  final Future<void> Function(String url) onOpen;
+  final Future<void> Function(String url) onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: 320,
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(theme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(item.title, style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(item.body, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 12),
+          SelectableText(
+            item.url,
+            key: ValueKey<String>('legal-url-${item.id.storageKey}'),
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                key: ValueKey<String>('legal-open-${item.id.storageKey}'),
+                onPressed: () => onOpen(item.url),
+                icon: const Icon(Icons.open_in_new_rounded),
+                label: Text(l10n.privacyLegalOpen),
+              ),
+              TextButton.icon(
+                key: ValueKey<String>('legal-copy-${item.id.storageKey}'),
+                onPressed: () => onCopy(item.url),
+                icon: const Icon(Icons.copy_all_rounded),
+                label: Text(l10n.privacyLegalCopy),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

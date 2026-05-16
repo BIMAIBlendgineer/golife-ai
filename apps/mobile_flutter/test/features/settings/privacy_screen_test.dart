@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:golife_flutter/core/legal/legal_document_registry.dart';
 import 'package:golife_flutter/core/ai_client/ai_gateway_client.dart';
 import 'package:golife_flutter/core/export/local_export_service.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
@@ -131,5 +132,56 @@ void main() {
     expect(find.textContaining('Event ID: ${financeEvent.eventId}'),
         findsOneWidget);
     expect(find.textContaining('Changed at:'), findsOneWidget);
+  });
+
+  testWidgets('privacy screen exposes public legal links', (tester) async {
+    final localStore = MemoryLocalStore();
+    final controller = GoLifeController(
+      localStore: localStore,
+      aiGatewayClient: MockAiGatewayClient(),
+      lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+      localExportService: _FakeLocalExportService(),
+    );
+    await controller.bootstrap();
+
+    final openedUrls = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PrivacyScreen(
+            controller: controller,
+            onOpenExternalUrl: (url) async => openedUrls.add(url),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Store and legal'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('Store and legal'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('legal-url-privacy_policy')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('legal-open-privacy_policy')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(openedUrls, <String>[GoLifeLegalDocuments.privacyPolicyUrl]);
   });
 }

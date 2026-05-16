@@ -299,6 +299,47 @@ class AppLocalizationsEs extends AppLocalizations {
   String get privacyMetricAuditEntries => 'Entradas de auditoria';
 
   @override
+  String get privacyLegalTitle => 'Store y legal';
+
+  @override
+  String get privacyLegalBody =>
+      'Las URLs publicas de privacidad, terminos y soporte para esta release viven aqui y tambien quedan referenciadas en el release artifact.';
+
+  @override
+  String get privacyLegalPolicyTitle => 'Politica de privacidad';
+
+  @override
+  String get privacyLegalPolicyBody =>
+      'Politica publica para almacenamiento local, permisos de IA, limites de analytics, exportacion y borrado.';
+
+  @override
+  String get privacyLegalTermsTitle => 'Terminos del servicio';
+
+  @override
+  String get privacyLegalTermsBody =>
+      'Scope del producto, limites, comportamiento de fallback y baseline actual con billing deshabilitado.';
+
+  @override
+  String get privacyLegalSupportTitle => 'Soporte';
+
+  @override
+  String get privacyLegalSupportBody =>
+      'Ruta publica de soporte para bugs, problemas de privacidad y preguntas de store review.';
+
+  @override
+  String get privacyLegalOpen => 'Abrir enlace';
+
+  @override
+  String get privacyLegalCopy => 'Copiar URL';
+
+  @override
+  String get privacyLegalCopied => 'URL publica copiada.';
+
+  @override
+  String get privacyLegalOpenFallback =>
+      'No se pudo abrir el enlace. La URL se copio.';
+
+  @override
   String get lifeGraphOpenTimeline => 'Abrir timeline de LifeGraph';
 
   @override
