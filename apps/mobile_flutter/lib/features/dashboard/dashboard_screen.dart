@@ -5,6 +5,7 @@ import '../../core/i18n/app_localized_values.dart';
 import '../../domains/mindflow/decision_card.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../domains/missions/mission_set.dart';
 import '../../domains/shopping/product_evidence_card.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
@@ -23,6 +24,7 @@ class DashboardScreen extends StatelessWidget {
     final secondaryMissions = missions.length > 1
         ? missions.skip(1).toList(growable: false)
         : const <DailyMission>[];
+    final currentMissionSet = controller.currentMissionSet;
     final risks = controller.dailyRisks;
     final gatewayStatusMessage = controller.gatewayStatusMessage;
     final disclosureSummary = primaryMission == null
@@ -266,6 +268,13 @@ class DashboardScreen extends StatelessWidget {
                     color: const Color(0xFFF2E5D2),
                   ),
                 ),
+                if (currentMissionSet != null) ...[
+                  const SizedBox(height: 16),
+                  _MissionSnapshotCard(
+                    missionSet: currentMissionSet,
+                    l10n: l10n,
+                  ),
+                ],
               ],
             ),
           ),
@@ -503,6 +512,18 @@ class DashboardScreen extends StatelessWidget {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
+                if (controller.currentMissionSet != null) ...[
+                  Text(
+                    l10n.missionSetSectionTitle,
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  _MissionSnapshotDetails(
+                    missionSet: controller.currentMissionSet!,
+                    l10n: l10n,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text(l10n.labelTrace, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 for (final entry in mission.trace.entries)
@@ -522,8 +543,7 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-String _decisionsLabel(AppLocalizations l10n) =>
-    pickLocalizedValue(
+String _decisionsLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Decisions',
       es: 'Decisiones',
@@ -779,7 +799,8 @@ void _showDecisionExplanationSheet(
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
-              Text(l10n.labelAlwaysLocalOnDevice, style: theme.textTheme.titleLarge),
+              Text(l10n.labelAlwaysLocalOnDevice,
+                  style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(
                 card.privacySummary.localOnlyCollections.join(', '),
@@ -825,10 +846,13 @@ void _showShoppingExplanationSheet(
                 style: theme.textTheme.bodyLarge,
               ),
               const SizedBox(height: 16),
-              Text(l10n.labelDataUsedForMission, style: theme.textTheme.titleLarge),
+              Text(l10n.labelDataUsedForMission,
+                  style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(
-                controller.localizedAlwaysLocalCollectionLabels(l10n).join(', '),
+                controller
+                    .localizedAlwaysLocalCollectionLabels(l10n)
+                    .join(', '),
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -950,7 +974,8 @@ class _MentalLoadSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_mentalLoadSummaryTitle(l10n), style: theme.textTheme.titleLarge),
+          Text(_mentalLoadSummaryTitle(l10n),
+              style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
             _mentalLoadSummaryBody(
@@ -1003,8 +1028,12 @@ class _DecisionPreviewCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              Chip(label: Text(_decisionEvidenceStatusLabel(l10n, card.evidenceStatus))),
-              Chip(label: Text(l10n.dashboardConfidencePill((card.confidence * 100).round()))),
+              Chip(
+                  label: Text(
+                      _decisionEvidenceStatusLabel(l10n, card.evidenceStatus))),
+              Chip(
+                  label: Text(l10n.dashboardConfidencePill(
+                      (card.confidence * 100).round()))),
             ],
           ),
           const SizedBox(height: 12),
@@ -1152,7 +1181,8 @@ class _SecondaryDecisionListCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_secondaryDecisionsTitle(l10n), style: theme.textTheme.titleLarge),
+          Text(_secondaryDecisionsTitle(l10n),
+              style: theme.textTheme.titleLarge),
           const SizedBox(height: 12),
           for (final card in controller.secondaryDecisionCards.take(2))
             Padding(
@@ -1169,7 +1199,8 @@ class _SecondaryDecisionListCard extends StatelessWidget {
                   children: [
                     Text(card.title, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 6),
-                    Text(card.recommendedAction, style: theme.textTheme.bodyMedium),
+                    Text(card.recommendedAction,
+                        style: theme.textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -1313,6 +1344,183 @@ class _DisclosurePanel extends StatelessWidget {
   }
 }
 
+class _MissionSnapshotCard extends StatelessWidget {
+  const _MissionSnapshotCard({
+    required this.missionSet,
+    required this.l10n,
+  });
+
+  final MissionSet missionSet;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.16),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.missionSnapshotTitle,
+            style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.missionSnapshotBody,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFFF2E5D2),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _MissionSnapshotDetails(
+            missionSet: missionSet,
+            l10n: l10n,
+            lightText: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MissionSnapshotDetails extends StatelessWidget {
+  const _MissionSnapshotDetails({
+    required this.missionSet,
+    required this.l10n,
+    this.lightText = false,
+  });
+
+  final MissionSet missionSet;
+  final AppLocalizations l10n;
+  final bool lightText;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rankingTrace = missionSet.rankingTrace;
+    final textColor =
+        lightText ? const Color(0xFFF2E5D2) : theme.colorScheme.onSurface;
+    final traceEntries = rankingTrace.entries
+        .where((entry) => entry.key != 'missionSetId' && entry.key != 'date')
+        .toList(growable: false);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotId,
+          value: missionSet.missionSetId,
+          lightText: lightText,
+        ),
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotDate,
+          value: missionSet.date,
+          lightText: lightText,
+        ),
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotSourceState,
+          value: _missionSourceStateLabel(l10n, missionSet.sourceState),
+          lightText: lightText,
+        ),
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotCreatedAt,
+          value: missionSet.createdAt,
+          lightText: lightText,
+        ),
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotMissionCount,
+          value: missionSet.missions.length.toString(),
+          lightText: lightText,
+        ),
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotFallbackUsed,
+          value: _traceBoolLabel(
+            l10n,
+            rankingTrace['fallbackUsed'] ?? rankingTrace['fallback_used'],
+          ),
+          lightText: lightText,
+        ),
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotPolicyVersion,
+          value: _traceStringOrFallback(
+            rankingTrace,
+            const <String>['policyVersion', 'policy_version'],
+            l10n.valueUnknown,
+          ),
+          lightText: lightText,
+        ),
+        _SnapshotFactRow(
+          label: l10n.missionSnapshotRankingVersion,
+          value: _traceStringOrFallback(
+            rankingTrace,
+            const <String>['rankingVersion', 'ranking_version'],
+            l10n.valueUnknown,
+          ),
+          lightText: lightText,
+        ),
+        if (traceEntries.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            l10n.missionSnapshotRankingTrace,
+            style: theme.textTheme.titleMedium?.copyWith(color: textColor),
+          ),
+          const SizedBox(height: 8),
+          for (final entry in traceEntries.take(8))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                '${entry.key}: ${entry.value}',
+                style: theme.textTheme.bodySmall?.copyWith(color: textColor),
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SnapshotFactRow extends StatelessWidget {
+  const _SnapshotFactRow({
+    required this.label,
+    required this.value,
+    this.lightText = false,
+  });
+
+  final String label;
+  final String value;
+  final bool lightText;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textColor =
+        lightText ? const Color(0xFFF2E5D2) : theme.colorScheme.onSurface;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          style: theme.textTheme.bodyMedium?.copyWith(color: textColor),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DisclosureList extends StatelessWidget {
   const _DisclosureList({
     required this.items,
@@ -1339,6 +1547,55 @@ class _DisclosureList extends StatelessWidget {
       ],
     );
   }
+}
+
+String _missionSourceStateLabel(
+  AppLocalizations l10n,
+  MissionSourceState sourceState,
+) {
+  switch (sourceState) {
+    case MissionSourceState.live:
+      return l10n.gatewayLive;
+    case MissionSourceState.fallback:
+      return l10n.gatewayLocalFallback;
+    case MissionSourceState.offline:
+      return l10n.gatewayNoConnection;
+    case MissionSourceState.local:
+      return l10n.missionSnapshotSourceStateLocal;
+    case MissionSourceState.degraded:
+      return l10n.missionSnapshotSourceStateDegraded;
+  }
+}
+
+String _traceStringOrFallback(
+  Map<String, Object?> trace,
+  List<String> keys,
+  String fallback,
+) {
+  for (final key in keys) {
+    final value = trace[key]?.toString().trim();
+    if (value != null && value.isNotEmpty) {
+      return value;
+    }
+  }
+  return fallback;
+}
+
+String _traceBoolLabel(AppLocalizations l10n, Object? value) {
+  if (value == true) {
+    return l10n.valueYes;
+  }
+  if (value == false) {
+    return l10n.valueNo;
+  }
+  final normalized = value?.toString().trim().toLowerCase();
+  if (normalized == 'true') {
+    return l10n.valueYes;
+  }
+  if (normalized == 'false') {
+    return l10n.valueNo;
+  }
+  return l10n.valueUnknown;
 }
 
 class _MetaPill extends StatelessWidget {

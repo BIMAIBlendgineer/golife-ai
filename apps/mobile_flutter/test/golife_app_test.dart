@@ -262,4 +262,63 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+      'shows mission snapshot metadata on home and in explanation sheet',
+      (tester) async {
+    final localStore = MemoryLocalStore();
+    final controller = GoLifeController(
+      localStore: localStore,
+      aiGatewayClient: _FallbackAiGatewayClient(),
+      lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+    );
+    await controller.bootstrap();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        supportedLocales: supportedAppLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: Scaffold(
+          body: DashboardScreen(
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mission snapshot'), findsOneWidget);
+    expect(
+      find.textContaining('mission-set-offline-test', findRichText: true),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Using local fallback', findRichText: true),
+      findsWidgets,
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Explain').first,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Explain').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('MissionSet'), findsOneWidget);
+    expect(
+      find.textContaining('policy_v1', findRichText: true),
+      findsWidgets,
+    );
+    expect(
+      find.textContaining('mission_ranker_v1', findRichText: true),
+      findsWidgets,
+    );
+  });
 }

@@ -280,6 +280,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get privacyMetricBlockedLocal => 'Bloqueados localmente';
 
   @override
+  String get privacyRuntimeSnapshotTitle => 'Snapshot de auditoria runtime';
+
+  @override
+  String get privacyRuntimeSnapshotBody =>
+      'Estos conteos salen de la capa local de persistencia que GoLife usa para export, trazabilidad y revision de privacidad.';
+
+  @override
+  String get privacyMetricEvidenceItems => 'Evidence items';
+
+  @override
+  String get privacyMetricRelations => 'Relaciones';
+
+  @override
+  String get privacyMetricAuditEntries => 'Entradas de auditoria';
+
+  @override
   String get dataControls => 'Controles de datos';
 
   @override
@@ -339,6 +355,27 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get privacyRecentEventsTitle => 'Eventos recientes de LifeGraph';
+
+  @override
+  String get privacyRecentEventsBody =>
+      'Revisa eventos locales recientes, su nivel de privacidad y si pueden usarse para misiones con soporte de IA.';
+
+  @override
+  String get privacyRecentEventsEmpty =>
+      'Todavia no hay eventos recientes para revisar.';
+
+  @override
+  String get privacyAuditTitle => 'Auditoria de privacidad';
+
+  @override
+  String get privacyAuditBody =>
+      'Cada cambio de privacidad por evento se registra localmente en este dispositivo.';
+
+  @override
+  String get privacyAuditEmpty => 'Todavia no hay entradas de auditoria local.';
+
+  @override
   String get permissionLocal => 'Local';
 
   @override
@@ -376,6 +413,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get collectionQuickNotes => 'Notas rapidas';
+
+  @override
+  String get collectionMissionSets => 'Snapshots de misiones';
+
+  @override
+  String get collectionEvidenceItems => 'Evidence items';
+
+  @override
+  String get collectionLifeGraphRelations => 'Relaciones de LifeGraph';
+
+  @override
+  String get collectionPrivacyAuditEntries =>
+      'Entradas de auditoria de privacidad';
 
   @override
   String get collectionOwnedItems => 'Owned items';
@@ -532,6 +582,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get fieldPrivacy => 'Privacidad';
 
   @override
+  String get privacyEventSource => 'Origen';
+
+  @override
+  String get privacyEventAiEligible => 'Apto para IA';
+
+  @override
+  String get privacyEventId => 'Event ID';
+
+  @override
+  String get privacyAuditChangedAt => 'Cambiado en';
+
+  @override
+  String get valueYes => 'Si';
+
+  @override
+  String get valueNo => 'No';
+
+  @override
+  String get valueUnknown => 'Desconocido';
+
+  @override
   String get dashboardDisclosurePending =>
       'GoLife mantiene los datos locales hasta que una mision este lista.';
 
@@ -569,6 +640,49 @@ class AppLocalizationsEs extends AppLocalizations {
       Object summary, int sentCount, int blockedCount) {
     return '$summary Enviado ahora: $sentCount eventos locales. Bloqueados localmente: $blockedCount.';
   }
+
+  @override
+  String get missionSnapshotTitle => 'Mission snapshot';
+
+  @override
+  String get missionSnapshotBody =>
+      'Este es el snapshot local persistido para el set actual de misiones.';
+
+  @override
+  String get missionSnapshotId => 'ID';
+
+  @override
+  String get missionSnapshotDate => 'Fecha';
+
+  @override
+  String get missionSnapshotSourceState => 'Source state';
+
+  @override
+  String get missionSnapshotCreatedAt => 'Creado en';
+
+  @override
+  String get missionSnapshotMissionCount => 'Cantidad de misiones';
+
+  @override
+  String get missionSnapshotFallbackUsed => 'Fallback usado';
+
+  @override
+  String get missionSnapshotPolicyVersion => 'Version de policy';
+
+  @override
+  String get missionSnapshotRankingVersion => 'Version de ranking';
+
+  @override
+  String get missionSnapshotRankingTrace => 'Traza de ranking';
+
+  @override
+  String get missionSnapshotSourceStateLocal => 'Solo local';
+
+  @override
+  String get missionSnapshotSourceStateDegraded => 'Degradado';
+
+  @override
+  String get missionSetSectionTitle => 'MissionSet';
 
   @override
   String get dashboardRisksTitle => 'Riesgos de hoy';
