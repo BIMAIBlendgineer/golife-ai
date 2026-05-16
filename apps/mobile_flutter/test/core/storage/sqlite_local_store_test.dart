@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/lifegraph/life_event.dart';
 import 'package:golife_flutter/core/storage/sqlite_local_store.dart';
+import 'package:golife_flutter/domains/analytics/analytics_event.dart';
 import 'package:golife_flutter/domains/pantry/pantry_item.dart';
 import 'package:golife_flutter/domains/tasks/go_task.dart';
 import 'package:golife_flutter/domains/finance/expense_record.dart';
@@ -149,6 +150,21 @@ void main() {
         ),
       ],
     );
+    await store.saveAnalyticsEvents(
+      const <AnalyticsEvent>[
+        AnalyticsEvent(
+          eventId: 'analytics-1',
+          eventName: 'mission_set_generated',
+          timestampIso: '2026-04-25T08:25:00Z',
+          locale: 'en',
+          source: 'mission_planner',
+          metadata: <String, Object?>{
+            'mission_set_id': 'set-1',
+            'summary': 'This should be stripped from analytics metadata.',
+          },
+        ),
+      ],
+    );
 
     expect(await store.loadLifeEvents(), hasLength(1));
     expect(await store.loadDailyMissions(), hasLength(1));
@@ -157,6 +173,11 @@ void main() {
     expect(await store.loadEvidenceItems(), hasLength(1));
     expect(await store.loadLifeGraphRelations(), hasLength(1));
     expect(await store.loadPrivacyAuditEntries(), hasLength(1));
+    expect(await store.loadAnalyticsEvents(), hasLength(1));
+    expect(
+      (await store.loadAnalyticsEvents()).single.metadata.containsKey('summary'),
+      isFalse,
+    );
     expect(await store.loadDemoSeedEnabled(), isTrue);
 
     await store.upsertJournalEntry(
@@ -282,6 +303,13 @@ void main() {
     ))
         .first['json_blob']
         .toString();
+    final analyticsBlob = (await db.query(
+      'analytics_events',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
     final calendarBlob = (await db.query(
       'calendar_items',
       columns: const ['json_blob'],
@@ -300,6 +328,7 @@ void main() {
     expect(relationBlob, isNot(contains('homememory.proof')));
     expect(
         privacyAuditBlob, isNot(contains('"new_privacy_level":"ai_allowed"')));
+    expect(analyticsBlob, isNot(contains('mission_set_generated')));
     expect(calendarBlob, isNot(contains('Focus block')));
     await db.close();
 
@@ -312,6 +341,7 @@ void main() {
     expect(await store.loadEvidenceItems(), isEmpty);
     expect(await store.loadLifeGraphRelations(), isEmpty);
     expect(await store.loadPrivacyAuditEntries(), isEmpty);
+    expect(await store.loadAnalyticsEvents(), isEmpty);
     expect(await store.loadMissionFeedback(), isEmpty);
     expect(await store.loadJournalEntries(), isEmpty);
     expect(await store.loadCalendarItems(), isEmpty);
@@ -825,7 +855,7 @@ void main() {
     await deleteDatabase(databasePath);
   });
 
-  test('upgrades v4 databases to v6 without losing existing rows', () async {
+  test('upgrades v4 databases to v7 without losing existing rows', () async {
     final databaseName =
         'golife_v4_upgrade_${DateTime.now().microsecondsSinceEpoch}.db';
     final databasePath = path.join(await getDatabasesPath(), databaseName);
@@ -880,7 +910,7 @@ void main() {
 
     final migratedDb = await openDatabase(databasePath, singleInstance: false);
     final tables = (await migratedDb.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('mental_load_items', 'decision_cards', 'shopping_needs', 'product_evidence_cards', 'mission_sets', 'evidence_items', 'lifegraph_relations', 'privacy_audit_entries')",
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('mental_load_items', 'decision_cards', 'shopping_needs', 'product_evidence_cards', 'mission_sets', 'evidence_items', 'lifegraph_relations', 'privacy_audit_entries', 'analytics_events')",
     ))
         .map((row) => row['name'].toString())
         .toSet();
@@ -895,9 +925,61 @@ void main() {
         'evidence_items',
         'lifegraph_relations',
         'privacy_audit_entries',
+        'analytics_events',
       ]),
     );
     await migratedDb.close();
+
+    await deleteDatabase(databasePath);
+  });
+
+  test('upgrades v6 databases to v7 and adds analytics_events', () async {
+    final databaseName =
+        'golife_v6_upgrade_${DateTime.now().microsecondsSinceEpoch}.db';
+    final databasePath = path.join(await getDatabasesPath(), databaseName);
+
+    final legacyDb = await openDatabase(
+      databasePath,
+      version: 6,
+      onCreate: (db, version) async {
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS key_value (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS mission_sets (mission_set_id TEXT PRIMARY KEY, date TEXT NOT NULL, source_state TEXT NOT NULL, created_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+      },
+    );
+    await legacyDb.insert(
+      'mission_sets',
+      <String, Object?>{
+        'mission_set_id': 'set-legacy',
+        'date': '2026-05-16',
+        'source_state': 'live',
+        'created_at_iso': '2026-05-16T08:00:00Z',
+        'json_blob':
+            '{"mission_set_id":"set-legacy","date":"2026-05-16","source_state":"live","missions":[],"ranking_trace":{"sourceState":"live"},"created_at":"2026-05-16T08:00:00Z"}',
+      },
+    );
+    await legacyDb.close();
+
+    final store = SqliteLocalStore(
+      databaseName: databaseName,
+      encryptionSecretOverride: 'test-secret',
+    );
+
+    final missionSets = await store.loadMissionSets();
+    expect(missionSets, hasLength(1));
+    expect(missionSets.single.missionSetId, 'set-legacy');
+
+    final upgradedDb = await openDatabase(databasePath, singleInstance: false);
+    final tables = (await upgradedDb.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'analytics_events'",
+    ))
+        .map((row) => row['name'].toString())
+        .toSet();
+    expect(tables, contains('analytics_events'));
+    await upgradedDb.close();
 
     await deleteDatabase(databasePath);
   });
