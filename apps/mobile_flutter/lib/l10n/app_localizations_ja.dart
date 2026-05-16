@@ -276,6 +276,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get privacyMetricBlockedLocal => 'ローカルでブロック';
 
   @override
+  String get privacyRuntimeSnapshotTitle => 'Runtime audit snapshot';
+
+  @override
+  String get privacyRuntimeSnapshotBody =>
+      'These counts come from the local persistence layer used for export, traceability, and privacy review.';
+
+  @override
+  String get privacyMetricEvidenceItems => 'Evidence items';
+
+  @override
+  String get privacyMetricRelations => 'Relations';
+
+  @override
+  String get privacyMetricAuditEntries => 'Audit entries';
+
+  @override
   String get dataControls => 'データ操作';
 
   @override
@@ -333,6 +349,26 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get privacyRecentEventsTitle => 'Recent LifeGraph events';
+
+  @override
+  String get privacyRecentEventsBody =>
+      'Review recent local events, their privacy level, and whether they can be used for AI-backed missions.';
+
+  @override
+  String get privacyRecentEventsEmpty => 'No recent events to review yet.';
+
+  @override
+  String get privacyAuditTitle => 'Privacy audit';
+
+  @override
+  String get privacyAuditBody =>
+      'Every event-level privacy change is logged locally on this device.';
+
+  @override
+  String get privacyAuditEmpty => 'No local privacy audit entries yet.';
+
+  @override
   String get permissionLocal => 'ローカル';
 
   @override
@@ -370,6 +406,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get collectionQuickNotes => 'Quick notes';
+
+  @override
+  String get collectionMissionSets => 'Mission snapshots';
+
+  @override
+  String get collectionEvidenceItems => 'Evidence items';
+
+  @override
+  String get collectionLifeGraphRelations => 'LifeGraph relations';
+
+  @override
+  String get collectionPrivacyAuditEntries => 'Privacy audit entries';
 
   @override
   String get collectionOwnedItems => 'Owned items';
@@ -524,6 +572,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fieldPrivacy => 'プライバシー';
 
   @override
+  String get privacyEventSource => 'Source';
+
+  @override
+  String get privacyEventAiEligible => 'AI eligible';
+
+  @override
+  String get privacyEventId => 'Event ID';
+
+  @override
+  String get privacyAuditChangedAt => 'Changed at';
+
+  @override
+  String get valueYes => 'Yes';
+
+  @override
+  String get valueNo => 'No';
+
+  @override
+  String get valueUnknown => 'Unknown';
+
+  @override
   String get dashboardDisclosurePending =>
       'GoLife ?????????????????????????????';
 
@@ -561,6 +630,49 @@ class AppLocalizationsJa extends AppLocalizations {
       Object summary, int sentCount, int blockedCount) {
     return '$summary Sent now: $sentCount local events. Blocked locally: $blockedCount.';
   }
+
+  @override
+  String get missionSnapshotTitle => 'Mission snapshot';
+
+  @override
+  String get missionSnapshotBody =>
+      'This is the persisted local snapshot for the current mission set.';
+
+  @override
+  String get missionSnapshotId => 'ID';
+
+  @override
+  String get missionSnapshotDate => 'Date';
+
+  @override
+  String get missionSnapshotSourceState => 'Source state';
+
+  @override
+  String get missionSnapshotCreatedAt => 'Created at';
+
+  @override
+  String get missionSnapshotMissionCount => 'Mission count';
+
+  @override
+  String get missionSnapshotFallbackUsed => 'Fallback used';
+
+  @override
+  String get missionSnapshotPolicyVersion => 'Policy version';
+
+  @override
+  String get missionSnapshotRankingVersion => 'Ranking version';
+
+  @override
+  String get missionSnapshotRankingTrace => 'Ranking trace';
+
+  @override
+  String get missionSnapshotSourceStateLocal => 'Local only';
+
+  @override
+  String get missionSnapshotSourceStateDegraded => 'Degraded';
+
+  @override
+  String get missionSetSectionTitle => 'MissionSet';
 
   @override
   String get dashboardRisksTitle => 'Risks today';

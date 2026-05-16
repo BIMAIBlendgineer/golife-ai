@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/app_localized_values.dart';
+import '../../core/lifegraph/life_event.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/settings/app_profile_preferences.dart';
+import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
 
@@ -113,6 +115,47 @@ class PrivacyScreen extends StatelessWidget {
             tone: const Color(0xFFD06447),
           ),
           const SizedBox(height: 24),
+          Text(
+            l10n.privacyRuntimeSnapshotTitle,
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.privacyRuntimeSnapshotBody,
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              SizedBox(
+                width: 220,
+                child: _PrivacyMetricCard(
+                  label: l10n.privacyMetricEvidenceItems,
+                  value: controller.evidenceItems.length.toString(),
+                  tone: const Color(0xFF6C5B3D),
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                child: _PrivacyMetricCard(
+                  label: l10n.privacyMetricRelations,
+                  value: controller.lifeGraphRelations.length.toString(),
+                  tone: const Color(0xFF7A5167),
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                child: _PrivacyMetricCard(
+                  label: l10n.privacyMetricAuditEntries,
+                  value: controller.privacyAuditEntries.length.toString(),
+                  tone: const Color(0xFF1F4C5B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -167,6 +210,53 @@ class PrivacyScreen extends StatelessWidget {
                 },
               ),
             ),
+          const SizedBox(height: 24),
+          Text(
+            l10n.privacyRecentEventsTitle,
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.privacyRecentEventsBody,
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          if (controller.lifeEvents.isEmpty)
+            Text(
+              l10n.privacyRecentEventsEmpty,
+              style: theme.textTheme.bodyMedium,
+            )
+          else
+            for (final event in controller.lifeEvents.take(8))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _RecentLifeEventCard(
+                  controller: controller,
+                  event: event,
+                ),
+              ),
+          const SizedBox(height: 24),
+          Text(
+            l10n.privacyAuditTitle,
+            style: theme.textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.privacyAuditBody,
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          if (controller.privacyAuditEntries.isEmpty)
+            Text(
+              l10n.privacyAuditEmpty,
+              style: theme.textTheme.bodyMedium,
+            )
+          else
+            for (final entry in controller.privacyAuditEntries.take(8))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _PrivacyAuditEntryCard(entry: entry),
+              ),
         ],
       ),
     );
@@ -744,6 +834,126 @@ class _PrivacyDisclosureCard extends StatelessWidget {
   }
 }
 
+class _RecentLifeEventCard extends StatelessWidget {
+  const _RecentLifeEventCard({
+    required this.controller,
+    required this.event,
+  });
+
+  final GoLifeController controller;
+  final LifeEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final aiEligible = _isEventAiEligible(controller, event);
+    return Container(
+      key: ValueKey<String>('life-event-${event.eventId}'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(theme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            event.summary,
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${event.timestampIso} • ${event.eventType}',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Chip(
+                label: Text(
+                  '${l10n.fieldDomain}: ${event.domain.localizedDomainLabel(l10n)}',
+                ),
+              ),
+              Chip(
+                label: Text(
+                  '${l10n.privacyEventSource}: ${event.source}',
+                ),
+              ),
+              Chip(
+                label: Text(
+                  '${l10n.fieldPrivacy}: ${event.privacyLevel.localizedPermissionLabel(l10n)}',
+                ),
+              ),
+              Chip(
+                label: Text(
+                  '${l10n.privacyEventAiEligible}: ${aiEligible ? l10n.valueYes : l10n.valueNo}',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final permission in DataPermission.values)
+                ChoiceChip(
+                  key: ValueKey<String>(
+                    'event-privacy-${event.eventId}-${permission.storageKey}',
+                  ),
+                  label: Text(permission.localizedLabel(l10n)),
+                  selected: event.privacyLevel == permission.storageKey,
+                  onSelected: (_) async {
+                    await controller.updateEventPrivacy(
+                        event.eventId, permission);
+                  },
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivacyAuditEntryCard extends StatelessWidget {
+  const _PrivacyAuditEntryCard({required this.entry});
+
+  final PrivacyAuditEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Container(
+      key: ValueKey<String>('privacy-audit-${entry.auditId}'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(theme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${l10n.privacyEventId}: ${entry.eventId}',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${entry.oldPrivacyLevel.localizedPermissionLabel(l10n)} -> ${entry.newPrivacyLevel.localizedPermissionLabel(l10n)}',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${l10n.privacyAuditChangedAt}: ${entry.changedAt}',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 BoxDecoration _cardDecoration(ThemeData theme) {
   final isDark = theme.brightness == Brightness.dark;
   return BoxDecoration(
@@ -755,4 +965,14 @@ BoxDecoration _cardDecoration(ThemeData theme) {
       color: isDark ? const Color(0x33E6CDB9) : const Color(0x12FFFFFF),
     ),
   );
+}
+
+bool _isEventAiEligible(GoLifeController controller, LifeEvent event) {
+  final domain = domainKeyFromWireName(event.domain);
+  if (domain == null) {
+    return false;
+  }
+  return controller.privacySettings.permissionFor(domain) ==
+          DataPermission.aiAllowed &&
+      event.privacyLevel == DataPermission.aiAllowed.storageKey;
 }

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/core/ai_client/ai_gateway_client.dart';
 import 'package:golife_flutter/core/export/local_export_service.dart';
 import 'package:golife_flutter/core/lifegraph/lifegraph_repository.dart';
+import 'package:golife_flutter/core/privacy/privacy_models.dart';
 import 'package:golife_flutter/core/storage/memory_local_store.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
 import 'package:golife_flutter/features/settings/privacy_screen.dart';
@@ -68,5 +69,67 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Clear AI history'), findsOneWidget);
+  });
+
+  testWidgets('privacy screen exposes event controls and visible local audit',
+      (tester) async {
+    final localStore = MemoryLocalStore();
+    final controller = GoLifeController(
+      localStore: localStore,
+      aiGatewayClient: MockAiGatewayClient(),
+      lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+      localExportService: _FakeLocalExportService(),
+    );
+    await controller.bootstrap();
+    await controller.updatePermission(
+      DomainKey.finance,
+      DataPermission.aiAllowed,
+    );
+    final financeEvent = controller.lifeEvents.firstWhere(
+      (event) => event.domain == 'finance',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: AnimatedBuilder(
+            animation: controller,
+            builder: (context, child) => PrivacyScreen(controller: controller),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recent LifeGraph events'), findsOneWidget);
+    expect(find.text('Privacy audit'), findsOneWidget);
+    expect(find.text('No local privacy audit entries yet.'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.byKey(ValueKey<String>('life-event-${financeEvent.eventId}')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(
+      find.byKey(
+        ValueKey<String>(
+          'event-privacy-${financeEvent.eventId}-${DataPermission.aiAllowed.storageKey}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No local privacy audit entries yet.'), findsNothing);
+    expect(find.textContaining('Event ID: ${financeEvent.eventId}'),
+        findsOneWidget);
+    expect(find.textContaining('Changed at:'), findsOneWidget);
   });
 }

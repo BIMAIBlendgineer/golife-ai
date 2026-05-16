@@ -636,6 +636,36 @@ abstract class AppLocalizations {
   /// **'Blocked locally'**
   String get privacyMetricBlockedLocal;
 
+  /// No description provided for @privacyRuntimeSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Runtime audit snapshot'**
+  String get privacyRuntimeSnapshotTitle;
+
+  /// No description provided for @privacyRuntimeSnapshotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These counts come from the local persistence layer used for export, traceability, and privacy review.'**
+  String get privacyRuntimeSnapshotBody;
+
+  /// No description provided for @privacyMetricEvidenceItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence items'**
+  String get privacyMetricEvidenceItems;
+
+  /// No description provided for @privacyMetricRelations.
+  ///
+  /// In en, this message translates to:
+  /// **'Relations'**
+  String get privacyMetricRelations;
+
+  /// No description provided for @privacyMetricAuditEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Audit entries'**
+  String get privacyMetricAuditEntries;
+
   /// No description provided for @dataControls.
   ///
   /// In en, this message translates to:
@@ -738,6 +768,42 @@ abstract class AppLocalizations {
   /// **'{eventCount} events · {aiCount} currently AI-eligible'**
   String domainEventsEligible(int eventCount, int aiCount);
 
+  /// No description provided for @privacyRecentEventsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent LifeGraph events'**
+  String get privacyRecentEventsTitle;
+
+  /// No description provided for @privacyRecentEventsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Review recent local events, their privacy level, and whether they can be used for AI-backed missions.'**
+  String get privacyRecentEventsBody;
+
+  /// No description provided for @privacyRecentEventsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent events to review yet.'**
+  String get privacyRecentEventsEmpty;
+
+  /// No description provided for @privacyAuditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy audit'**
+  String get privacyAuditTitle;
+
+  /// No description provided for @privacyAuditBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every event-level privacy change is logged locally on this device.'**
+  String get privacyAuditBody;
+
+  /// No description provided for @privacyAuditEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No local privacy audit entries yet.'**
+  String get privacyAuditEmpty;
+
   /// No description provided for @permissionLocal.
   ///
   /// In en, this message translates to:
@@ -815,6 +881,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quick notes'**
   String get collectionQuickNotes;
+
+  /// No description provided for @collectionMissionSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission snapshots'**
+  String get collectionMissionSets;
+
+  /// No description provided for @collectionEvidenceItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence items'**
+  String get collectionEvidenceItems;
+
+  /// No description provided for @collectionLifeGraphRelations.
+  ///
+  /// In en, this message translates to:
+  /// **'LifeGraph relations'**
+  String get collectionLifeGraphRelations;
+
+  /// No description provided for @collectionPrivacyAuditEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy audit entries'**
+  String get collectionPrivacyAuditEntries;
 
   /// No description provided for @collectionOwnedItems.
   ///
@@ -1110,6 +1200,48 @@ abstract class AppLocalizations {
   /// **'Privacy'**
   String get fieldPrivacy;
 
+  /// No description provided for @privacyEventSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get privacyEventSource;
+
+  /// No description provided for @privacyEventAiEligible.
+  ///
+  /// In en, this message translates to:
+  /// **'AI eligible'**
+  String get privacyEventAiEligible;
+
+  /// No description provided for @privacyEventId.
+  ///
+  /// In en, this message translates to:
+  /// **'Event ID'**
+  String get privacyEventId;
+
+  /// No description provided for @privacyAuditChangedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed at'**
+  String get privacyAuditChangedAt;
+
+  /// No description provided for @valueYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get valueYes;
+
+  /// No description provided for @valueNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get valueNo;
+
+  /// No description provided for @valueUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get valueUnknown;
+
   /// No description provided for @dashboardDisclosurePending.
   ///
   /// In en, this message translates to:
@@ -1164,6 +1296,90 @@ abstract class AppLocalizations {
   /// **'{summary} Sent now: {sentCount} local events. Blocked locally: {blockedCount}.'**
   String dashboardAiDisclosureSummary(
       Object summary, int sentCount, int blockedCount);
+
+  /// No description provided for @missionSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission snapshot'**
+  String get missionSnapshotTitle;
+
+  /// No description provided for @missionSnapshotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the persisted local snapshot for the current mission set.'**
+  String get missionSnapshotBody;
+
+  /// No description provided for @missionSnapshotId.
+  ///
+  /// In en, this message translates to:
+  /// **'ID'**
+  String get missionSnapshotId;
+
+  /// No description provided for @missionSnapshotDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get missionSnapshotDate;
+
+  /// No description provided for @missionSnapshotSourceState.
+  ///
+  /// In en, this message translates to:
+  /// **'Source state'**
+  String get missionSnapshotSourceState;
+
+  /// No description provided for @missionSnapshotCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created at'**
+  String get missionSnapshotCreatedAt;
+
+  /// No description provided for @missionSnapshotMissionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Mission count'**
+  String get missionSnapshotMissionCount;
+
+  /// No description provided for @missionSnapshotFallbackUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback used'**
+  String get missionSnapshotFallbackUsed;
+
+  /// No description provided for @missionSnapshotPolicyVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Policy version'**
+  String get missionSnapshotPolicyVersion;
+
+  /// No description provided for @missionSnapshotRankingVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranking version'**
+  String get missionSnapshotRankingVersion;
+
+  /// No description provided for @missionSnapshotRankingTrace.
+  ///
+  /// In en, this message translates to:
+  /// **'Ranking trace'**
+  String get missionSnapshotRankingTrace;
+
+  /// No description provided for @missionSnapshotSourceStateLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local only'**
+  String get missionSnapshotSourceStateLocal;
+
+  /// No description provided for @missionSnapshotSourceStateDegraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Degraded'**
+  String get missionSnapshotSourceStateDegraded;
+
+  /// No description provided for @missionSetSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'MissionSet'**
+  String get missionSetSectionTitle;
 
   /// No description provided for @dashboardRisksTitle.
   ///

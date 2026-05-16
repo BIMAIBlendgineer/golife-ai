@@ -2613,6 +2613,18 @@ class GoLifeController extends ChangeNotifier {
       privacySettings: _privacySettings,
       lifeEvents: lifeEvents,
     );
+    final createdAt =
+        _stringOrFallback(dto.trace['createdAt'], DateTime.now().toUtc());
+    final missionTrace = <String, Object?>{
+      ...dto.trace,
+      'missionSetId': dto.missionSetId,
+      'date': dto.date,
+      'sourceState': dto.sourceState.storageKey,
+      'fallbackUsed': dto.fallbackUsed,
+      'createdAt': createdAt,
+      if (dto.policyVersion != null) 'policyVersion': dto.policyVersion,
+      if (dto.rankingVersion != null) 'rankingVersion': dto.rankingVersion,
+    };
     _dailyMissions = mapMissionPlan(dto);
     _cachedDailyRisks = _extractDailyRisksFromMission(
       _dailyMissions.isEmpty ? null : _dailyMissions.first,
@@ -2624,9 +2636,8 @@ class GoLifeController extends ChangeNotifier {
         date: dto.date,
         sourceState: dto.sourceState,
         missions: _dailyMissions,
-        rankingTrace: Map<String, Object?>.from(dto.trace),
-        createdAt:
-            _stringOrFallback(dto.trace['createdAt'], DateTime.now().toUtc()),
+        rankingTrace: missionTrace,
+        createdAt: createdAt,
       ),
       (item) => item.missionSetId,
     );

@@ -155,6 +155,10 @@ extension LocalizedGoLifeController on GoLifeController {
         zhHans: 'Daily risks',
         zhHant: 'Daily risks',
       ),
+      l10n.collectionMissionSets,
+      l10n.collectionEvidenceItems,
+      l10n.collectionLifeGraphRelations,
+      l10n.collectionPrivacyAuditEntries,
       l10n.collectionFinanceRecords,
       pickLocalizedValue(
         l10n.localeName,
@@ -175,6 +179,10 @@ extension LocalizedGoLifeController on GoLifeController {
       l10n.collectionPurchaseProofs,
       l10n.collectionClaimDrafts,
       l10n.collectionEvidenceAttachments,
+      l10n.collectionMissionSets,
+      l10n.collectionEvidenceItems,
+      l10n.collectionLifeGraphRelations,
+      l10n.collectionPrivacyAuditEntries,
     ];
   }
 
