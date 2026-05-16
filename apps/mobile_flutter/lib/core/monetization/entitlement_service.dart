@@ -105,14 +105,23 @@ class EntitlementService {
   }
 
   Entitlement _normalize(Entitlement entitlement) {
-    final mergedTrace =
-        Map<String, Object?>.from(entitlement.trace)
-          ..putIfAbsent('source_state', () => 'local_cache')
-          ..['billing_status'] = entitlementBillingProviderDisabled
-          ..['verified'] = false;
+    final verified = entitlement.trace['verified'] == true;
+    final allowsStoreProvider =
+        entitlement.billingProvider == entitlementBillingProviderGooglePlay &&
+            verified;
+    final mergedTrace = Map<String, Object?>.from(entitlement.trace)
+      ..putIfAbsent('source_state', () => 'local_cache');
     return entitlement.copyWith(
-      billingProvider: entitlementBillingProviderDisabled,
-      renewalState: entitlementRenewalStateDisabled,
+      plan: allowsStoreProvider ? entitlement.plan : EntitlementPlan.free,
+      quota: allowsStoreProvider
+          ? entitlement.quota
+          : EntitlementQuota.disabledSafeDefault,
+      billingProvider: allowsStoreProvider
+          ? entitlement.billingProvider
+          : entitlementBillingProviderDisabled,
+      renewalState: allowsStoreProvider
+          ? entitlement.renewalState
+          : entitlementRenewalStateDisabled,
       trace: mergedTrace,
     );
   }

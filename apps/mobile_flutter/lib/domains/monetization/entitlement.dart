@@ -5,7 +5,14 @@ enum EntitlementPlan {
 }
 
 const String entitlementBillingProviderDisabled = 'disabled';
+const String entitlementBillingProviderGooglePlay = 'google_play';
 const String entitlementRenewalStateDisabled = 'disabled';
+const String entitlementRenewalStatePending = 'pending';
+const String entitlementRenewalStateActive = 'active';
+const String entitlementRenewalStateGrace = 'grace';
+const String entitlementRenewalStatePaused = 'paused';
+const String entitlementRenewalStateExpired = 'expired';
+const String entitlementRenewalStateRefunded = 'refunded';
 const String entitlementTrialStatusNotStarted = 'not_started';
 
 extension EntitlementPlanX on EntitlementPlan {
@@ -40,6 +47,18 @@ class EntitlementQuota {
   static const EntitlementQuota disabledSafeDefault = EntitlementQuota(
     dailyMissionRefreshes: 24,
     aiAssistedCaptures: 24,
+    exportBundles: 1,
+  );
+
+  static const EntitlementQuota premiumSandboxDefault = EntitlementQuota(
+    dailyMissionRefreshes: 120,
+    aiAssistedCaptures: 120,
+    exportBundles: 1,
+  );
+
+  static const EntitlementQuota proSandboxDefault = EntitlementQuota(
+    dailyMissionRefreshes: 240,
+    aiAssistedCaptures: 240,
     exportBundles: 1,
   );
 
@@ -160,21 +179,18 @@ class Entitlement {
           (json['quota'] as Map?)?.cast<String, Object?>() ?? const {},
         ),
       ),
-      trialStatus:
-          (json['trial_status'] ??
-                  json['trialStatus'] ??
-                  entitlementTrialStatusNotStarted)
-              .toString(),
-      billingProvider:
-          (json['billing_provider'] ??
-                  json['billingProvider'] ??
-                  entitlementBillingProviderDisabled)
-              .toString(),
-      renewalState:
-          (json['renewal_state'] ??
-                  json['renewalState'] ??
-                  entitlementRenewalStateDisabled)
-              .toString(),
+      trialStatus: (json['trial_status'] ??
+              json['trialStatus'] ??
+              entitlementTrialStatusNotStarted)
+          .toString(),
+      billingProvider: (json['billing_provider'] ??
+              json['billingProvider'] ??
+              entitlementBillingProviderDisabled)
+          .toString(),
+      renewalState: (json['renewal_state'] ??
+              json['renewalState'] ??
+              entitlementRenewalStateDisabled)
+          .toString(),
       trace: Map<String, Object?>.from(
         (json['trace'] as Map?)?.cast<String, Object?>() ??
             const <String, Object?>{},

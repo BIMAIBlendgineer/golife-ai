@@ -88,4 +88,60 @@ void main() {
     expect(gate.remaining, 0);
     expect(gate.reasonCode, 'quota_exhausted');
   });
+
+  test('preserves a verified Google Play entitlement', () async {
+    final store = MemoryLocalStore();
+    final service = EntitlementService(
+      localStore: store,
+      clock: () => DateTime.utc(2026, 5, 16, 12),
+    );
+
+    await service.saveEntitlement(
+      Entitlement(
+        plan: EntitlementPlan.premium,
+        quota: EntitlementQuota.premiumSandboxDefault,
+        trialStatus: entitlementTrialStatusNotStarted,
+        billingProvider: entitlementBillingProviderGooglePlay,
+        renewalState: entitlementRenewalStateActive,
+        trace: const <String, Object?>{
+          'verified': true,
+          'source_state': 'google_play_validation',
+        },
+      ),
+    );
+
+    final entitlement = await service.loadEntitlement();
+
+    expect(entitlement.plan, EntitlementPlan.premium);
+    expect(entitlement.billingProvider, entitlementBillingProviderGooglePlay);
+    expect(entitlement.renewalState, entitlementRenewalStateActive);
+  });
+
+  test('strips an unverified Google Play entitlement back to free', () async {
+    final store = MemoryLocalStore();
+    final service = EntitlementService(
+      localStore: store,
+      clock: () => DateTime.utc(2026, 5, 16, 12),
+    );
+
+    await service.saveEntitlement(
+      Entitlement(
+        plan: EntitlementPlan.pro,
+        quota: EntitlementQuota.proSandboxDefault,
+        trialStatus: entitlementTrialStatusNotStarted,
+        billingProvider: entitlementBillingProviderGooglePlay,
+        renewalState: entitlementRenewalStateActive,
+        trace: const <String, Object?>{
+          'verified': false,
+          'source_state': 'google_play_validation',
+        },
+      ),
+    );
+
+    final entitlement = await service.loadEntitlement();
+
+    expect(entitlement.plan, EntitlementPlan.free);
+    expect(entitlement.billingProvider, entitlementBillingProviderDisabled);
+    expect(entitlement.renewalState, entitlementRenewalStateDisabled);
+  });
 }
