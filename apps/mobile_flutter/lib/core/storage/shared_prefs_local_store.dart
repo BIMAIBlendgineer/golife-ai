@@ -10,6 +10,7 @@ import '../../domains/homememory/maintenance_reminder.dart';
 import '../../domains/homememory/owned_item.dart';
 import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
+import '../../domains/analytics/analytics_event.dart';
 import '../../domains/journal/journal_entry.dart';
 import '../../domains/journal/quick_note.dart';
 import '../../domains/mindflow/decision_card.dart';
@@ -49,6 +50,7 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _evidenceItemsKey = 'golife.evidence_items';
   static const _lifeGraphRelationsKey = 'golife.lifegraph_relations';
   static const _privacyAuditEntriesKey = 'golife.privacy_audit_entries';
+  static const _analyticsEventsKey = 'golife.analytics_events';
   static const _tasksKey = 'golife.tasks';
   static const _habitsKey = 'golife.habits';
   static const _expensesKey = 'golife.expenses';
@@ -289,6 +291,22 @@ class SharedPrefsLocalStore implements LocalStore {
     await _saveList(
       _privacyAuditEntriesKey,
       entries.map((item) => item.toJson()).toList(growable: false),
+    );
+  }
+
+  @override
+  Future<List<AnalyticsEvent>> loadAnalyticsEvents() async {
+    return _loadList(
+      _analyticsEventsKey,
+      (item) => AnalyticsEvent.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveAnalyticsEvents(List<AnalyticsEvent> events) async {
+    await _saveList(
+      _analyticsEventsKey,
+      events.map((item) => item.toJson()).toList(growable: false),
     );
   }
 
@@ -708,6 +726,7 @@ class SharedPrefsLocalStore implements LocalStore {
     await prefs.remove(_evidenceItemsKey);
     await prefs.remove(_lifeGraphRelationsKey);
     await prefs.remove(_privacyAuditEntriesKey);
+    await prefs.remove(_analyticsEventsKey);
     await prefs.remove(_tasksKey);
     await prefs.remove(_habitsKey);
     await prefs.remove(_expensesKey);
