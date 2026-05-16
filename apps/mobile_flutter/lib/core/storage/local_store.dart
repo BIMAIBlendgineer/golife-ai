@@ -14,7 +14,10 @@ import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../domains/missions/mission_set.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/privacy/evidence_item.dart';
+import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/shopping/product_evidence_card.dart';
 import '../../domains/shopping/shopping_need.dart';
@@ -22,6 +25,7 @@ import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
+import '../lifegraph/lifegraph_relation.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
 import '../settings/app_profile_preferences.dart';
@@ -55,6 +59,25 @@ abstract class LocalStore {
 
   Future<List<DailyRisk>> loadDailyRisks() async => const <DailyRisk>[];
   Future<void> saveDailyRisks(List<DailyRisk> risks) async {}
+
+  Future<List<MissionSet>> loadMissionSets() async => const <MissionSet>[];
+  Future<void> saveMissionSets(List<MissionSet> missionSets) async {}
+
+  Future<List<EvidenceItem>> loadEvidenceItems() async =>
+      const <EvidenceItem>[];
+  Future<void> saveEvidenceItems(List<EvidenceItem> evidenceItems) async {}
+
+  Future<List<LifeGraphRelation>> loadLifeGraphRelations() async =>
+      const <LifeGraphRelation>[];
+  Future<void> saveLifeGraphRelations(
+    List<LifeGraphRelation> relations,
+  ) async {}
+
+  Future<List<PrivacyAuditEntry>> loadPrivacyAuditEntries() async =>
+      const <PrivacyAuditEntry>[];
+  Future<void> savePrivacyAuditEntries(
+    List<PrivacyAuditEntry> entries,
+  ) async {}
 
   Future<List<GoTask>> loadTasks() async => const <GoTask>[];
   Future<List<Habit>> loadHabits() async => const <Habit>[];
@@ -94,7 +117,8 @@ abstract class LocalStore {
   Future<void> upsertShoppingNeed(ShoppingNeed need) async {}
   Future<List<ProductEvidenceCard>> loadProductEvidenceCards() async =>
       const <ProductEvidenceCard>[];
-  Future<void> saveProductEvidenceCards(List<ProductEvidenceCard> cards) async {}
+  Future<void> saveProductEvidenceCards(
+      List<ProductEvidenceCard> cards) async {}
   Future<void> upsertProductEvidenceCard(ProductEvidenceCard card) async {}
 
   Future<void> upsertTask(GoTask task) async {}

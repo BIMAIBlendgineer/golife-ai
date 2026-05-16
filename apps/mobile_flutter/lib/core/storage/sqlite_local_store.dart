@@ -20,7 +20,10 @@ import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../domains/missions/mission_set.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/privacy/evidence_item.dart';
+import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/shopping/product_evidence_card.dart';
 import '../../domains/shopping/shopping_need.dart';
@@ -28,6 +31,7 @@ import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
+import '../lifegraph/lifegraph_relation.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
 import '../settings/app_profile_preferences.dart';
@@ -44,7 +48,7 @@ class SqliteLocalStore implements LocalStore {
         );
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 6;
   static const _privacyKey = 'privacy_settings';
   static const _localePreferenceKey = 'locale_preference';
   static const _profilePreferencesKey = 'profile_preferences';
@@ -84,6 +88,9 @@ class SqliteLocalStore implements LocalStore {
         }
         if (oldVersion < 5) {
           await _createMindFlowSchema(db);
+        }
+        if (oldVersion < 6) {
+          await _createCommercialSnapshotSchema(db);
         }
       },
     );
@@ -407,6 +414,159 @@ class SqliteLocalStore implements LocalStore {
             'rank_index': index,
             'severity': risk.severity,
             'json_blob': _encodeSensitiveJsonBlob(risk.toJson()),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  @override
+  Future<List<MissionSet>> loadMissionSets() async {
+    final db = await _db;
+    final rows = await db.query(
+      'mission_sets',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => MissionSet.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveMissionSets(List<MissionSet> missionSets) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('mission_sets');
+      for (final missionSet in missionSets) {
+        await txn.insert(
+          'mission_sets',
+          {
+            'mission_set_id': missionSet.missionSetId,
+            'date': missionSet.date,
+            'source_state': missionSet.sourceState.storageKey,
+            'created_at_iso': missionSet.createdAt,
+            'json_blob': _encodeSensitiveJsonBlob(missionSet.toJson()),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  @override
+  Future<List<EvidenceItem>> loadEvidenceItems() async {
+    final db = await _db;
+    final rows = await db.query(
+      'evidence_items',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => EvidenceItem.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveEvidenceItems(List<EvidenceItem> evidenceItems) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('evidence_items');
+      for (final item in evidenceItems) {
+        await txn.insert(
+          'evidence_items',
+          {
+            'evidence_id': item.evidenceId,
+            'source_type': item.sourceType,
+            'privacy_class': item.privacyClass.storageKey,
+            'allowed_for_ai': item.allowedForAi ? 1 : 0,
+            'created_at_iso': item.createdAt,
+            'hash': item.hash,
+            'json_blob': _encodeSensitiveJsonBlob(item.toJson()),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  @override
+  Future<List<LifeGraphRelation>> loadLifeGraphRelations() async {
+    final db = await _db;
+    final rows = await db.query(
+      'lifegraph_relations',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => LifeGraphRelation.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveLifeGraphRelations(List<LifeGraphRelation> relations) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('lifegraph_relations');
+      for (final relation in relations) {
+        await txn.insert(
+          'lifegraph_relations',
+          {
+            'relation_id': relation.relationId,
+            'from_event_id': relation.fromEventId,
+            'to_event_id': relation.toEventId,
+            'relation_type': relation.relationType,
+            'confidence': relation.confidence,
+            'created_at_iso': relation.createdAt,
+            'json_blob': _encodeSensitiveJsonBlob(relation.toJson()),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  @override
+  Future<List<PrivacyAuditEntry>> loadPrivacyAuditEntries() async {
+    final db = await _db;
+    final rows = await db.query(
+      'privacy_audit_entries',
+      orderBy: 'changed_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => PrivacyAuditEntry.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> savePrivacyAuditEntries(List<PrivacyAuditEntry> entries) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('privacy_audit_entries');
+      for (final entry in entries) {
+        await txn.insert(
+          'privacy_audit_entries',
+          {
+            'audit_id': entry.auditId,
+            'event_id': entry.eventId,
+            'old_privacy_level': entry.oldPrivacyLevel,
+            'new_privacy_level': entry.newPrivacyLevel,
+            'changed_at_iso': entry.changedAt,
+            'json_blob': _encodeSensitiveJsonBlob(entry.toJson()),
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
@@ -1090,6 +1250,10 @@ class SqliteLocalStore implements LocalStore {
       await txn.delete('mission_feedback');
       await txn.delete('missions');
       await txn.delete('daily_risks');
+      await txn.delete('mission_sets');
+      await txn.delete('evidence_items');
+      await txn.delete('lifegraph_relations');
+      await txn.delete('privacy_audit_entries');
       await txn.delete('tasks');
       await txn.delete('habits');
       await txn.delete('expenses');
@@ -1283,6 +1447,49 @@ class SqliteLocalStore implements LocalStore {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_product_evidence_status ON product_evidence_cards(sustainability_status)',
+    );
+    await _createCommercialSnapshotSchema(db);
+  }
+
+  Future<void> _createCommercialSnapshotSchema(Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS mission_sets (mission_set_id TEXT PRIMARY KEY, date TEXT NOT NULL, source_state TEXT NOT NULL, created_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_mission_sets_date_created ON mission_sets(date, created_at_iso DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_mission_sets_source_state ON mission_sets(source_state)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS evidence_items (evidence_id TEXT PRIMARY KEY, source_type TEXT NOT NULL, privacy_class TEXT NOT NULL, allowed_for_ai INTEGER NOT NULL, created_at_iso TEXT NOT NULL, hash TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_evidence_items_source_type ON evidence_items(source_type)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_evidence_items_privacy_class ON evidence_items(privacy_class)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_evidence_items_allowed_created ON evidence_items(allowed_for_ai, created_at_iso DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_evidence_items_hash ON evidence_items(hash)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS lifegraph_relations (relation_id TEXT PRIMARY KEY, from_event_id TEXT NOT NULL, to_event_id TEXT NOT NULL, relation_type TEXT NOT NULL, confidence REAL NOT NULL, created_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_lifegraph_relations_from_to ON lifegraph_relations(from_event_id, to_event_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_lifegraph_relations_type ON lifegraph_relations(relation_type)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS privacy_audit_entries (audit_id TEXT PRIMARY KEY, event_id TEXT NOT NULL, old_privacy_level TEXT NOT NULL, new_privacy_level TEXT NOT NULL, changed_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_privacy_audit_event_time ON privacy_audit_entries(event_id, changed_at_iso DESC)',
     );
   }
 

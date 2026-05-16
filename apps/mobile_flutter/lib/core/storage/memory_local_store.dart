@@ -14,7 +14,10 @@ import '../../domains/mindflow/mental_load_item.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
+import '../../domains/missions/mission_set.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/privacy/evidence_item.dart';
+import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/shopping/product_evidence_card.dart';
 import '../../domains/shopping/shopping_need.dart';
@@ -22,6 +25,7 @@ import '../../domains/tasks/go_task.dart';
 import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../lifegraph/life_event.dart';
+import '../lifegraph/lifegraph_relation.dart';
 import '../privacy/privacy_models.dart';
 import '../runtime/app_runtime_config.dart';
 import '../settings/app_profile_preferences.dart';
@@ -36,6 +40,10 @@ class MemoryLocalStore implements LocalStore {
   final List<MissionFeedback> _feedbackItems = <MissionFeedback>[];
   final List<DailyMission> _missions = <DailyMission>[];
   final List<DailyRisk> _risks = <DailyRisk>[];
+  final List<MissionSet> _missionSets = <MissionSet>[];
+  final List<EvidenceItem> _evidenceItems = <EvidenceItem>[];
+  final List<LifeGraphRelation> _lifeGraphRelations = <LifeGraphRelation>[];
+  final List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
   final List<GoTask> _tasks = <GoTask>[];
   final List<Habit> _habits = <Habit>[];
   final List<ExpenseRecord> _expenses = <ExpenseRecord>[];
@@ -161,6 +169,54 @@ class MemoryLocalStore implements LocalStore {
     _risks
       ..clear()
       ..addAll(risks);
+  }
+
+  @override
+  Future<List<MissionSet>> loadMissionSets() async {
+    return List<MissionSet>.unmodifiable(_missionSets);
+  }
+
+  @override
+  Future<void> saveMissionSets(List<MissionSet> missionSets) async {
+    _missionSets
+      ..clear()
+      ..addAll(missionSets);
+  }
+
+  @override
+  Future<List<EvidenceItem>> loadEvidenceItems() async {
+    return List<EvidenceItem>.unmodifiable(_evidenceItems);
+  }
+
+  @override
+  Future<void> saveEvidenceItems(List<EvidenceItem> evidenceItems) async {
+    _evidenceItems
+      ..clear()
+      ..addAll(evidenceItems);
+  }
+
+  @override
+  Future<List<LifeGraphRelation>> loadLifeGraphRelations() async {
+    return List<LifeGraphRelation>.unmodifiable(_lifeGraphRelations);
+  }
+
+  @override
+  Future<void> saveLifeGraphRelations(List<LifeGraphRelation> relations) async {
+    _lifeGraphRelations
+      ..clear()
+      ..addAll(relations);
+  }
+
+  @override
+  Future<List<PrivacyAuditEntry>> loadPrivacyAuditEntries() async {
+    return List<PrivacyAuditEntry>.unmodifiable(_privacyAuditEntries);
+  }
+
+  @override
+  Future<void> savePrivacyAuditEntries(List<PrivacyAuditEntry> entries) async {
+    _privacyAuditEntries
+      ..clear()
+      ..addAll(entries);
   }
 
   @override
@@ -485,6 +541,10 @@ class MemoryLocalStore implements LocalStore {
     _feedbackItems.clear();
     _missions.clear();
     _risks.clear();
+    _missionSets.clear();
+    _evidenceItems.clear();
+    _lifeGraphRelations.clear();
+    _privacyAuditEntries.clear();
     _tasks.clear();
     _habits.clear();
     _expenses.clear();
