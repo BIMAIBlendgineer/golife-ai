@@ -291,7 +291,7 @@ abstract class AppLocalizations {
   /// No description provided for @profilePreferencesBody.
   ///
   /// In en, this message translates to:
-  /// **'Set language, theme, AI style, and current plan from one local-first profile center.'**
+  /// **'Set language, theme, and AI style from one local-first profile center.'**
   String get profilePreferencesBody;
 
   /// No description provided for @deliveryPreferencesTitle.
@@ -671,6 +671,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Audit entries'**
   String get privacyMetricAuditEntries;
+
+  /// No description provided for @billingPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan and billing'**
+  String get billingPlanTitle;
+
+  /// No description provided for @billingPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This release includes a safe local entitlement runtime. Real purchases, restore, and renewal handling stay disabled.'**
+  String get billingPlanBody;
+
+  /// No description provided for @billingCurrentPlanLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan'**
+  String get billingCurrentPlanLabel;
+
+  /// No description provided for @billingProviderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing provider'**
+  String get billingProviderLabel;
+
+  /// No description provided for @billingRenewalStateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Renewal state'**
+  String get billingRenewalStateLabel;
+
+  /// No description provided for @billingRestoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get billingRestoreLabel;
+
+  /// No description provided for @billingExportDeleteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export and delete'**
+  String get billingExportDeleteLabel;
+
+  /// No description provided for @billingDisabledLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled in this release'**
+  String get billingDisabledLabel;
+
+  /// No description provided for @billingRenewalDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get billingRenewalDisabled;
+
+  /// No description provided for @billingRestoreUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable in this release'**
+  String get billingRestoreUnavailable;
+
+  /// No description provided for @billingExportDeleteAlwaysAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Always available'**
+  String get billingExportDeleteAlwaysAvailable;
+
+  /// No description provided for @billingFeatureGatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature gates'**
+  String get billingFeatureGatesTitle;
+
+  /// No description provided for @billingGateMissionRefreshes.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily mission refreshes'**
+  String get billingGateMissionRefreshes;
+
+  /// No description provided for @billingGateAiCaptures.
+  ///
+  /// In en, this message translates to:
+  /// **'AI-assisted captures'**
+  String get billingGateAiCaptures;
+
+  /// No description provided for @billingGateExportBundles.
+  ///
+  /// In en, this message translates to:
+  /// **'Export bundles'**
+  String get billingGateExportBundles;
+
+  /// No description provided for @billingGateValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} remaining of {limit}'**
+  String billingGateValue(int remaining, int limit);
+
+  /// No description provided for @billingGateAlwaysAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enforced in this release'**
+  String get billingGateAlwaysAvailable;
+
+  /// No description provided for @billingGateWithinQuota.
+  ///
+  /// In en, this message translates to:
+  /// **'Within the local quota window'**
+  String get billingGateWithinQuota;
+
+  /// No description provided for @billingGateQuotaExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'Quota exhausted, local fallback stays available'**
+  String get billingGateQuotaExhausted;
+
+  /// No description provided for @billingDecisionOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open billing decision'**
+  String get billingDecisionOpen;
+
+  /// No description provided for @billingDecisionCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy billing decision URL'**
+  String get billingDecisionCopy;
+
+  /// No description provided for @billingPlanFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get billingPlanFree;
+
+  /// No description provided for @billingPlanPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get billingPlanPremium;
+
+  /// No description provided for @billingPlanPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get billingPlanPro;
 
   /// No description provided for @privacyLegalTitle.
   ///

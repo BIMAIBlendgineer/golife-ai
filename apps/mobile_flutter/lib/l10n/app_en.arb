@@ -29,7 +29,7 @@
   "languageChineseSimplified": "Simplified Chinese",
   "languageChineseTraditional": "Traditional Chinese",
   "profilePreferencesTitle": "Profile preferences",
-  "profilePreferencesBody": "Set language, theme, AI style, and current plan from one local-first profile center.",
+  "profilePreferencesBody": "Set language, theme, and AI style from one local-first profile center.",
   "deliveryPreferencesTitle": "Notifications and rhythm",
   "regionalPreferencesTitle": "Region and units",
   "preferencesLocalOnlyHint": "These preferences stay local on this device until live sync and billing are connected.",
@@ -93,6 +93,40 @@
   "privacyMetricEvidenceItems": "Evidence items",
   "privacyMetricRelations": "Relations",
   "privacyMetricAuditEntries": "Audit entries",
+  "billingPlanTitle": "Plan and billing",
+  "billingPlanBody": "This release includes a safe local entitlement runtime. Real purchases, restore, and renewal handling stay disabled.",
+  "billingCurrentPlanLabel": "Current plan",
+  "billingProviderLabel": "Billing provider",
+  "billingRenewalStateLabel": "Renewal state",
+  "billingRestoreLabel": "Restore purchases",
+  "billingExportDeleteLabel": "Export and delete",
+  "billingDisabledLabel": "Disabled in this release",
+  "billingRenewalDisabled": "Disabled",
+  "billingRestoreUnavailable": "Unavailable in this release",
+  "billingExportDeleteAlwaysAvailable": "Always available",
+  "billingFeatureGatesTitle": "Feature gates",
+  "billingGateMissionRefreshes": "Daily mission refreshes",
+  "billingGateAiCaptures": "AI-assisted captures",
+  "billingGateExportBundles": "Export bundles",
+  "billingGateValue": "{remaining} remaining of {limit}",
+  "@billingGateValue": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "billingGateAlwaysAvailable": "Not enforced in this release",
+  "billingGateWithinQuota": "Within the local quota window",
+  "billingGateQuotaExhausted": "Quota exhausted, local fallback stays available",
+  "billingDecisionOpen": "Open billing decision",
+  "billingDecisionCopy": "Copy billing decision URL",
+  "billingPlanFree": "Free",
+  "billingPlanPremium": "Premium",
+  "billingPlanPro": "Pro",
   "privacyLegalTitle": "Store and legal",
   "privacyLegalBody": "Public privacy, terms, and support URLs for this release live here and are also referenced in the release artifact.",
   "privacyLegalPolicyTitle": "Privacy policy",

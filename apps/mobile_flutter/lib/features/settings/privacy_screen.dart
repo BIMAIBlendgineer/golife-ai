@@ -7,8 +7,10 @@ import '../../core/i18n/app_locale.dart';
 import '../../core/i18n/app_localized_values.dart';
 import '../../core/legal/legal_document_registry.dart';
 import '../../core/lifegraph/life_event.dart';
+import '../../core/monetization/entitlement_service.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/settings/app_profile_preferences.dart';
+import '../../domains/monetization/entitlement.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
@@ -172,6 +174,11 @@ class PrivacyScreen extends StatelessWidget {
               icon: const Icon(Icons.timeline_rounded),
               label: Text(l10n.lifeGraphOpenTimeline),
             ),
+          ),
+          const SizedBox(height: 24),
+          _PlanBillingCard(
+            controller: controller,
+            onOpenExternalUrl: onOpenExternalUrl,
           ),
           const SizedBox(height: 24),
           Text(
@@ -618,26 +625,232 @@ class _ProfilePreferencesCard extends StatelessWidget {
           ],
           onSelected: controller.updateAiDetailPreference,
         ),
-        _PreferenceChoiceGroup<CurrentPlanPreference>(
-          label: l10n.currentPlanPreference,
-          selected: controller.profilePreferences.currentPlan,
-          options: [
-            _ChoiceOption(
-              value: CurrentPlanPreference.free,
-              label: l10n.planFree,
-            ),
-            _ChoiceOption(
-              value: CurrentPlanPreference.plus,
-              label: l10n.planPlus,
-            ),
-            _ChoiceOption(
-              value: CurrentPlanPreference.pro,
-              label: l10n.planPro,
-            ),
-          ],
-          onSelected: controller.updateCurrentPlanPreference,
-        ),
       ],
+    );
+  }
+}
+
+class _PlanBillingCard extends StatefulWidget {
+  const _PlanBillingCard({
+    required this.controller,
+    this.onOpenExternalUrl,
+  });
+
+  final GoLifeController controller;
+  final Future<void> Function(String url)? onOpenExternalUrl;
+
+  @override
+  State<_PlanBillingCard> createState() => _PlanBillingCardState();
+}
+
+class _PlanBillingCardState extends State<_PlanBillingCard> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.controller.trackBillingDisabledViewed();
+      widget.controller.trackRestoreUnavailableViewed();
+      widget.controller
+          .trackEntitlementGateViewed(EntitlementFeature.dailyMissionRefreshes);
+      widget.controller
+          .trackEntitlementGateViewed(EntitlementFeature.aiAssistedCaptures);
+      widget.controller
+          .trackEntitlementGateViewed(EntitlementFeature.exportBundles);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
+    final entitlement = controller.entitlement;
+    final missionRefreshGate = controller.entitlementGateForFeature(
+      EntitlementFeature.dailyMissionRefreshes,
+    );
+    final aiCaptureGate = controller.entitlementGateForFeature(
+      EntitlementFeature.aiAssistedCaptures,
+    );
+    final exportGate = controller.entitlementGateForFeature(
+      EntitlementFeature.exportBundles,
+    );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(theme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.billingPlanTitle, style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(
+            l10n.billingPlanBody,
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 14),
+          _BillingFactRow(
+            label: l10n.billingCurrentPlanLabel,
+            value: _entitlementPlanLabel(entitlement.plan, l10n),
+          ),
+          _BillingFactRow(
+            label: l10n.billingProviderLabel,
+            value: l10n.billingDisabledLabel,
+          ),
+          _BillingFactRow(
+            label: l10n.billingRenewalStateLabel,
+            value: l10n.billingRenewalDisabled,
+          ),
+          _BillingFactRow(
+            label: l10n.billingRestoreLabel,
+            value: l10n.billingRestoreUnavailable,
+          ),
+          _BillingFactRow(
+            label: l10n.billingExportDeleteLabel,
+            value: l10n.billingExportDeleteAlwaysAvailable,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            l10n.billingFeatureGatesTitle,
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          _BillingGateRow(
+            label: l10n.billingGateMissionRefreshes,
+            gate: missionRefreshGate,
+          ),
+          _BillingGateRow(
+            label: l10n.billingGateAiCaptures,
+            gate: aiCaptureGate,
+          ),
+          _BillingGateRow(
+            label: l10n.billingGateExportBundles,
+            gate: exportGate,
+            forceAlwaysAvailable: true,
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                key: const ValueKey<String>('billing-open-decision'),
+                onPressed: () => _openDecisionDocument(context),
+                icon: const Icon(Icons.open_in_new_rounded),
+                label: Text(l10n.billingDecisionOpen),
+              ),
+              TextButton.icon(
+                key: const ValueKey<String>('billing-copy-decision'),
+                onPressed: () => _copyDecisionDocument(context),
+                icon: const Icon(Icons.copy_all_rounded),
+                label: Text(l10n.billingDecisionCopy),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openDecisionDocument(BuildContext context) async {
+    final url = GoLifeLegalDocuments.billingDisabledDecisionUrl;
+    if (widget.onOpenExternalUrl != null) {
+      await widget.onOpenExternalUrl!(url);
+      return;
+    }
+
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (opened || !context.mounted) {
+      return;
+    }
+    await _copyDecisionDocument(context, useFallbackMessage: true);
+  }
+
+  Future<void> _copyDecisionDocument(
+    BuildContext context, {
+    bool useFallbackMessage = false,
+  }) async {
+    await Clipboard.setData(
+      const ClipboardData(text: GoLifeLegalDocuments.billingDisabledDecisionUrl),
+    );
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          useFallbackMessage
+              ? AppLocalizations.of(context)!.privacyLegalOpenFallback
+              : AppLocalizations.of(context)!.privacyLegalCopied,
+        ),
+      ),
+    );
+  }
+}
+
+class _BillingGateRow extends StatelessWidget {
+  const _BillingGateRow({
+    required this.label,
+    required this.gate,
+    this.forceAlwaysAvailable = false,
+  });
+
+  final String label;
+  final EntitlementGateResult gate;
+  final bool forceAlwaysAvailable;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final value = forceAlwaysAvailable
+        ? l10n.billingExportDeleteAlwaysAvailable
+        : l10n.billingGateValue(gate.remaining, gate.limit);
+    final subtitle = forceAlwaysAvailable
+        ? l10n.billingGateAlwaysAvailable
+        : gate.allowed
+            ? l10n.billingGateWithinQuota
+            : l10n.billingGateQuotaExhausted;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$label: $value', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 2),
+          Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+class _BillingFactRow extends StatelessWidget {
+  const _BillingFactRow({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          style: Theme.of(context).textTheme.bodyMedium,
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1157,4 +1370,18 @@ bool _isEventAiEligible(GoLifeController controller, LifeEvent event) {
   return controller.privacySettings.permissionFor(domain) ==
           DataPermission.aiAllowed &&
       event.privacyLevel == DataPermission.aiAllowed.storageKey;
+}
+
+String _entitlementPlanLabel(
+  EntitlementPlan plan,
+  AppLocalizations l10n,
+) {
+  switch (plan) {
+    case EntitlementPlan.free:
+      return l10n.billingPlanFree;
+    case EntitlementPlan.premium:
+      return l10n.billingPlanPremium;
+    case EntitlementPlan.pro:
+      return l10n.billingPlanPro;
+  }
 }

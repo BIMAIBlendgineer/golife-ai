@@ -166,6 +166,30 @@ void main() {
 
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
+      find.text('Plan and billing'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('Plan and billing'), findsOneWidget);
+    expect(find.text('Feature gates'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('billing-open-decision')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('billing-copy-decision')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('billing-open-decision')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(openedUrls, <String>[GoLifeLegalDocuments.billingDisabledDecisionUrl]);
+
+    await tester.scrollUntilVisible(
       find.text('Store and legal'),
       300,
       scrollable: find.byType(Scrollable).first,
@@ -182,6 +206,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(openedUrls, <String>[GoLifeLegalDocuments.privacyPolicyUrl]);
+    expect(
+      openedUrls,
+      <String>[
+        GoLifeLegalDocuments.billingDisabledDecisionUrl,
+        GoLifeLegalDocuments.privacyPolicyUrl,
+      ],
+    );
   });
 }

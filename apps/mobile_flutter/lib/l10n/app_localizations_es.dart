@@ -99,7 +99,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profilePreferencesBody =>
-      'Configura idioma, tema, estilo de IA y plan actual desde un ?nico centro de perfil local-first.';
+      'Configura idioma, tema y estilo de IA desde un centro de perfil local-first.';
 
   @override
   String get deliveryPreferencesTitle => 'Notificaciones y ritmo';
@@ -297,6 +297,82 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get privacyMetricAuditEntries => 'Entradas de auditoria';
+
+  @override
+  String get billingPlanTitle => 'Plan y billing';
+
+  @override
+  String get billingPlanBody =>
+      'Esta release incluye un runtime local seguro de entitlement. Las compras reales, restore y renovaciones siguen deshabilitados.';
+
+  @override
+  String get billingCurrentPlanLabel => 'Plan actual';
+
+  @override
+  String get billingProviderLabel => 'Proveedor de billing';
+
+  @override
+  String get billingRenewalStateLabel => 'Estado de renovacion';
+
+  @override
+  String get billingRestoreLabel => 'Restore purchases';
+
+  @override
+  String get billingExportDeleteLabel => 'Export y delete';
+
+  @override
+  String get billingDisabledLabel => 'Deshabilitado en esta release';
+
+  @override
+  String get billingRenewalDisabled => 'Deshabilitado';
+
+  @override
+  String get billingRestoreUnavailable => 'No disponible en esta release';
+
+  @override
+  String get billingExportDeleteAlwaysAvailable => 'Siempre disponible';
+
+  @override
+  String get billingFeatureGatesTitle => 'Feature gates';
+
+  @override
+  String get billingGateMissionRefreshes => 'Refreshes diarios de misiones';
+
+  @override
+  String get billingGateAiCaptures => 'Capturas asistidas por IA';
+
+  @override
+  String get billingGateExportBundles => 'Paquetes de export';
+
+  @override
+  String billingGateValue(int remaining, int limit) {
+    return '$remaining disponibles de $limit';
+  }
+
+  @override
+  String get billingGateAlwaysAvailable => 'No se aplica en esta release';
+
+  @override
+  String get billingGateWithinQuota => 'Dentro de la cuota local';
+
+  @override
+  String get billingGateQuotaExhausted =>
+      'Cuota agotada, el fallback local sigue disponible';
+
+  @override
+  String get billingDecisionOpen => 'Abrir decision de billing';
+
+  @override
+  String get billingDecisionCopy => 'Copiar URL de la decision de billing';
+
+  @override
+  String get billingPlanFree => 'Free';
+
+  @override
+  String get billingPlanPremium => 'Premium';
+
+  @override
+  String get billingPlanPro => 'Pro';
 
   @override
   String get privacyLegalTitle => 'Store y legal';
