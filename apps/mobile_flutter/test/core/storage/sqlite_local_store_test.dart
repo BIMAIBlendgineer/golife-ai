@@ -19,9 +19,13 @@ import 'package:golife_flutter/domains/mindflow/mental_load_item.dart';
 import 'package:golife_flutter/domains/mindflow/privacy_summary.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/missions/daily_risk.dart';
+import 'package:golife_flutter/domains/missions/mission_set.dart';
+import 'package:golife_flutter/domains/privacy/evidence_item.dart';
+import 'package:golife_flutter/domains/privacy/privacy_audit_entry.dart';
 import 'package:golife_flutter/domains/recipes/recipe_rescue.dart';
 import 'package:golife_flutter/domains/shopping/product_evidence_card.dart';
 import 'package:golife_flutter/domains/shopping/shopping_need.dart';
+import 'package:golife_flutter/core/lifegraph/lifegraph_relation.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -83,10 +87,76 @@ void main() {
         ),
       ],
     );
+    await store.saveMissionSets(
+      const <MissionSet>[
+        MissionSet(
+          missionSetId: 'set-1',
+          date: '2026-04-25',
+          sourceState: MissionSourceState.live,
+          missions: <DailyMission>[
+            DailyMission(
+              id: 'mission-1',
+              title: 'Protect one focus block',
+              body: 'Block 30 minutes for the next critical task.',
+              evidence: <String>['Calendar is fragmented'],
+              uncertainty: 'Review final timing before starting.',
+              requiresConfirmation: true,
+              domainTargets: <String>['task'],
+              recommendationType: 'mission',
+              confidence: 0.88,
+              ranking: null,
+              trace: <String, Object?>{'provider': 'mock'},
+            ),
+          ],
+          rankingTrace: <String, Object?>{'sourceState': 'live'},
+          createdAt: '2026-04-25T08:05:00Z',
+        ),
+      ],
+    );
+    await store.saveEvidenceItems(
+      const <EvidenceItem>[
+        EvidenceItem(
+          evidenceId: 'evidence-1',
+          sourceType: 'purchase_proof',
+          localPayloadRef: 'vault://submission-assets/proof.txt',
+          privacyClass: EvidencePrivacyClass.localOnly,
+          allowedForAi: false,
+          createdAt: '2026-04-25T08:10:00Z',
+          hash: 'proof-1',
+        ),
+      ],
+    );
+    await store.saveLifeGraphRelations(
+      const <LifeGraphRelation>[
+        LifeGraphRelation(
+          relationId: 'rel-1',
+          fromEventId: 'evt-1',
+          toEventId: 'evt-2',
+          relationType: 'homememory.proof',
+          confidence: 0.95,
+          createdAt: '2026-04-25T08:15:00Z',
+        ),
+      ],
+    );
+    await store.savePrivacyAuditEntries(
+      const <PrivacyAuditEntry>[
+        PrivacyAuditEntry(
+          auditId: 'audit-1',
+          eventId: 'evt-1',
+          oldPrivacyLevel: 'local_only',
+          newPrivacyLevel: 'ai_allowed',
+          changedAt: '2026-04-25T08:20:00Z',
+        ),
+      ],
+    );
 
     expect(await store.loadLifeEvents(), hasLength(1));
     expect(await store.loadDailyMissions(), hasLength(1));
     expect(await store.loadDailyRisks(), hasLength(1));
+    expect(await store.loadMissionSets(), hasLength(1));
+    expect(await store.loadEvidenceItems(), hasLength(1));
+    expect(await store.loadLifeGraphRelations(), hasLength(1));
+    expect(await store.loadPrivacyAuditEntries(), hasLength(1));
     expect(await store.loadDemoSeedEnabled(), isTrue);
 
     await store.upsertJournalEntry(
@@ -184,6 +254,34 @@ void main() {
     ))
         .first['json_blob']
         .toString();
+    final missionSetBlob = (await db.query(
+      'mission_sets',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final evidenceItemBlob = (await db.query(
+      'evidence_items',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final relationBlob = (await db.query(
+      'lifegraph_relations',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final privacyAuditBlob = (await db.query(
+      'privacy_audit_entries',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
     final calendarBlob = (await db.query(
       'calendar_items',
       columns: const ['json_blob'],
@@ -197,6 +295,11 @@ void main() {
     expect(eventBlob, isNot(contains('task_captured')));
     expect(missionBlob, isNot(contains('Protect one focus block')));
     expect(riskBlob, isNot(contains('Calendar overload')));
+    expect(missionSetBlob, isNot(contains('"mission_set_id":"set-1"')));
+    expect(evidenceItemBlob, isNot(contains('vault://submission-assets')));
+    expect(relationBlob, isNot(contains('homememory.proof')));
+    expect(
+        privacyAuditBlob, isNot(contains('"new_privacy_level":"ai_allowed"')));
     expect(calendarBlob, isNot(contains('Focus block')));
     await db.close();
 
@@ -205,6 +308,10 @@ void main() {
     expect(await store.loadLifeEvents(), isEmpty);
     expect(await store.loadDailyMissions(), isEmpty);
     expect(await store.loadDailyRisks(), isEmpty);
+    expect(await store.loadMissionSets(), isEmpty);
+    expect(await store.loadEvidenceItems(), isEmpty);
+    expect(await store.loadLifeGraphRelations(), isEmpty);
+    expect(await store.loadPrivacyAuditEntries(), isEmpty);
     expect(await store.loadMissionFeedback(), isEmpty);
     expect(await store.loadJournalEntries(), isEmpty);
     expect(await store.loadCalendarItems(), isEmpty);
@@ -718,7 +825,7 @@ void main() {
     await deleteDatabase(databasePath);
   });
 
-  test('upgrades v4 databases to v5 without losing existing rows', () async {
+  test('upgrades v4 databases to v6 without losing existing rows', () async {
     final databaseName =
         'golife_v4_upgrade_${DateTime.now().microsecondsSinceEpoch}.db';
     final databasePath = path.join(await getDatabasesPath(), databaseName);
@@ -773,7 +880,7 @@ void main() {
 
     final migratedDb = await openDatabase(databasePath, singleInstance: false);
     final tables = (await migratedDb.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('mental_load_items', 'decision_cards', 'shopping_needs', 'product_evidence_cards')",
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('mental_load_items', 'decision_cards', 'shopping_needs', 'product_evidence_cards', 'mission_sets', 'evidence_items', 'lifegraph_relations', 'privacy_audit_entries')",
     ))
         .map((row) => row['name'].toString())
         .toSet();
@@ -784,6 +891,10 @@ void main() {
         'decision_cards',
         'shopping_needs',
         'product_evidence_cards',
+        'mission_sets',
+        'evidence_items',
+        'lifegraph_relations',
+        'privacy_audit_entries',
       ]),
     );
     await migratedDb.close();

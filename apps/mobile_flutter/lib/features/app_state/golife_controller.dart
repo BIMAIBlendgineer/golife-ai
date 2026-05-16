@@ -12,6 +12,7 @@ import '../../core/i18n/app_localized_values.dart';
 import '../../core/lifegraph/life_event.dart';
 import '../../core/lifegraph/life_event_factory.dart';
 import '../../core/lifegraph/lifegraph_repository.dart';
+import '../../core/lifegraph/lifegraph_relation.dart';
 import '../../core/mindflow/mindflow_mappers.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/runtime/app_runtime_config.dart';
@@ -36,7 +37,10 @@ import '../../domains/mindflow/privacy_summary.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
+import '../../domains/missions/mission_set.dart';
 import '../../domains/pantry/pantry_item.dart';
+import '../../domains/privacy/evidence_item.dart';
+import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../domains/recipes/recipe_rescue.dart';
 import '../../domains/shopping/product_evidence_card.dart';
 import '../../domains/shopping/shopping_need.dart';
@@ -74,6 +78,7 @@ class GoLifeController extends ChangeNotifier {
   PrivacySettings _privacySettings = PrivacySettings.defaults();
   List<DailyMission> _dailyMissions = <DailyMission>[];
   List<DailyRisk> _cachedDailyRisks = <DailyRisk>[];
+  List<MissionSet> _missionSets = <MissionSet>[];
   List<MissionFeedback> _missionFeedback = <MissionFeedback>[];
   AppRuntimeConfig? _runtimeConfig;
   List<GoTask> _tasks = <GoTask>[];
@@ -92,6 +97,9 @@ class GoLifeController extends ChangeNotifier {
   List<MaintenanceReminder> _maintenanceReminders = <MaintenanceReminder>[];
   List<ClaimDraft> _claimDrafts = <ClaimDraft>[];
   List<EvidenceAttachment> _evidenceAttachments = <EvidenceAttachment>[];
+  List<EvidenceItem> _evidenceItems = <EvidenceItem>[];
+  List<LifeGraphRelation> _lifeGraphRelations = <LifeGraphRelation>[];
+  List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
   List<MentalLoadItem> _mentalLoadItems = <MentalLoadItem>[];
   List<DecisionCard> _decisionCards = <DecisionCard>[];
   List<ShoppingNeed> _shoppingNeeds = <ShoppingNeed>[];
@@ -160,7 +168,17 @@ class GoLifeController extends ChangeNotifier {
       _dailyMissions.isEmpty ? null : _dailyMissions.first;
   List<DailyMission> get dailyMissions =>
       List<DailyMission>.unmodifiable(_dailyMissions);
+  MissionSet? get currentMissionSet =>
+      _missionSets.isEmpty ? null : _missionSets.first;
+  List<MissionSet> get missionSets =>
+      List<MissionSet>.unmodifiable(_missionSets);
   List<LifeEvent> get lifeEvents => _lifeGraphRepository.allEvents();
+  List<EvidenceItem> get evidenceItems =>
+      List<EvidenceItem>.unmodifiable(_evidenceItems);
+  List<LifeGraphRelation> get lifeGraphRelations =>
+      List<LifeGraphRelation>.unmodifiable(_lifeGraphRelations);
+  List<PrivacyAuditEntry> get privacyAuditEntries =>
+      List<PrivacyAuditEntry>.unmodifiable(_privacyAuditEntries);
   List<MissionFeedback> get missionFeedbackHistory =>
       List<MissionFeedback>.unmodifiable(_missionFeedback);
   List<DailyRisk> get dailyRisks =>
@@ -225,14 +243,18 @@ class GoLifeController extends ChangeNotifier {
         'Life events',
         'Daily missions',
         'Daily risks',
+        'Mission sets',
+        'LifeGraph relations',
         'Finance records',
         'Calendar items',
         'Journal entries',
         'Quick notes',
+        'Evidence items',
         'Owned items',
         'Purchase proofs',
         'Claim drafts',
         'Evidence attachments',
+        'Privacy audit entries',
         'Mental load items',
         'Decision cards',
         'Shopping needs',
@@ -449,6 +471,7 @@ class GoLifeController extends ChangeNotifier {
     await _lifeGraphRepository.bootstrap();
     _dailyMissions = await _localStore.loadDailyMissions();
     _cachedDailyRisks = await _localStore.loadDailyRisks();
+    _missionSets = await _localStore.loadMissionSets();
     _missionFeedback = await _localStore.loadMissionFeedback();
     _tasks = await _localStore.loadTasks();
     _habits = await _localStore.loadHabits();
@@ -466,10 +489,18 @@ class GoLifeController extends ChangeNotifier {
     _maintenanceReminders = await _localStore.loadMaintenanceReminders();
     _claimDrafts = await _localStore.loadClaimDrafts();
     _evidenceAttachments = await _localStore.loadEvidenceAttachments();
+    _evidenceItems = await _localStore.loadEvidenceItems();
+    _lifeGraphRelations = await _localStore.loadLifeGraphRelations();
+    _privacyAuditEntries = await _localStore.loadPrivacyAuditEntries();
     _mentalLoadItems = await _localStore.loadMentalLoadItems();
     _decisionCards = await _localStore.loadDecisionCards();
     _shoppingNeeds = await _localStore.loadShoppingNeeds();
     _productEvidenceCards = await _localStore.loadProductEvidenceCards();
+    if (_dailyMissions.isEmpty && _missionSets.isNotEmpty) {
+      _dailyMissions = _missionSets.first.missions;
+    }
+    await _syncDerivedEvidenceItems(notifyStore: false);
+    await _rebuildDerivedLifeGraphRelations(notifyStore: false);
     await _seedDomainEntitiesIfNeeded();
     await _refreshMissionPlan();
     await refreshDecisionPlan(notify: false);
@@ -512,6 +543,56 @@ class GoLifeController extends ChangeNotifier {
   ) async {
     _privacySettings = _privacySettings.copyWithPermission(domain, permission);
     await _localStore.savePrivacySettings(_privacySettings);
+    await _refreshMissionPlan();
+    notifyListeners();
+  }
+
+  Future<void> updateEventPrivacy(
+    String eventId,
+    DataPermission permission,
+  ) async {
+    final currentEvents = lifeEvents.reversed.toList(growable: false);
+    final targetIndex =
+        currentEvents.indexWhere((event) => event.eventId == eventId);
+    if (targetIndex < 0) {
+      return;
+    }
+
+    final currentEvent = currentEvents[targetIndex];
+    final nextPrivacyLevel = permission.storageKey;
+    if (currentEvent.privacyLevel == nextPrivacyLevel) {
+      return;
+    }
+
+    final updatedEvent = LifeEvent(
+      eventId: currentEvent.eventId,
+      userId: currentEvent.userId,
+      domain: currentEvent.domain,
+      eventType: currentEvent.eventType,
+      timestampIso: currentEvent.timestampIso,
+      payload: currentEvent.payload,
+      source: currentEvent.source,
+      privacyLevel: nextPrivacyLevel,
+      evidenceHash: currentEvent.evidenceHash,
+    );
+
+    final mutable = List<LifeEvent>.from(currentEvents);
+    mutable[targetIndex] = updatedEvent;
+    await _lifeGraphRepository.replaceAll(mutable);
+    _privacyAuditEntries = _upsertById(
+      _privacyAuditEntries,
+      PrivacyAuditEntry(
+        auditId: _entityId('privacy-audit'),
+        eventId: eventId,
+        oldPrivacyLevel: currentEvent.privacyLevel,
+        newPrivacyLevel: nextPrivacyLevel,
+        changedAt: DateTime.now().toUtc().toIso8601String(),
+      ),
+      (item) => item.auditId,
+    );
+    await _localStore.savePrivacyAuditEntries(_privacyAuditEntries);
+    await _syncDerivedEvidenceItems(notifyStore: true);
+    await _rebuildDerivedLifeGraphRelations(notifyStore: true);
     await _refreshMissionPlan();
     notifyListeners();
   }
@@ -1694,6 +1775,7 @@ class GoLifeController extends ChangeNotifier {
       );
     }
 
+    await _rebuildDerivedLifeGraphRelations(notifyStore: true);
     await _refreshMissionPlan();
     notifyListeners();
     return _controllerText(
@@ -1832,6 +1914,7 @@ class GoLifeController extends ChangeNotifier {
         type: 'purchase_proof_added',
         summary: ownedItem.displayName,
         privacyLevel: privacyLevel,
+        evidenceHash: proofId,
         payload: {
           'ownedItemId': ownedItemId,
           'purchaseProofId': proofId,
@@ -1940,6 +2023,7 @@ class GoLifeController extends ChangeNotifier {
       ),
     );
 
+    await _rebuildDerivedLifeGraphRelations(notifyStore: true);
     await _refreshMissionPlan();
     await refreshDecisionPlan(notify: false);
     await refreshShoppingPlan(notify: false);
@@ -2017,6 +2101,7 @@ class GoLifeController extends ChangeNotifier {
         },
       ),
     );
+    await _rebuildDerivedLifeGraphRelations(notifyStore: true);
     await _upsertMentalLoadItem(
       _homeMemoryMentalLoadItem(
         id: 'mental-maintenance-${reminder.id}',
@@ -2115,6 +2200,7 @@ class GoLifeController extends ChangeNotifier {
         },
       ),
     );
+    await _rebuildDerivedLifeGraphRelations(notifyStore: true);
     await _upsertMentalLoadItem(
       _homeMemoryMentalLoadItem(
         id: 'mental-claim-${claimDraft.id}',
@@ -2178,6 +2264,7 @@ class GoLifeController extends ChangeNotifier {
         type: 'evidence_attachment_added',
         summary: description.trim().isEmpty ? attachment.type : description,
         privacyLevel: privacyLevel,
+        evidenceHash: attachment.id,
         payload: {
           'ownedItemId': ownedItemId,
           'evidenceAttachmentId': attachment.id,
@@ -2186,6 +2273,7 @@ class GoLifeController extends ChangeNotifier {
         },
       ),
     );
+    await _rebuildDerivedLifeGraphRelations(notifyStore: true);
     return _controllerText(
       id == null ? 'evidence_attachment_saved' : 'evidence_attachment_updated',
     );
@@ -2237,14 +2325,18 @@ class GoLifeController extends ChangeNotifier {
           'life_events',
           'missions',
           'daily_risks',
+          'mission_sets',
+          'lifegraph_relations',
           'expenses',
           'calendar_items',
           'journal_entries',
           'quick_notes',
+          'evidence_items',
           'owned_items',
           'purchase_proofs',
           'claim_drafts',
           'evidence_attachments',
+          'privacy_audit_entries',
           'mental_load_items',
           'decision_cards',
           'shopping_needs',
@@ -2269,8 +2361,18 @@ class GoLifeController extends ChangeNotifier {
       'daily_risks': _cachedDailyRisks
           .map((item) => item.toJson())
           .toList(growable: false),
+      'mission_sets':
+          _missionSets.map((item) => item.toJson()).toList(growable: false),
       'mission_feedback':
           _missionFeedback.map((item) => item.toJson()).toList(growable: false),
+      'evidence_items':
+          _evidenceItems.map((item) => item.toJson()).toList(growable: false),
+      'lifegraph_relations': _lifeGraphRelations
+          .map((item) => item.toJson())
+          .toList(growable: false),
+      'privacy_audit_entries': _privacyAuditEntries
+          .map((item) => item.toJson())
+          .toList(growable: false),
       'tasks': _tasks.map((item) => item.toJson()).toList(growable: false),
       'habits': _habits.map((item) => item.toJson()).toList(growable: false),
       'expenses':
@@ -2348,6 +2450,7 @@ class GoLifeController extends ChangeNotifier {
     _runtimeConfig = null;
     _dailyMissions = <DailyMission>[];
     _cachedDailyRisks = <DailyRisk>[];
+    _missionSets = <MissionSet>[];
     _missionFeedback = <MissionFeedback>[];
     _tasks = <GoTask>[];
     _habits = <Habit>[];
@@ -2365,6 +2468,9 @@ class GoLifeController extends ChangeNotifier {
     _maintenanceReminders = <MaintenanceReminder>[];
     _claimDrafts = <ClaimDraft>[];
     _evidenceAttachments = <EvidenceAttachment>[];
+    _evidenceItems = <EvidenceItem>[];
+    _lifeGraphRelations = <LifeGraphRelation>[];
+    _privacyAuditEntries = <PrivacyAuditEntry>[];
     _mentalLoadItems = <MentalLoadItem>[];
     _decisionCards = <DecisionCard>[];
     _shoppingNeeds = <ShoppingNeed>[];
@@ -2375,11 +2481,13 @@ class GoLifeController extends ChangeNotifier {
   Future<void> clearAiHistory() async {
     _dailyMissions = <DailyMission>[];
     _cachedDailyRisks = <DailyRisk>[];
+    _missionSets = <MissionSet>[];
     _missionFeedback = <MissionFeedback>[];
     _decisionCards = <DecisionCard>[];
     _productEvidenceCards = <ProductEvidenceCard>[];
     await _localStore.saveDailyMissions(_dailyMissions);
     await _localStore.saveDailyRisks(_cachedDailyRisks);
+    await _localStore.saveMissionSets(_missionSets);
     await _localStore.saveMissionFeedback(_missionFeedback);
     await _localStore.saveDecisionCards(_decisionCards);
     await _localStore.saveProductEvidenceCards(_productEvidenceCards);
@@ -2467,7 +2575,7 @@ class GoLifeController extends ChangeNotifier {
         .toList(growable: false);
   }
 
-  Future<void> _recordEvent({
+  Future<LifeEvent> _recordEvent({
     LifeEvent? event,
     String? domain,
     String? type,
@@ -2489,12 +2597,14 @@ class GoLifeController extends ChangeNotifier {
           privacyLevel: _privacyLevelForDomain(domain ?? 'system'),
         );
     await _lifeGraphRepository.addEvent(nextEvent);
+    await _syncDerivedEvidenceItems(notifyStore: true);
     if (refreshPlan) {
       await _refreshMissionPlan();
     }
     if (notifyAfter) {
       notifyListeners();
     }
+    return nextEvent;
   }
 
   Future<void> _refreshMissionPlan() async {
@@ -2507,8 +2617,22 @@ class GoLifeController extends ChangeNotifier {
     _cachedDailyRisks = _extractDailyRisksFromMission(
       _dailyMissions.isEmpty ? null : _dailyMissions.first,
     );
+    _missionSets = _upsertById(
+      _missionSets,
+      MissionSet(
+        missionSetId: dto.missionSetId,
+        date: dto.date,
+        sourceState: dto.sourceState,
+        missions: _dailyMissions,
+        rankingTrace: Map<String, Object?>.from(dto.trace),
+        createdAt:
+            _stringOrFallback(dto.trace['createdAt'], DateTime.now().toUtc()),
+      ),
+      (item) => item.missionSetId,
+    );
     await _localStore.saveDailyMissions(_dailyMissions);
     await _localStore.saveDailyRisks(_cachedDailyRisks);
+    await _localStore.saveMissionSets(_missionSets);
   }
 
   DecisionCard _decisionCardFromDto(DecisionCardDto dto) {
@@ -3459,6 +3583,205 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.upsertProductEvidenceCard(card);
   }
 
+  Future<void> _syncDerivedEvidenceItems({
+    required bool notifyStore,
+  }) async {
+    final derived = <EvidenceItem>[
+      for (final event in lifeEvents)
+        if ((event.evidenceHash ?? '').trim().isNotEmpty)
+          EvidenceItem(
+            evidenceId: 'event-evidence-${event.eventId}',
+            sourceType: event.source,
+            localPayloadRef: 'life_event:${event.eventId}',
+            privacyClass: _evidencePrivacyClassForLevel(event.privacyLevel),
+            allowedForAi: _eventEligibleForAi(event),
+            createdAt: event.timestampIso,
+            hash: event.evidenceHash!.trim(),
+          ),
+      for (final proof in _purchaseProofs)
+        EvidenceItem(
+          evidenceId: proof.id,
+          sourceType: 'purchase_proof',
+          localPayloadRef: proof.fileRef ?? 'purchase_proof:${proof.id}',
+          privacyClass: _evidencePrivacyClassForLevel(proof.privacyLevel),
+          allowedForAi:
+              proof.privacyLevel == DataPermission.aiAllowed.storageKey,
+          createdAt: proof.createdAt,
+          hash: proof.id,
+        ),
+      for (final attachment in _evidenceAttachments)
+        EvidenceItem(
+          evidenceId: attachment.id,
+          sourceType: 'evidence_attachment:${attachment.type}',
+          localPayloadRef:
+              attachment.fileRef ?? 'evidence_attachment:${attachment.id}',
+          privacyClass: _evidencePrivacyClassForLevel(attachment.privacyLevel),
+          allowedForAi:
+              attachment.privacyLevel == DataPermission.aiAllowed.storageKey,
+          createdAt: attachment.createdAt,
+          hash: attachment.id,
+        ),
+    ];
+    derived.sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    _evidenceItems = _dedupeById(derived, (item) => item.evidenceId);
+    if (notifyStore) {
+      await _localStore.saveEvidenceItems(_evidenceItems);
+    }
+  }
+
+  Future<void> _rebuildDerivedLifeGraphRelations({
+    required bool notifyStore,
+  }) async {
+    final relations = <LifeGraphRelation>[];
+    final groupedByOwnedItem = <String, List<LifeEvent>>{};
+    for (final event in lifeEvents) {
+      final ownedItemId = event.payload['ownedItemId']?.toString();
+      if (ownedItemId == null || ownedItemId.isEmpty) {
+        continue;
+      }
+      groupedByOwnedItem.putIfAbsent(ownedItemId, () => <LifeEvent>[]).add(
+            event,
+          );
+    }
+
+    for (final events in groupedByOwnedItem.values) {
+      final ownedItemEvent = _firstEventOfType(events, 'owned_item_created');
+      if (ownedItemEvent == null) {
+        continue;
+      }
+      for (final proofEvent in events.where(
+        (event) => event.type == 'purchase_proof_added',
+      )) {
+        relations.add(
+          _lifeGraphRelation(
+            fromEventId: ownedItemEvent.eventId,
+            toEventId: proofEvent.eventId,
+            relationType: 'homememory.proof',
+            confidence: 0.96,
+            createdAt: proofEvent.timestampIso,
+          ),
+        );
+      }
+      for (final warrantyEvent in events.where(
+        (event) => event.type == 'warranty_detected',
+      )) {
+        relations.add(
+          _lifeGraphRelation(
+            fromEventId: ownedItemEvent.eventId,
+            toEventId: warrantyEvent.eventId,
+            relationType: 'homememory.warranty',
+            confidence: 0.98,
+            createdAt: warrantyEvent.timestampIso,
+          ),
+        );
+      }
+      for (final reminderEvent in events.where(
+        (event) => event.type == 'maintenance_scheduled',
+      )) {
+        relations.add(
+          _lifeGraphRelation(
+            fromEventId: ownedItemEvent.eventId,
+            toEventId: reminderEvent.eventId,
+            relationType: 'homememory.reminder',
+            confidence: 0.98,
+            createdAt: reminderEvent.timestampIso,
+          ),
+        );
+      }
+      for (final claimEvent in events.where(
+        (event) => event.type == 'claim_draft_created',
+      )) {
+        relations.add(
+          _lifeGraphRelation(
+            fromEventId: ownedItemEvent.eventId,
+            toEventId: claimEvent.eventId,
+            relationType: 'homememory.claim',
+            confidence: 0.94,
+            createdAt: claimEvent.timestampIso,
+          ),
+        );
+      }
+      for (final evidenceEvent in events.where(
+        (event) => event.type == 'evidence_attachment_added',
+      )) {
+        relations.add(
+          _lifeGraphRelation(
+            fromEventId: ownedItemEvent.eventId,
+            toEventId: evidenceEvent.eventId,
+            relationType: 'homememory.evidence',
+            confidence: 0.96,
+            createdAt: evidenceEvent.timestampIso,
+          ),
+        );
+        final proofId = evidenceEvent.payload['proofId']?.toString();
+        if (proofId == null || proofId.isEmpty) {
+          continue;
+        }
+        final matchingProofEvent = events.cast<LifeEvent?>().firstWhere(
+              (candidate) =>
+                  candidate?.type == 'purchase_proof_added' &&
+                  candidate?.payload['purchaseProofId']?.toString() == proofId,
+              orElse: () => null,
+            );
+        if (matchingProofEvent == null) {
+          continue;
+        }
+        relations.add(
+          _lifeGraphRelation(
+            fromEventId: matchingProofEvent.eventId,
+            toEventId: evidenceEvent.eventId,
+            relationType: 'homememory.proof_attachment',
+            confidence: 0.93,
+            createdAt: evidenceEvent.timestampIso,
+          ),
+        );
+      }
+    }
+
+    relations.sort((left, right) => right.createdAt.compareTo(left.createdAt));
+    _lifeGraphRelations = _dedupeById(relations, (item) => item.relationId);
+    if (notifyStore) {
+      await _localStore.saveLifeGraphRelations(_lifeGraphRelations);
+    }
+  }
+
+  LifeGraphRelation _lifeGraphRelation({
+    required String fromEventId,
+    required String toEventId,
+    required String relationType,
+    required double confidence,
+    required String createdAt,
+  }) {
+    return LifeGraphRelation(
+      relationId: '$relationType:$fromEventId:$toEventId',
+      fromEventId: fromEventId,
+      toEventId: toEventId,
+      relationType: relationType,
+      confidence: confidence,
+      createdAt: createdAt,
+    );
+  }
+
+  LifeEvent? _firstEventOfType(List<LifeEvent> events, String type) {
+    for (final event in events) {
+      if (event.type == type) {
+        return event;
+      }
+    }
+    return null;
+  }
+
+  EvidencePrivacyClass _evidencePrivacyClassForLevel(String privacyLevel) {
+    switch (privacyLevel) {
+      case 'ai_allowed':
+        return EvidencePrivacyClass.aiAllowed;
+      case 'sync_allowed':
+        return EvidencePrivacyClass.private;
+      default:
+        return EvidencePrivacyClass.localOnly;
+    }
+  }
+
   MentalLoadItem _homeMemoryMentalLoadItem({
     required String id,
     required String type,
@@ -3536,6 +3859,7 @@ class GoLifeController extends ChangeNotifier {
     required String type,
     required String summary,
     required String privacyLevel,
+    String? evidenceHash,
     Map<String, Object?> payload = const <String, Object?>{},
   }) {
     return LifeEventFactory.create(
@@ -3543,6 +3867,7 @@ class GoLifeController extends ChangeNotifier {
       type: type,
       summary: summary,
       privacyLevel: privacyLevel,
+      evidenceHash: evidenceHash,
       payload: <String, Object?>{
         ...payload,
         'module': 'homememory',
@@ -4209,6 +4534,14 @@ class GoLifeController extends ChangeNotifier {
       return null;
     }
     return double.tryParse(match.group(1)!.replaceAll(',', '.'));
+  }
+
+  String _stringOrFallback(Object? rawValue, DateTime fallbackValue) {
+    final value = rawValue?.toString().trim();
+    if (value == null || value.isEmpty) {
+      return fallbackValue.toIso8601String();
+    }
+    return value;
   }
 
   String _entityId(String prefix) {
