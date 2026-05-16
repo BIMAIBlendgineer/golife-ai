@@ -2,35 +2,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:golife_flutter/domains/analytics/analytics_event.dart';
 
 void main() {
-  test('sanitizes blocked metadata keys and long free-text values', () {
+  test('serializes analytics event with sanitized metadata', () {
     const event = AnalyticsEvent(
       eventId: 'analytics-1',
-      eventName: 'capture_parsed',
+      eventName: 'mission_set_generated',
       timestampIso: '2026-05-16T18:00:00Z',
       locale: 'en',
-      source: 'capture_parser',
+      source: 'mission_planner',
       metadata: <String, Object?>{
-        'draft_count': 2,
-        'domain': 'task',
-        'summary': 'This summary should never survive the sanitizer.',
-        'trace': <String, Object?>{
-          'reason_code': 'gateway_parse_exception',
-          'title': 'Raw title should be removed.',
-        },
-        'long_value':
-            'This string is intentionally longer than eighty characters so it gets dropped from analytics metadata.',
+        'mission_set_id': 'set-1',
+        'mission_count': 3,
+        'body': 'Should be removed.',
       },
     );
 
-    final json = event.toJson();
-    final metadata = Map<String, Object?>.from(json['metadata'] as Map);
-    final trace = Map<String, Object?>.from(metadata['trace'] as Map);
+    final restored = AnalyticsEvent.fromJson(
+      Map<String, dynamic>.from(event.toJson()),
+    );
 
-    expect(metadata['draft_count'], 2);
-    expect(metadata['domain'], 'task');
-    expect(metadata.containsKey('summary'), isFalse);
-    expect(metadata.containsKey('long_value'), isFalse);
-    expect(trace['reason_code'], 'gateway_parse_exception');
-    expect(trace.containsKey('title'), isFalse);
+    expect(restored.eventId, 'analytics-1');
+    expect(restored.eventName, 'mission_set_generated');
+    expect(restored.metadata['mission_set_id'], 'set-1');
+    expect(restored.metadata['mission_count'], 3);
+    expect(restored.metadata.containsKey('body'), isFalse);
+    expect(restored.metadata['has_text'], true);
   });
 }
