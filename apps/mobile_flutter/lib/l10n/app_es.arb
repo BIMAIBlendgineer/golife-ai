@@ -29,7 +29,7 @@
   "languageChineseSimplified": "Chino simplificado",
   "languageChineseTraditional": "Chino tradicional",
   "profilePreferencesTitle": "Preferencias del perfil",
-  "profilePreferencesBody": "Configura idioma, tema, estilo de IA y plan actual desde un ?nico centro de perfil local-first.",
+  "profilePreferencesBody": "Configura idioma, tema y estilo de IA desde un centro de perfil local-first.",
   "deliveryPreferencesTitle": "Notificaciones y ritmo",
   "regionalPreferencesTitle": "Regi?n y unidades",
   "preferencesLocalOnlyHint": "Estas preferencias permanecen en este dispositivo hasta que se conecten la sincronizaci?n en vivo y la facturaci?n.",
@@ -93,6 +93,40 @@
   "privacyMetricEvidenceItems": "Evidence items",
   "privacyMetricRelations": "Relaciones",
   "privacyMetricAuditEntries": "Entradas de auditoria",
+  "billingPlanTitle": "Plan y billing",
+  "billingPlanBody": "Esta release incluye un runtime local seguro de entitlement. Las compras reales, restore y renovaciones siguen deshabilitados.",
+  "billingCurrentPlanLabel": "Plan actual",
+  "billingProviderLabel": "Proveedor de billing",
+  "billingRenewalStateLabel": "Estado de renovacion",
+  "billingRestoreLabel": "Restore purchases",
+  "billingExportDeleteLabel": "Export y delete",
+  "billingDisabledLabel": "Deshabilitado en esta release",
+  "billingRenewalDisabled": "Deshabilitado",
+  "billingRestoreUnavailable": "No disponible en esta release",
+  "billingExportDeleteAlwaysAvailable": "Siempre disponible",
+  "billingFeatureGatesTitle": "Feature gates",
+  "billingGateMissionRefreshes": "Refreshes diarios de misiones",
+  "billingGateAiCaptures": "Capturas asistidas por IA",
+  "billingGateExportBundles": "Paquetes de export",
+  "billingGateValue": "{remaining} disponibles de {limit}",
+  "@billingGateValue": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "billingGateAlwaysAvailable": "No se aplica en esta release",
+  "billingGateWithinQuota": "Dentro de la cuota local",
+  "billingGateQuotaExhausted": "Cuota agotada, el fallback local sigue disponible",
+  "billingDecisionOpen": "Abrir decision de billing",
+  "billingDecisionCopy": "Copiar URL de la decision de billing",
+  "billingPlanFree": "Free",
+  "billingPlanPremium": "Premium",
+  "billingPlanPro": "Pro",
   "privacyLegalTitle": "Store y legal",
   "privacyLegalBody": "Las URLs publicas de privacidad, terminos y soporte para esta release viven aqui y tambien quedan referenciadas en el release artifact.",
   "privacyLegalPolicyTitle": "Politica de privacidad",

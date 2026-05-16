@@ -21,6 +21,7 @@ import 'package:golife_flutter/domains/mindflow/privacy_summary.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/missions/daily_risk.dart';
 import 'package:golife_flutter/domains/missions/mission_set.dart';
+import 'package:golife_flutter/domains/monetization/entitlement.dart';
 import 'package:golife_flutter/domains/privacy/evidence_item.dart';
 import 'package:golife_flutter/domains/privacy/privacy_audit_entry.dart';
 import 'package:golife_flutter/domains/recipes/recipe_rescue.dart';
@@ -165,6 +166,20 @@ void main() {
         ),
       ],
     );
+    await store.saveEntitlement(
+      Entitlement(
+        plan: EntitlementPlan.free,
+        quota: const EntitlementQuota(
+          dailyMissionRefreshes: 12,
+          aiAssistedCaptures: 20,
+          exportBundles: 1,
+        ),
+        trialStatus: entitlementTrialStatusNotStarted,
+        billingProvider: entitlementBillingProviderDisabled,
+        renewalState: entitlementRenewalStateDisabled,
+        trace: const <String, Object?>{'source_state': 'local_cache'},
+      ),
+    );
 
     expect(await store.loadLifeEvents(), hasLength(1));
     expect(await store.loadDailyMissions(), hasLength(1));
@@ -174,6 +189,7 @@ void main() {
     expect(await store.loadLifeGraphRelations(), hasLength(1));
     expect(await store.loadPrivacyAuditEntries(), hasLength(1));
     expect(await store.loadAnalyticsEvents(), hasLength(1));
+    expect((await store.loadEntitlement()).plan, EntitlementPlan.free);
     expect(
       (await store.loadAnalyticsEvents()).single.metadata.containsKey('summary'),
       isFalse,
@@ -310,6 +326,13 @@ void main() {
     ))
         .first['json_blob']
         .toString();
+    final entitlementBlob = (await db.query(
+      'entitlement_state',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
     final calendarBlob = (await db.query(
       'calendar_items',
       columns: const ['json_blob'],
@@ -329,6 +352,7 @@ void main() {
     expect(
         privacyAuditBlob, isNot(contains('"new_privacy_level":"ai_allowed"')));
     expect(analyticsBlob, isNot(contains('mission_set_generated')));
+    expect(entitlementBlob, isNot(contains('"plan":"free"')));
     expect(calendarBlob, isNot(contains('Focus block')));
     await db.close();
 
@@ -342,6 +366,8 @@ void main() {
     expect(await store.loadLifeGraphRelations(), isEmpty);
     expect(await store.loadPrivacyAuditEntries(), isEmpty);
     expect(await store.loadAnalyticsEvents(), isEmpty);
+    expect(await store.loadEntitlement(), isA<Entitlement>());
+    expect((await store.loadEntitlement()).plan, EntitlementPlan.free);
     expect(await store.loadMissionFeedback(), isEmpty);
     expect(await store.loadJournalEntries(), isEmpty);
     expect(await store.loadCalendarItems(), isEmpty);
@@ -933,14 +959,14 @@ void main() {
     await deleteDatabase(databasePath);
   });
 
-  test('upgrades v6 databases to v7 and adds analytics_events', () async {
+  test('upgrades v7 databases to v8 and adds entitlement_state', () async {
     final databaseName =
-        'golife_v6_upgrade_${DateTime.now().microsecondsSinceEpoch}.db';
+        'golife_v7_upgrade_${DateTime.now().microsecondsSinceEpoch}.db';
     final databasePath = path.join(await getDatabasesPath(), databaseName);
 
     final legacyDb = await openDatabase(
       databasePath,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await db.execute(
           'CREATE TABLE IF NOT EXISTS key_value (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
@@ -974,11 +1000,11 @@ void main() {
 
     final upgradedDb = await openDatabase(databasePath, singleInstance: false);
     final tables = (await upgradedDb.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'analytics_events'",
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'entitlement_state'",
     ))
         .map((row) => row['name'].toString())
         .toSet();
-    expect(tables, contains('analytics_events'));
+    expect(tables, contains('entitlement_state'));
     await upgradedDb.close();
 
     await deleteDatabase(databasePath);

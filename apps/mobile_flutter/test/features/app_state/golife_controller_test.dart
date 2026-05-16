@@ -173,6 +173,7 @@ void main() {
       expect(decoded['mission_sets'], isA<List<dynamic>>());
       expect(decoded['analytics_events'], isA<List<dynamic>>());
       expect(decoded['analytics_summary'], isA<Map<String, dynamic>>());
+      expect(decoded['entitlement'], isA<Map<String, dynamic>>());
       expect((decoded['mission_sets'] as List<dynamic>), isNotEmpty);
       expect(
         (decoded['analytics_events'] as List<dynamic>)
@@ -594,6 +595,9 @@ void main() {
       final captureEvent = controller.analyticsEvents.firstWhere(
         (event) => event.eventName == 'capture_created',
       );
+      final entitlementEvent = controller.analyticsEvents.firstWhere(
+        (event) => event.eventName == 'entitlement_loaded',
+      );
 
       final exported = jsonDecode(await controller.exportLocalDataJson())
           as Map<String, dynamic>;
@@ -615,6 +619,9 @@ void main() {
       expect(missionSetEvent.metadata.containsKey('body'), isFalse);
       expect(captureEvent.metadata.containsKey('text'), isFalse);
       expect(captureEvent.metadata.containsKey('payload'), isFalse);
+      expect(entitlementEvent.metadata.containsKey('price'), isFalse);
+      expect(entitlementEvent.metadata.containsKey('receipt'), isFalse);
+      expect(entitlementEvent.metadata.containsKey('purchaseToken'), isFalse);
       expect(analyticsJson, isNot(contains('Call landlord tomorrow morning')));
       expect(analyticsJson, isNot(contains('buy coffee for 4.50')));
     });

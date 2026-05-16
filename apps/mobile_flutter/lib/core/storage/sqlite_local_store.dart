@@ -22,6 +22,7 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
@@ -49,7 +50,7 @@ class SqliteLocalStore implements LocalStore {
         );
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 7;
+  static const _databaseVersion = 8;
   static const _privacyKey = 'privacy_settings';
   static const _localePreferenceKey = 'locale_preference';
   static const _profilePreferencesKey = 'profile_preferences';
@@ -95,6 +96,9 @@ class SqliteLocalStore implements LocalStore {
         }
         if (oldVersion < 7) {
           await _createAnalyticsSchema(db);
+        }
+        if (oldVersion < 8) {
+          await _createEntitlementSchema(db);
         }
       },
     );
@@ -613,6 +617,39 @@ class SqliteLocalStore implements LocalStore {
         );
       }
     });
+  }
+
+  @override
+  Future<Entitlement> loadEntitlement() async {
+    final db = await _db;
+    final rows = await db.query(
+      'entitlement_state',
+      orderBy: 'updated_at_iso DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return Entitlement.disabledSafeDefault();
+    }
+    return Entitlement.fromJson(
+      _decodeSensitiveJsonRow(rows.first['json_blob']),
+    );
+  }
+
+  @override
+  Future<void> saveEntitlement(Entitlement entitlement) async {
+    final db = await _db;
+    await db.insert(
+      'entitlement_state',
+      <String, Object?>{
+        'singleton_id': 1,
+        'plan': entitlement.plan.storageKey,
+        'billing_provider': entitlement.billingProvider,
+        'renewal_state': entitlement.renewalState,
+        'updated_at_iso': DateTime.now().toUtc().toIso8601String(),
+        'json_blob': _encodeSensitiveJsonBlob(entitlement.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   @override
@@ -1296,6 +1333,7 @@ class SqliteLocalStore implements LocalStore {
       await txn.delete('lifegraph_relations');
       await txn.delete('privacy_audit_entries');
       await txn.delete('analytics_events');
+      await txn.delete('entitlement_state');
       await txn.delete('tasks');
       await txn.delete('habits');
       await txn.delete('expenses');
@@ -1545,6 +1583,16 @@ class SqliteLocalStore implements LocalStore {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_analytics_events_source_time ON analytics_events(source, timestamp_iso DESC)',
+    );
+    await _createEntitlementSchema(db);
+  }
+
+  Future<void> _createEntitlementSchema(Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS entitlement_state (singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1), plan TEXT NOT NULL, billing_provider TEXT NOT NULL, renewal_state TEXT NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_entitlement_state_updated ON entitlement_state(updated_at_iso DESC)',
     );
   }
 

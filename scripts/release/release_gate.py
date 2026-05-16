@@ -13,6 +13,7 @@ REQUIRED_ARTIFACT_KEYS = [
     "ci",
     "deviceQa",
     "billing",
+    "entitlementRuntime",
     "privacy",
     "legal",
     "storeAssets",
@@ -112,6 +113,7 @@ def main() -> int:
     device_qa = artifact.get("deviceQa", {})
     legal = artifact.get("legal", {})
     store_assets = artifact.get("storeAssets", {})
+    entitlement_runtime = artifact.get("entitlementRuntime", {})
 
     legal_doc_paths = [
         legal.get("privacyPolicyDocument"),
@@ -189,6 +191,15 @@ def main() -> int:
             if artifact.get("billing", {}).get("status") in {"pass", "fail"}
             else "pass",
             "message": str(artifact.get("billing", {}).get("decisionDocument", "")),
+        },
+        "entitlement_runtime": {
+            "status": _status(
+                entitlement_runtime.get("status") == "pass"
+                and entitlement_runtime.get("billingProvider") == "disabled"
+                and entitlement_runtime.get("restorePurchases") is False
+                and entitlement_runtime.get("exportDeleteAlwaysAvailable") is True
+            ),
+            "message": json.dumps(entitlement_runtime, sort_keys=True),
         },
     }
 

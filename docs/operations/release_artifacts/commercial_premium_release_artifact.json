@@ -44,6 +44,12 @@
     "restorePurchases": false,
     "renewalState": "disabled"
   },
+  "entitlementRuntime": {
+    "status": "pass",
+    "billingProvider": "disabled",
+    "restorePurchases": false,
+    "exportDeleteAlwaysAvailable": true
+  },
   "privacy": {
     "status": "pass",
     "dataMapDocument": "docs/compliance/DATA_MAP.md",

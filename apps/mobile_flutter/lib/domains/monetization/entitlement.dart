@@ -4,6 +4,10 @@ enum EntitlementPlan {
   pro,
 }
 
+const String entitlementBillingProviderDisabled = 'disabled';
+const String entitlementRenewalStateDisabled = 'disabled';
+const String entitlementTrialStatusNotStarted = 'not_started';
+
 extension EntitlementPlanX on EntitlementPlan {
   String get storageKey {
     switch (this) {
@@ -33,9 +37,28 @@ class EntitlementQuota {
     required this.exportBundles,
   });
 
+  static const EntitlementQuota disabledSafeDefault = EntitlementQuota(
+    dailyMissionRefreshes: 24,
+    aiAssistedCaptures: 24,
+    exportBundles: 1,
+  );
+
   final int dailyMissionRefreshes;
   final int aiAssistedCaptures;
   final int exportBundles;
+
+  EntitlementQuota copyWith({
+    int? dailyMissionRefreshes,
+    int? aiAssistedCaptures,
+    int? exportBundles,
+  }) {
+    return EntitlementQuota(
+      dailyMissionRefreshes:
+          dailyMissionRefreshes ?? this.dailyMissionRefreshes,
+      aiAssistedCaptures: aiAssistedCaptures ?? this.aiAssistedCaptures,
+      exportBundles: exportBundles ?? this.exportBundles,
+    );
+  }
 
   Map<String, Object?> toJson() {
     return {
@@ -79,6 +102,45 @@ class Entitlement {
   final String renewalState;
   final Map<String, Object?> trace;
 
+  factory Entitlement.disabledSafeDefault({
+    Map<String, Object?> trace = const <String, Object?>{},
+  }) {
+    return Entitlement(
+      plan: EntitlementPlan.free,
+      quota: EntitlementQuota.disabledSafeDefault,
+      trialStatus: entitlementTrialStatusNotStarted,
+      billingProvider: entitlementBillingProviderDisabled,
+      renewalState: entitlementRenewalStateDisabled,
+      trace: <String, Object?>{
+        'source_state': 'local_default',
+        'billing_status': entitlementBillingProviderDisabled,
+        'verified': false,
+        ...trace,
+      },
+    );
+  }
+
+  bool get billingDisabled =>
+      billingProvider == entitlementBillingProviderDisabled;
+
+  Entitlement copyWith({
+    EntitlementPlan? plan,
+    EntitlementQuota? quota,
+    String? trialStatus,
+    String? billingProvider,
+    String? renewalState,
+    Map<String, Object?>? trace,
+  }) {
+    return Entitlement(
+      plan: plan ?? this.plan,
+      quota: quota ?? this.quota,
+      trialStatus: trialStatus ?? this.trialStatus,
+      billingProvider: billingProvider ?? this.billingProvider,
+      renewalState: renewalState ?? this.renewalState,
+      trace: trace ?? this.trace,
+    );
+  }
+
   Map<String, Object?> toJson() {
     return {
       'plan': plan.storageKey,
@@ -99,13 +161,19 @@ class Entitlement {
         ),
       ),
       trialStatus:
-          (json['trial_status'] ?? json['trialStatus'] ?? 'not_started')
+          (json['trial_status'] ??
+                  json['trialStatus'] ??
+                  entitlementTrialStatusNotStarted)
               .toString(),
       billingProvider:
-          (json['billing_provider'] ?? json['billingProvider'] ?? 'disabled')
+          (json['billing_provider'] ??
+                  json['billingProvider'] ??
+                  entitlementBillingProviderDisabled)
               .toString(),
       renewalState:
-          (json['renewal_state'] ?? json['renewalState'] ?? 'disabled')
+          (json['renewal_state'] ??
+                  json['renewalState'] ??
+                  entitlementRenewalStateDisabled)
               .toString(),
       trace: Map<String, Object?>.from(
         (json['trace'] as Map?)?.cast<String, Object?>() ??

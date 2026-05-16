@@ -16,6 +16,7 @@ import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
@@ -46,6 +47,7 @@ class MemoryLocalStore implements LocalStore {
   final List<LifeGraphRelation> _lifeGraphRelations = <LifeGraphRelation>[];
   final List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
   final List<AnalyticsEvent> _analyticsEvents = <AnalyticsEvent>[];
+  Entitlement _entitlement = Entitlement.disabledSafeDefault();
   final List<GoTask> _tasks = <GoTask>[];
   final List<Habit> _habits = <Habit>[];
   final List<ExpenseRecord> _expenses = <ExpenseRecord>[];
@@ -231,6 +233,16 @@ class MemoryLocalStore implements LocalStore {
     _analyticsEvents
       ..clear()
       ..addAll(events);
+  }
+
+  @override
+  Future<Entitlement> loadEntitlement() async {
+    return _entitlement;
+  }
+
+  @override
+  Future<void> saveEntitlement(Entitlement entitlement) async {
+    _entitlement = entitlement;
   }
 
   @override
@@ -560,6 +572,7 @@ class MemoryLocalStore implements LocalStore {
     _lifeGraphRelations.clear();
     _privacyAuditEntries.clear();
     _analyticsEvents.clear();
+    _entitlement = Entitlement.disabledSafeDefault();
     _tasks.clear();
     _habits.clear();
     _expenses.clear();

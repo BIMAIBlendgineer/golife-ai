@@ -295,6 +295,82 @@ class AppLocalizationsJa extends AppLocalizations {
   String get privacyMetricAuditEntries => 'Audit entries';
 
   @override
+  String get billingPlanTitle => 'Plan and billing';
+
+  @override
+  String get billingPlanBody =>
+      'This release includes a safe local entitlement runtime. Real purchases, restore, and renewal handling stay disabled.';
+
+  @override
+  String get billingCurrentPlanLabel => 'Current plan';
+
+  @override
+  String get billingProviderLabel => 'Billing provider';
+
+  @override
+  String get billingRenewalStateLabel => 'Renewal state';
+
+  @override
+  String get billingRestoreLabel => 'Restore purchases';
+
+  @override
+  String get billingExportDeleteLabel => 'Export and delete';
+
+  @override
+  String get billingDisabledLabel => 'Disabled in this release';
+
+  @override
+  String get billingRenewalDisabled => 'Disabled';
+
+  @override
+  String get billingRestoreUnavailable => 'Unavailable in this release';
+
+  @override
+  String get billingExportDeleteAlwaysAvailable => 'Always available';
+
+  @override
+  String get billingFeatureGatesTitle => 'Feature gates';
+
+  @override
+  String get billingGateMissionRefreshes => 'Daily mission refreshes';
+
+  @override
+  String get billingGateAiCaptures => 'AI-assisted captures';
+
+  @override
+  String get billingGateExportBundles => 'Export bundles';
+
+  @override
+  String billingGateValue(int remaining, int limit) {
+    return '$remaining remaining of $limit';
+  }
+
+  @override
+  String get billingGateAlwaysAvailable => 'Not enforced in this release';
+
+  @override
+  String get billingGateWithinQuota => 'Within the local quota window';
+
+  @override
+  String get billingGateQuotaExhausted =>
+      'Quota exhausted, local fallback stays available';
+
+  @override
+  String get billingDecisionOpen => 'Open billing decision';
+
+  @override
+  String get billingDecisionCopy => 'Copy billing decision URL';
+
+  @override
+  String get billingPlanFree => 'Free';
+
+  @override
+  String get billingPlanPremium => 'Premium';
+
+  @override
+  String get billingPlanPro => 'Pro';
+
+  @override
   String get privacyLegalTitle => 'Store and legal';
 
   @override
