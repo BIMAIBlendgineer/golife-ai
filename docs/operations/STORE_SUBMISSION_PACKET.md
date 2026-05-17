@@ -1,7 +1,7 @@
 # Store Submission Packet
 
-Date: `2026-05-16`
-Branch baseline: `main@9b6fd3f`
+Date: `2026-05-17`
+Branch baseline: `main@53c7683`
 Status: `manual closeout required`
 
 ## Scope
@@ -15,7 +15,7 @@ Current release scope:
 - three actionable daily missions
 - metadata-only analytics
 - EN/ES release scope
-- no billing runtime
+- Google Play Billing sandbox runtime for internal Android testing only
 
 ## Public legal URLs
 
@@ -68,13 +68,13 @@ The app remains local-first and does not require a user account for the current 
 
 ## Billing status
 
-Billing remains disabled in this baseline.
+Google Play Billing sandbox is available in this baseline for internal Android testing only.
 
 Reference:
 
-- `docs/operations/BILLING_DISABLED_DECISION.md`
+- `docs/operations/BILLING_SANDBOX_DECISION.md`
 
-No store listing or legal copy should imply an active subscription purchase flow in the current release.
+No store listing or legal copy should imply live commercial billing, general public subscription purchase availability, or non-sandbox premium activation in the current release.
 
 ## Screenshot and visual assets
 

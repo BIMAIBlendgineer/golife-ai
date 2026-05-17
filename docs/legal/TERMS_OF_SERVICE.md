@@ -32,9 +32,9 @@ GoLife AI does not guarantee uninterrupted network services or uninterrupted ava
 
 ## Billing
 
-Billing and entitlement enforcement are currently disabled in the runtime documented by this repository baseline.
+The current repository baseline includes Google Play Billing sandbox runtime for internal Android testing only.
 
-These terms do not grant a subscription entitlement or paid premium access unless and until billing is explicitly implemented and disclosed.
+These terms do not promise live commercial billing, store-wide subscription availability, or paid premium access outside validated Google Play sandbox flows and the documented runtime configuration.
 
 ## Product limits
 
