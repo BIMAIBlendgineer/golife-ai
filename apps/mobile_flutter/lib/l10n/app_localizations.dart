@@ -786,6 +786,12 @@ abstract class AppLocalizations {
   /// **'Paused'**
   String get billingRenewalPaused;
 
+  /// No description provided for @billingRenewalCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get billingRenewalCancelled;
+
   /// No description provided for @billingRenewalExpired.
   ///
   /// In en, this message translates to:
@@ -821,6 +827,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last validated'**
   String get billingLastValidatedLabel;
+
+  /// No description provided for @billingLastProductLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last validated product'**
+  String get billingLastProductLabel;
+
+  /// No description provided for @billingStoredPurchaseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored billing state'**
+  String get billingStoredPurchaseLabel;
 
   /// No description provided for @billingFeatureGatesTitle.
   ///
@@ -900,6 +918,24 @@ abstract class AppLocalizations {
   /// **'Restore sandbox purchases'**
   String get billingRestoreNow;
 
+  /// No description provided for @billingRefreshNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh billing status'**
+  String get billingRefreshNow;
+
+  /// No description provided for @billingAuditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing audit'**
+  String get billingAuditTitle;
+
+  /// No description provided for @billingAuditEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No billing events have been recorded on this device yet.'**
+  String get billingAuditEmpty;
+
   /// No description provided for @billingDecisionOpen.
   ///
   /// In en, this message translates to:
@@ -963,7 +999,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyLegalTermsBody.
   ///
   /// In en, this message translates to:
-  /// **'Product scope, limits, fallback behavior, and the current billing-disabled baseline.'**
+  /// **'Product scope, limits, fallback behavior, and the current Google Play billing sandbox baseline.'**
   String get privacyLegalTermsBody;
 
   /// No description provided for @privacyLegalSupportTitle.

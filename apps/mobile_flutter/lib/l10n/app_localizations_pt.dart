@@ -359,6 +359,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get billingRenewalPaused => 'Paused';
 
   @override
+  String get billingRenewalCancelled => 'Cancelled';
+
+  @override
   String get billingRenewalExpired => 'Expired';
 
   @override
@@ -375,6 +378,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get billingLastValidatedLabel => 'Last validated';
+
+  @override
+  String get billingLastProductLabel => 'Last validated product';
+
+  @override
+  String get billingStoredPurchaseLabel => 'Stored billing state';
 
   @override
   String get billingFeatureGatesTitle => 'Feature gates';
@@ -421,6 +430,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get billingRestoreNow => 'Restore sandbox purchases';
 
   @override
+  String get billingRefreshNow => 'Refresh billing status';
+
+  @override
+  String get billingAuditTitle => 'Billing audit';
+
+  @override
+  String get billingAuditEmpty =>
+      'No billing events have been recorded on this device yet.';
+
+  @override
   String get billingDecisionOpen => 'Open billing decision';
 
   @override
@@ -454,7 +473,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get privacyLegalTermsBody =>
-      'Product scope, limits, fallback behavior, and the current billing-disabled baseline.';
+      'Product scope, limits, fallback behavior, and the current Google Play billing sandbox baseline.';
 
   @override
   String get privacyLegalSupportTitle => 'Support';
