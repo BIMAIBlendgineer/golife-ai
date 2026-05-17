@@ -18,6 +18,8 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/billing_audit_entry.dart';
+import '../../domains/monetization/billing_subscription_state.dart';
 import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
@@ -188,6 +190,22 @@ class ResilientLocalStore implements LocalStore {
   @override
   Future<void> saveEntitlement(Entitlement entitlement) =>
       _run((store) => store.saveEntitlement(entitlement));
+
+  @override
+  Future<BillingSubscriptionState?> loadBillingSubscriptionState() =>
+      _run((store) => store.loadBillingSubscriptionState());
+
+  @override
+  Future<void> saveBillingSubscriptionState(BillingSubscriptionState? state) =>
+      _run((store) => store.saveBillingSubscriptionState(state));
+
+  @override
+  Future<List<BillingAuditEntry>> loadBillingAuditEntries() =>
+      _run((store) => store.loadBillingAuditEntries());
+
+  @override
+  Future<void> saveBillingAuditEntries(List<BillingAuditEntry> entries) =>
+      _run((store) => store.saveBillingAuditEntries(entries));
 
   @override
   Future<List<GoTask>> loadTasks() => _run((store) => store.loadTasks());

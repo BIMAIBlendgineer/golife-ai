@@ -16,6 +16,8 @@ import '../../domains/calendar/calendar_item.dart';
 import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/billing_audit_entry.dart';
+import '../../domains/monetization/billing_subscription_state.dart';
 import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
@@ -48,6 +50,8 @@ class MemoryLocalStore implements LocalStore {
   final List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
   final List<AnalyticsEvent> _analyticsEvents = <AnalyticsEvent>[];
   Entitlement _entitlement = Entitlement.disabledSafeDefault();
+  BillingSubscriptionState? _billingSubscriptionState;
+  final List<BillingAuditEntry> _billingAuditEntries = <BillingAuditEntry>[];
   final List<GoTask> _tasks = <GoTask>[];
   final List<Habit> _habits = <Habit>[];
   final List<ExpenseRecord> _expenses = <ExpenseRecord>[];
@@ -243,6 +247,30 @@ class MemoryLocalStore implements LocalStore {
   @override
   Future<void> saveEntitlement(Entitlement entitlement) async {
     _entitlement = entitlement;
+  }
+
+  @override
+  Future<BillingSubscriptionState?> loadBillingSubscriptionState() async {
+    return _billingSubscriptionState;
+  }
+
+  @override
+  Future<void> saveBillingSubscriptionState(
+    BillingSubscriptionState? state,
+  ) async {
+    _billingSubscriptionState = state;
+  }
+
+  @override
+  Future<List<BillingAuditEntry>> loadBillingAuditEntries() async {
+    return List<BillingAuditEntry>.unmodifiable(_billingAuditEntries);
+  }
+
+  @override
+  Future<void> saveBillingAuditEntries(List<BillingAuditEntry> entries) async {
+    _billingAuditEntries
+      ..clear()
+      ..addAll(entries);
   }
 
   @override
@@ -573,6 +601,8 @@ class MemoryLocalStore implements LocalStore {
     _privacyAuditEntries.clear();
     _analyticsEvents.clear();
     _entitlement = Entitlement.disabledSafeDefault();
+    _billingSubscriptionState = null;
+    _billingAuditEntries.clear();
     _tasks.clear();
     _habits.clear();
     _expenses.clear();

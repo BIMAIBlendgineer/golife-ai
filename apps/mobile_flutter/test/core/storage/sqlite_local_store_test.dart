@@ -21,6 +21,8 @@ import 'package:golife_flutter/domains/mindflow/privacy_summary.dart';
 import 'package:golife_flutter/domains/missions/daily_mission.dart';
 import 'package:golife_flutter/domains/missions/daily_risk.dart';
 import 'package:golife_flutter/domains/missions/mission_set.dart';
+import 'package:golife_flutter/domains/monetization/billing_audit_entry.dart';
+import 'package:golife_flutter/domains/monetization/billing_subscription_state.dart';
 import 'package:golife_flutter/domains/monetization/entitlement.dart';
 import 'package:golife_flutter/domains/privacy/evidence_item.dart';
 import 'package:golife_flutter/domains/privacy/privacy_audit_entry.dart';
@@ -180,6 +182,44 @@ void main() {
         trace: const <String, Object?>{'source_state': 'local_cache'},
       ),
     );
+    await store.saveBillingSubscriptionState(
+      const BillingSubscriptionState(
+        provider: entitlementBillingProviderGooglePlay,
+        mode: 'google_play_sandbox',
+        packageName: 'ai.golife.mobile',
+        productId: 'golife_premium_monthly_sandbox',
+        purchaseToken: 'sandbox-token-1',
+        purchaseTokenHash: 'hash-sandbox-token-1',
+        purchaseId: 'purchase-1',
+        renewalState: entitlementRenewalStateActive,
+        statusCode: 'validated',
+        sandbox: true,
+        verified: true,
+        restored: false,
+        lastTransactionDateIso: '2026-04-25T08:30:00Z',
+        lastValidatedAtIso: '2026-04-25T08:31:00Z',
+        trace: <String, Object?>{'source_state': 'google_play_validation'},
+      ),
+    );
+    await store.saveBillingAuditEntries(
+      const <BillingAuditEntry>[
+        BillingAuditEntry(
+          auditId: 'billing-audit-1',
+          createdAtIso: '2026-04-25T08:32:00Z',
+          eventType: 'validation_applied',
+          provider: entitlementBillingProviderGooglePlay,
+          mode: 'google_play_sandbox',
+          statusCode: 'validated',
+          productId: 'golife_premium_monthly_sandbox',
+          purchaseTokenHash: 'hash-sandbox-token-1',
+          renewalState: entitlementRenewalStateActive,
+          sandbox: true,
+          verified: true,
+          restored: false,
+          trace: <String, Object?>{'source_action': 'purchase'},
+        ),
+      ],
+    );
 
     expect(await store.loadLifeEvents(), hasLength(1));
     expect(await store.loadDailyMissions(), hasLength(1));
@@ -190,8 +230,13 @@ void main() {
     expect(await store.loadPrivacyAuditEntries(), hasLength(1));
     expect(await store.loadAnalyticsEvents(), hasLength(1));
     expect((await store.loadEntitlement()).plan, EntitlementPlan.free);
+    expect(await store.loadBillingSubscriptionState(), isNotNull);
+    expect(await store.loadBillingAuditEntries(), hasLength(1));
     expect(
-      (await store.loadAnalyticsEvents()).single.metadata.containsKey('summary'),
+      (await store.loadAnalyticsEvents())
+          .single
+          .metadata
+          .containsKey('summary'),
       isFalse,
     );
     expect(await store.loadDemoSeedEnabled(), isTrue);
@@ -333,6 +378,20 @@ void main() {
     ))
         .first['json_blob']
         .toString();
+    final billingStateBlob = (await db.query(
+      'billing_subscription_state',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
+    final billingAuditBlob = (await db.query(
+      'billing_audit_entries',
+      columns: const ['json_blob'],
+      limit: 1,
+    ))
+        .first['json_blob']
+        .toString();
     final calendarBlob = (await db.query(
       'calendar_items',
       columns: const ['json_blob'],
@@ -353,6 +412,8 @@ void main() {
         privacyAuditBlob, isNot(contains('"new_privacy_level":"ai_allowed"')));
     expect(analyticsBlob, isNot(contains('mission_set_generated')));
     expect(entitlementBlob, isNot(contains('"plan":"free"')));
+    expect(billingStateBlob, isNot(contains('sandbox-token-1')));
+    expect(billingAuditBlob, isNot(contains('validation_applied')));
     expect(calendarBlob, isNot(contains('Focus block')));
     await db.close();
 
@@ -368,6 +429,8 @@ void main() {
     expect(await store.loadAnalyticsEvents(), isEmpty);
     expect(await store.loadEntitlement(), isA<Entitlement>());
     expect((await store.loadEntitlement()).plan, EntitlementPlan.free);
+    expect(await store.loadBillingSubscriptionState(), isNull);
+    expect(await store.loadBillingAuditEntries(), isEmpty);
     expect(await store.loadMissionFeedback(), isEmpty);
     expect(await store.loadJournalEntries(), isEmpty);
     expect(await store.loadCalendarItems(), isEmpty);
@@ -1005,6 +1068,63 @@ void main() {
         .map((row) => row['name'].toString())
         .toSet();
     expect(tables, contains('entitlement_state'));
+    await upgradedDb.close();
+
+    await deleteDatabase(databasePath);
+  });
+
+  test('upgrades v8 databases to v9 and adds billing runtime tables', () async {
+    final databaseName =
+        'golife_v8_upgrade_${DateTime.now().microsecondsSinceEpoch}.db';
+    final databasePath = path.join(await getDatabasesPath(), databaseName);
+
+    final legacyDb = await openDatabase(
+      databasePath,
+      version: 8,
+      onCreate: (db, version) async {
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS key_value (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS entitlement_state (singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1), plan TEXT NOT NULL, billing_provider TEXT NOT NULL, renewal_state TEXT NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+        );
+      },
+    );
+    await legacyDb.insert(
+      'entitlement_state',
+      <String, Object?>{
+        'singleton_id': 1,
+        'plan': 'free',
+        'billing_provider': 'disabled',
+        'renewal_state': 'disabled',
+        'updated_at_iso': '2026-05-17T09:00:00Z',
+        'json_blob':
+            '{"plan":"free","quota":{"daily_mission_refreshes":24,"ai_assisted_captures":24,"export_bundles":1},"trial_status":"not_started","billing_provider":"disabled","renewal_state":"disabled","trace":{"source_state":"local_cache"}}',
+      },
+    );
+    await legacyDb.close();
+
+    final store = SqliteLocalStore(
+      databaseName: databaseName,
+      encryptionSecretOverride: 'test-secret',
+    );
+
+    final entitlement = await store.loadEntitlement();
+    expect(entitlement.plan, EntitlementPlan.free);
+
+    final upgradedDb = await openDatabase(databasePath, singleInstance: false);
+    final tables = (await upgradedDb.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('billing_subscription_state', 'billing_audit_entries')",
+    ))
+        .map((row) => row['name'].toString())
+        .toSet();
+    expect(
+      tables,
+      containsAll(<String>[
+        'billing_subscription_state',
+        'billing_audit_entries',
+      ]),
+    );
     await upgradedDb.close();
 
     await deleteDatabase(databasePath);
