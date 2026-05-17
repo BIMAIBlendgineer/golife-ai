@@ -144,4 +144,34 @@ void main() {
     expect(entitlement.billingProvider, entitlementBillingProviderDisabled);
     expect(entitlement.renewalState, entitlementRenewalStateDisabled);
   });
+
+  test('preserves inactive store-managed state after validated cancellation',
+      () async {
+    final store = MemoryLocalStore();
+    final service = EntitlementService(
+      localStore: store,
+      clock: () => DateTime.utc(2026, 5, 16, 12),
+    );
+
+    await service.saveEntitlement(
+      Entitlement(
+        plan: EntitlementPlan.free,
+        quota: EntitlementQuota.disabledSafeDefault,
+        trialStatus: entitlementTrialStatusNotStarted,
+        billingProvider: entitlementBillingProviderGooglePlay,
+        renewalState: entitlementRenewalStateCancelled,
+        trace: const <String, Object?>{
+          'verified': false,
+          'store_validated': true,
+          'source_state': 'google_play_validation',
+        },
+      ),
+    );
+
+    final entitlement = await service.loadEntitlement();
+
+    expect(entitlement.plan, EntitlementPlan.free);
+    expect(entitlement.billingProvider, entitlementBillingProviderGooglePlay);
+    expect(entitlement.renewalState, entitlementRenewalStateCancelled);
+  });
 }

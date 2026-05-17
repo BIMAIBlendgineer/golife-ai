@@ -20,6 +20,8 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/billing_audit_entry.dart';
+import '../../domains/monetization/billing_subscription_state.dart';
 import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
@@ -53,6 +55,9 @@ class SharedPrefsLocalStore implements LocalStore {
   static const _privacyAuditEntriesKey = 'golife.privacy_audit_entries';
   static const _analyticsEventsKey = 'golife.analytics_events';
   static const _entitlementKey = 'golife.entitlement_state';
+  static const _billingSubscriptionStateKey =
+      'golife.billing_subscription_state';
+  static const _billingAuditEntriesKey = 'golife.billing_audit_entries';
   static const _tasksKey = 'golife.tasks';
   static const _habitsKey = 'golife.habits';
   static const _expensesKey = 'golife.expenses';
@@ -328,6 +333,49 @@ class SharedPrefsLocalStore implements LocalStore {
   Future<void> saveEntitlement(Entitlement entitlement) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_entitlementKey, jsonEncode(entitlement.toJson()));
+  }
+
+  @override
+  Future<BillingSubscriptionState?> loadBillingSubscriptionState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawJson = prefs.getString(_billingSubscriptionStateKey);
+    if (rawJson == null || rawJson.isEmpty) {
+      return null;
+    }
+    return BillingSubscriptionState.fromJson(
+      Map<String, dynamic>.from(jsonDecode(rawJson) as Map),
+    );
+  }
+
+  @override
+  Future<void> saveBillingSubscriptionState(
+    BillingSubscriptionState? state,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (state == null) {
+      await prefs.remove(_billingSubscriptionStateKey);
+      return;
+    }
+    await prefs.setString(
+      _billingSubscriptionStateKey,
+      jsonEncode(state.toJson()),
+    );
+  }
+
+  @override
+  Future<List<BillingAuditEntry>> loadBillingAuditEntries() async {
+    return _loadList(
+      _billingAuditEntriesKey,
+      (item) => BillingAuditEntry.fromJson(item),
+    );
+  }
+
+  @override
+  Future<void> saveBillingAuditEntries(List<BillingAuditEntry> entries) async {
+    await _saveList(
+      _billingAuditEntriesKey,
+      entries.map((item) => item.toJson()).toList(growable: false),
+    );
   }
 
   @override
@@ -748,6 +796,8 @@ class SharedPrefsLocalStore implements LocalStore {
     await prefs.remove(_privacyAuditEntriesKey);
     await prefs.remove(_analyticsEventsKey);
     await prefs.remove(_entitlementKey);
+    await prefs.remove(_billingSubscriptionStateKey);
+    await prefs.remove(_billingAuditEntriesKey);
     await prefs.remove(_tasksKey);
     await prefs.remove(_habitsKey);
     await prefs.remove(_expensesKey);

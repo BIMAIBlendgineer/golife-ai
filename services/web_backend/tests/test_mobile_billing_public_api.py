@@ -1,10 +1,13 @@
+import asyncio
 from datetime import UTC, datetime
 
+import httpx
 from fastapi.testclient import TestClient
 
+from app.google_play_billing import GooglePlayBillingValidator
 from app.main import create_app
 from app.repository import OperationalRepository
-from app.schemas import MobileBillingValidationResponse
+from app.schemas import MobileBillingValidationRequest, MobileBillingValidationResponse
 from app.settings import Settings
 
 
@@ -129,3 +132,106 @@ def test_google_play_validation_endpoint_can_return_verified_sandbox_decision(
     assert payload["plan"] == "premium"
     assert payload["billing_provider"] == "google_play"
     assert payload["sandbox"] is True
+
+
+class _StaticAsyncClient:
+    def __init__(self, response):
+        self._response = response
+
+    async def get(self, *_args, **_kwargs):
+        return self._response
+
+    async def aclose(self):
+        return None
+
+
+def test_google_play_validator_marks_cancelled_subscription_state():
+    validator = GooglePlayBillingValidator(
+        settings=Settings(
+            mobile_billing_mode="google_play_sandbox",
+            mobile_google_play_service_account_json='{"client_email":"test@example.com"}',
+        ),
+        client=_StaticAsyncClient(
+            httpx.Response(
+                status_code=200,
+                json={
+                    "subscriptionState": "SUBSCRIPTION_STATE_CANCELED",
+                    "testPurchase": {},
+                    "acknowledgementState": "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+                    "canceledStateContext": {
+                        "userInitiatedCancellation": {}
+                    },
+                    "lineItems": [
+                        {
+                            "productId": "golife_premium_monthly_sandbox",
+                            "expiryTime": "2026-06-01T10:00:00Z",
+                        }
+                    ],
+                },
+            )
+        ),
+    )
+    validator._build_access_token = lambda _info: "token"  # type: ignore[attr-defined]
+
+    decision = asyncio.run(
+        validator.validate(
+            MobileBillingValidationRequest(
+                provider="google_play",
+                mode="google_play_sandbox",
+                package_name="ai.golife.mobile",
+                product_id="golife_premium_monthly_sandbox",
+                purchase_token="sandbox-token-cancelled",
+                purchase_status="purchase_restored",
+                restored=True,
+            )
+        )
+    )
+
+    assert decision.verified is False
+    assert decision.billing_provider == "google_play"
+    assert decision.renewal_state == "cancelled"
+    assert decision.status_code == "validated_cancelled"
+    assert decision.trace["cancellation_reason"] == "user"
+
+
+def test_google_play_validator_maps_product_not_owned_to_refunded_state():
+    validator = GooglePlayBillingValidator(
+        settings=Settings(
+            mobile_billing_mode="google_play_sandbox",
+            mobile_google_play_service_account_json='{"client_email":"test@example.com"}',
+        ),
+        client=_StaticAsyncClient(
+            httpx.Response(
+                status_code=400,
+                json={
+                    "error": {
+                        "errors": [
+                            {
+                                "reason": "productNotOwnedByUser",
+                            }
+                        ]
+                    }
+                },
+            )
+        ),
+    )
+    validator._build_access_token = lambda _info: "token"  # type: ignore[attr-defined]
+
+    decision = asyncio.run(
+        validator.validate(
+            MobileBillingValidationRequest(
+                provider="google_play",
+                mode="google_play_sandbox",
+                package_name="ai.golife.mobile",
+                product_id="golife_premium_monthly_sandbox",
+                purchase_token="sandbox-token-refunded",
+                purchase_status="purchase_purchased",
+            )
+        )
+    )
+
+    assert decision.verified is False
+    assert decision.billing_provider == "google_play"
+    assert decision.renewal_state == "refunded"
+    assert decision.status_code == "google_play_error"
+    assert decision.trace["renewal_state_inferred"] is True

@@ -18,6 +18,7 @@ import '../../core/lifegraph/lifegraph_relation.dart';
 import '../../core/monetization/billing_provider_adapter.dart';
 import '../../core/monetization/billing_runtime_models.dart';
 import '../../core/monetization/billing_validation_client.dart';
+import '../../core/monetization/subscription_state_service.dart';
 import '../../core/monetization/entitlement_service.dart';
 import '../../core/mindflow/mindflow_mappers.dart';
 import '../../core/privacy/privacy_models.dart';
@@ -45,6 +46,8 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/billing_audit_entry.dart';
+import '../../domains/monetization/billing_subscription_state.dart';
 import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
@@ -67,6 +70,7 @@ class GoLifeController extends ChangeNotifier {
     SubmissionAssetVault? submissionAssetVault,
     LocalAnalyticsRepository? localAnalyticsRepository,
     EntitlementService? entitlementService,
+    SubscriptionStateService? subscriptionStateService,
     BillingProviderAdapter? billingProviderAdapter,
     BillingValidationClient? billingValidationClient,
   })  : _localStore = localStore,
@@ -81,6 +85,8 @@ class GoLifeController extends ChangeNotifier {
             LocalAnalyticsRepository(localStore: localStore),
         _entitlementService =
             entitlementService ?? EntitlementService(localStore: localStore),
+        _subscriptionStateService =
+            subscriptionStateService ?? const SubscriptionStateService(),
         _billingProviderAdapter = billingProviderAdapter,
         _billingValidationClient = billingValidationClient;
 
@@ -92,6 +98,7 @@ class GoLifeController extends ChangeNotifier {
   final SubmissionAssetVault _submissionAssetVault;
   final LocalAnalyticsRepository _localAnalyticsRepository;
   final EntitlementService _entitlementService;
+  final SubscriptionStateService _subscriptionStateService;
   final BillingProviderAdapter? _billingProviderAdapter;
   final BillingValidationClient? _billingValidationClient;
   final CaptureParser _captureParser = const CaptureParser();
@@ -125,6 +132,8 @@ class GoLifeController extends ChangeNotifier {
   List<PrivacyAuditEntry> _privacyAuditEntries = <PrivacyAuditEntry>[];
   List<AnalyticsEvent> _analyticsEvents = <AnalyticsEvent>[];
   Entitlement _entitlement = Entitlement.disabledSafeDefault();
+  BillingSubscriptionState? _billingSubscriptionState;
+  List<BillingAuditEntry> _billingAuditEntries = <BillingAuditEntry>[];
   BillingRuntimeState _billingRuntimeState =
       BillingRuntimeState.disabledDefault();
   List<MentalLoadItem> _mentalLoadItems = <MentalLoadItem>[];
@@ -210,6 +219,10 @@ class GoLifeController extends ChangeNotifier {
   List<AnalyticsEvent> get analyticsEvents =>
       List<AnalyticsEvent>.unmodifiable(_analyticsEvents);
   Entitlement get entitlement => _entitlement;
+  BillingSubscriptionState? get billingSubscriptionState =>
+      _billingSubscriptionState;
+  List<BillingAuditEntry> get billingAuditEntries =>
+      List<BillingAuditEntry>.unmodifiable(_billingAuditEntries);
   BillingRuntimeState get billingRuntimeState => _billingRuntimeState;
   List<MissionFeedback> get missionFeedbackHistory =>
       List<MissionFeedback>.unmodifiable(_missionFeedback);
@@ -277,6 +290,8 @@ class GoLifeController extends ChangeNotifier {
         'Daily risks',
         'Mission sets',
         'Entitlement state',
+        'Billing subscription state',
+        'Billing audit entries',
         'LifeGraph relations',
         'Finance records',
         'Calendar items',
@@ -296,6 +311,8 @@ class GoLifeController extends ChangeNotifier {
   List<String> get alwaysLocalCollectionLabels => const <String>[
         'Privacy settings',
         'Entitlement state',
+        'Billing subscription state',
+        'Billing audit entries',
         'Journal entries',
         'Quick notes',
         'Owned items',
@@ -537,6 +554,9 @@ class GoLifeController extends ChangeNotifier {
     _privacyAuditEntries = await _localStore.loadPrivacyAuditEntries();
     _analyticsEvents = await _localAnalyticsRepository.loadEvents();
     _entitlement = await _entitlementService.loadEntitlement();
+    _billingSubscriptionState =
+        await _localStore.loadBillingSubscriptionState();
+    _billingAuditEntries = await _localStore.loadBillingAuditEntries();
     _mentalLoadItems = await _localStore.loadMentalLoadItems();
     _decisionCards = await _localStore.loadDecisionCards();
     _shoppingNeeds = await _localStore.loadShoppingNeeds();
@@ -560,6 +580,7 @@ class GoLifeController extends ChangeNotifier {
     await _syncDerivedEvidenceItems(notifyStore: false);
     await _rebuildDerivedLifeGraphRelations(notifyStore: false);
     await _seedDomainEntitiesIfNeeded();
+    await _refreshStoredBillingEntitlement(notify: false);
     await _refreshMissionPlan();
     await refreshDecisionPlan(notify: false);
     await refreshShoppingPlan(notify: false);
@@ -586,6 +607,7 @@ class GoLifeController extends ChangeNotifier {
     await _localStore.saveRuntimeConfig(config);
     _applyRuntimeConfig();
     await _refreshBillingRuntime(notify: false);
+    await _refreshStoredBillingEntitlement(notify: false);
     if (refreshMissionPlan) {
       await _refreshMissionPlan();
       await refreshDecisionPlan(notify: false);
@@ -2607,6 +2629,7 @@ class GoLifeController extends ChangeNotifier {
           'privacy_audit_entries',
           'analytics_events',
           'entitlement_state',
+          'billing_audit_entries',
           'mental_load_items',
           'decision_cards',
           'shopping_needs',
@@ -2647,6 +2670,10 @@ class GoLifeController extends ChangeNotifier {
           _analyticsEvents.map((item) => item.toJson()).toList(growable: false),
       'analytics_summary':
           _localAnalyticsRepository.buildSummary(_analyticsEvents),
+      'billing_subscription_summary': _billingSubscriptionState?.toExportJson(),
+      'billing_audit_entries': _billingAuditEntries
+          .map((item) => item.toJson())
+          .toList(growable: false),
       'tasks': _tasks.map((item) => item.toJson()).toList(growable: false),
       'habits': _habits.map((item) => item.toJson()).toList(growable: false),
       'expenses':
@@ -2756,6 +2783,8 @@ class GoLifeController extends ChangeNotifier {
     _privacyAuditEntries = <PrivacyAuditEntry>[];
     _analyticsEvents = <AnalyticsEvent>[];
     _entitlement = Entitlement.disabledSafeDefault();
+    _billingSubscriptionState = null;
+    _billingAuditEntries = <BillingAuditEntry>[];
     _billingRuntimeState = BillingRuntimeState.disabledDefault();
     _mentalLoadItems = <MentalLoadItem>[];
     _decisionCards = <DecisionCard>[];
@@ -3702,6 +3731,20 @@ class GoLifeController extends ChangeNotifier {
         'billing_provider': config.provider,
       },
     );
+    await _recordBillingAuditEntry(
+      eventType: 'purchase_requested',
+      provider: config.provider,
+      mode: config.mode.storageKey,
+      statusCode: result.statusCode,
+      renewalState: _entitlement.renewalState,
+      sandbox: config.sandboxOnly,
+      verified: false,
+      restored: false,
+      productId: productId,
+      trace: <String, Object?>{
+        'result_message': result.message,
+      },
+    );
     notifyListeners();
     return result;
   }
@@ -3741,8 +3784,53 @@ class GoLifeController extends ChangeNotifier {
         'billing_provider': config.provider,
       },
     );
+    await _recordBillingAuditEntry(
+      eventType: 'restore_requested',
+      provider: config.provider,
+      mode: config.mode.storageKey,
+      statusCode: result.statusCode,
+      renewalState: _entitlement.renewalState,
+      sandbox: config.sandboxOnly,
+      verified: false,
+      restored: true,
+      trace: <String, Object?>{
+        'result_message': result.message,
+      },
+    );
     notifyListeners();
     return result;
+  }
+
+  Future<BillingActionResult> refreshBillingEntitlement() async {
+    final state = _billingSubscriptionState;
+    final config = _billingRuntimeState.config;
+    if (state == null || state.purchaseToken.isEmpty) {
+      return const BillingActionResult(
+        statusCode: 'billing_refresh_unavailable',
+        message:
+            'No persisted Google Play purchase is available to refresh on this device.',
+      );
+    }
+    if (!config.enabled || config.mode == BillingRuntimeMode.disabled) {
+      return BillingActionResult(
+        statusCode: 'billing_disabled',
+        message: config.publicMessage,
+        productId: state.productId,
+      );
+    }
+
+    final decision = await _validateBillingPurchase(
+      _purchaseUpdateFromState(state),
+      sourceAction: 'refresh',
+      notifyAfter: true,
+      interactive: true,
+    );
+    return BillingActionResult(
+      statusCode: decision?.statusCode ?? 'validation_unreachable',
+      message: decision?.message ??
+          'Stored Google Play purchase could not be revalidated with the backend.',
+      productId: state.productId,
+    );
   }
 
   Future<void> _handleBillingPurchaseUpdate(
@@ -3762,6 +3850,22 @@ class GoLifeController extends ChangeNotifier {
         'last_product_id': purchase.productId,
       },
     );
+    await _recordBillingAuditEntry(
+      eventType: 'purchase_update',
+      provider: _billingRuntimeState.config.provider,
+      mode: _billingRuntimeState.config.mode.storageKey,
+      statusCode: purchase.statusCode,
+      renewalState: _entitlement.renewalState,
+      sandbox: _billingRuntimeState.config.sandboxOnly,
+      verified: false,
+      restored: purchase.restored,
+      productId: purchase.productId,
+      purchaseToken: purchase.purchaseToken,
+      trace: <String, Object?>{
+        ...purchase.trace,
+        if (purchase.errorCode != null) 'error_code': purchase.errorCode,
+      },
+    );
     notifyListeners();
 
     final requiresValidation = purchase.statusCode == 'purchase_purchased' ||
@@ -3770,26 +3874,73 @@ class GoLifeController extends ChangeNotifier {
       return;
     }
 
+    await _validateBillingPurchase(
+      purchase,
+      sourceAction: purchase.restored ? 'restore' : 'purchase',
+      notifyAfter: true,
+      interactive: true,
+    );
+    if (purchase.pendingCompletePurchase) {
+      await adapter.completePurchase(purchase);
+    }
+  }
+
+  Future<void> _refreshStoredBillingEntitlement({
+    bool notify = true,
+  }) async {
+    final state = _billingSubscriptionState;
+    if (state == null || state.purchaseToken.isEmpty) {
+      return;
+    }
+    await _validateBillingPurchase(
+      _purchaseUpdateFromState(state),
+      sourceAction: 'refresh',
+      notifyAfter: notify,
+      interactive: false,
+    );
+  }
+
+  Future<BillingValidationDecision?> _validateBillingPurchase(
+    BillingPurchaseUpdate purchase, {
+    required String sourceAction,
+    required bool notifyAfter,
+    required bool interactive,
+  }) async {
     final client = _billingValidationClient;
+    final config = _billingRuntimeState.config;
     if (client == null) {
       _billingRuntimeState = _billingRuntimeState.copyWith(
         statusCode: 'validation_client_unavailable',
         statusMessage:
-            'Google Play sandbox returned a purchase update, but no validation client is configured.',
+            'Google Play purchase returned an update, but no validation client is configured.',
       );
-      notifyListeners();
-      return;
+      await _recordBillingAuditEntry(
+        eventType: 'validation_client_missing',
+        provider: config.provider,
+        mode: config.mode.storageKey,
+        statusCode: 'validation_client_unavailable',
+        renewalState: _entitlement.renewalState,
+        sandbox: config.sandboxOnly,
+        verified: false,
+        restored: purchase.restored,
+        productId: purchase.productId,
+        purchaseToken: purchase.purchaseToken,
+      );
+      if (notifyAfter) {
+        notifyListeners();
+      }
+      return null;
     }
 
     final decision = await client.validateGooglePlayPurchase(
-      config: _billingRuntimeState.config,
+      config: config,
       purchase: purchase,
     );
     if (decision == null) {
       _billingRuntimeState = _billingRuntimeState.copyWith(
         statusCode: 'validation_unreachable',
         statusMessage:
-            'Google Play sandbox purchase could not be validated with the backend.',
+            'Google Play purchase could not be validated with the backend.',
       );
       await _recordAnalyticsEvent(
         'billing_purchase_validation',
@@ -3799,40 +3950,60 @@ class GoLifeController extends ChangeNotifier {
           'verified': false,
           'status_code': 'validation_unreachable',
           'restored': purchase.restored,
+          'source_action': sourceAction,
         },
       );
-      notifyListeners();
-      return;
+      await _recordBillingAuditEntry(
+        eventType: 'validation_unreachable',
+        provider: config.provider,
+        mode: config.mode.storageKey,
+        statusCode: 'validation_unreachable',
+        renewalState: _entitlement.renewalState,
+        sandbox: config.sandboxOnly,
+        verified: false,
+        restored: purchase.restored,
+        productId: purchase.productId,
+        purchaseToken: purchase.purchaseToken,
+        trace: <String, Object?>{
+          'source_action': sourceAction,
+          'interactive': interactive,
+        },
+      );
+      if (notifyAfter) {
+        notifyListeners();
+      }
+      return null;
     }
 
-    final nextEntitlement = decision.verified
-        ? Entitlement(
-            plan: decision.plan,
-            quota: decision.quota,
-            trialStatus: _entitlement.trialStatus,
-            billingProvider: decision.billingProvider,
-            renewalState: decision.renewalState,
-            trace: <String, Object?>{
-              'source_state': 'google_play_validation',
-              'verified': true,
-              'sandbox': decision.sandbox,
-              'status_code': decision.statusCode,
-              'validated_at_iso': decision.validatedAtIso,
-              ...decision.trace,
-            },
-          )
-        : Entitlement.disabledSafeDefault(
-            trace: <String, Object?>{
-              'source_state': 'google_play_validation',
-              'verified': false,
-              'sandbox': decision.sandbox,
-              'status_code': decision.statusCode,
-              'validated_at_iso': decision.validatedAtIso,
-              ...decision.trace,
-            },
-          );
+    await _applyBillingValidationDecision(
+      purchase: purchase,
+      decision: decision,
+      sourceAction: sourceAction,
+      interactive: interactive,
+      notifyAfter: notifyAfter,
+    );
+    return decision;
+  }
+
+  Future<void> _applyBillingValidationDecision({
+    required BillingPurchaseUpdate purchase,
+    required BillingValidationDecision decision,
+    required String sourceAction,
+    required bool interactive,
+    required bool notifyAfter,
+  }) async {
+    final nextEntitlement = _entitlementFromBillingDecision(decision);
     await _entitlementService.saveEntitlement(nextEntitlement);
     _entitlement = await _entitlementService.loadEntitlement();
+
+    final nextState = _subscriptionStateService.buildState(
+      purchase: purchase,
+      decision: decision,
+      config: _billingRuntimeState.config,
+    );
+    _billingSubscriptionState = nextState;
+    await _localStore.saveBillingSubscriptionState(nextState);
+
     _billingRuntimeState = _billingRuntimeState.copyWith(
       statusCode: decision.statusCode,
       statusMessage: decision.message,
@@ -3842,6 +4013,7 @@ class GoLifeController extends ChangeNotifier {
         ..._billingRuntimeState.trace,
         'validated': decision.verified,
         'sandbox': decision.sandbox,
+        'source_action': sourceAction,
         ...decision.trace,
       },
     );
@@ -3854,14 +4026,114 @@ class GoLifeController extends ChangeNotifier {
         'verified': decision.verified,
         'status_code': decision.statusCode,
         'billing_provider': decision.billingProvider,
+        'renewal_state': decision.renewalState,
         'sandbox': decision.sandbox,
         'restored': purchase.restored,
+        'source_action': sourceAction,
       },
     );
-    if (purchase.pendingCompletePurchase) {
-      await adapter.completePurchase(purchase);
+    await _recordBillingAuditEntry(
+      eventType: 'validation_applied',
+      provider: decision.billingProvider,
+      mode: _billingRuntimeState.config.mode.storageKey,
+      statusCode: decision.statusCode,
+      renewalState: decision.renewalState,
+      sandbox: decision.sandbox,
+      verified: decision.verified,
+      restored: purchase.restored,
+      productId: purchase.productId,
+      purchaseToken: purchase.purchaseToken,
+      trace: <String, Object?>{
+        'source_action': sourceAction,
+        'interactive': interactive,
+        ...decision.trace,
+      },
+    );
+    if (notifyAfter) {
+      notifyListeners();
     }
-    notifyListeners();
+  }
+
+  Entitlement _entitlementFromBillingDecision(
+    BillingValidationDecision decision,
+  ) {
+    final provider =
+        decision.billingProvider == entitlementBillingProviderDisabled
+            ? _billingRuntimeState.config.provider
+            : decision.billingProvider;
+    return Entitlement(
+      plan: decision.verified ? decision.plan : EntitlementPlan.free,
+      quota: decision.verified
+          ? decision.quota
+          : EntitlementQuota.disabledSafeDefault,
+      trialStatus: _entitlement.trialStatus,
+      billingProvider: provider,
+      renewalState: decision.renewalState,
+      trace: <String, Object?>{
+        'source_state': 'google_play_validation',
+        'verified': decision.verified,
+        'store_validated': true,
+        'sandbox': decision.sandbox,
+        'status_code': decision.statusCode,
+        'validated_at_iso': decision.validatedAtIso,
+        ...decision.trace,
+      },
+    );
+  }
+
+  BillingPurchaseUpdate _purchaseUpdateFromState(
+    BillingSubscriptionState state,
+  ) {
+    return BillingPurchaseUpdate(
+      productId: state.productId,
+      purchaseToken: state.purchaseToken,
+      purchaseId: state.purchaseId,
+      transactionDateIso: state.lastTransactionDateIso,
+      statusCode: 'purchase_stored',
+      restored: state.restored,
+      pendingCompletePurchase: false,
+      trace: <String, Object?>{
+        'source_state': 'local_billing_state',
+        ...state.trace,
+      },
+      rawHandle: state,
+    );
+  }
+
+  Future<void> _recordBillingAuditEntry({
+    required String eventType,
+    required String provider,
+    required String mode,
+    required String statusCode,
+    required String renewalState,
+    required bool sandbox,
+    required bool verified,
+    required bool restored,
+    String? productId,
+    String? purchaseToken,
+    Map<String, Object?> trace = const <String, Object?>{},
+  }) async {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    final entry = _subscriptionStateService.buildAuditEntry(
+      auditId: 'billing-audit-${DateTime.now().microsecondsSinceEpoch}',
+      createdAtIso: nowIso,
+      eventType: eventType,
+      provider: provider,
+      mode: mode,
+      statusCode: statusCode,
+      renewalState: renewalState,
+      sandbox: sandbox,
+      verified: verified,
+      restored: restored,
+      productId: productId,
+      purchaseToken: purchaseToken,
+      trace: trace,
+    );
+    _billingAuditEntries = <BillingAuditEntry>[
+      entry,
+      ..._billingAuditEntries,
+    ].take(40).toList(growable: false);
+    await _localStore.saveBillingAuditEntries(_billingAuditEntries);
   }
 
   String _billingStatusMessageForPurchaseUpdate(

@@ -16,6 +16,8 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/billing_audit_entry.dart';
+import '../../domains/monetization/billing_subscription_state.dart';
 import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
@@ -88,6 +90,16 @@ abstract class LocalStore {
   Future<Entitlement> loadEntitlement() async =>
       Entitlement.disabledSafeDefault();
   Future<void> saveEntitlement(Entitlement entitlement) async {}
+  Future<BillingSubscriptionState?> loadBillingSubscriptionState() async =>
+      null;
+  Future<void> saveBillingSubscriptionState(
+    BillingSubscriptionState? state,
+  ) async {}
+  Future<List<BillingAuditEntry>> loadBillingAuditEntries() async =>
+      const <BillingAuditEntry>[];
+  Future<void> saveBillingAuditEntries(
+    List<BillingAuditEntry> entries,
+  ) async {}
 
   Future<List<GoTask>> loadTasks() async => const <GoTask>[];
   Future<List<Habit>> loadHabits() async => const <Habit>[];

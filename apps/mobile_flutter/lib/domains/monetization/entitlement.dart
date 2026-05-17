@@ -11,6 +11,7 @@ const String entitlementRenewalStatePending = 'pending';
 const String entitlementRenewalStateActive = 'active';
 const String entitlementRenewalStateGrace = 'grace';
 const String entitlementRenewalStatePaused = 'paused';
+const String entitlementRenewalStateCancelled = 'cancelled';
 const String entitlementRenewalStateExpired = 'expired';
 const String entitlementRenewalStateRefunded = 'refunded';
 const String entitlementTrialStatusNotStarted = 'not_started';

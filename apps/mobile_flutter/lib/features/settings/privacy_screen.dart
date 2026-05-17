@@ -11,6 +11,7 @@ import '../../core/monetization/billing_runtime_models.dart';
 import '../../core/monetization/entitlement_service.dart';
 import '../../core/privacy/privacy_models.dart';
 import '../../core/settings/app_profile_preferences.dart';
+import '../../domains/monetization/billing_audit_entry.dart';
 import '../../domains/monetization/entitlement.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../l10n/app_localizations.dart';
@@ -668,6 +669,9 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     final entitlement = controller.entitlement;
     final billingState = controller.billingRuntimeState;
     final billingConfig = billingState.config;
+    final storedBillingState = controller.billingSubscriptionState;
+    final billingAuditEntries =
+        controller.billingAuditEntries.take(4).toList(growable: false);
     final missionRefreshGate = controller.entitlementGateForFeature(
       EntitlementFeature.dailyMissionRefreshes,
     );
@@ -728,6 +732,17 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
               label: l10n.billingLastValidatedLabel,
               value: billingState.lastValidatedAtIso!,
             ),
+          if (storedBillingState != null)
+            _BillingFactRow(
+              label: l10n.billingLastProductLabel,
+              value: storedBillingState.productId,
+            ),
+          if (storedBillingState != null)
+            _BillingFactRow(
+              label: l10n.billingStoredPurchaseLabel,
+              value:
+                  '${_billingStatusCodeLabel(storedBillingState.statusCode)} · ${_billingRenewalLabel(storedBillingState.renewalState, l10n)}',
+            ),
           if (billingConfig.enabled) ...[
             const SizedBox(height: 8),
             Text(
@@ -784,6 +799,32 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
                 icon: const Icon(Icons.restore_rounded),
                 label: Text(l10n.billingRestoreNow),
               ),
+            if (storedBillingState != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                key: const ValueKey<String>('billing-refresh-status'),
+                onPressed: () => _refreshBillingStatus(context),
+                icon: const Icon(Icons.sync_rounded),
+                label: Text(l10n.billingRefreshNow),
+              ),
+            ],
+            const SizedBox(height: 14),
+            Text(
+              l10n.billingAuditTitle,
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            if (billingAuditEntries.isEmpty)
+              Text(
+                l10n.billingAuditEmpty,
+                style: theme.textTheme.bodyMedium,
+              )
+            else
+              for (final entry in billingAuditEntries)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _BillingAuditCard(entry: entry),
+                ),
           ],
           const SizedBox(height: 14),
           Wrap(
@@ -873,6 +914,16 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
       SnackBar(content: Text(result.message)),
     );
   }
+
+  Future<void> _refreshBillingStatus(BuildContext context) async {
+    final result = await widget.controller.refreshBillingEntitlement();
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message)),
+    );
+  }
 }
 
 class _BillingCatalogCard extends StatelessWidget {
@@ -944,6 +995,38 @@ class _BillingGateRow extends StatelessWidget {
           Text('$label: $value', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 2),
           Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+class _BillingAuditCard extends StatelessWidget {
+  const _BillingAuditCard({
+    required this.entry,
+  });
+
+  final BillingAuditEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: _cardDecoration(theme),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(entry.eventType, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(
+            '${entry.statusCode} · ${entry.renewalState}',
+            style: theme.textTheme.bodyMedium,
+          ),
+          if (entry.productId != null && entry.productId!.isNotEmpty)
+            Text(entry.productId!, style: theme.textTheme.bodySmall),
+          Text(entry.createdAtIso, style: theme.textTheme.bodySmall),
         ],
       ),
     );
@@ -1547,6 +1630,8 @@ String _billingRenewalLabel(
       return l10n.billingRenewalGrace;
     case entitlementRenewalStatePaused:
       return l10n.billingRenewalPaused;
+    case entitlementRenewalStateCancelled:
+      return l10n.billingRenewalCancelled;
     case entitlementRenewalStateExpired:
       return l10n.billingRenewalExpired;
     case entitlementRenewalStateRefunded:

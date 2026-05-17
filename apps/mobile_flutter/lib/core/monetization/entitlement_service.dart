@@ -106,14 +106,17 @@ class EntitlementService {
 
   Entitlement _normalize(Entitlement entitlement) {
     final verified = entitlement.trace['verified'] == true;
+    final storeValidated = entitlement.trace['store_validated'] == true;
     final allowsStoreProvider =
         entitlement.billingProvider == entitlementBillingProviderGooglePlay &&
-            verified;
+            (verified || storeValidated);
     final mergedTrace = Map<String, Object?>.from(entitlement.trace)
       ..putIfAbsent('source_state', () => 'local_cache');
     return entitlement.copyWith(
-      plan: allowsStoreProvider ? entitlement.plan : EntitlementPlan.free,
-      quota: allowsStoreProvider
+      plan: verified && allowsStoreProvider
+          ? entitlement.plan
+          : EntitlementPlan.free,
+      quota: verified && allowsStoreProvider
           ? entitlement.quota
           : EntitlementQuota.disabledSafeDefault,
       billingProvider: allowsStoreProvider

@@ -22,6 +22,8 @@ import '../../domains/missions/daily_mission.dart';
 import '../../domains/missions/mission_feedback.dart';
 import '../../domains/missions/daily_risk.dart';
 import '../../domains/missions/mission_set.dart';
+import '../../domains/monetization/billing_audit_entry.dart';
+import '../../domains/monetization/billing_subscription_state.dart';
 import '../../domains/monetization/entitlement.dart';
 import '../../domains/pantry/pantry_item.dart';
 import '../../domains/privacy/evidence_item.dart';
@@ -50,7 +52,7 @@ class SqliteLocalStore implements LocalStore {
         );
 
   static const _defaultDatabaseName = 'golife_ai.db';
-  static const _databaseVersion = 8;
+  static const _databaseVersion = 9;
   static const _privacyKey = 'privacy_settings';
   static const _localePreferenceKey = 'locale_preference';
   static const _profilePreferencesKey = 'profile_preferences';
@@ -99,6 +101,9 @@ class SqliteLocalStore implements LocalStore {
         }
         if (oldVersion < 8) {
           await _createEntitlementSchema(db);
+        }
+        if (oldVersion < 9) {
+          await _createBillingRuntimeSchema(db);
         }
       },
     );
@@ -650,6 +655,88 @@ class SqliteLocalStore implements LocalStore {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  @override
+  Future<BillingSubscriptionState?> loadBillingSubscriptionState() async {
+    final db = await _db;
+    final rows = await db.query(
+      'billing_subscription_state',
+      orderBy: 'updated_at_iso DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    return BillingSubscriptionState.fromJson(
+      _decodeSensitiveJsonRow(rows.first['json_blob']),
+    );
+  }
+
+  @override
+  Future<void> saveBillingSubscriptionState(
+    BillingSubscriptionState? state,
+  ) async {
+    final db = await _db;
+    if (state == null) {
+      await db.delete('billing_subscription_state');
+      return;
+    }
+    await db.insert(
+      'billing_subscription_state',
+      <String, Object?>{
+        'singleton_id': 1,
+        'provider': state.provider,
+        'mode': state.mode,
+        'product_id': state.productId,
+        'renewal_state': state.renewalState,
+        'purchase_token_hash': state.purchaseTokenHash,
+        'verified': state.verified ? 1 : 0,
+        'updated_at_iso': DateTime.now().toUtc().toIso8601String(),
+        'json_blob': _encodeSensitiveJsonBlob(state.toJson()),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  @override
+  Future<List<BillingAuditEntry>> loadBillingAuditEntries() async {
+    final db = await _db;
+    final rows = await db.query(
+      'billing_audit_entries',
+      orderBy: 'created_at_iso DESC',
+    );
+    return rows
+        .map(
+          (row) => BillingAuditEntry.fromJson(
+            _decodeSensitiveJsonRow(row['json_blob']),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<void> saveBillingAuditEntries(List<BillingAuditEntry> entries) async {
+    final db = await _db;
+    await db.transaction((txn) async {
+      await txn.delete('billing_audit_entries');
+      for (final entry in entries) {
+        await txn.insert(
+          'billing_audit_entries',
+          <String, Object?>{
+            'audit_id': entry.auditId,
+            'event_type': entry.eventType,
+            'status_code': entry.statusCode,
+            'provider': entry.provider,
+            'product_id': entry.productId,
+            'renewal_state': entry.renewalState,
+            'created_at_iso': entry.createdAtIso,
+            'json_blob': _encodeSensitiveJsonBlob(entry.toJson()),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
   }
 
   @override
@@ -1334,6 +1421,8 @@ class SqliteLocalStore implements LocalStore {
       await txn.delete('privacy_audit_entries');
       await txn.delete('analytics_events');
       await txn.delete('entitlement_state');
+      await txn.delete('billing_subscription_state');
+      await txn.delete('billing_audit_entries');
       await txn.delete('tasks');
       await txn.delete('habits');
       await txn.delete('expenses');
@@ -1593,6 +1682,25 @@ class SqliteLocalStore implements LocalStore {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_entitlement_state_updated ON entitlement_state(updated_at_iso DESC)',
+    );
+    await _createBillingRuntimeSchema(db);
+  }
+
+  Future<void> _createBillingRuntimeSchema(Database db) async {
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS billing_subscription_state (singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1), provider TEXT NOT NULL, mode TEXT NOT NULL, product_id TEXT NOT NULL, renewal_state TEXT NOT NULL, purchase_token_hash TEXT NOT NULL, verified INTEGER NOT NULL, updated_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_billing_subscription_state_updated ON billing_subscription_state(updated_at_iso DESC)',
+    );
+    await db.execute(
+      'CREATE TABLE IF NOT EXISTS billing_audit_entries (audit_id TEXT PRIMARY KEY, event_type TEXT NOT NULL, status_code TEXT NOT NULL, provider TEXT NOT NULL, product_id TEXT, renewal_state TEXT NOT NULL, created_at_iso TEXT NOT NULL, json_blob TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_billing_audit_created ON billing_audit_entries(created_at_iso DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_billing_audit_status ON billing_audit_entries(status_code)',
     );
   }
 
