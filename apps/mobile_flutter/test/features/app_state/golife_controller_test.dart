@@ -175,28 +175,35 @@ class _FakeBillingProviderAdapter implements BillingProviderAdapter {
 }
 
 class _FakeBillingValidationClient implements BillingValidationClient {
-  const _FakeBillingValidationClient();
+  _FakeBillingValidationClient({
+    this.nextDecision,
+  });
+
+  BillingValidationDecision? nextDecision;
+  int validateCallCount = 0;
 
   @override
   Future<BillingValidationDecision?> validateGooglePlayPurchase({
     required MobileBillingConfig config,
     required BillingPurchaseUpdate purchase,
   }) async {
-    return BillingValidationDecision(
-      verified: true,
-      plan: EntitlementPlan.premium,
-      quota: EntitlementQuota.premiumSandboxDefault,
-      billingProvider: entitlementBillingProviderGooglePlay,
-      renewalState: entitlementRenewalStateActive,
-      sandbox: true,
-      statusCode: 'validated',
-      message: 'Google Play sandbox purchase validated.',
-      validatedAtIso: '2026-05-17T10:01:00Z',
-      trace: <String, Object?>{
-        'mode': config.mode.storageKey,
-        'product_id': purchase.productId,
-      },
-    );
+    validateCallCount += 1;
+    return nextDecision ??
+        BillingValidationDecision(
+          verified: true,
+          plan: EntitlementPlan.premium,
+          quota: EntitlementQuota.premiumSandboxDefault,
+          billingProvider: entitlementBillingProviderGooglePlay,
+          renewalState: entitlementRenewalStateActive,
+          sandbox: true,
+          statusCode: 'validated',
+          message: 'Google Play sandbox purchase validated.',
+          validatedAtIso: '2026-05-17T10:01:00Z',
+          trace: <String, Object?>{
+            'mode': config.mode.storageKey,
+            'product_id': purchase.productId,
+          },
+        );
   }
 }
 
@@ -216,6 +223,7 @@ void main() {
         localExportService: exportService,
         submissionAssetVault: _NoopSubmissionAssetVault(),
       );
+      addTearDown(controller.dispose);
       await controller.bootstrap();
     });
 
@@ -777,8 +785,9 @@ void main() {
         localExportService: exportService,
         submissionAssetVault: _NoopSubmissionAssetVault(),
         billingProviderAdapter: fakeAdapter,
-        billingValidationClient: const _FakeBillingValidationClient(),
+        billingValidationClient: _FakeBillingValidationClient(),
       );
+      addTearDown(sandboxController.dispose);
       await sandboxController.bootstrap();
 
       expect(sandboxController.billingRuntimeState.config.enabled, isTrue);
@@ -807,6 +816,121 @@ void main() {
 
       final exportedJson = await sandboxController.exportLocalDataJson();
       expect(exportedJson, isNot(contains('sandbox-token')));
+    });
+
+    test('refreshes persisted billing state and degrades entitlement safely',
+        () async {
+      final sandboxStore = MemoryLocalStore();
+      await sandboxStore.saveRuntimeConfig(
+        AppRuntimeConfig(
+          schemaVersion: 2,
+          ttlSeconds: 21600,
+          gatewayBaseUrl: 'http://127.0.0.1:8000',
+          featureFlags: const <String, bool>{},
+          friendlyCopy: const <String, String>{},
+          aiStatus: const <String, Object?>{},
+          billing: MobileBillingConfig(
+            enabled: true,
+            provider: entitlementBillingProviderGooglePlay,
+            mode: BillingRuntimeMode.googlePlaySandbox,
+            sandboxOnly: true,
+            productionPurchasesEnabled: false,
+            restorePurchases: true,
+            packageName: 'ai.golife.mobile',
+            validationPath: '/public/mobile/billing/google-play/validate',
+            decisionDocumentUrl: 'https://example.test/billing-sandbox',
+            publicMessage: 'Sandbox only.',
+            catalog: const <BillingCatalogConfig>[
+              BillingCatalogConfig(
+                productId: 'golife_premium_monthly_sandbox',
+                plan: EntitlementPlan.premium,
+                title: 'GoLife Premium Sandbox',
+                description: 'Sandbox premium plan',
+              ),
+            ],
+          ),
+          generatedAtIso: '2026-05-17T10:00:00Z',
+        ),
+      );
+      final purchaseAdapter = _FakeBillingProviderAdapter();
+      final initialValidationClient = _FakeBillingValidationClient();
+      final firstController = GoLifeController(
+        localStore: sandboxStore,
+        aiGatewayClient: MockAiGatewayClient(),
+        lifeGraphRepository:
+            LifeGraphRepository.seeded(localStore: sandboxStore),
+        localExportService: exportService,
+        submissionAssetVault: _NoopSubmissionAssetVault(),
+        billingProviderAdapter: purchaseAdapter,
+        billingValidationClient: initialValidationClient,
+      );
+      addTearDown(firstController.dispose);
+      await firstController.bootstrap();
+      purchaseAdapter.emitPurchased('golife_premium_monthly_sandbox');
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(firstController.entitlement.plan, EntitlementPlan.premium);
+      expect(firstController.billingSubscriptionState, isNotNull);
+
+      final refreshValidationClient = _FakeBillingValidationClient(
+        nextDecision: BillingValidationDecision(
+          verified: false,
+          plan: EntitlementPlan.free,
+          quota: EntitlementQuota.disabledSafeDefault,
+          billingProvider: entitlementBillingProviderGooglePlay,
+          renewalState: entitlementRenewalStateCancelled,
+          sandbox: true,
+          statusCode: 'validated_cancelled',
+          message: 'Google Play subscription is cancelled and will not renew.',
+          validatedAtIso: '2026-05-17T10:05:00Z',
+          trace: const <String, Object?>{
+            'mode': 'google_play_sandbox',
+            'google_subscription_state': 'SUBSCRIPTION_STATE_CANCELED',
+          },
+        ),
+      );
+      final refreshedController = GoLifeController(
+        localStore: sandboxStore,
+        aiGatewayClient: MockAiGatewayClient(),
+        lifeGraphRepository:
+            LifeGraphRepository.seeded(localStore: sandboxStore),
+        localExportService: exportService,
+        submissionAssetVault: _NoopSubmissionAssetVault(),
+        billingProviderAdapter: _FakeBillingProviderAdapter(),
+        billingValidationClient: refreshValidationClient,
+      );
+      addTearDown(refreshedController.dispose);
+      await refreshedController.bootstrap();
+
+      expect(refreshValidationClient.validateCallCount, greaterThan(0));
+      expect(refreshedController.entitlement.plan, EntitlementPlan.free);
+      expect(
+        refreshedController.entitlement.billingProvider,
+        entitlementBillingProviderGooglePlay,
+      );
+      expect(
+        refreshedController.entitlement.renewalState,
+        entitlementRenewalStateCancelled,
+      );
+      expect(refreshedController.billingSubscriptionState, isNotNull);
+      expect(
+        refreshedController.billingSubscriptionState!.statusCode,
+        'validated_cancelled',
+      );
+      expect(
+        refreshedController.billingAuditEntries.any(
+          (entry) => entry.eventType == 'validation_applied',
+        ),
+        isTrue,
+      );
+
+      final exportedJson = await refreshedController.exportLocalDataJson();
+      final decoded = jsonDecode(exportedJson) as Map<String, dynamic>;
+      expect(exportedJson, isNot(contains('sandbox-token')));
+      expect(
+          decoded['billing_subscription_summary'], isA<Map<String, dynamic>>());
+      expect(decoded['billing_audit_entries'], isA<List<dynamic>>());
     });
   });
 }
