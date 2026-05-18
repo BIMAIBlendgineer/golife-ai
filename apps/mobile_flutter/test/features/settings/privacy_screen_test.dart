@@ -157,18 +157,16 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PrivacyScreen(controller: controller),
-        ),
+        home: Scaffold(body: PrivacyScreen(controller: controller)),
       ),
     );
 
     await tester.scrollUntilVisible(
-      find.text('Export JSON'),
+      find.byKey(const ValueKey<String>('privacy-export-json')),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Export JSON'));
+    await tester.tap(find.byKey(const ValueKey<String>('privacy-export-json')));
     await tester.pumpAndSettle();
 
     expect(
@@ -180,8 +178,9 @@ void main() {
     expect(find.text('Clear AI history'), findsOneWidget);
   });
 
-  testWidgets('privacy screen exposes event controls and visible local audit',
-      (tester) async {
+  testWidgets('privacy screen exposes event controls and visible local audit', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     final controller = GoLifeController(
       localStore: localStore,
@@ -238,8 +237,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No local privacy audit entries yet.'), findsNothing);
-    expect(find.textContaining('Event ID: ${financeEvent.eventId}'),
-        findsOneWidget);
+    expect(
+      find.textContaining('Event ID: ${financeEvent.eventId}'),
+      findsOneWidget,
+    );
     expect(find.textContaining('Changed at:'), findsOneWidget);
   });
 
@@ -276,12 +277,12 @@ void main() {
 
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Plan and billing'),
+      find.byKey(const ValueKey<String>('billing-open-decision')),
       300,
       scrollable: find.byType(Scrollable).first,
     );
 
-    expect(find.text('Plan and billing'), findsOneWidget);
+    expect(find.text('Plan and billing'), findsWidgets);
     expect(find.text('Feature gates'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('billing-open-decision')),
@@ -297,16 +298,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-        openedUrls, <String>[GoLifeLegalDocuments.billingDisabledDecisionUrl]);
+    expect(openedUrls, <String>[
+      GoLifeLegalDocuments.billingDisabledDecisionUrl,
+    ]);
 
     await tester.scrollUntilVisible(
-      find.text('Store and legal'),
+      find.byKey(const ValueKey<String>('legal-open-privacy_policy')),
       300,
       scrollable: find.byType(Scrollable).first,
     );
 
-    expect(find.text('Store and legal'), findsOneWidget);
+    expect(find.text('Store and legal'), findsWidgets);
     expect(
       find.byKey(const ValueKey<String>('legal-url-privacy_policy')),
       findsOneWidget,
@@ -317,17 +319,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      openedUrls,
-      <String>[
-        GoLifeLegalDocuments.billingDisabledDecisionUrl,
-        GoLifeLegalDocuments.privacyPolicyUrl,
-      ],
-    );
+    expect(openedUrls, <String>[
+      GoLifeLegalDocuments.billingDisabledDecisionUrl,
+      GoLifeLegalDocuments.privacyPolicyUrl,
+    ]);
   });
 
-  testWidgets('privacy screen shows Google Play sandbox billing controls',
-      (tester) async {
+  testWidgets('privacy screen shows Google Play sandbox billing controls', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     await localStore.saveRuntimeConfig(
       AppRuntimeConfig(
@@ -380,15 +380,13 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PrivacyScreen(controller: controller),
-        ),
+        home: Scaffold(body: PrivacyScreen(controller: controller)),
       ),
     );
 
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Plan and billing'),
+      find.byKey(const ValueKey<String>('billing-restore-purchases')),
       300,
       scrollable: find.byType(Scrollable).first,
     );
@@ -406,8 +404,9 @@ void main() {
     );
   });
 
-  testWidgets('privacy screen shows billing refresh and audit after purchase',
-      (tester) async {
+  testWidgets('privacy screen shows billing refresh and audit after purchase', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     await localStore.saveRuntimeConfig(
       AppRuntimeConfig(
@@ -478,27 +477,23 @@ void main() {
         },
       ),
     );
-    await localStore.saveBillingAuditEntries(
-      const <BillingAuditEntry>[
-        BillingAuditEntry(
-          auditId: 'billing-audit-1',
-          createdAtIso: '2026-05-17T10:01:00Z',
-          eventType: 'validation_applied',
-          provider: entitlementBillingProviderGooglePlay,
-          mode: 'google_play_sandbox',
-          statusCode: 'validated',
-          productId: 'golife_premium_monthly_sandbox',
-          purchaseTokenHash: 'hashed-sandbox-token',
-          renewalState: entitlementRenewalStateActive,
-          sandbox: true,
-          verified: true,
-          restored: false,
-          trace: <String, Object?>{
-            'source_action': 'purchase',
-          },
-        ),
-      ],
-    );
+    await localStore.saveBillingAuditEntries(const <BillingAuditEntry>[
+      BillingAuditEntry(
+        auditId: 'billing-audit-1',
+        createdAtIso: '2026-05-17T10:01:00Z',
+        eventType: 'validation_applied',
+        provider: entitlementBillingProviderGooglePlay,
+        mode: 'google_play_sandbox',
+        statusCode: 'validated',
+        productId: 'golife_premium_monthly_sandbox',
+        purchaseTokenHash: 'hashed-sandbox-token',
+        renewalState: entitlementRenewalStateActive,
+        sandbox: true,
+        verified: true,
+        restored: false,
+        trace: <String, Object?>{'source_action': 'purchase'},
+      ),
+    ]);
     final controller = GoLifeController(
       localStore: localStore,
       aiGatewayClient: MockAiGatewayClient(),
@@ -529,7 +524,7 @@ void main() {
 
     await tester.pump();
     await tester.scrollUntilVisible(
-      find.text('Plan and billing'),
+      find.byKey(const ValueKey<String>('billing-refresh-status')),
       300,
       scrollable: find.byType(Scrollable).first,
     );

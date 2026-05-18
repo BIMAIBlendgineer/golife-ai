@@ -32,8 +32,9 @@ Future<GoLifeController> _buildController() async {
 }
 
 void main() {
-  testWidgets('HomeMemory screen renders stored item without overflow',
-      (tester) async {
+  testWidgets('HomeMemory screen renders stored item without overflow', (
+    tester,
+  ) async {
     final controller = await _buildController();
 
     await tester.pumpWidget(

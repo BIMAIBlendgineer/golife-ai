@@ -16,6 +16,7 @@ import '../../domains/monetization/entitlement.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
+import '../shared/premium_ui.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({
@@ -32,40 +33,130 @@ class PrivacyScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(l10n.privacyTitle, style: theme.textTheme.headlineMedium),
+          Text(l10n.navSettings, style: theme.textTheme.headlineMedium),
           const SizedBox(height: 8),
+          Text(_settingsIntro(l10n), style: theme.textTheme.bodyLarge),
+          const SizedBox(height: 16),
+          GoLifeCard(
+            accent: controller.sensitiveLocalEncryptionEnabled
+                ? GoLifeAccent.emerald
+                : GoLifeAccent.amber,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  controller.sensitiveLocalEncryptionEnabled
+                      ? Icons.verified_user_rounded
+                      : Icons.shield_moon_outlined,
+                  color: controller.sensitiveLocalEncryptionEnabled
+                      ? GoLifePalette.emerald
+                      : GoLifePalette.amber,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    controller.sensitiveLocalEncryptionEnabled
+                        ? l10n.privacyEncryptedActive
+                        : l10n.privacyEncryptedUnavailable,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _SettingsIndexCard(
+                title: _settingsAccountTitle(l10n),
+                body: _settingsAccountBody(l10n),
+              ),
+              _SettingsIndexCard(
+                title: l10n.billingPlanTitle,
+                body: _settingsPremiumBody(l10n),
+              ),
+              _SettingsIndexCard(
+                title: l10n.privacyTitle,
+                body: _settingsPrivacyBody(l10n),
+              ),
+              _SettingsIndexCard(
+                title: _settingsAiDataTitle(l10n),
+                body: _settingsAiDataBody(l10n),
+              ),
+              _SettingsIndexCard(
+                title: l10n.language,
+                body: _settingsLanguageBody(l10n),
+              ),
+              _SettingsIndexCard(
+                title: l10n.themePreference,
+                body: _settingsThemeBody(l10n),
+              ),
+              _SettingsIndexCard(
+                title: l10n.exportJson,
+                body: _settingsExportBody(l10n),
+              ),
+              _SettingsIndexCard(
+                title: l10n.deleteAllLocalData,
+                body: _settingsDeleteBody(l10n),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           Text(
-            l10n.privacyIntro,
-            style: theme.textTheme.bodyLarge,
+            _settingsPrivacyCenterTitle(l10n),
+            style: theme.textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: controller.sensitiveLocalEncryptionEnabled
-                  ? const Color(0xFFEDF4EE)
-                  : const Color(0xFFF6EEE7),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: controller.sensitiveLocalEncryptionEnabled
-                    ? const Color(0xFFB6C8B4)
-                    : const Color(0xFFD6C0A7),
-              ),
-            ),
-            child: Text(
-              controller.sensitiveLocalEncryptionEnabled
-                  ? l10n.privacyEncryptedActive
-                  : l10n.privacyEncryptedUnavailable,
-              style: theme.textTheme.bodyMedium,
+          GoLifeCard(
+            accent: GoLifeAccent.blue,
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricTotalEvents,
+                    value: controller.totalEventCount.toString(),
+                    tone: const Color(0xFF1F4C5B),
+                  ),
+                ),
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricAiEligible,
+                    value: controller.aiEligibleEventCount.toString(),
+                    tone: const Color(0xFF5D7A68),
+                  ),
+                ),
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricBlockedLocal,
+                    value:
+                        '${controller.totalEventCount - controller.aiEligibleEventCount}',
+                    tone: const Color(0xFFD06447),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
           Text(l10n.privacyCenter, style: theme.textTheme.titleLarge),
+          const SizedBox(height: 12),
+          GoLifeCard(
+            accent: GoLifeAccent.violet,
+            child: Text(
+              _settingsPreferencesBody(l10n),
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
           const SizedBox(height: 12),
           _LanguageCard(controller: controller),
           const SizedBox(height: 12),
@@ -95,37 +186,10 @@ class PrivacyScreen extends StatelessWidget {
                 items: controller.privacySettings.aiAllowedDomains.isEmpty
                     ? <String>[l10n.nothingAiEnabled]
                     : controller.privacySettings.aiAllowedDomains
-                        .map((domain) => domain.localizedLabel(l10n))
-                        .toList(growable: false),
+                          .map((domain) => domain.localizedLabel(l10n))
+                          .toList(growable: false),
               ),
             ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: _PrivacyMetricCard(
-                  label: l10n.privacyMetricTotalEvents,
-                  value: controller.totalEventCount.toString(),
-                  tone: const Color(0xFF1F4C5B),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _PrivacyMetricCard(
-                  label: l10n.privacyMetricAiEligible,
-                  value: controller.aiEligibleEventCount.toString(),
-                  tone: const Color(0xFF5D7A68),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _PrivacyMetricCard(
-            label: l10n.privacyMetricBlockedLocal,
-            value:
-                '${controller.totalEventCount - controller.aiEligibleEventCount}',
-            tone: const Color(0xFFD06447),
           ),
           const SizedBox(height: 24),
           Text(
@@ -183,15 +247,9 @@ class PrivacyScreen extends StatelessWidget {
             onOpenExternalUrl: onOpenExternalUrl,
           ),
           const SizedBox(height: 24),
-          Text(
-            l10n.privacyLegalTitle,
-            style: theme.textTheme.titleLarge,
-          ),
+          Text(l10n.privacyLegalTitle, style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text(
-            l10n.privacyLegalBody,
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(l10n.privacyLegalBody, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
           Wrap(
             spacing: 12,
@@ -215,16 +273,14 @@ class PrivacyScreen extends StatelessWidget {
               children: [
                 Text(l10n.dataControls, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
-                Text(
-                  l10n.dataControlsBody,
-                  style: theme.textTheme.bodyMedium,
-                ),
+                Text(l10n.dataControlsBody, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
                   children: [
                     FilledButton.tonalIcon(
+                      key: const ValueKey<String>('privacy-export-json'),
                       onPressed: () => _exportLocalJson(context),
                       icon: const Icon(Icons.download_outlined),
                       label: Text(l10n.exportJson),
@@ -266,10 +322,7 @@ class PrivacyScreen extends StatelessWidget {
             style: theme.textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
-          Text(
-            l10n.privacyRecentEventsBody,
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(l10n.privacyRecentEventsBody, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
           if (controller.lifeEvents.isEmpty)
             Text(
@@ -286,21 +339,12 @@ class PrivacyScreen extends StatelessWidget {
                 ),
               ),
           const SizedBox(height: 24),
-          Text(
-            l10n.privacyAuditTitle,
-            style: theme.textTheme.titleLarge,
-          ),
+          Text(l10n.privacyAuditTitle, style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text(
-            l10n.privacyAuditBody,
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(l10n.privacyAuditBody, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
           if (controller.privacyAuditEntries.isEmpty)
-            Text(
-              l10n.privacyAuditEmpty,
-              style: theme.textTheme.bodyMedium,
-            )
+            Text(l10n.privacyAuditEmpty, style: theme.textTheme.bodyMedium)
           else
             for (final entry in controller.privacyAuditEntries.take(8))
               Padding(
@@ -398,7 +442,8 @@ class PrivacyScreen extends StatelessWidget {
   }
 
   Future<void> _confirmDeleteAll(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (context) {
             return AlertDialog(
@@ -431,7 +476,8 @@ class PrivacyScreen extends StatelessWidget {
   }
 
   Future<void> _confirmClearAiHistory(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (context) {
             return AlertDialog(
@@ -534,6 +580,215 @@ class _LegalDocumentCard extends StatelessWidget {
   }
 }
 
+class _SettingsIndexCard extends StatelessWidget {
+  const _SettingsIndexCard({required this.title, required this.body});
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      child: GoLifeCard(
+        accent: GoLifeAccent.neutral,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(body, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _settingsIntro(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Premium, privacy, AI and local controls in one place.',
+  es: 'Premium, privacidad, IA y controles locales en un solo lugar.',
+  ptBr: 'Premium, privacidade, IA e controles locais em um so lugar.',
+  ptPt: 'Premium, privacidade, IA e controlos locais num so lugar.',
+  fr: 'Premium, confidentialite, IA et controles locaux au meme endroit.',
+  it: 'Premium, privacy, IA e controlli locali in un solo posto.',
+  de: 'Premium, Datenschutz, KI und lokale Kontrollen an einem Ort.',
+  ja: 'Premium, privacy, AI and local controls in one place.',
+  zhHans: 'Premium, privacy, AI and local controls in one place.',
+  zhHant: 'Premium, privacy, AI and local controls in one place.',
+);
+
+String _settingsAccountTitle(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Account',
+  es: 'Cuenta',
+  ptBr: 'Conta',
+  ptPt: 'Conta',
+  fr: 'Compte',
+  it: 'Account',
+  de: 'Konto',
+  ja: 'Account',
+  zhHans: 'Account',
+  zhHant: 'Account',
+);
+
+String _settingsAccountBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Language, profile and local preferences.',
+  es: 'Idioma, perfil y preferencias locales.',
+  ptBr: 'Idioma, perfil e preferencias locais.',
+  ptPt: 'Idioma, perfil e preferencias locais.',
+  fr: 'Langue, profil et preferences locales.',
+  it: 'Lingua, profilo e preferenze locali.',
+  de: 'Sprache, Profil und lokale Einstellungen.',
+  ja: 'Language, profile and local preferences.',
+  zhHans: 'Language, profile and local preferences.',
+  zhHant: 'Language, profile and local preferences.',
+);
+
+String _settingsPremiumBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Subscription status, catalog, restore and billing audit.',
+  es: 'Estado de suscripcion, catalogo, restaurar y auditoria de billing.',
+  ptBr: 'Status da assinatura, catalogo, restauracao e auditoria de billing.',
+  ptPt: 'Estado da subscricao, catalogo, restaurar e auditoria de billing.',
+  fr: 'Etat de l abonnement, catalogue, restauration et audit de facturation.',
+  it: 'Stato abbonamento, catalogo, ripristino e audit billing.',
+  de: 'Abo-Status, Katalog, Wiederherstellung und Billing-Audit.',
+  ja: 'Subscription status, catalog, restore and billing audit.',
+  zhHans: 'Subscription status, catalog, restore and billing audit.',
+  zhHant: 'Subscription status, catalog, restore and billing audit.',
+);
+
+String _settingsPrivacyBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Local-only, sync and AI permissions by domain and event.',
+  es: 'Permisos local-only, sync e IA por dominio y por evento.',
+  ptBr: 'Permissoes local-only, sync e IA por dominio e evento.',
+  ptPt: 'Permissoes local-only, sync e IA por dominio e evento.',
+  fr: 'Autorisations local-only, sync et IA par domaine et evenement.',
+  it: 'Permessi local-only, sync e IA per dominio ed evento.',
+  de: 'Local-only-, Sync- und KI-Berechtigungen pro Bereich und Ereignis.',
+  ja: 'Local-only, sync and AI permissions by domain and event.',
+  zhHans: 'Local-only, sync and AI permissions by domain and event.',
+  zhHant: 'Local-only, sync and AI permissions by domain and event.',
+);
+
+String _settingsAiDataTitle(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'AI and data',
+  es: 'IA y datos',
+  ptBr: 'IA e dados',
+  ptPt: 'IA e dados',
+  fr: 'IA et donnees',
+  it: 'IA e dati',
+  de: 'KI und Daten',
+  ja: 'AI and data',
+  zhHans: 'AI and data',
+  zhHant: 'AI and data',
+);
+
+String _settingsAiDataBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'What was used, what stayed blocked and what remains local.',
+  es: 'Que se uso, que quedo bloqueado y que sigue local.',
+  ptBr: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
+  ptPt: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
+  fr: 'Ce qui a ete utilise, ce qui est bloque et ce qui reste local.',
+  it: 'Cosa e stato usato, cosa e rimasto bloccato e cosa resta locale.',
+  de: 'Was genutzt wurde, was blockiert blieb und was lokal bleibt.',
+  ja: 'What was used, what stayed blocked and what remains local.',
+  zhHans: 'What was used, what stayed blocked and what remains local.',
+  zhHant: 'What was used, what stayed blocked and what remains local.',
+);
+
+String _settingsLanguageBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Switch the language without leaving the device.',
+  es: 'Cambia el idioma sin salir del dispositivo.',
+  ptBr: 'Troque o idioma sem sair do dispositivo.',
+  ptPt: 'Muda o idioma sem sair do dispositivo.',
+  fr: 'Change la langue sans quitter l appareil.',
+  it: 'Cambia lingua senza uscire dal dispositivo.',
+  de: 'Sprache wechseln, ohne das Geraet zu verlassen.',
+  ja: 'Switch the language without leaving the device.',
+  zhHans: 'Switch the language without leaving the device.',
+  zhHant: 'Switch the language without leaving the device.',
+);
+
+String _settingsThemeBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'System, light or dark mode for daily use.',
+  es: 'Sistema, claro u oscuro para el uso diario.',
+  ptBr: 'Sistema, claro ou escuro para o uso diario.',
+  ptPt: 'Sistema, claro ou escuro para o uso diario.',
+  fr: 'Mode systeme, clair ou sombre pour le quotidien.',
+  it: 'Sistema, chiaro o scuro per l uso quotidiano.',
+  de: 'System-, Hell- oder Dunkelmodus fuer den Alltag.',
+  ja: 'System, light or dark mode for daily use.',
+  zhHans: 'System, light or dark mode for daily use.',
+  zhHant: 'System, light or dark mode for daily use.',
+);
+
+String _settingsExportBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Export your local JSON bundle at any time.',
+  es: 'Exporta tu paquete JSON local en cualquier momento.',
+  ptBr: 'Exporte seu pacote JSON local a qualquer momento.',
+  ptPt: 'Exporta o teu pacote JSON local a qualquer momento.',
+  fr: 'Exporte ton paquet JSON local a tout moment.',
+  it: 'Esporta il tuo bundle JSON locale in ogni momento.',
+  de: 'Exportiere dein lokales JSON-Buendel jederzeit.',
+  ja: 'Export your local JSON bundle at any time.',
+  zhHans: 'Export your local JSON bundle at any time.',
+  zhHant: 'Export your local JSON bundle at any time.',
+);
+
+String _settingsDeleteBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Delete local data or clear AI history with explicit confirmation.',
+  es: 'Borra datos locales o limpia historial de IA con confirmacion explicita.',
+  ptBr:
+      'Apague dados locais ou limpe o historico da IA com confirmacao explicita.',
+  ptPt:
+      'Apaga dados locais ou limpa o historico da IA com confirmacao explicita.',
+  fr: 'Supprime les donnees locales ou l historique IA avec confirmation explicite.',
+  it: 'Elimina dati locali o cronologia IA con conferma esplicita.',
+  de: 'Loesche lokale Daten oder KI-Verlauf mit ausdruecklicher Bestaetigung.',
+  ja: 'Delete local data or clear AI history with explicit confirmation.',
+  zhHans: 'Delete local data or clear AI history with explicit confirmation.',
+  zhHant: 'Delete local data or clear AI history with explicit confirmation.',
+);
+
+String _settingsPrivacyCenterTitle(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Privacy dashboard',
+  es: 'Dashboard de privacidad',
+  ptBr: 'Dashboard de privacidade',
+  ptPt: 'Dashboard de privacidade',
+  fr: 'Dashboard de confidentialite',
+  it: 'Dashboard privacy',
+  de: 'Datenschutz-Dashboard',
+  ja: 'Privacy dashboard',
+  zhHans: 'Privacy dashboard',
+  zhHant: 'Privacy dashboard',
+);
+
+String _settingsPreferencesBody(AppLocalizations l10n) => pickLocalizedValue(
+  l10n.localeName,
+  en: 'Profile, reminders and regional behavior stay local-first.',
+  es: 'Perfil, recordatorios y comportamiento regional se mantienen local-first.',
+  ptBr: 'Perfil, lembretes e comportamento regional permanecem local-first.',
+  ptPt: 'Perfil, lembretes e comportamento regional mantem-se local-first.',
+  fr: 'Profil, rappels et comportement regional restent local-first.',
+  it: 'Profilo, promemoria e comportamento regionale restano local-first.',
+  de: 'Profil, Erinnerungen und regionale Einstellungen bleiben local-first.',
+  ja: 'Profile, reminders and regional behavior stay local-first.',
+  zhHans: 'Profile, reminders and regional behavior stay local-first.',
+  zhHant: 'Profile, reminders and regional behavior stay local-first.',
+);
+
 class _LanguageCard extends StatelessWidget {
   const _LanguageCard({required this.controller});
 
@@ -616,10 +871,7 @@ class _ProfilePreferencesCard extends StatelessWidget {
           label: l10n.aiResponseStyle,
           selected: controller.profilePreferences.aiDetail,
           options: [
-            _ChoiceOption(
-              value: AiDetailPreference.brief,
-              label: l10n.aiBrief,
-            ),
+            _ChoiceOption(value: AiDetailPreference.brief, label: l10n.aiBrief),
             _ChoiceOption(
               value: AiDetailPreference.detailed,
               label: l10n.aiDetailed,
@@ -633,10 +885,7 @@ class _ProfilePreferencesCard extends StatelessWidget {
 }
 
 class _PlanBillingCard extends StatefulWidget {
-  const _PlanBillingCard({
-    required this.controller,
-    this.onOpenExternalUrl,
-  });
+  const _PlanBillingCard({required this.controller, this.onOpenExternalUrl});
 
   final GoLifeController controller;
   final Future<void> Function(String url)? onOpenExternalUrl;
@@ -652,12 +901,15 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.controller.trackBillingDisabledViewed();
       widget.controller.trackRestoreUnavailableViewed();
-      widget.controller
-          .trackEntitlementGateViewed(EntitlementFeature.dailyMissionRefreshes);
-      widget.controller
-          .trackEntitlementGateViewed(EntitlementFeature.aiAssistedCaptures);
-      widget.controller
-          .trackEntitlementGateViewed(EntitlementFeature.exportBundles);
+      widget.controller.trackEntitlementGateViewed(
+        EntitlementFeature.dailyMissionRefreshes,
+      );
+      widget.controller.trackEntitlementGateViewed(
+        EntitlementFeature.aiAssistedCaptures,
+      );
+      widget.controller.trackEntitlementGateViewed(
+        EntitlementFeature.exportBundles,
+      );
     });
   }
 
@@ -670,8 +922,9 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     final billingState = controller.billingRuntimeState;
     final billingConfig = billingState.config;
     final storedBillingState = controller.billingSubscriptionState;
-    final billingAuditEntries =
-        controller.billingAuditEntries.take(4).toList(growable: false);
+    final billingAuditEntries = controller.billingAuditEntries
+        .take(4)
+        .toList(growable: false);
     final missionRefreshGate = controller.entitlementGateForFeature(
       EntitlementFeature.dailyMissionRefreshes,
     );
@@ -771,16 +1024,10 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
           ),
           if (billingConfig.enabled) ...[
             const SizedBox(height: 14),
-            Text(
-              l10n.billingCatalogTitle,
-              style: theme.textTheme.titleMedium,
-            ),
+            Text(l10n.billingCatalogTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             if (billingState.catalog.isEmpty)
-              Text(
-                l10n.billingCatalogEmpty,
-                style: theme.textTheme.bodyMedium,
-              )
+              Text(l10n.billingCatalogEmpty, style: theme.textTheme.bodyMedium)
             else
               for (final item in billingState.catalog)
                 Padding(
@@ -809,16 +1056,10 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
               ),
             ],
             const SizedBox(height: 14),
-            Text(
-              l10n.billingAuditTitle,
-              style: theme.textTheme.titleMedium,
-            ),
+            Text(l10n.billingAuditTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             if (billingAuditEntries.isEmpty)
-              Text(
-                l10n.billingAuditEmpty,
-                style: theme.textTheme.bodyMedium,
-              )
+              Text(l10n.billingAuditEmpty, style: theme.textTheme.bodyMedium)
             else
               for (final entry in billingAuditEntries)
                 Padding(
@@ -874,8 +1115,8 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
   }) async {
     await Clipboard.setData(
       ClipboardData(
-          text:
-              widget.controller.billingRuntimeState.config.decisionDocumentUrl),
+        text: widget.controller.billingRuntimeState.config.decisionDocumentUrl,
+      ),
     );
     if (!context.mounted) {
       return;
@@ -895,14 +1136,15 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     BuildContext context,
     BillingCatalogItem item,
   ) async {
-    final result =
-        await widget.controller.buyBillingCatalogProduct(item.productId);
+    final result = await widget.controller.buyBillingCatalogProduct(
+      item.productId,
+    );
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message)));
   }
 
   Future<void> _restorePurchases(BuildContext context) async {
@@ -910,9 +1152,9 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message)));
   }
 
   Future<void> _refreshBillingStatus(BuildContext context) async {
@@ -920,9 +1162,9 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(result.message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(result.message)));
   }
 }
 
@@ -985,8 +1227,8 @@ class _BillingGateRow extends StatelessWidget {
     final subtitle = forceAlwaysAvailable
         ? l10n.billingGateAlwaysAvailable
         : gate.allowed
-            ? l10n.billingGateWithinQuota
-            : l10n.billingGateQuotaExhausted;
+        ? l10n.billingGateWithinQuota
+        : l10n.billingGateQuotaExhausted;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
@@ -1002,9 +1244,7 @@ class _BillingGateRow extends StatelessWidget {
 }
 
 class _BillingAuditCard extends StatelessWidget {
-  const _BillingAuditCard({
-    required this.entry,
-  });
+  const _BillingAuditCard({required this.entry});
 
   final BillingAuditEntry entry;
 
@@ -1034,10 +1274,7 @@ class _BillingAuditCard extends StatelessWidget {
 }
 
 class _BillingFactRow extends StatelessWidget {
-  const _BillingFactRow({
-    required this.label,
-    required this.value,
-  });
+  const _BillingFactRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1185,18 +1422,12 @@ class _RegionalPreferencesCard extends StatelessWidget {
             _ChoiceOption(value: RegionPreference.auto, label: l10n.regionAuto),
             _ChoiceOption(value: RegionPreference.us, label: l10n.regionUs),
             _ChoiceOption(value: RegionPreference.es, label: l10n.regionSpain),
-            _ChoiceOption(
-              value: RegionPreference.br,
-              label: l10n.regionBrazil,
-            ),
+            _ChoiceOption(value: RegionPreference.br, label: l10n.regionBrazil),
             _ChoiceOption(
               value: RegionPreference.pt,
               label: l10n.regionPortugal,
             ),
-            _ChoiceOption(
-              value: RegionPreference.fr,
-              label: l10n.regionFrance,
-            ),
+            _ChoiceOption(value: RegionPreference.fr, label: l10n.regionFrance),
             _ChoiceOption(value: RegionPreference.it, label: l10n.regionItaly),
             _ChoiceOption(
               value: RegionPreference.de,
@@ -1207,10 +1438,7 @@ class _RegionalPreferencesCard extends StatelessWidget {
               value: RegionPreference.cn,
               label: l10n.regionChinaMainland,
             ),
-            _ChoiceOption(
-              value: RegionPreference.tw,
-              label: l10n.regionTaiwan,
-            ),
+            _ChoiceOption(value: RegionPreference.tw, label: l10n.regionTaiwan),
           ],
           onSelected: controller.updateRegionPreference,
         ),
@@ -1292,10 +1520,7 @@ class _PreferenceChoiceGroup<T> extends StatelessWidget {
 }
 
 class _ChoiceOption<T> {
-  const _ChoiceOption({
-    required this.value,
-    required this.label,
-  });
+  const _ChoiceOption({required this.value, required this.label});
 
   final T value;
   final String label;
@@ -1327,10 +1552,7 @@ class _PrivacyMetricCard extends StatelessWidget {
         children: [
           Text(label, style: theme.textTheme.titleMedium),
           const SizedBox(height: 10),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall,
-          ),
+          Text(value, style: theme.textTheme.headlineSmall),
         ],
       ),
     );
@@ -1368,10 +1590,9 @@ class _DomainPermissionCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            AppLocalizations.of(context)!.domainEventsEligible(
-              eventCount,
-              aiEligibleCount,
-            ),
+            AppLocalizations.of(
+              context,
+            )!.domainEventsEligible(eventCount, aiEligibleCount),
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -1425,10 +1646,7 @@ class _PrivacyDisclosureCard extends StatelessWidget {
           for (final item in items)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                '- $item',
-                style: theme.textTheme.bodyMedium,
-              ),
+              child: Text('- $item', style: theme.textTheme.bodyMedium),
             ),
         ],
       ),
@@ -1437,10 +1655,7 @@ class _PrivacyDisclosureCard extends StatelessWidget {
 }
 
 class _RecentLifeEventCard extends StatelessWidget {
-  const _RecentLifeEventCard({
-    required this.controller,
-    required this.event,
-  });
+  const _RecentLifeEventCard({required this.controller, required this.event});
 
   final GoLifeController controller;
   final LifeEvent event;
@@ -1458,10 +1673,7 @@ class _RecentLifeEventCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            event.summary,
-            style: theme.textTheme.titleMedium,
-          ),
+          Text(event.summary, style: theme.textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
             '${event.timestampIso} • ${event.eventType}',
@@ -1477,11 +1689,7 @@ class _RecentLifeEventCard extends StatelessWidget {
                   '${l10n.fieldDomain}: ${event.domain.localizedDomainLabel(l10n)}',
                 ),
               ),
-              Chip(
-                label: Text(
-                  '${l10n.privacyEventSource}: ${event.source}',
-                ),
-              ),
+              Chip(label: Text('${l10n.privacyEventSource}: ${event.source}')),
               Chip(
                 label: Text(
                   '${l10n.fieldPrivacy}: ${event.privacyLevel.localizedPermissionLabel(l10n)}',
@@ -1508,7 +1716,9 @@ class _RecentLifeEventCard extends StatelessWidget {
                   selected: event.privacyLevel == permission.storageKey,
                   onSelected: (_) async {
                     await controller.updateEventPrivacy(
-                        event.eventId, permission);
+                      event.eventId,
+                      permission,
+                    );
                   },
                 ),
             ],
@@ -1560,11 +1770,13 @@ BoxDecoration _cardDecoration(ThemeData theme) {
   final isDark = theme.brightness == Brightness.dark;
   return BoxDecoration(
     color: isDark
-        ? const Color(0xFF241C18).withValues(alpha: 0.92)
-        : Colors.white.withValues(alpha: 0.76),
-    borderRadius: BorderRadius.circular(24),
+        ? GoLifePalette.surface700.withValues(alpha: 0.88)
+        : Colors.white.withValues(alpha: 0.88),
+    borderRadius: BorderRadius.circular(26),
     border: Border.all(
-      color: isDark ? const Color(0x33E6CDB9) : const Color(0x12FFFFFF),
+      color: isDark
+          ? GoLifePalette.lineStrong.withValues(alpha: 0.88)
+          : const Color(0xFFD7E1FF),
     ),
   );
 }
@@ -1579,10 +1791,7 @@ bool _isEventAiEligible(GoLifeController controller, LifeEvent event) {
       event.privacyLevel == DataPermission.aiAllowed.storageKey;
 }
 
-String _entitlementPlanLabel(
-  EntitlementPlan plan,
-  AppLocalizations l10n,
-) {
+String _entitlementPlanLabel(EntitlementPlan plan, AppLocalizations l10n) {
   switch (plan) {
     case EntitlementPlan.free:
       return l10n.billingPlanFree;
@@ -1617,10 +1826,7 @@ String _billingModeLabel(
   }
 }
 
-String _billingRenewalLabel(
-  String renewalState,
-  AppLocalizations l10n,
-) {
+String _billingRenewalLabel(String renewalState, AppLocalizations l10n) {
   switch (renewalState) {
     case entitlementRenewalStatePending:
       return l10n.billingRenewalPending;

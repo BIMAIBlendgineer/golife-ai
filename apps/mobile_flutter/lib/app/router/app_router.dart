@@ -19,11 +19,14 @@ GoRouter buildAppRouter(GoLifeController controller) {
         builder: (context, state, child) {
           return AppShellScaffold(
             controller: controller,
-            currentLocation: state.uri.toString(),
+            currentLocation: state.uri.path,
             child: child,
           );
         },
         routes: [
+          GoRoute(path: '/today', redirect: (_, __) => '/dashboard'),
+          GoRoute(path: '/memory', redirect: (_, __) => '/lifegraph'),
+          GoRoute(path: '/coach', redirect: (_, __) => '/copilot'),
           GoRoute(
             path: '/dashboard',
             builder: (context, state) =>
