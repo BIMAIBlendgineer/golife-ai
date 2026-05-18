@@ -64,11 +64,10 @@ class GoLifeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isCompactHeader =
-        MediaQuery.sizeOf(context).width < 520 &&
+    final isCompactHeader = MediaQuery.sizeOf(context).width < 520 &&
         (badge != null || trailing != null);
     return SingleChildScrollView(
-      padding: padding ?? const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      padding: padding ?? goLifeContentPadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -134,6 +133,19 @@ class GoLifeScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+EdgeInsets goLifeContentPadding(
+  BuildContext context, {
+  double horizontal = 20,
+  double top = 20,
+  double mobileBottom = 128,
+  double wideBottom = 32,
+}) {
+  final width = MediaQuery.sizeOf(context).width;
+  final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
+  final bottom = width < 980 ? mobileBottom : wideBottom;
+  return EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom + safeBottom);
 }
 
 class GoLifeCard extends StatelessWidget {
@@ -233,9 +245,9 @@ class GoLifeStatusPill extends StatelessWidget {
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: GoLifePalette.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+                      color: GoLifePalette.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
             ),
           ],
@@ -275,8 +287,8 @@ class GoLifeMetricCard extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: GoLifePalette.textSecondary,
-            ),
+                  color: GoLifePalette.textSecondary,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -322,8 +334,8 @@ class GoLifeSectionTitle extends StatelessWidget {
           Text(
             subtitle!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: GoLifePalette.textSecondary,
-            ),
+                  color: GoLifePalette.textSecondary,
+                ),
           ),
         ],
       ],
@@ -408,8 +420,8 @@ class GoLifeShortcutGrid extends StatelessWidget {
     final crossAxisCount = width >= 900
         ? 4
         : width >= 560
-        ? 3
-        : 2;
+            ? 3
+            : 2;
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -448,8 +460,8 @@ class GoLifeShortcutGrid extends StatelessWidget {
                 Text(
                   item.badge!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: GoLifePalette.textMuted,
-                  ),
+                        color: GoLifePalette.textMuted,
+                      ),
                 ),
               ],
             ],
@@ -493,8 +505,8 @@ class GoLifeTimelineCard extends StatelessWidget {
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: GoLifePalette.textSecondary,
-            ),
+                  color: GoLifePalette.textSecondary,
+                ),
           ),
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: meta),

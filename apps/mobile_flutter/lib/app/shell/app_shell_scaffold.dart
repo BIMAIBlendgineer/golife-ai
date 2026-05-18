@@ -5,6 +5,7 @@ import '../../core/i18n/app_localized_values.dart';
 import '../../features/app_state/golife_controller.dart';
 import '../../features/shared/premium_ui.dart';
 import '../../l10n/app_localizations.dart';
+import '../theme/golife_theme.dart';
 
 class AppShellScaffold extends StatelessWidget {
   const AppShellScaffold({
@@ -23,105 +24,111 @@ class AppShellScaffold extends StatelessWidget {
     final isWide = MediaQuery.sizeOf(context).width >= 980;
     final l10n = AppLocalizations.of(context)!;
     final selectedSection = _sectionForLocation(currentLocation);
+    final premiumTheme = buildGoLifeTheme(Brightness.dark);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBody: true,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              GoLifePalette.ink900,
-              GoLifePalette.surface900,
-              GoLifePalette.ink800,
+    return Theme(
+      data: premiumTheme,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        body: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                GoLifePalette.ink900,
+                GoLifePalette.surface900,
+                GoLifePalette.ink800,
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              const Positioned(
+                top: -120,
+                left: -80,
+                child: _Orb(size: 260, color: Color(0x557A5CFF)),
+              ),
+              const Positioned(
+                top: 120,
+                right: -70,
+                child: _Orb(size: 220, color: Color(0x443EB4FF)),
+              ),
+              const Positioned(
+                bottom: -140,
+                left: 40,
+                child: _Orb(size: 320, color: Color(0x2225C79B)),
+              ),
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    isWide ? 24 : 16,
+                    16,
+                    isWide ? 24 : 16,
+                    16,
+                  ),
+                  child: isWide
+                      ? Row(
+                          children: [
+                            _DesktopRail(
+                              controller: controller,
+                              selectedSection: selectedSection,
+                              l10n: l10n,
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(child: _ContentFrame(child: child)),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            _MobileTopBar(controller: controller, l10n: l10n),
+                            const SizedBox(height: 16),
+                            Expanded(child: _ContentFrame(child: child)),
+                          ],
+                        ),
+                ),
+              ),
             ],
           ),
         ),
-        child: Stack(
-          children: [
-            const Positioned(
-              top: -120,
-              left: -80,
-              child: _Orb(size: 260, color: Color(0x557A5CFF)),
-            ),
-            const Positioned(
-              top: 120,
-              right: -70,
-              child: _Orb(size: 220, color: Color(0x443EB4FF)),
-            ),
-            const Positioned(
-              bottom: -140,
-              left: 40,
-              child: _Orb(size: 320, color: Color(0x2225C79B)),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  isWide ? 24 : 16,
-                  16,
-                  isWide ? 24 : 16,
-                  16,
-                ),
-                child: isWide
-                    ? Row(
-                        children: [
-                          _DesktopRail(
-                            controller: controller,
-                            selectedSection: selectedSection,
-                            l10n: l10n,
+        bottomNavigationBar: isWide
+            ? null
+            : SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: GoLifePalette.lineStrong.withValues(
+                            alpha: 0.88,
                           ),
-                          const SizedBox(width: 20),
-                          Expanded(child: _ContentFrame(child: child)),
-                        ],
-                      )
-                    : Column(
-                        children: [
-                          _MobileTopBar(controller: controller, l10n: l10n),
-                          const SizedBox(height: 16),
-                          Expanded(child: _ContentFrame(child: child)),
-                        ],
+                        ),
+                        borderRadius: BorderRadius.circular(28),
                       ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: isWide
-          ? null
-          : SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: GoLifePalette.lineStrong.withValues(alpha: 0.88),
+                      child: NavigationBar(
+                        selectedIndex: selectedSection.index,
+                        destinations: [
+                          for (final destination in _primaryDestinations)
+                            NavigationDestination(
+                              icon: Icon(destination.icon),
+                              selectedIcon: Icon(destination.selectedIcon),
+                              label: destination.localizedLabel(l10n),
+                            ),
+                        ],
+                        onDestinationSelected: (index) {
+                          context.go(_primaryDestinations[index].path);
+                        },
                       ),
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: NavigationBar(
-                      selectedIndex: selectedSection.index,
-                      destinations: [
-                        for (final destination in _primaryDestinations)
-                          NavigationDestination(
-                            icon: Icon(destination.icon),
-                            selectedIcon: Icon(destination.selectedIcon),
-                            label: destination.localizedLabel(l10n),
-                          ),
-                      ],
-                      onDestinationSelected: (index) {
-                        context.go(_primaryDestinations[index].path);
-                      },
                     ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

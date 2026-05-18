@@ -32,328 +32,313 @@ class PrivacyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.navSettings, style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(_settingsIntro(l10n), style: theme.textTheme.bodyLarge),
-          const SizedBox(height: 16),
-          GoLifeCard(
-            accent: controller.sensitiveLocalEncryptionEnabled
-                ? GoLifeAccent.emerald
-                : GoLifeAccent.amber,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  controller.sensitiveLocalEncryptionEnabled
-                      ? Icons.verified_user_rounded
-                      : Icons.shield_moon_outlined,
-                  color: controller.sensitiveLocalEncryptionEnabled
-                      ? GoLifePalette.emerald
-                      : GoLifePalette.amber,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    controller.sensitiveLocalEncryptionEnabled
-                        ? l10n.privacyEncryptedActive
-                        : l10n.privacyEncryptedUnavailable,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _SettingsIndexCard(
-                title: _settingsAccountTitle(l10n),
-                body: _settingsAccountBody(l10n),
-              ),
-              _SettingsIndexCard(
-                title: l10n.billingPlanTitle,
-                body: _settingsPremiumBody(l10n),
-              ),
-              _SettingsIndexCard(
-                title: l10n.privacyTitle,
-                body: _settingsPrivacyBody(l10n),
-              ),
-              _SettingsIndexCard(
-                title: _settingsAiDataTitle(l10n),
-                body: _settingsAiDataBody(l10n),
-              ),
-              _SettingsIndexCard(
-                title: l10n.language,
-                body: _settingsLanguageBody(l10n),
-              ),
-              _SettingsIndexCard(
-                title: l10n.themePreference,
-                body: _settingsThemeBody(l10n),
-              ),
-              _SettingsIndexCard(
-                title: l10n.exportJson,
-                body: _settingsExportBody(l10n),
-              ),
-              _SettingsIndexCard(
-                title: l10n.deleteAllLocalData,
-                body: _settingsDeleteBody(l10n),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            _settingsPrivacyCenterTitle(l10n),
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          GoLifeCard(
-            accent: GoLifeAccent.blue,
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: 220,
-                  child: _PrivacyMetricCard(
-                    label: l10n.privacyMetricTotalEvents,
-                    value: controller.totalEventCount.toString(),
-                    tone: const Color(0xFF1F4C5B),
-                  ),
-                ),
-                SizedBox(
-                  width: 220,
-                  child: _PrivacyMetricCard(
-                    label: l10n.privacyMetricAiEligible,
-                    value: controller.aiEligibleEventCount.toString(),
-                    tone: const Color(0xFF5D7A68),
-                  ),
-                ),
-                SizedBox(
-                  width: 220,
-                  child: _PrivacyMetricCard(
-                    label: l10n.privacyMetricBlockedLocal,
-                    value:
-                        '${controller.totalEventCount - controller.aiEligibleEventCount}',
-                    tone: const Color(0xFFD06447),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(l10n.privacyCenter, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 12),
-          GoLifeCard(
-            accent: GoLifeAccent.violet,
-            child: Text(
-              _settingsPreferencesBody(l10n),
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _LanguageCard(controller: controller),
-          const SizedBox(height: 12),
-          _ProfilePreferencesCard(controller: controller),
-          const SizedBox(height: 12),
-          _DeliveryPreferencesCard(controller: controller),
-          const SizedBox(height: 12),
-          _RegionalPreferencesCard(controller: controller),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _PrivacyDisclosureCard(
-                title: l10n.privacyDisclosureEncryptedTitle,
-                body: l10n.privacyDisclosureEncryptedBody,
-                items: controller.localizedEncryptedCollectionLabels(l10n),
-              ),
-              _PrivacyDisclosureCard(
-                title: l10n.privacyDisclosureLocalTitle,
-                body: l10n.privacyDisclosureLocalBody,
-                items: controller.localizedAlwaysLocalCollectionLabels(l10n),
-              ),
-              _PrivacyDisclosureCard(
-                title: l10n.privacyDisclosureAiTitle,
-                body: l10n.privacyDisclosureAiBody,
-                items: controller.privacySettings.aiAllowedDomains.isEmpty
-                    ? <String>[l10n.nothingAiEnabled]
-                    : controller.privacySettings.aiAllowedDomains
-                          .map((domain) => domain.localizedLabel(l10n))
-                          .toList(growable: false),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.privacyRuntimeSnapshotTitle,
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.privacyRuntimeSnapshotBody,
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              SizedBox(
-                width: 220,
-                child: _PrivacyMetricCard(
-                  label: l10n.privacyMetricEvidenceItems,
-                  value: controller.evidenceItems.length.toString(),
-                  tone: const Color(0xFF6C5B3D),
-                ),
-              ),
-              SizedBox(
-                width: 220,
-                child: _PrivacyMetricCard(
-                  label: l10n.privacyMetricRelations,
-                  value: controller.lifeGraphRelations.length.toString(),
-                  tone: const Color(0xFF7A5167),
-                ),
-              ),
-              SizedBox(
-                width: 220,
-                child: _PrivacyMetricCard(
-                  label: l10n.privacyMetricAuditEntries,
-                  value: controller.privacyAuditEntries.length.toString(),
-                  tone: const Color(0xFF1F4C5B),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: () => context.go('/lifegraph'),
-              icon: const Icon(Icons.timeline_rounded),
-              label: Text(l10n.lifeGraphOpenTimeline),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _PlanBillingCard(
-            controller: controller,
-            onOpenExternalUrl: onOpenExternalUrl,
-          ),
-          const SizedBox(height: 24),
-          Text(l10n.privacyLegalTitle, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(l10n.privacyLegalBody, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              for (final item in _legalCards(l10n))
-                _LegalDocumentCard(
-                  item: item,
-                  onOpen: (url) => _openExternalUrl(context, url),
-                  onCopy: (url) => _copyExternalUrl(context, url),
-                ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: _cardDecoration(theme),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.dataControls, style: theme.textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(l10n.dataControlsBody, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton.tonalIcon(
-                      key: const ValueKey<String>('privacy-export-json'),
-                      onPressed: () => _exportLocalJson(context),
-                      icon: const Icon(Icons.download_outlined),
-                      label: Text(l10n.exportJson),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => _confirmDeleteAll(context),
-                      icon: const Icon(Icons.delete_outline),
-                      label: Text(l10n.deleteAllLocalData),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => _confirmClearAiHistory(context),
-                      icon: const Icon(Icons.history_toggle_off_outlined),
-                      label: Text(l10n.clearAiHistory),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(l10n.domainControls, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 12),
-          for (final domain in DomainKey.values)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _DomainPermissionCard(
-                domain: domain,
-                selected: controller.privacySettings.permissionFor(domain),
-                eventCount: controller.eventCountFor(domain.wireName),
-                aiEligibleCount: controller.aiEligibleEventCountFor(domain),
-                onChanged: (permission) async {
-                  await controller.updatePermission(domain, permission);
-                },
-              ),
-            ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.privacyRecentEventsTitle,
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(l10n.privacyRecentEventsBody, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          if (controller.lifeEvents.isEmpty)
-            Text(
-              l10n.privacyRecentEventsEmpty,
-              style: theme.textTheme.bodyMedium,
-            )
-          else
-            for (final event in controller.lifeEvents.take(8))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _RecentLifeEventCard(
-                  controller: controller,
-                  event: event,
-                ),
-              ),
-          const SizedBox(height: 24),
-          Text(l10n.privacyAuditTitle, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(l10n.privacyAuditBody, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          if (controller.privacyAuditEntries.isEmpty)
-            Text(l10n.privacyAuditEmpty, style: theme.textTheme.bodyMedium)
-          else
-            for (final entry in controller.privacyAuditEntries.take(8))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _PrivacyAuditEntryCard(entry: entry),
-              ),
-        ],
+    final encrypted = controller.sensitiveLocalEncryptionEnabled;
+    final settingsIndexItems = _settingsIndexItems(l10n);
+
+    return GoLifeScreen(
+      title: l10n.navSettings,
+      subtitle: _settingsIntro(l10n),
+      badge: GoLifeStatusPill(
+        label: _settingsStatusLabel(encrypted, l10n),
+        icon: encrypted
+            ? Icons.verified_user_rounded
+            : Icons.shield_moon_outlined,
+        accent: encrypted ? GoLifeAccent.emerald : GoLifeAccent.amber,
       ),
+      children: [
+        GoLifeCard(
+          accent: encrypted ? GoLifeAccent.emerald : GoLifeAccent.amber,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GoLifeSectionTitle(
+                title: _settingsIndexTitle(l10n),
+                subtitle: encrypted
+                    ? l10n.privacyEncryptedActive
+                    : l10n.privacyEncryptedUnavailable,
+              ),
+              const SizedBox(height: 16),
+              for (var index = 0;
+                  index < settingsIndexItems.length;
+                  index++) ...[
+                if (index > 0) const SizedBox(height: 12),
+                _SettingsIndexRow(item: settingsIndexItems[index]),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: _settingsPrivacyCenterTitle(l10n),
+          subtitle: _settingsPrivacyCenterBody(l10n),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              width: 220,
+              child: _PrivacyMetricCard(
+                label: l10n.privacyMetricTotalEvents,
+                value: controller.totalEventCount.toString(),
+                tone: const Color(0xFF1F4C5B),
+              ),
+            ),
+            SizedBox(
+              width: 220,
+              child: _PrivacyMetricCard(
+                label: l10n.privacyMetricAiEligible,
+                value: controller.aiEligibleEventCount.toString(),
+                tone: const Color(0xFF5D7A68),
+              ),
+            ),
+            SizedBox(
+              width: 220,
+              child: _PrivacyMetricCard(
+                label: l10n.privacyMetricBlockedLocal,
+                value:
+                    '${controller.totalEventCount - controller.aiEligibleEventCount}',
+                tone: const Color(0xFFD06447),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: l10n.privacyCenter,
+          subtitle: _settingsPreferencesBody(l10n),
+        ),
+        const SizedBox(height: 12),
+        _LanguageCard(controller: controller),
+        const SizedBox(height: 12),
+        _ProfilePreferencesCard(controller: controller),
+        const SizedBox(height: 12),
+        _DeliveryPreferencesCard(controller: controller),
+        const SizedBox(height: 12),
+        _RegionalPreferencesCard(controller: controller),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _PrivacyDisclosureCard(
+              title: l10n.privacyDisclosureEncryptedTitle,
+              body: l10n.privacyDisclosureEncryptedBody,
+              items: controller.localizedEncryptedCollectionLabels(l10n),
+            ),
+            _PrivacyDisclosureCard(
+              title: l10n.privacyDisclosureLocalTitle,
+              body: l10n.privacyDisclosureLocalBody,
+              items: controller.localizedAlwaysLocalCollectionLabels(l10n),
+            ),
+            _PrivacyDisclosureCard(
+              title: l10n.privacyDisclosureAiTitle,
+              body: l10n.privacyDisclosureAiBody,
+              items: controller.privacySettings.aiAllowedDomains.isEmpty
+                  ? <String>[l10n.nothingAiEnabled]
+                  : controller.privacySettings.aiAllowedDomains
+                      .map((domain) => domain.localizedLabel(l10n))
+                      .toList(growable: false),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: l10n.privacyRuntimeSnapshotTitle,
+          subtitle: l10n.privacyRuntimeSnapshotBody,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              width: 220,
+              child: _PrivacyMetricCard(
+                label: l10n.privacyMetricEvidenceItems,
+                value: controller.evidenceItems.length.toString(),
+                tone: const Color(0xFF6C5B3D),
+              ),
+            ),
+            SizedBox(
+              width: 220,
+              child: _PrivacyMetricCard(
+                label: l10n.privacyMetricRelations,
+                value: controller.lifeGraphRelations.length.toString(),
+                tone: const Color(0xFF7A5167),
+              ),
+            ),
+            SizedBox(
+              width: 220,
+              child: _PrivacyMetricCard(
+                label: l10n.privacyMetricAuditEntries,
+                value: controller.privacyAuditEntries.length.toString(),
+                tone: const Color(0xFF1F4C5B),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton.icon(
+            onPressed: () => context.go('/lifegraph'),
+            icon: const Icon(Icons.timeline_rounded),
+            label: Text(l10n.lifeGraphOpenTimeline),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _PlanBillingCard(
+          controller: controller,
+          onOpenExternalUrl: onOpenExternalUrl,
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: l10n.privacyLegalTitle,
+          subtitle: l10n.privacyLegalBody,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final item in _legalCards(l10n))
+              _LegalDocumentCard(
+                item: item,
+                onOpen: (url) => _openExternalUrl(context, url),
+                onCopy: (url) => _copyExternalUrl(context, url),
+              ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: l10n.dataControls,
+          subtitle: l10n.dataControlsBody,
+        ),
+        const SizedBox(height: 12),
+        GoLifeCard(
+          accent: GoLifeAccent.blue,
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              FilledButton.tonalIcon(
+                key: const ValueKey<String>('privacy-export-json'),
+                onPressed: () => _exportLocalJson(context),
+                icon: const Icon(Icons.download_outlined),
+                label: Text(l10n.exportJson),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _confirmDeleteAll(context),
+                icon: const Icon(Icons.delete_outline),
+                label: Text(l10n.deleteAllLocalData),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _confirmClearAiHistory(context),
+                icon: const Icon(Icons.history_toggle_off_outlined),
+                label: Text(l10n.clearAiHistory),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: l10n.domainControls,
+          subtitle: _settingsDomainControlsBody(l10n),
+        ),
+        const SizedBox(height: 12),
+        for (final domain in DomainKey.values)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: _DomainPermissionCard(
+              domain: domain,
+              selected: controller.privacySettings.permissionFor(domain),
+              eventCount: controller.eventCountFor(domain.wireName),
+              aiEligibleCount: controller.aiEligibleEventCountFor(domain),
+              onChanged: (permission) async {
+                await controller.updatePermission(domain, permission);
+              },
+            ),
+          ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: l10n.privacyRecentEventsTitle,
+          subtitle: l10n.privacyRecentEventsBody,
+        ),
+        const SizedBox(height: 12),
+        if (controller.lifeEvents.isEmpty)
+          Text(
+            l10n.privacyRecentEventsEmpty,
+            style: theme.textTheme.bodyMedium,
+          )
+        else
+          for (final event in controller.lifeEvents.take(8))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _RecentLifeEventCard(controller: controller, event: event),
+            ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: l10n.privacyAuditTitle,
+          subtitle: l10n.privacyAuditBody,
+        ),
+        const SizedBox(height: 12),
+        if (controller.privacyAuditEntries.isEmpty)
+          Text(l10n.privacyAuditEmpty, style: theme.textTheme.bodyMedium)
+        else
+          for (final entry in controller.privacyAuditEntries.take(8))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _PrivacyAuditEntryCard(entry: entry),
+            ),
+      ],
     );
+  }
+
+  List<_SettingsIndexItem> _settingsIndexItems(AppLocalizations l10n) {
+    return <_SettingsIndexItem>[
+      _SettingsIndexItem(
+        icon: Icons.person_outline_rounded,
+        title: _settingsAccountTitle(l10n),
+        body: _settingsAccountBody(l10n),
+      ),
+      _SettingsIndexItem(
+        icon: Icons.workspace_premium_outlined,
+        title: l10n.billingPlanTitle,
+        body: _settingsPremiumBody(l10n),
+      ),
+      _SettingsIndexItem(
+        icon: Icons.shield_outlined,
+        title: l10n.privacyTitle,
+        body: _settingsPrivacyBody(l10n),
+      ),
+      _SettingsIndexItem(
+        icon: Icons.auto_awesome_outlined,
+        title: _settingsAiDataTitle(l10n),
+        body: _settingsAiDataBody(l10n),
+      ),
+      _SettingsIndexItem(
+        icon: Icons.language_rounded,
+        title: l10n.language,
+        body: _settingsLanguageBody(l10n),
+      ),
+      _SettingsIndexItem(
+        icon: Icons.contrast_rounded,
+        title: l10n.themePreference,
+        body: _settingsThemeBody(l10n),
+      ),
+      _SettingsIndexItem(
+        icon: Icons.download_outlined,
+        title: l10n.exportJson,
+        body: _settingsExportBody(l10n),
+      ),
+      _SettingsIndexItem(
+        icon: Icons.delete_outline_rounded,
+        title: l10n.deleteAllLocalData,
+        body: _settingsDeleteBody(l10n),
+      ),
+    ];
   }
 
   List<_LegalDocumentCardModel> _legalCards(AppLocalizations l10n) {
@@ -442,8 +427,7 @@ class PrivacyScreen extends StatelessWidget {
   }
 
   Future<void> _confirmDeleteAll(BuildContext context) async {
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) {
             return AlertDialog(
@@ -476,8 +460,7 @@ class PrivacyScreen extends StatelessWidget {
   }
 
   Future<void> _confirmClearAiHistory(BuildContext context) async {
-    final confirmed =
-        await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) {
             return AlertDialog(
@@ -580,214 +563,311 @@ class _LegalDocumentCard extends StatelessWidget {
   }
 }
 
-class _SettingsIndexCard extends StatelessWidget {
-  const _SettingsIndexCard({required this.title, required this.body});
+class _SettingsIndexItem {
+  const _SettingsIndexItem({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
 
+  final IconData icon;
   final String title;
   final String body;
+}
+
+class _SettingsIndexRow extends StatelessWidget {
+  const _SettingsIndexRow({required this.item});
+
+  final _SettingsIndexItem item;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 220,
-      child: GoLifeCard(
-        accent: GoLifeAccent.neutral,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(body, style: Theme.of(context).textTheme.bodySmall),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: GoLifePalette.ink700.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: GoLifePalette.lineStrong.withValues(alpha: 0.6),
         ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: GoLifePalette.violet.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(item.icon, color: GoLifePalette.violetBright, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.title,
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 6),
+                Text(item.body, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 String _settingsIntro(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Premium, privacy, AI and local controls in one place.',
-  es: 'Premium, privacidad, IA y controles locales en un solo lugar.',
-  ptBr: 'Premium, privacidade, IA e controles locais em um so lugar.',
-  ptPt: 'Premium, privacidade, IA e controlos locais num so lugar.',
-  fr: 'Premium, confidentialite, IA et controles locaux au meme endroit.',
-  it: 'Premium, privacy, IA e controlli locali in un solo posto.',
-  de: 'Premium, Datenschutz, KI und lokale Kontrollen an einem Ort.',
-  ja: 'Premium, privacy, AI and local controls in one place.',
-  zhHans: 'Premium, privacy, AI and local controls in one place.',
-  zhHant: 'Premium, privacy, AI and local controls in one place.',
-);
+      l10n.localeName,
+      en: 'Premium, privacy, AI and local controls in one place.',
+      es: 'Premium, privacidad, IA y controles locales en un solo lugar.',
+      ptBr: 'Premium, privacidade, IA e controles locais em um so lugar.',
+      ptPt: 'Premium, privacidade, IA e controlos locais num so lugar.',
+      fr: 'Premium, confidentialite, IA et controles locaux au meme endroit.',
+      it: 'Premium, privacy, IA e controlli locali in un solo posto.',
+      de: 'Premium, Datenschutz, KI und lokale Kontrollen an einem Ort.',
+      ja: 'Premium, privacy, AI and local controls in one place.',
+      zhHans: 'Premium, privacy, AI and local controls in one place.',
+      zhHant: 'Premium, privacy, AI and local controls in one place.',
+    );
+
+String _settingsStatusLabel(bool encrypted, AppLocalizations l10n) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: encrypted ? 'Local protected' : 'Review privacy',
+      es: encrypted ? 'Local protegido' : 'Revisar privacidad',
+      ptBr: encrypted ? 'Local protegido' : 'Rever privacidade',
+      ptPt: encrypted ? 'Local protegido' : 'Rever privacidade',
+      fr: encrypted ? 'Local protege' : 'Verifier la confidentialite',
+      it: encrypted ? 'Locale protetto' : 'Rivedi privacy',
+      de: encrypted ? 'Lokal geschuetzt' : 'Datenschutz pruefen',
+      ja: encrypted ? 'Local protected' : 'Review privacy',
+      zhHans: encrypted ? 'Local protected' : 'Review privacy',
+      zhHant: encrypted ? 'Local protected' : 'Review privacy',
+    );
+
+String _settingsIndexTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Quick index',
+      es: 'Indice rapido',
+      ptBr: 'Indice rapido',
+      ptPt: 'Indice rapido',
+      fr: 'Index rapide',
+      it: 'Indice rapido',
+      de: 'Schnelluebersicht',
+      ja: 'Quick index',
+      zhHans: 'Quick index',
+      zhHant: 'Quick index',
+    );
+
+String _settingsPrivacyCenterBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'What stays local, what AI can use, and what remains blocked.',
+      es: 'Que se queda local, que puede usar la IA y que sigue bloqueado.',
+      ptBr:
+          'O que fica local, o que a IA pode usar e o que continua bloqueado.',
+      ptPt:
+          'O que fica local, o que a IA pode usar e o que continua bloqueado.',
+      fr: 'Ce qui reste local, ce que l IA peut utiliser et ce qui reste bloque.',
+      it: 'Cosa resta locale, cosa puo usare l IA e cosa rimane bloccato.',
+      de: 'Was lokal bleibt, was KI nutzen darf und was blockiert bleibt.',
+      ja: 'What stays local, what AI can use, and what remains blocked.',
+      zhHans: 'What stays local, what AI can use, and what remains blocked.',
+      zhHant: 'What stays local, what AI can use, and what remains blocked.',
+    );
+
+String _settingsDomainControlsBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Adjust local, sync, and AI permissions per domain.',
+      es: 'Ajusta permisos local, sync e IA por dominio.',
+      ptBr: 'Ajuste permissoes locais, sync e IA por dominio.',
+      ptPt: 'Ajusta permissoes locais, sync e IA por dominio.',
+      fr: 'Ajuste les autorisations locales, sync et IA par domaine.',
+      it: 'Regola i permessi locali, sync e IA per dominio.',
+      de: 'Passe lokale, Sync- und KI-Berechtigungen pro Bereich an.',
+      ja: 'Adjust local, sync, and AI permissions per domain.',
+      zhHans: 'Adjust local, sync, and AI permissions per domain.',
+      zhHant: 'Adjust local, sync, and AI permissions per domain.',
+    );
 
 String _settingsAccountTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Account',
-  es: 'Cuenta',
-  ptBr: 'Conta',
-  ptPt: 'Conta',
-  fr: 'Compte',
-  it: 'Account',
-  de: 'Konto',
-  ja: 'Account',
-  zhHans: 'Account',
-  zhHant: 'Account',
-);
+      l10n.localeName,
+      en: 'Account',
+      es: 'Cuenta',
+      ptBr: 'Conta',
+      ptPt: 'Conta',
+      fr: 'Compte',
+      it: 'Account',
+      de: 'Konto',
+      ja: 'Account',
+      zhHans: 'Account',
+      zhHant: 'Account',
+    );
 
 String _settingsAccountBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Language, profile and local preferences.',
-  es: 'Idioma, perfil y preferencias locales.',
-  ptBr: 'Idioma, perfil e preferencias locais.',
-  ptPt: 'Idioma, perfil e preferencias locais.',
-  fr: 'Langue, profil et preferences locales.',
-  it: 'Lingua, profilo e preferenze locali.',
-  de: 'Sprache, Profil und lokale Einstellungen.',
-  ja: 'Language, profile and local preferences.',
-  zhHans: 'Language, profile and local preferences.',
-  zhHant: 'Language, profile and local preferences.',
-);
+      l10n.localeName,
+      en: 'Language, profile and local preferences.',
+      es: 'Idioma, perfil y preferencias locales.',
+      ptBr: 'Idioma, perfil e preferencias locais.',
+      ptPt: 'Idioma, perfil e preferencias locais.',
+      fr: 'Langue, profil et preferences locales.',
+      it: 'Lingua, profilo e preferenze locali.',
+      de: 'Sprache, Profil und lokale Einstellungen.',
+      ja: 'Language, profile and local preferences.',
+      zhHans: 'Language, profile and local preferences.',
+      zhHant: 'Language, profile and local preferences.',
+    );
 
 String _settingsPremiumBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Subscription status, catalog, restore and billing audit.',
-  es: 'Estado de suscripcion, catalogo, restaurar y auditoria de billing.',
-  ptBr: 'Status da assinatura, catalogo, restauracao e auditoria de billing.',
-  ptPt: 'Estado da subscricao, catalogo, restaurar e auditoria de billing.',
-  fr: 'Etat de l abonnement, catalogue, restauration et audit de facturation.',
-  it: 'Stato abbonamento, catalogo, ripristino e audit billing.',
-  de: 'Abo-Status, Katalog, Wiederherstellung und Billing-Audit.',
-  ja: 'Subscription status, catalog, restore and billing audit.',
-  zhHans: 'Subscription status, catalog, restore and billing audit.',
-  zhHant: 'Subscription status, catalog, restore and billing audit.',
-);
+      l10n.localeName,
+      en: 'Subscription status, catalog, restore and billing audit.',
+      es: 'Estado de suscripcion, catalogo, restaurar y auditoria de billing.',
+      ptBr:
+          'Status da assinatura, catalogo, restauracao e auditoria de billing.',
+      ptPt: 'Estado da subscricao, catalogo, restaurar e auditoria de billing.',
+      fr: 'Etat de l abonnement, catalogue, restauration et audit de facturation.',
+      it: 'Stato abbonamento, catalogo, ripristino e audit billing.',
+      de: 'Abo-Status, Katalog, Wiederherstellung und Billing-Audit.',
+      ja: 'Subscription status, catalog, restore and billing audit.',
+      zhHans: 'Subscription status, catalog, restore and billing audit.',
+      zhHant: 'Subscription status, catalog, restore and billing audit.',
+    );
 
 String _settingsPrivacyBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Local-only, sync and AI permissions by domain and event.',
-  es: 'Permisos local-only, sync e IA por dominio y por evento.',
-  ptBr: 'Permissoes local-only, sync e IA por dominio e evento.',
-  ptPt: 'Permissoes local-only, sync e IA por dominio e evento.',
-  fr: 'Autorisations local-only, sync et IA par domaine et evenement.',
-  it: 'Permessi local-only, sync e IA per dominio ed evento.',
-  de: 'Local-only-, Sync- und KI-Berechtigungen pro Bereich und Ereignis.',
-  ja: 'Local-only, sync and AI permissions by domain and event.',
-  zhHans: 'Local-only, sync and AI permissions by domain and event.',
-  zhHant: 'Local-only, sync and AI permissions by domain and event.',
-);
+      l10n.localeName,
+      en: 'Local-only, sync and AI permissions by domain and event.',
+      es: 'Permisos local-only, sync e IA por dominio y por evento.',
+      ptBr: 'Permissoes local-only, sync e IA por dominio e evento.',
+      ptPt: 'Permissoes local-only, sync e IA por dominio e evento.',
+      fr: 'Autorisations local-only, sync et IA par domaine et evenement.',
+      it: 'Permessi local-only, sync e IA per dominio ed evento.',
+      de: 'Local-only-, Sync- und KI-Berechtigungen pro Bereich und Ereignis.',
+      ja: 'Local-only, sync and AI permissions by domain and event.',
+      zhHans: 'Local-only, sync and AI permissions by domain and event.',
+      zhHant: 'Local-only, sync and AI permissions by domain and event.',
+    );
 
 String _settingsAiDataTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'AI and data',
-  es: 'IA y datos',
-  ptBr: 'IA e dados',
-  ptPt: 'IA e dados',
-  fr: 'IA et donnees',
-  it: 'IA e dati',
-  de: 'KI und Daten',
-  ja: 'AI and data',
-  zhHans: 'AI and data',
-  zhHant: 'AI and data',
-);
+      l10n.localeName,
+      en: 'AI and data',
+      es: 'IA y datos',
+      ptBr: 'IA e dados',
+      ptPt: 'IA e dados',
+      fr: 'IA et donnees',
+      it: 'IA e dati',
+      de: 'KI und Daten',
+      ja: 'AI and data',
+      zhHans: 'AI and data',
+      zhHant: 'AI and data',
+    );
 
 String _settingsAiDataBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'What was used, what stayed blocked and what remains local.',
-  es: 'Que se uso, que quedo bloqueado y que sigue local.',
-  ptBr: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
-  ptPt: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
-  fr: 'Ce qui a ete utilise, ce qui est bloque et ce qui reste local.',
-  it: 'Cosa e stato usato, cosa e rimasto bloccato e cosa resta locale.',
-  de: 'Was genutzt wurde, was blockiert blieb und was lokal bleibt.',
-  ja: 'What was used, what stayed blocked and what remains local.',
-  zhHans: 'What was used, what stayed blocked and what remains local.',
-  zhHant: 'What was used, what stayed blocked and what remains local.',
-);
+      l10n.localeName,
+      en: 'What was used, what stayed blocked and what remains local.',
+      es: 'Que se uso, que quedo bloqueado y que sigue local.',
+      ptBr: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
+      ptPt: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
+      fr: 'Ce qui a ete utilise, ce qui est bloque et ce qui reste local.',
+      it: 'Cosa e stato usato, cosa e rimasto bloccato e cosa resta locale.',
+      de: 'Was genutzt wurde, was blockiert blieb und was lokal bleibt.',
+      ja: 'What was used, what stayed blocked and what remains local.',
+      zhHans: 'What was used, what stayed blocked and what remains local.',
+      zhHant: 'What was used, what stayed blocked and what remains local.',
+    );
 
 String _settingsLanguageBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Switch the language without leaving the device.',
-  es: 'Cambia el idioma sin salir del dispositivo.',
-  ptBr: 'Troque o idioma sem sair do dispositivo.',
-  ptPt: 'Muda o idioma sem sair do dispositivo.',
-  fr: 'Change la langue sans quitter l appareil.',
-  it: 'Cambia lingua senza uscire dal dispositivo.',
-  de: 'Sprache wechseln, ohne das Geraet zu verlassen.',
-  ja: 'Switch the language without leaving the device.',
-  zhHans: 'Switch the language without leaving the device.',
-  zhHant: 'Switch the language without leaving the device.',
-);
+      l10n.localeName,
+      en: 'Switch the language without leaving the device.',
+      es: 'Cambia el idioma sin salir del dispositivo.',
+      ptBr: 'Troque o idioma sem sair do dispositivo.',
+      ptPt: 'Muda o idioma sem sair do dispositivo.',
+      fr: 'Change la langue sans quitter l appareil.',
+      it: 'Cambia lingua senza uscire dal dispositivo.',
+      de: 'Sprache wechseln, ohne das Geraet zu verlassen.',
+      ja: 'Switch the language without leaving the device.',
+      zhHans: 'Switch the language without leaving the device.',
+      zhHant: 'Switch the language without leaving the device.',
+    );
 
 String _settingsThemeBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'System, light or dark mode for daily use.',
-  es: 'Sistema, claro u oscuro para el uso diario.',
-  ptBr: 'Sistema, claro ou escuro para o uso diario.',
-  ptPt: 'Sistema, claro ou escuro para o uso diario.',
-  fr: 'Mode systeme, clair ou sombre pour le quotidien.',
-  it: 'Sistema, chiaro o scuro per l uso quotidiano.',
-  de: 'System-, Hell- oder Dunkelmodus fuer den Alltag.',
-  ja: 'System, light or dark mode for daily use.',
-  zhHans: 'System, light or dark mode for daily use.',
-  zhHant: 'System, light or dark mode for daily use.',
-);
+      l10n.localeName,
+      en: 'System, light or dark mode for daily use.',
+      es: 'Sistema, claro u oscuro para el uso diario.',
+      ptBr: 'Sistema, claro ou escuro para o uso diario.',
+      ptPt: 'Sistema, claro ou escuro para o uso diario.',
+      fr: 'Mode systeme, clair ou sombre pour le quotidien.',
+      it: 'Sistema, chiaro o scuro per l uso quotidiano.',
+      de: 'System-, Hell- oder Dunkelmodus fuer den Alltag.',
+      ja: 'System, light or dark mode for daily use.',
+      zhHans: 'System, light or dark mode for daily use.',
+      zhHant: 'System, light or dark mode for daily use.',
+    );
 
 String _settingsExportBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Export your local JSON bundle at any time.',
-  es: 'Exporta tu paquete JSON local en cualquier momento.',
-  ptBr: 'Exporte seu pacote JSON local a qualquer momento.',
-  ptPt: 'Exporta o teu pacote JSON local a qualquer momento.',
-  fr: 'Exporte ton paquet JSON local a tout moment.',
-  it: 'Esporta il tuo bundle JSON locale in ogni momento.',
-  de: 'Exportiere dein lokales JSON-Buendel jederzeit.',
-  ja: 'Export your local JSON bundle at any time.',
-  zhHans: 'Export your local JSON bundle at any time.',
-  zhHant: 'Export your local JSON bundle at any time.',
-);
+      l10n.localeName,
+      en: 'Export your local JSON bundle at any time.',
+      es: 'Exporta tu paquete JSON local en cualquier momento.',
+      ptBr: 'Exporte seu pacote JSON local a qualquer momento.',
+      ptPt: 'Exporta o teu pacote JSON local a qualquer momento.',
+      fr: 'Exporte ton paquet JSON local a tout moment.',
+      it: 'Esporta il tuo bundle JSON locale in ogni momento.',
+      de: 'Exportiere dein lokales JSON-Buendel jederzeit.',
+      ja: 'Export your local JSON bundle at any time.',
+      zhHans: 'Export your local JSON bundle at any time.',
+      zhHant: 'Export your local JSON bundle at any time.',
+    );
 
 String _settingsDeleteBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Delete local data or clear AI history with explicit confirmation.',
-  es: 'Borra datos locales o limpia historial de IA con confirmacion explicita.',
-  ptBr:
-      'Apague dados locais ou limpe o historico da IA com confirmacao explicita.',
-  ptPt:
-      'Apaga dados locais ou limpa o historico da IA com confirmacao explicita.',
-  fr: 'Supprime les donnees locales ou l historique IA avec confirmation explicite.',
-  it: 'Elimina dati locali o cronologia IA con conferma esplicita.',
-  de: 'Loesche lokale Daten oder KI-Verlauf mit ausdruecklicher Bestaetigung.',
-  ja: 'Delete local data or clear AI history with explicit confirmation.',
-  zhHans: 'Delete local data or clear AI history with explicit confirmation.',
-  zhHant: 'Delete local data or clear AI history with explicit confirmation.',
-);
+      l10n.localeName,
+      en: 'Delete local data or clear AI history with explicit confirmation.',
+      es: 'Borra datos locales o limpia historial de IA con confirmacion explicita.',
+      ptBr:
+          'Apague dados locais ou limpe o historico da IA com confirmacao explicita.',
+      ptPt:
+          'Apaga dados locais ou limpa o historico da IA com confirmacao explicita.',
+      fr: 'Supprime les donnees locales ou l historique IA avec confirmation explicite.',
+      it: 'Elimina dati locali o cronologia IA con conferma esplicita.',
+      de: 'Loesche lokale Daten oder KI-Verlauf mit ausdruecklicher Bestaetigung.',
+      ja: 'Delete local data or clear AI history with explicit confirmation.',
+      zhHans:
+          'Delete local data or clear AI history with explicit confirmation.',
+      zhHant:
+          'Delete local data or clear AI history with explicit confirmation.',
+    );
 
 String _settingsPrivacyCenterTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Privacy dashboard',
-  es: 'Dashboard de privacidad',
-  ptBr: 'Dashboard de privacidade',
-  ptPt: 'Dashboard de privacidade',
-  fr: 'Dashboard de confidentialite',
-  it: 'Dashboard privacy',
-  de: 'Datenschutz-Dashboard',
-  ja: 'Privacy dashboard',
-  zhHans: 'Privacy dashboard',
-  zhHant: 'Privacy dashboard',
-);
+      l10n.localeName,
+      en: 'Privacy dashboard',
+      es: 'Dashboard de privacidad',
+      ptBr: 'Dashboard de privacidade',
+      ptPt: 'Dashboard de privacidade',
+      fr: 'Dashboard de confidentialite',
+      it: 'Dashboard privacy',
+      de: 'Datenschutz-Dashboard',
+      ja: 'Privacy dashboard',
+      zhHans: 'Privacy dashboard',
+      zhHant: 'Privacy dashboard',
+    );
 
 String _settingsPreferencesBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Profile, reminders and regional behavior stay local-first.',
-  es: 'Perfil, recordatorios y comportamiento regional se mantienen local-first.',
-  ptBr: 'Perfil, lembretes e comportamento regional permanecem local-first.',
-  ptPt: 'Perfil, lembretes e comportamento regional mantem-se local-first.',
-  fr: 'Profil, rappels et comportement regional restent local-first.',
-  it: 'Profilo, promemoria e comportamento regionale restano local-first.',
-  de: 'Profil, Erinnerungen und regionale Einstellungen bleiben local-first.',
-  ja: 'Profile, reminders and regional behavior stay local-first.',
-  zhHans: 'Profile, reminders and regional behavior stay local-first.',
-  zhHant: 'Profile, reminders and regional behavior stay local-first.',
-);
+      l10n.localeName,
+      en: 'Profile, reminders and regional behavior stay local-first.',
+      es: 'Perfil, recordatorios y comportamiento regional se mantienen local-first.',
+      ptBr:
+          'Perfil, lembretes e comportamento regional permanecem local-first.',
+      ptPt: 'Perfil, lembretes e comportamento regional mantem-se local-first.',
+      fr: 'Profil, rappels et comportement regional restent local-first.',
+      it: 'Profilo, promemoria e comportamento regionale restano local-first.',
+      de: 'Profil, Erinnerungen und regionale Einstellungen bleiben local-first.',
+      ja: 'Profile, reminders and regional behavior stay local-first.',
+      zhHans: 'Profile, reminders and regional behavior stay local-first.',
+      zhHant: 'Profile, reminders and regional behavior stay local-first.',
+    );
 
 class _LanguageCard extends StatelessWidget {
   const _LanguageCard({required this.controller});
@@ -922,9 +1002,8 @@ class _PlanBillingCardState extends State<_PlanBillingCard> {
     final billingState = controller.billingRuntimeState;
     final billingConfig = billingState.config;
     final storedBillingState = controller.billingSubscriptionState;
-    final billingAuditEntries = controller.billingAuditEntries
-        .take(4)
-        .toList(growable: false);
+    final billingAuditEntries =
+        controller.billingAuditEntries.take(4).toList(growable: false);
     final missionRefreshGate = controller.entitlementGateForFeature(
       EntitlementFeature.dailyMissionRefreshes,
     );
@@ -1227,8 +1306,8 @@ class _BillingGateRow extends StatelessWidget {
     final subtitle = forceAlwaysAvailable
         ? l10n.billingGateAlwaysAvailable
         : gate.allowed
-        ? l10n.billingGateWithinQuota
-        : l10n.billingGateQuotaExhausted;
+            ? l10n.billingGateWithinQuota
+            : l10n.billingGateQuotaExhausted;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
@@ -1592,7 +1671,8 @@ class _DomainPermissionCard extends StatelessWidget {
           Text(
             AppLocalizations.of(
               context,
-            )!.domainEventsEligible(eventCount, aiEligibleCount),
+            )!
+                .domainEventsEligible(eventCount, aiEligibleCount),
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),

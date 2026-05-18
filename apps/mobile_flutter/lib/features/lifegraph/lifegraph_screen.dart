@@ -71,7 +71,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
               child: GoLifeMetricCard(
                 label: _eventsLabel(l10n),
                 value: '${viewModels.length}',
-                subtitle: '${allEvents.length} total',
+                subtitle: _totalEventsLabel(allEvents.length, l10n),
                 icon: Icons.bolt_outlined,
                 accent: GoLifeAccent.blue,
               ),
@@ -105,7 +105,10 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
               child: GoLifeMetricCard(
                 label: _relationsLabel(l10n),
                 value: '${analyticsSnapshot.visibleRelationCount}',
-                subtitle: '${analyticsSnapshot.visibleEvidenceCount} evidence',
+                subtitle: _evidenceCountLabel(
+                  analyticsSnapshot.visibleEvidenceCount,
+                  l10n,
+                ),
                 icon: Icons.alt_route_rounded,
                 accent: GoLifeAccent.violet,
               ),
@@ -472,8 +475,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
     final matches = widget.controller.evidenceItems.where((item) {
       final samePayloadRef =
           item.localPayloadRef == 'life_event:${event.eventId}';
-      final sameHash =
-          event.evidenceHash != null &&
+      final sameHash = event.evidenceHash != null &&
           event.evidenceHash!.isNotEmpty &&
           item.hash == event.evidenceHash;
       return samePayloadRef || sameHash;
@@ -513,32 +515,32 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
 }
 
 String _shoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Shopping',
-  es: 'Shopping',
-  ptBr: 'Shopping',
-  ptPt: 'Shopping',
-  fr: 'Achats',
-  it: 'Shopping',
-  de: 'Einkaufen',
-  ja: 'Shopping',
-  zhHans: 'Shopping',
-  zhHant: 'Shopping',
-);
+      l10n.localeName,
+      en: 'Shopping',
+      es: 'Shopping',
+      ptBr: 'Shopping',
+      ptPt: 'Shopping',
+      fr: 'Achats',
+      it: 'Shopping',
+      de: 'Einkaufen',
+      ja: 'Shopping',
+      zhHans: 'Shopping',
+      zhHant: 'Shopping',
+    );
 
 String _decisionsLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Decisions',
-  es: 'Decisiones',
-  ptBr: 'Decisoes',
-  ptPt: 'Decisoes',
-  fr: 'Decisions',
-  it: 'Decisioni',
-  de: 'Entscheidungen',
-  ja: 'Decisions',
-  zhHans: 'Decisions',
-  zhHant: 'Decisions',
-);
+      l10n.localeName,
+      en: 'Decisions',
+      es: 'Decisiones',
+      ptBr: 'Decisoes',
+      ptPt: 'Decisoes',
+      fr: 'Decisions',
+      it: 'Decisioni',
+      de: 'Entscheidungen',
+      ja: 'Decisions',
+      zhHans: 'Decisions',
+      zhHant: 'Decisions',
+    );
 
 class _MemoryEventCard extends StatelessWidget {
   const _MemoryEventCard({required this.viewModel, required this.controller});
@@ -550,9 +552,8 @@ class _MemoryEventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final event = viewModel.event;
-    final latestAudit = viewModel.auditEntries.isEmpty
-        ? null
-        : viewModel.auditEntries.first;
+    final latestAudit =
+        viewModel.auditEntries.isEmpty ? null : viewModel.auditEntries.first;
 
     return GoLifeTimelineCard(
       title: event.summary,
@@ -604,28 +605,20 @@ void _showEventDetails(
           final event = controller.lifeEvents.firstWhere(
             (item) => item.eventId == eventId,
           );
-          final evidence = controller.evidenceItems
-              .where((item) {
-                return item.localPayloadRef == 'life_event:${event.eventId}' ||
-                    item.hash == event.evidenceHash;
-              })
-              .toList(growable: false);
-          final relations = controller.lifeGraphRelations
-              .where((relation) {
-                return relation.fromEventId == event.eventId ||
-                    relation.toEventId == event.eventId;
-              })
-              .toList(growable: false);
-          final audits =
-              controller.privacyAuditEntries
-                  .where((entry) {
-                    return entry.eventId == event.eventId;
-                  })
-                  .toList(growable: false)
-                ..sort((a, b) => b.changedAt.compareTo(a.changedAt));
+          final evidence = controller.evidenceItems.where((item) {
+            return item.localPayloadRef == 'life_event:${event.eventId}' ||
+                item.hash == event.evidenceHash;
+          }).toList(growable: false);
+          final relations = controller.lifeGraphRelations.where((relation) {
+            return relation.fromEventId == event.eventId ||
+                relation.toEventId == event.eventId;
+          }).toList(growable: false);
+          final audits = controller.privacyAuditEntries.where((entry) {
+            return entry.eventId == event.eventId;
+          }).toList(growable: false)
+            ..sort((a, b) => b.changedAt.compareTo(a.changedAt));
 
-          final usedInMission =
-              controller.dailyMission != null &&
+          final usedInMission = controller.dailyMission != null &&
               controller
                   .missionDataUsed(controller.dailyMission!)
                   .contains(event.summary);
@@ -685,8 +678,7 @@ void _showEventDetails(
                               for (final permission in DataPermission.values)
                                 ChoiceChip(
                                   label: Text(permission.localizedLabel(l10n)),
-                                  selected:
-                                      event.privacyLevel ==
+                                  selected: event.privacyLevel ==
                                       permission.storageKey,
                                   onSelected: (_) async {
                                     await controller.updateEventPrivacy(
@@ -977,282 +969,318 @@ GoLifeAccent _privacyAccent(String privacyLevel) {
 }
 
 String _memoryTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Memory',
-  es: 'Memory',
-  ptBr: 'Memory',
-  ptPt: 'Memory',
-  fr: 'Memory',
-  it: 'Memory',
-  de: 'Memory',
-  ja: 'Memory',
-  zhHans: 'Memory',
-  zhHant: 'Memory',
-);
+      l10n.localeName,
+      en: 'Memory',
+      es: 'Memory',
+      ptBr: 'Memory',
+      ptPt: 'Memory',
+      fr: 'Memory',
+      it: 'Memory',
+      de: 'Memory',
+      ja: 'Memory',
+      zhHans: 'Memory',
+      zhHant: 'Memory',
+    );
 
 String _memorySubtitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Your recent life.',
-  es: 'Tu vida reciente.',
-  ptBr: 'Sua vida recente.',
-  ptPt: 'A tua vida recente.',
-  fr: 'Ta vie recente.',
-  it: 'La tua vita recente.',
-  de: 'Dein aktuelles Leben.',
-  ja: 'Your recent life.',
-  zhHans: 'Your recent life.',
-  zhHant: 'Your recent life.',
-);
+      l10n.localeName,
+      en: 'Your recent life.',
+      es: 'Tu vida reciente.',
+      ptBr: 'Sua vida recente.',
+      ptPt: 'A tua vida recente.',
+      fr: 'Ta vie recente.',
+      it: 'La tua vita recente.',
+      de: 'Dein aktuelles Leben.',
+      ja: 'Your recent life.',
+      zhHans: 'Your recent life.',
+      zhHant: 'Your recent life.',
+    );
 
 String _eventsLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Events',
-  es: 'Eventos',
-  ptBr: 'Eventos',
-  ptPt: 'Eventos',
-  fr: 'Evenements',
-  it: 'Eventi',
-  de: 'Ereignisse',
-  ja: 'Events',
-  zhHans: 'Events',
-  zhHant: 'Events',
-);
+      l10n.localeName,
+      en: 'Events',
+      es: 'Eventos',
+      ptBr: 'Eventos',
+      ptPt: 'Eventos',
+      fr: 'Evenements',
+      it: 'Eventi',
+      de: 'Ereignisse',
+      ja: 'Events',
+      zhHans: 'Events',
+      zhHant: 'Events',
+    );
 
 String _usedByAiLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Usable by AI',
-  es: 'Usables por IA',
-  ptBr: 'Usaveis pela IA',
-  ptPt: 'Usaveis pela IA',
-  fr: 'Utilisables par IA',
-  it: 'Usabili dall IA',
-  de: 'Von KI nutzbar',
-  ja: 'Usable by AI',
-  zhHans: 'Usable by AI',
-  zhHant: 'Usable by AI',
-);
+      l10n.localeName,
+      en: 'Usable by AI',
+      es: 'Usables por IA',
+      ptBr: 'Usaveis pela IA',
+      ptPt: 'Usaveis pela IA',
+      fr: 'Utilisables par IA',
+      it: 'Usabili dall IA',
+      de: 'Von KI nutzbar',
+      ja: 'Usable by AI',
+      zhHans: 'Usable by AI',
+      zhHant: 'Usable by AI',
+    );
 
 String _protectedLocalLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Protected local',
-  es: 'Protegidos local',
-  ptBr: 'Protegidos no local',
-  ptPt: 'Protegidos no local',
-  fr: 'Proteges en local',
-  it: 'Protetti in locale',
-  de: 'Lokal geschuetzt',
-  ja: 'Protected local',
-  zhHans: 'Protected local',
-  zhHant: 'Protected local',
-);
+      l10n.localeName,
+      en: 'Protected local',
+      es: 'Protegidos local',
+      ptBr: 'Protegidos no local',
+      ptPt: 'Protegidos no local',
+      fr: 'Proteges en local',
+      it: 'Protetti in locale',
+      de: 'Lokal geschuetzt',
+      ja: 'Protected local',
+      zhHans: 'Protected local',
+      zhHant: 'Protected local',
+    );
 
 String _relationsLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Relations',
-  es: 'Relaciones',
-  ptBr: 'Relacoes',
-  ptPt: 'Relacoes',
-  fr: 'Relations',
-  it: 'Relazioni',
-  de: 'Beziehungen',
-  ja: 'Relations',
-  zhHans: 'Relations',
-  zhHant: 'Relations',
-);
+      l10n.localeName,
+      en: 'Relations',
+      es: 'Relaciones',
+      ptBr: 'Relacoes',
+      ptPt: 'Relacoes',
+      fr: 'Relations',
+      it: 'Relazioni',
+      de: 'Beziehungen',
+      ja: 'Relations',
+      zhHans: 'Relations',
+      zhHant: 'Relations',
+    );
+
+String _totalEventsLabel(int count, AppLocalizations l10n) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: '$count total',
+      es: '$count total',
+      ptBr: '$count total',
+      ptPt: '$count total',
+      fr: '$count total',
+      it: '$count totale',
+      de: '$count gesamt',
+      ja: '$count total',
+      zhHans: '$count total',
+      zhHant: '$count total',
+    );
+
+String _evidenceCountLabel(
+  int count,
+  AppLocalizations l10n,
+) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: '$count evidence',
+      es: '$count evidencias',
+      ptBr: '$count evidencias',
+      ptPt: '$count evidencias',
+      fr: '$count preuves',
+      it: '$count evidenze',
+      de: '$count Evidenzen',
+      ja: '$count evidence',
+      zhHans: '$count evidence',
+      zhHant: '$count evidence',
+    );
 
 String _memorySearchTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Search memory',
-  es: 'Buscar en memoria',
-  ptBr: 'Buscar na memoria',
-  ptPt: 'Procurar na memoria',
-  fr: 'Rechercher dans la memoire',
-  it: 'Cerca nella memoria',
-  de: 'Erinnerung durchsuchen',
-  ja: 'Search memory',
-  zhHans: 'Search memory',
-  zhHant: 'Search memory',
-);
+      l10n.localeName,
+      en: 'Search memory',
+      es: 'Buscar en memoria',
+      ptBr: 'Buscar na memoria',
+      ptPt: 'Procurar na memoria',
+      fr: 'Rechercher dans la memoire',
+      it: 'Cerca nella memoria',
+      de: 'Erinnerung durchsuchen',
+      ja: 'Search memory',
+      zhHans: 'Search memory',
+      zhHant: 'Search memory',
+    );
 
 String _memorySearchBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Search first, then narrow by domain, time or privacy.',
-  es: 'Busca primero y luego ajusta por dominio, tiempo o privacidad.',
-  ptBr: 'Busque primeiro e depois ajuste por dominio, tempo ou privacidade.',
-  ptPt: 'Procura primeiro e depois ajusta por dominio, tempo ou privacidade.',
-  fr: 'Cherche d abord puis affine par domaine, date ou confidentialite.',
-  it: 'Cerca prima e poi restringi per dominio, tempo o privacy.',
-  de: 'Erst suchen, dann nach Bereich, Zeit oder Datenschutz eingrenzen.',
-  ja: 'Search first, then narrow by domain, time or privacy.',
-  zhHans: 'Search first, then narrow by domain, time or privacy.',
-  zhHant: 'Search first, then narrow by domain, time or privacy.',
-);
+      l10n.localeName,
+      en: 'Search first, then narrow by domain, time or privacy.',
+      es: 'Busca primero y luego ajusta por dominio, tiempo o privacidad.',
+      ptBr:
+          'Busque primeiro e depois ajuste por dominio, tempo ou privacidade.',
+      ptPt:
+          'Procura primeiro e depois ajusta por dominio, tempo ou privacidade.',
+      fr: 'Cherche d abord puis affine par domaine, date ou confidentialite.',
+      it: 'Cerca prima e poi restringi per dominio, tempo o privacy.',
+      de: 'Erst suchen, dann nach Bereich, Zeit oder Datenschutz eingrenzen.',
+      ja: 'Search first, then narrow by domain, time or privacy.',
+      zhHans: 'Search first, then narrow by domain, time or privacy.',
+      zhHant: 'Search first, then narrow by domain, time or privacy.',
+    );
 
 String _filtersLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Search and filters',
-  es: 'Busqueda y filtros',
-  ptBr: 'Busca e filtros',
-  ptPt: 'Pesquisa e filtros',
-  fr: 'Recherche et filtres',
-  it: 'Ricerca e filtri',
-  de: 'Suche und Filter',
-  ja: 'Search and filters',
-  zhHans: 'Search and filters',
-  zhHant: 'Search and filters',
-);
+      l10n.localeName,
+      en: 'Search and filters',
+      es: 'Busqueda y filtros',
+      ptBr: 'Busca e filtros',
+      ptPt: 'Pesquisa e filtros',
+      fr: 'Recherche et filtres',
+      it: 'Ricerca e filtri',
+      de: 'Suche und Filter',
+      ja: 'Search and filters',
+      zhHans: 'Search and filters',
+      zhHant: 'Search and filters',
+    );
 
 String _filtersBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Keep the timeline readable on a small screen.',
-  es: 'Mantiene la timeline legible en pantalla pequena.',
-  ptBr: 'Mantem a timeline legivel em tela pequena.',
-  ptPt: 'Mantem a timeline legivel em ecra pequeno.',
-  fr: 'Garde la timeline lisible sur petit ecran.',
-  it: 'Mantiene la timeline leggibile su schermo piccolo.',
-  de: 'Haelt die Timeline auf kleinen Bildschirmen lesbar.',
-  ja: 'Keep the timeline readable on a small screen.',
-  zhHans: 'Keep the timeline readable on a small screen.',
-  zhHant: 'Keep the timeline readable on a small screen.',
-);
+      l10n.localeName,
+      en: 'Keep the timeline readable on a small screen.',
+      es: 'Mantiene la timeline legible en pantalla pequena.',
+      ptBr: 'Mantem a timeline legivel em tela pequena.',
+      ptPt: 'Mantem a timeline legivel em ecra pequeno.',
+      fr: 'Garde la timeline lisible sur petit ecran.',
+      it: 'Mantiene la timeline leggibile su schermo piccolo.',
+      de: 'Haelt die Timeline auf kleinen Bildschirmen lesbar.',
+      ja: 'Keep the timeline readable on a small screen.',
+      zhHans: 'Keep the timeline readable on a small screen.',
+      zhHant: 'Keep the timeline readable on a small screen.',
+    );
 
 String _domainFilterTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Domain',
-  es: 'Dominio',
-  ptBr: 'Dominio',
-  ptPt: 'Dominio',
-  fr: 'Domaine',
-  it: 'Dominio',
-  de: 'Bereich',
-  ja: 'Domain',
-  zhHans: 'Domain',
-  zhHant: 'Domain',
-);
+      l10n.localeName,
+      en: 'Domain',
+      es: 'Dominio',
+      ptBr: 'Dominio',
+      ptPt: 'Dominio',
+      fr: 'Domaine',
+      it: 'Dominio',
+      de: 'Bereich',
+      ja: 'Domain',
+      zhHans: 'Domain',
+      zhHant: 'Domain',
+    );
 
 String _dateFilterTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Time',
-  es: 'Tiempo',
-  ptBr: 'Tempo',
-  ptPt: 'Tempo',
-  fr: 'Temps',
-  it: 'Tempo',
-  de: 'Zeit',
-  ja: 'Time',
-  zhHans: 'Time',
-  zhHant: 'Time',
-);
+      l10n.localeName,
+      en: 'Time',
+      es: 'Tiempo',
+      ptBr: 'Tempo',
+      ptPt: 'Tempo',
+      fr: 'Temps',
+      it: 'Tempo',
+      de: 'Zeit',
+      ja: 'Time',
+      zhHans: 'Time',
+      zhHant: 'Time',
+    );
 
 String _domainsTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Domains',
-  es: 'Dominios',
-  ptBr: 'Dominios',
-  ptPt: 'Dominios',
-  fr: 'Domaines',
-  it: 'Domini',
-  de: 'Bereiche',
-  ja: 'Domains',
-  zhHans: 'Domains',
-  zhHant: 'Domains',
-);
+      l10n.localeName,
+      en: 'Domains',
+      es: 'Dominios',
+      ptBr: 'Dominios',
+      ptPt: 'Dominios',
+      fr: 'Domaines',
+      it: 'Domini',
+      de: 'Bereiche',
+      ja: 'Domains',
+      zhHans: 'Domains',
+      zhHant: 'Domains',
+    );
 
 String _domainsBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'These routes still exist, but Memory keeps them in one place.',
-  es: 'Estas rutas siguen existiendo, pero Memory las mantiene en un solo lugar.',
-  ptBr: 'Essas rotas continuam existindo, mas o Memory as mantem num so lugar.',
-  ptPt:
-      'Estas rotas continuam a existir, mas o Memory mantem-nas num so lugar.',
-  fr: 'Ces routes existent toujours, mais Memory les garde au meme endroit.',
-  it: 'Queste rotte esistono ancora, ma Memory le tiene insieme.',
-  de: 'Diese Routen existieren weiter, aber Memory haelt sie an einem Ort.',
-  ja: 'These routes still exist, but Memory keeps them in one place.',
-  zhHans: 'These routes still exist, but Memory keeps them in one place.',
-  zhHant: 'These routes still exist, but Memory keeps them in one place.',
-);
+      l10n.localeName,
+      en: 'These routes still exist, but Memory keeps them in one place.',
+      es: 'Estas rutas siguen existiendo, pero Memory las mantiene en un solo lugar.',
+      ptBr:
+          'Essas rotas continuam existindo, mas o Memory as mantem num so lugar.',
+      ptPt:
+          'Estas rotas continuam a existir, mas o Memory mantem-nas num so lugar.',
+      fr: 'Ces routes existent toujours, mais Memory les garde au meme endroit.',
+      it: 'Queste rotte esistono ancora, ma Memory le tiene insieme.',
+      de: 'Diese Routen existieren weiter, aber Memory haelt sie an einem Ort.',
+      ja: 'These routes still exist, but Memory keeps them in one place.',
+      zhHans: 'These routes still exist, but Memory keeps them in one place.',
+      zhHant: 'These routes still exist, but Memory keeps them in one place.',
+    );
 
 String _timelineTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Timeline',
-  es: 'Timeline',
-  ptBr: 'Timeline',
-  ptPt: 'Timeline',
-  fr: 'Timeline',
-  it: 'Timeline',
-  de: 'Timeline',
-  ja: 'Timeline',
-  zhHans: 'Timeline',
-  zhHant: 'Timeline',
-);
+      l10n.localeName,
+      en: 'Timeline',
+      es: 'Timeline',
+      ptBr: 'Timeline',
+      ptPt: 'Timeline',
+      fr: 'Timeline',
+      it: 'Timeline',
+      de: 'Timeline',
+      ja: 'Timeline',
+      zhHans: 'Timeline',
+      zhHant: 'Timeline',
+    );
 
 String _timelineBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Readable cards first. Detail only when you ask for it.',
-  es: 'Cards legibles primero. El detalle solo cuando lo pides.',
-  ptBr: 'Cards legiveis primeiro. O detalhe so quando voce pedir.',
-  ptPt: 'Cards legiveis primeiro. O detalhe so quando pedires.',
-  fr: 'Des cartes lisibles d abord. Le detail seulement si tu le demandes.',
-  it: 'Carte leggibili prima. Il dettaglio solo quando lo chiedi.',
-  de: 'Zuerst lesbare Karten. Details nur auf Wunsch.',
-  ja: 'Readable cards first. Detail only when you ask for it.',
-  zhHans: 'Readable cards first. Detail only when you ask for it.',
-  zhHant: 'Readable cards first. Detail only when you ask for it.',
-);
+      l10n.localeName,
+      en: 'Readable cards first. Detail only when you ask for it.',
+      es: 'Cards legibles primero. El detalle solo cuando lo pides.',
+      ptBr: 'Cards legiveis primeiro. O detalhe so quando voce pedir.',
+      ptPt: 'Cards legiveis primeiro. O detalhe so quando pedires.',
+      fr: 'Des cartes lisibles d abord. Le detail seulement si tu le demandes.',
+      it: 'Carte leggibili prima. Il dettaglio solo quando lo chiedi.',
+      de: 'Zuerst lesbare Karten. Details nur auf Wunsch.',
+      ja: 'Readable cards first. Detail only when you ask for it.',
+      zhHans: 'Readable cards first. Detail only when you ask for it.',
+      zhHant: 'Readable cards first. Detail only when you ask for it.',
+    );
 
 String _emptyMemoryTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'No memory yet',
-  es: 'Todavia no hay memoria',
-  ptBr: 'Ainda nao ha memoria',
-  ptPt: 'Ainda nao ha memoria',
-  fr: 'Pas encore de memoire',
-  it: 'Nessuna memoria ancora',
-  de: 'Noch keine Erinnerung',
-  ja: 'No memory yet',
-  zhHans: 'No memory yet',
-  zhHant: 'No memory yet',
-);
+      l10n.localeName,
+      en: 'No memory yet',
+      es: 'Todavia no hay memoria',
+      ptBr: 'Ainda nao ha memoria',
+      ptPt: 'Ainda nao ha memoria',
+      fr: 'Pas encore de memoire',
+      it: 'Nessuna memoria ancora',
+      de: 'Noch keine Erinnerung',
+      ja: 'No memory yet',
+      zhHans: 'No memory yet',
+      zhHant: 'No memory yet',
+    );
 
 String _detailsLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Details',
-  es: 'Detalles',
-  ptBr: 'Detalhes',
-  ptPt: 'Detalhes',
-  fr: 'Details',
-  it: 'Dettagli',
-  de: 'Details',
-  ja: 'Details',
-  zhHans: 'Details',
-  zhHant: 'Details',
-);
+      l10n.localeName,
+      en: 'Details',
+      es: 'Detalles',
+      ptBr: 'Detalhes',
+      ptPt: 'Detalhes',
+      fr: 'Details',
+      it: 'Dettagli',
+      de: 'Details',
+      ja: 'Details',
+      zhHans: 'Details',
+      zhHant: 'Details',
+    );
 
 String _usedInMissionLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Used in mission',
-  es: 'Usado en mision',
-  ptBr: 'Usado na missao',
-  ptPt: 'Usado na missao',
-  fr: 'Utilise dans la mission',
-  it: 'Usato nella missione',
-  de: 'In Mission verwendet',
-  ja: 'Used in mission',
-  zhHans: 'Used in mission',
-  zhHant: 'Used in mission',
-);
+      l10n.localeName,
+      en: 'Used in mission',
+      es: 'Usado en mision',
+      ptBr: 'Usado na missao',
+      ptPt: 'Usado na missao',
+      fr: 'Utilise dans la mission',
+      it: 'Usato nella missione',
+      de: 'In Mission verwendet',
+      ja: 'Used in mission',
+      zhHans: 'Used in mission',
+      zhHant: 'Used in mission',
+    );
 
 String _privacyChangeTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Privacy',
-  es: 'Privacidad',
-  ptBr: 'Privacidade',
-  ptPt: 'Privacidade',
-  fr: 'Confidentialite',
-  it: 'Privacy',
-  de: 'Datenschutz',
-  ja: 'Privacy',
-  zhHans: 'Privacy',
-  zhHant: 'Privacy',
-);
+      l10n.localeName,
+      en: 'Privacy',
+      es: 'Privacidad',
+      ptBr: 'Privacidade',
+      ptPt: 'Privacidade',
+      fr: 'Confidentialite',
+      it: 'Privacy',
+      de: 'Datenschutz',
+      ja: 'Privacy',
+      zhHans: 'Privacy',
+      zhHant: 'Privacy',
+    );
