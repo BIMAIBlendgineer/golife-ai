@@ -68,230 +68,254 @@ class PrivacyScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        GoLifeSectionTitle(
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-privacy-dashboard'),
           title: _settingsPrivacyCenterTitle(l10n),
           subtitle: _settingsPrivacyCenterBody(l10n),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          accent: GoLifeAccent.blue,
           children: [
-            SizedBox(
-              width: 220,
-              child: _PrivacyMetricCard(
-                label: l10n.privacyMetricTotalEvents,
-                value: controller.totalEventCount.toString(),
-                tone: const Color(0xFF1F4C5B),
-              ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricTotalEvents,
+                    value: controller.totalEventCount.toString(),
+                    tone: const Color(0xFF1F4C5B),
+                  ),
+                ),
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricAiEligible,
+                    value: controller.aiEligibleEventCount.toString(),
+                    tone: const Color(0xFF5D7A68),
+                  ),
+                ),
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricBlockedLocal,
+                    value:
+                        '${controller.totalEventCount - controller.aiEligibleEventCount}',
+                    tone: const Color(0xFFD06447),
+                  ),
+                ),
+              ],
             ),
-            SizedBox(
-              width: 220,
-              child: _PrivacyMetricCard(
-                label: l10n.privacyMetricAiEligible,
-                value: controller.aiEligibleEventCount.toString(),
-                tone: const Color(0xFF5D7A68),
-              ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _PrivacyDisclosureCard(
+                  title: l10n.privacyDisclosureEncryptedTitle,
+                  body: l10n.privacyDisclosureEncryptedBody,
+                  items: controller.localizedEncryptedCollectionLabels(l10n),
+                ),
+                _PrivacyDisclosureCard(
+                  title: l10n.privacyDisclosureLocalTitle,
+                  body: l10n.privacyDisclosureLocalBody,
+                  items: controller.localizedAlwaysLocalCollectionLabels(l10n),
+                ),
+                _PrivacyDisclosureCard(
+                  title: l10n.privacyDisclosureAiTitle,
+                  body: l10n.privacyDisclosureAiBody,
+                  items: controller.privacySettings.aiAllowedDomains.isEmpty
+                      ? <String>[l10n.nothingAiEnabled]
+                      : controller.privacySettings.aiAllowedDomains
+                          .map((domain) => domain.localizedLabel(l10n))
+                          .toList(growable: false),
+                ),
+              ],
             ),
-            SizedBox(
-              width: 220,
-              child: _PrivacyMetricCard(
-                label: l10n.privacyMetricBlockedLocal,
-                value:
-                    '${controller.totalEventCount - controller.aiEligibleEventCount}',
-                tone: const Color(0xFFD06447),
+          ],
+        ),
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-ai-data'),
+          title: _settingsAiDataTitle(l10n),
+          subtitle: _settingsAiDataBody(l10n),
+          accent: GoLifeAccent.emerald,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricEvidenceItems,
+                    value: controller.evidenceItems.length.toString(),
+                    tone: const Color(0xFF6C5B3D),
+                  ),
+                ),
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricRelations,
+                    value: controller.lifeGraphRelations.length.toString(),
+                    tone: const Color(0xFF7A5167),
+                  ),
+                ),
+                SizedBox(
+                  width: 220,
+                  child: _PrivacyMetricCard(
+                    label: l10n.privacyMetricAuditEntries,
+                    value: controller.privacyAuditEntries.length.toString(),
+                    tone: const Color(0xFF1F4C5B),
+                  ),
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: () => context.go('/lifegraph'),
+                icon: const Icon(Icons.timeline_rounded),
+                label: Text(l10n.lifeGraphOpenTimeline),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        GoLifeSectionTitle(
-          title: l10n.privacyCenter,
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-preferences'),
+          title: _settingsPreferencesTitle(l10n),
           subtitle: _settingsPreferencesBody(l10n),
-        ),
-        const SizedBox(height: 12),
-        _LanguageCard(controller: controller),
-        const SizedBox(height: 12),
-        _ProfilePreferencesCard(controller: controller),
-        const SizedBox(height: 12),
-        _DeliveryPreferencesCard(controller: controller),
-        const SizedBox(height: 12),
-        _RegionalPreferencesCard(controller: controller),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          accent: GoLifeAccent.violet,
           children: [
-            _PrivacyDisclosureCard(
-              title: l10n.privacyDisclosureEncryptedTitle,
-              body: l10n.privacyDisclosureEncryptedBody,
-              items: controller.localizedEncryptedCollectionLabels(l10n),
-            ),
-            _PrivacyDisclosureCard(
-              title: l10n.privacyDisclosureLocalTitle,
-              body: l10n.privacyDisclosureLocalBody,
-              items: controller.localizedAlwaysLocalCollectionLabels(l10n),
-            ),
-            _PrivacyDisclosureCard(
-              title: l10n.privacyDisclosureAiTitle,
-              body: l10n.privacyDisclosureAiBody,
-              items: controller.privacySettings.aiAllowedDomains.isEmpty
-                  ? <String>[l10n.nothingAiEnabled]
-                  : controller.privacySettings.aiAllowedDomains
-                      .map((domain) => domain.localizedLabel(l10n))
-                      .toList(growable: false),
+            _LanguageCard(controller: controller),
+            _ProfilePreferencesCard(controller: controller),
+            _DeliveryPreferencesCard(controller: controller),
+            _RegionalPreferencesCard(controller: controller),
+          ],
+        ),
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-billing'),
+          title: l10n.billingPlanTitle,
+          subtitle: _settingsPremiumBody(l10n),
+          accent: GoLifeAccent.amber,
+          children: [
+            _PlanBillingCard(
+              controller: controller,
+              onOpenExternalUrl: onOpenExternalUrl,
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        GoLifeSectionTitle(
-          title: l10n.privacyRuntimeSnapshotTitle,
-          subtitle: l10n.privacyRuntimeSnapshotBody,
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            SizedBox(
-              width: 220,
-              child: _PrivacyMetricCard(
-                label: l10n.privacyMetricEvidenceItems,
-                value: controller.evidenceItems.length.toString(),
-                tone: const Color(0xFF6C5B3D),
-              ),
-            ),
-            SizedBox(
-              width: 220,
-              child: _PrivacyMetricCard(
-                label: l10n.privacyMetricRelations,
-                value: controller.lifeGraphRelations.length.toString(),
-                tone: const Color(0xFF7A5167),
-              ),
-            ),
-            SizedBox(
-              width: 220,
-              child: _PrivacyMetricCard(
-                label: l10n.privacyMetricAuditEntries,
-                value: controller.privacyAuditEntries.length.toString(),
-                tone: const Color(0xFF1F4C5B),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
-            onPressed: () => context.go('/lifegraph'),
-            icon: const Icon(Icons.timeline_rounded),
-            label: Text(l10n.lifeGraphOpenTimeline),
-          ),
-        ),
-        const SizedBox(height: 20),
-        _PlanBillingCard(
-          controller: controller,
-          onOpenExternalUrl: onOpenExternalUrl,
-        ),
-        const SizedBox(height: 20),
-        GoLifeSectionTitle(
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-legal'),
           title: l10n.privacyLegalTitle,
           subtitle: l10n.privacyLegalBody,
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
           children: [
-            for (final item in _legalCards(l10n))
-              _LegalDocumentCard(
-                item: item,
-                onOpen: (url) => _openExternalUrl(context, url),
-                onCopy: (url) => _copyExternalUrl(context, url),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final item in _legalCards(l10n))
+                  _LegalDocumentCard(
+                    item: item,
+                    onOpen: (url) => _openExternalUrl(context, url),
+                    onCopy: (url) => _copyExternalUrl(context, url),
+                  ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-data-controls'),
+          title: l10n.dataControls,
+          subtitle: l10n.dataControlsBody,
+          accent: GoLifeAccent.blue,
+          children: [
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                FilledButton.tonalIcon(
+                  key: const ValueKey<String>('privacy-export-json'),
+                  onPressed: () => _exportLocalJson(context),
+                  icon: const Icon(Icons.download_outlined),
+                  label: Text(l10n.exportJson),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _confirmDeleteAll(context),
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(l10n.deleteAllLocalData),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _confirmClearAiHistory(context),
+                  icon: const Icon(Icons.history_toggle_off_outlined),
+                  label: Text(l10n.clearAiHistory),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey:
+              const ValueKey<String>('settings-section-domain-permissions'),
+          title: l10n.domainControls,
+          subtitle: _settingsDomainControlsBody(l10n),
+          children: [
+            for (final domain in DomainKey.values)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _DomainPermissionCard(
+                  domain: domain,
+                  selected: controller.privacySettings.permissionFor(domain),
+                  eventCount: controller.eventCountFor(domain.wireName),
+                  aiEligibleCount: controller.aiEligibleEventCountFor(domain),
+                  onChanged: (permission) async {
+                    await controller.updatePermission(domain, permission);
+                  },
+                ),
               ),
           ],
         ),
-        const SizedBox(height: 20),
-        GoLifeSectionTitle(
-          title: l10n.dataControls,
-          subtitle: l10n.dataControlsBody,
-        ),
-        const SizedBox(height: 12),
-        GoLifeCard(
-          accent: GoLifeAccent.blue,
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              FilledButton.tonalIcon(
-                key: const ValueKey<String>('privacy-export-json'),
-                onPressed: () => _exportLocalJson(context),
-                icon: const Icon(Icons.download_outlined),
-                label: Text(l10n.exportJson),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => _confirmDeleteAll(context),
-                icon: const Icon(Icons.delete_outline),
-                label: Text(l10n.deleteAllLocalData),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => _confirmClearAiHistory(context),
-                icon: const Icon(Icons.history_toggle_off_outlined),
-                label: Text(l10n.clearAiHistory),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        GoLifeSectionTitle(
-          title: l10n.domainControls,
-          subtitle: _settingsDomainControlsBody(l10n),
-        ),
-        const SizedBox(height: 12),
-        for (final domain in DomainKey.values)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: _DomainPermissionCard(
-              domain: domain,
-              selected: controller.privacySettings.permissionFor(domain),
-              eventCount: controller.eventCountFor(domain.wireName),
-              aiEligibleCount: controller.aiEligibleEventCountFor(domain),
-              onChanged: (permission) async {
-                await controller.updatePermission(domain, permission);
-              },
-            ),
-          ),
-        const SizedBox(height: 20),
-        GoLifeSectionTitle(
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-recent-events'),
           title: l10n.privacyRecentEventsTitle,
           subtitle: l10n.privacyRecentEventsBody,
+          children: [
+            if (controller.lifeEvents.isEmpty)
+              Text(
+                l10n.privacyRecentEventsEmpty,
+                style: theme.textTheme.bodyMedium,
+              )
+            else
+              for (final event in controller.lifeEvents.take(8))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _RecentLifeEventCard(
+                    controller: controller,
+                    event: event,
+                  ),
+                ),
+          ],
         ),
-        const SizedBox(height: 12),
-        if (controller.lifeEvents.isEmpty)
-          Text(
-            l10n.privacyRecentEventsEmpty,
-            style: theme.textTheme.bodyMedium,
-          )
-        else
-          for (final event in controller.lifeEvents.take(8))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _RecentLifeEventCard(controller: controller, event: event),
-            ),
-        const SizedBox(height: 20),
-        GoLifeSectionTitle(
+        const SizedBox(height: 16),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('settings-section-privacy-audit'),
           title: l10n.privacyAuditTitle,
           subtitle: l10n.privacyAuditBody,
+          children: [
+            if (controller.privacyAuditEntries.isEmpty)
+              Text(l10n.privacyAuditEmpty, style: theme.textTheme.bodyMedium)
+            else
+              for (final entry in controller.privacyAuditEntries.take(8))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _PrivacyAuditEntryCard(entry: entry),
+                ),
+          ],
         ),
-        const SizedBox(height: 12),
-        if (controller.privacyAuditEntries.isEmpty)
-          Text(l10n.privacyAuditEmpty, style: theme.textTheme.bodyMedium)
-        else
-          for (final entry in controller.privacyAuditEntries.take(8))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _PrivacyAuditEntryCard(entry: entry),
-            ),
       ],
     );
   }
@@ -668,7 +692,7 @@ String _settingsIndexTitle(AppLocalizations l10n) => pickLocalizedValue(
 String _settingsPrivacyCenterBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'What stays local, what AI can use, and what remains blocked.',
-      es: 'Que se queda local, que puede usar la IA y que sigue bloqueado.',
+      es: 'Qué se queda local, qué puede usar la IA y qué sigue bloqueado.',
       ptBr:
           'O que fica local, o que a IA pode usar e o que continua bloqueado.',
       ptPt:
@@ -769,7 +793,7 @@ String _settingsAiDataTitle(AppLocalizations l10n) => pickLocalizedValue(
 String _settingsAiDataBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'What was used, what stayed blocked and what remains local.',
-      es: 'Que se uso, que quedo bloqueado y que sigue local.',
+      es: 'Qué se usó, qué quedó bloqueado y qué sigue local.',
       ptBr: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
       ptPt: 'O que foi usado, o que ficou bloqueado e o que permanece local.',
       fr: 'Ce qui a ete utilise, ce qui est bloque et ce qui reste local.',
@@ -825,7 +849,7 @@ String _settingsExportBody(AppLocalizations l10n) => pickLocalizedValue(
 String _settingsDeleteBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Delete local data or clear AI history with explicit confirmation.',
-      es: 'Borra datos locales o limpia historial de IA con confirmacion explicita.',
+      es: 'Borra datos locales o limpia historial de IA con confirmación explícita.',
       ptBr:
           'Apague dados locais ou limpe o historico da IA com confirmacao explicita.',
       ptPt:
@@ -852,6 +876,20 @@ String _settingsPrivacyCenterTitle(AppLocalizations l10n) => pickLocalizedValue(
       ja: 'Privacy dashboard',
       zhHans: 'Privacy dashboard',
       zhHant: 'Privacy dashboard',
+    );
+
+String _settingsPreferencesTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Preferences',
+      es: 'Preferencias',
+      ptBr: 'Preferencias',
+      ptPt: 'Preferencias',
+      fr: 'Preferences',
+      it: 'Preferenze',
+      de: 'Einstellungen',
+      ja: 'Preferences',
+      zhHans: 'Preferences',
+      zhHant: 'Preferences',
     );
 
 String _settingsPreferencesBody(AppLocalizations l10n) => pickLocalizedValue(

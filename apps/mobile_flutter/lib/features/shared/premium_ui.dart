@@ -343,6 +343,73 @@ class GoLifeSectionTitle extends StatelessWidget {
   }
 }
 
+class GoLifeExpansionCard extends StatelessWidget {
+  const GoLifeExpansionCard({
+    super.key,
+    required this.title,
+    required this.children,
+    this.subtitle,
+    this.accent = GoLifeAccent.neutral,
+    this.leading,
+    this.tileKey,
+    this.initiallyExpanded = false,
+  });
+
+  final String title;
+  final String? subtitle;
+  final List<Widget> children;
+  final GoLifeAccent accent;
+  final Widget? leading;
+  final Key? tileKey;
+  final bool initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    return GoLifeCard(
+      accent: accent,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: tileKey,
+          initiallyExpanded: initiallyExpanded,
+          maintainState: true,
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          shape: const Border(),
+          collapsedShape: const Border(),
+          iconColor: accent.color,
+          collapsedIconColor: GoLifePalette.textMuted,
+          leading: leading,
+          title: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          subtitle: subtitle == null
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    subtitle!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: GoLifePalette.textSecondary,
+                        ),
+                  ),
+                ),
+          children: [
+            const SizedBox(height: 16),
+            for (var index = 0; index < children.length; index++) ...[
+              children[index],
+              if (index < children.length - 1) const SizedBox(height: 12),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class GoLifeEmptyState extends StatelessWidget {
   const GoLifeEmptyState({
     super.key,

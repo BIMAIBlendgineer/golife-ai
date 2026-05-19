@@ -33,9 +33,8 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
       ? GoLifePalette.ink700.withValues(alpha: 0.96)
       : Colors.white.withValues(alpha: 0.92);
   final surface = isDark ? GoLifePalette.surface800 : const Color(0xFFF5F7FF);
-  final surfaceAlt = isDark
-      ? GoLifePalette.surface700
-      : const Color(0xFFEFF3FF);
+  final surfaceAlt =
+      isDark ? GoLifePalette.surface700 : const Color(0xFFEFF3FF);
   final line = isDark ? GoLifePalette.line : const Color(0xFFD7E1FF);
 
   TextTheme textTheme(TextTheme base) {
@@ -94,9 +93,8 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
     useMaterial3: true,
     brightness: brightness,
     colorScheme: colorScheme,
-    scaffoldBackgroundColor: isDark
-        ? GoLifePalette.surface900
-        : const Color(0xFFEEF3FF),
+    scaffoldBackgroundColor:
+        isDark ? GoLifePalette.surface900 : const Color(0xFFEEF3FF),
     canvasColor: surface,
     dividerColor: line,
     textTheme: textTheme(bodyTheme),
@@ -166,9 +164,8 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: isDark
-            ? GoLifePalette.textPrimary
-            : const Color(0xFF18233D),
+        foregroundColor:
+            isDark ? GoLifePalette.textPrimary : const Color(0xFF18233D),
         minimumSize: const Size(0, 52),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),

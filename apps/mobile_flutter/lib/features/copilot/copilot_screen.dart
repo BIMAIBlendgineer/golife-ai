@@ -85,8 +85,8 @@ class _CopilotScreenState extends State<CopilotScreen> {
               Text(
                 _promptIntroBody(l10n),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: GoLifePalette.textSecondary,
-                ),
+                      color: GoLifePalette.textSecondary,
+                    ),
               ),
               const SizedBox(height: 16),
               Wrap(
@@ -406,10 +406,8 @@ _CoachResponse _missionResponse(
   return _CoachResponse(
     heading: _promptWhyMission(l10n),
     recommendation: controller.localizedMissionBody(mission, l10n),
-    evidence: controller
-        .localizedMissionEvidence(mission, l10n)
-        .take(3)
-        .toList(),
+    evidence:
+        controller.localizedMissionEvidence(mission, l10n).take(3).toList(),
     uncertainty: mission.uncertainty,
     primaryActionLabel: l10n.actionDoNow,
     secondaryActionLabel: l10n.actionNotUseful,
@@ -476,301 +474,302 @@ _CoachResponse _shoppingResponse(
 }
 
 String _coachTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Coach',
-  es: 'Coach',
-  ptBr: 'Coach',
-  ptPt: 'Coach',
-  fr: 'Coach',
-  it: 'Coach',
-  de: 'Coach',
-  ja: 'Coach',
-  zhHans: 'Coach',
-  zhHant: 'Coach',
-);
+      l10n.localeName,
+      en: 'Coach',
+      es: 'Coach',
+      ptBr: 'Coach',
+      ptPt: 'Coach',
+      fr: 'Coach',
+      it: 'Coach',
+      de: 'Coach',
+      ja: 'Coach',
+      zhHans: 'Coach',
+      zhHant: 'Coach',
+    );
 
 String _coachSubtitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Ask about your day.',
-  es: 'Pregunta sobre tu dia.',
-  ptBr: 'Pergunte sobre o seu dia.',
-  ptPt: 'Pergunta sobre o teu dia.',
-  fr: 'Pose une question sur ta journee.',
-  it: 'Chiedi del tuo giorno.',
-  de: 'Frage nach deinem Tag.',
-  ja: 'Ask about your day.',
-  zhHans: 'Ask about your day.',
-  zhHant: 'Ask about your day.',
-);
+      l10n.localeName,
+      en: 'Ask about your day.',
+      es: 'Pregunta sobre tu día.',
+      ptBr: 'Pergunte sobre o seu dia.',
+      ptPt: 'Pergunta sobre o teu dia.',
+      fr: 'Pose une question sur ta journee.',
+      it: 'Chiedi del tuo giorno.',
+      de: 'Frage nach deinem Tag.',
+      ja: 'Ask about your day.',
+      zhHans: 'Ask about your day.',
+      zhHant: 'Ask about your day.',
+    );
 
 String _usingAllowedDataLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Using allowed data',
-  es: 'Usando datos permitidos',
-  ptBr: 'Usando dados permitidos',
-  ptPt: 'A usar dados permitidos',
-  fr: 'Utilise les donnees autorisees',
-  it: 'Usando dati consentiti',
-  de: 'Verwendet erlaubte Daten',
-  ja: 'Using allowed data',
-  zhHans: 'Using allowed data',
-  zhHant: 'Using allowed data',
-);
+      l10n.localeName,
+      en: 'Using permitted context',
+      es: 'Usando contexto permitido',
+      ptBr: 'Usando dados permitidos',
+      ptPt: 'A usar dados permitidos',
+      fr: 'Utilise les donnees autorisees',
+      it: 'Usando dati consentiti',
+      de: 'Verwendet erlaubte Daten',
+      ja: 'Using allowed data',
+      zhHans: 'Using allowed data',
+      zhHant: 'Using allowed data',
+    );
 
 String _promptIntroTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Explain, adjust, or slow a decision down.',
-  es: 'Explica, ajusta o frena una decision.',
-  ptBr: 'Explique, ajuste ou desacelere uma decisao.',
-  ptPt: 'Explica, ajusta ou abranda uma decisao.',
-  fr: 'Explique, ajuste ou ralentis une decision.',
-  it: 'Spiega, regola o rallenta una decisione.',
-  de: 'Erklaere, passe an oder verlangsame eine Entscheidung.',
-  ja: 'Explain, adjust, or slow a decision down.',
-  zhHans: 'Explain, adjust, or slow a decision down.',
-  zhHant: 'Explain, adjust, or slow a decision down.',
-);
+      l10n.localeName,
+      en: 'Explain, adjust, or slow a decision down.',
+      es: 'Explica, ajusta o frena una decisión.',
+      ptBr: 'Explique, ajuste ou desacelere uma decisao.',
+      ptPt: 'Explica, ajusta ou abranda uma decisao.',
+      fr: 'Explique, ajuste ou ralentis une decision.',
+      it: 'Spiega, regola o rallenta una decisione.',
+      de: 'Erklaere, passe an oder verlangsame eine Entscheidung.',
+      ja: 'Explain, adjust, or slow a decision down.',
+      zhHans: 'Explain, adjust, or slow a decision down.',
+      zhHant: 'Explain, adjust, or slow a decision down.',
+    );
 
 String _promptIntroBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Coach stays contextual. It reads the mission plan, the allowed memory, and the current fallback state before answering.',
-  es: 'Coach se mantiene contextual. Lee el plan de misiones, la memoria permitida y el estado de fallback antes de responder.',
-  ptBr:
-      'O Coach permanece contextual. Ele le o plano de missoes, a memoria permitida e o estado de fallback antes de responder.',
-  ptPt:
-      'O Coach mantem-se contextual. Le o plano de missoes, a memoria permitida e o estado de fallback antes de responder.',
-  fr: 'Coach reste contextuel. Il lit le plan de mission, la memoire autorisee et l etat de repli avant de repondre.',
-  it: 'Coach resta contestuale. Legge il piano missioni, la memoria consentita e lo stato di fallback prima di rispondere.',
-  de: 'Coach bleibt kontextbezogen. Er liest Missionsplan, erlaubte Erinnerung und Fallback-Status vor der Antwort.',
-  ja: 'Coach stays contextual. It reads the mission plan, the allowed memory, and the current fallback state before answering.',
-  zhHans:
-      'Coach stays contextual. It reads the mission plan, the allowed memory, and the current fallback state before answering.',
-  zhHant:
-      'Coach stays contextual. It reads the mission plan, the allowed memory, and the current fallback state before answering.',
-);
+      l10n.localeName,
+      en: 'Coach explains the current mission, memory, and decision context already available in GoLife.',
+      es: 'Coach explica el contexto de misión, memoria y decisiones ya disponible en GoLife.',
+      ptBr:
+          'O Coach permanece contextual. Ele le o plano de missoes, a memoria permitida e o estado de fallback antes de responder.',
+      ptPt:
+          'O Coach mantem-se contextual. Le o plano de missoes, a memoria permitida e o estado de fallback antes de responder.',
+      fr: 'Coach reste contextuel. Il lit le plan de mission, la memoire autorisee et l etat de repli avant de repondre.',
+      it: 'Coach resta contestuale. Legge il piano missioni, la memoria consentita e lo stato di fallback prima di rispondere.',
+      de: 'Coach bleibt kontextbezogen. Er liest Missionsplan, erlaubte Erinnerung und Fallback-Status vor der Antwort.',
+      ja: 'Coach stays contextual. It reads the mission plan, the allowed memory, and the current fallback state before answering.',
+      zhHans:
+          'Coach stays contextual. It reads the mission plan, the allowed memory, and the current fallback state before answering.',
+      zhHant:
+          'Coach stays contextual. It reads the mission plan, the allowed memory, and the current fallback state before answering.',
+    );
 
 String _promptWhyMission(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Why this mission?',
-  es: 'Por que esta mision?',
-  ptBr: 'Por que esta missao?',
-  ptPt: 'Porque esta missao?',
-  fr: 'Pourquoi cette mission ?',
-  it: 'Perche questa missione?',
-  de: 'Warum diese Mission?',
-  ja: 'Why this mission?',
-  zhHans: 'Why this mission?',
-  zhHant: 'Why this mission?',
-);
+      l10n.localeName,
+      en: 'Why this mission?',
+      es: '¿Por qué esta misión?',
+      ptBr: 'Por que esta missao?',
+      ptPt: 'Porque esta missao?',
+      fr: 'Pourquoi cette mission ?',
+      it: 'Perche questa missione?',
+      de: 'Warum diese Mission?',
+      ja: 'Why this mission?',
+      zhHans: 'Why this mission?',
+      zhHant: 'Why this mission?',
+    );
 
 String _promptAdjustTired(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'I am tired, adjust.',
-  es: 'Estoy cansado, ajusta.',
-  ptBr: 'Estou cansado, ajuste.',
-  ptPt: 'Estou cansado, ajusta.',
-  fr: 'Je suis fatigue, ajuste.',
-  it: 'Sono stanco, adatta.',
-  de: 'Ich bin muede, passe an.',
-  ja: 'I am tired, adjust.',
-  zhHans: 'I am tired, adjust.',
-  zhHant: 'I am tired, adjust.',
-);
+      l10n.localeName,
+      en: 'I am tired, adjust.',
+      es: 'Estoy cansado, ajusta.',
+      ptBr: 'Estou cansado, ajuste.',
+      ptPt: 'Estou cansado, ajusta.',
+      fr: 'Je suis fatigue, ajuste.',
+      it: 'Sono stanco, adatta.',
+      de: 'Ich bin muede, passe an.',
+      ja: 'I am tired, adjust.',
+      zhHans: 'I am tired, adjust.',
+      zhHant: 'I am tired, adjust.',
+    );
 
 String _promptDontBuy(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'What should I not buy today?',
-  es: 'Que no deberia comprar hoy?',
-  ptBr: 'O que eu nao deveria comprar hoje?',
-  ptPt: 'O que nao devo comprar hoje?',
-  fr: 'Que ne devrais-je pas acheter aujourd hui ?',
-  it: 'Cosa non dovrei comprare oggi?',
-  de: 'Was sollte ich heute nicht kaufen?',
-  ja: 'What should I not buy today?',
-  zhHans: 'What should I not buy today?',
-  zhHant: 'What should I not buy today?',
-);
+      l10n.localeName,
+      en: 'What should I not buy today?',
+      es: '¿Qué no debería comprar hoy?',
+      ptBr: 'O que eu nao deveria comprar hoje?',
+      ptPt: 'O que nao devo comprar hoje?',
+      fr: 'Que ne devrais-je pas acheter aujourd hui ?',
+      it: 'Cosa non dovrei comprare oggi?',
+      de: 'Was sollte ich heute nicht kaufen?',
+      ja: 'What should I not buy today?',
+      zhHans: 'What should I not buy today?',
+      zhHant: 'What should I not buy today?',
+    );
 
 String _inputHint(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Type a short question...',
-  es: 'Escribe una pregunta corta...',
-  ptBr: 'Escreva uma pergunta curta...',
-  ptPt: 'Escreve uma pergunta curta...',
-  fr: 'Ecris une question courte...',
-  it: 'Scrivi una domanda breve...',
-  de: 'Schreibe eine kurze Frage...',
-  ja: 'Type a short question...',
-  zhHans: 'Type a short question...',
-  zhHant: 'Type a short question...',
-);
+      l10n.localeName,
+      en: 'Type a short question...',
+      es: 'Escribe una pregunta corta...',
+      ptBr: 'Escreva uma pergunta curta...',
+      ptPt: 'Escreve uma pergunta curta...',
+      fr: 'Ecris une question courte...',
+      it: 'Scrivi una domanda breve...',
+      de: 'Schreibe eine kurze Frage...',
+      ja: 'Type a short question...',
+      zhHans: 'Type a short question...',
+      zhHant: 'Type a short question...',
+    );
 
 String _privacyContextTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Privacy context',
-  es: 'Contexto de privacidad',
-  ptBr: 'Contexto de privacidade',
-  ptPt: 'Contexto de privacidade',
-  fr: 'Contexte de confidentialite',
-  it: 'Contesto privacy',
-  de: 'Datenschutzkontext',
-  ja: 'Privacy context',
-  zhHans: 'Privacy context',
-  zhHant: 'Privacy context',
-);
+      l10n.localeName,
+      en: 'Privacy context',
+      es: 'Contexto de privacidad',
+      ptBr: 'Contexto de privacidade',
+      ptPt: 'Contexto de privacidade',
+      fr: 'Contexte de confidentialite',
+      it: 'Contesto privacy',
+      de: 'Datenschutzkontext',
+      ja: 'Privacy context',
+      zhHans: 'Privacy context',
+      zhHant: 'Privacy context',
+    );
 
 String _privacyContextBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Coach only uses the domains already allowed for AI or local explanation.',
-  es: 'Coach solo usa los dominios ya permitidos para IA o explicacion local.',
-  ptBr:
-      'O Coach usa apenas os dominios ja permitidos para IA ou explicacao local.',
-  ptPt:
-      'O Coach usa apenas os dominios ja permitidos para IA ou explicacao local.',
-  fr: 'Coach utilise uniquement les domaines deja autorises pour l IA ou l explication locale.',
-  it: 'Coach usa solo i domini gia consentiti per IA o spiegazione locale.',
-  de: 'Coach nutzt nur bereits erlaubte Bereiche fuer KI oder lokale Erklaerung.',
-  ja: 'Coach only uses the domains already allowed for AI or local explanation.',
-  zhHans:
-      'Coach only uses the domains already allowed for AI or local explanation.',
-  zhHant:
-      'Coach only uses the domains already allowed for AI or local explanation.',
-);
+      l10n.localeName,
+      en: 'These domains are part of your current privacy setup and visible context in GoLife.',
+      es: 'Estos dominios forman parte de tu configuración actual de privacidad y contexto visible en GoLife.',
+      ptBr:
+          'O Coach usa apenas os dominios ja permitidos para IA ou explicacao local.',
+      ptPt:
+          'O Coach usa apenas os dominios ja permitidos para IA ou explicacao local.',
+      fr: 'Coach utilise uniquement les domaines deja autorises pour l IA ou l explication locale.',
+      it: 'Coach usa solo i domini gia consentiti per IA o spiegazione locale.',
+      de: 'Coach nutzt nur bereits erlaubte Bereiche fuer KI oder lokale Erklaerung.',
+      ja: 'Coach only uses the domains already allowed for AI or local explanation.',
+      zhHans:
+          'Coach only uses the domains already allowed for AI or local explanation.',
+      zhHant:
+          'Coach only uses the domains already allowed for AI or local explanation.',
+    );
 
 String _coachEmptyTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Choose a prompt',
-  es: 'Elige un prompt',
-  ptBr: 'Escolha um prompt',
-  ptPt: 'Escolhe um prompt',
-  fr: 'Choisis un prompt',
-  it: 'Scegli un prompt',
-  de: 'Waehle einen Prompt',
-  ja: 'Choose a prompt',
-  zhHans: 'Choose a prompt',
-  zhHant: 'Choose a prompt',
-);
+      l10n.localeName,
+      en: 'Choose a prompt',
+      es: 'Elige un prompt',
+      ptBr: 'Escolha um prompt',
+      ptPt: 'Escolhe um prompt',
+      fr: 'Choisis un prompt',
+      it: 'Scegli un prompt',
+      de: 'Waehle einen Prompt',
+      ja: 'Choose a prompt',
+      zhHans: 'Choose a prompt',
+      zhHant: 'Choose a prompt',
+    );
 
 String _coachEmptyBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Start with the mission, the load, or the shopping tension you want explained.',
-  es: 'Empieza por la mision, la carga o la tension de compra que quieres entender.',
-  ptBr:
-      'Comece pela missao, pela carga ou pela tensao de compra que voce quer entender.',
-  ptPt:
-      'Comeca pela missao, pela carga ou pela tensao de compra que queres perceber.',
-  fr: 'Commence par la mission, la charge ou la tension d achat que tu veux comprendre.',
-  it: 'Inizia dalla missione, dal carico o dalla tensione di acquisto che vuoi capire.',
-  de: 'Starte mit Mission, Belastung oder Kaufspannung, die du erklaert haben willst.',
-  ja: 'Start with the mission, the load, or the shopping tension you want explained.',
-  zhHans:
-      'Start with the mission, the load, or the shopping tension you want explained.',
-  zhHant:
-      'Start with the mission, the load, or the shopping tension you want explained.',
-);
+      l10n.localeName,
+      en: 'Start with the mission, the load, or the shopping tension you want explained.',
+      es: 'Empieza por la misión, la carga o la tensión de compra que quieres entender.',
+      ptBr:
+          'Comece pela missao, pela carga ou pela tensao de compra que voce quer entender.',
+      ptPt:
+          'Comeca pela missao, pela carga ou pela tensao de compra que queres perceber.',
+      fr: 'Commence par la mission, la charge ou la tension d achat que tu veux comprendre.',
+      it: 'Inizia dalla missione, dal carico o dalla tensione di acquisto che vuoi capire.',
+      de: 'Starte mit Mission, Belastung oder Kaufspannung, die du erklaert haben willst.',
+      ja: 'Start with the mission, the load, or the shopping tension you want explained.',
+      zhHans:
+          'Start with the mission, the load, or the shopping tension you want explained.',
+      zhHant:
+          'Start with the mission, the load, or the shopping tension you want explained.',
+    );
 
 String _coachFallbackHeading(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Local mode',
-  es: 'Modo local',
-  ptBr: 'Modo local',
-  ptPt: 'Modo local',
-  fr: 'Mode local',
-  it: 'Modalita locale',
-  de: 'Lokaler Modus',
-  ja: 'Local mode',
-  zhHans: 'Local mode',
-  zhHant: 'Local mode',
-);
+      l10n.localeName,
+      en: 'Local mode',
+      es: 'Modo local',
+      ptBr: 'Modo local',
+      ptPt: 'Modo local',
+      fr: 'Mode local',
+      it: 'Modalita locale',
+      de: 'Lokaler Modus',
+      ja: 'Local mode',
+      zhHans: 'Local mode',
+      zhHant: 'Local mode',
+    );
 
 String _coachNoMission(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Capture something first so Coach has context.',
-  es: 'Captura algo primero para que Coach tenga contexto.',
-  ptBr: 'Capture algo primeiro para que o Coach tenha contexto.',
-  ptPt: 'Captura algo primeiro para que o Coach tenha contexto.',
-  fr: 'Capture quelque chose d abord pour donner du contexte a Coach.',
-  it: 'Cattura qualcosa prima cosi Coach avra contesto.',
-  de: 'Erfasse zuerst etwas, damit Coach Kontext hat.',
-  ja: 'Capture something first so Coach has context.',
-  zhHans: 'Capture something first so Coach has context.',
-  zhHant: 'Capture something first so Coach has context.',
-);
+      l10n.localeName,
+      en: 'Capture something first so Coach has context.',
+      es: 'Captura algo primero para que Coach tenga contexto.',
+      ptBr: 'Capture algo primeiro para que o Coach tenha contexto.',
+      ptPt: 'Captura algo primeiro para que o Coach tenha contexto.',
+      fr: 'Capture quelque chose d abord pour donner du contexte a Coach.',
+      it: 'Cattura qualcosa prima cosi Coach avra contesto.',
+      de: 'Erfasse zuerst etwas, damit Coach Kontext hat.',
+      ja: 'Capture something first so Coach has context.',
+      zhHans: 'Capture something first so Coach has context.',
+      zhHant: 'Capture something first so Coach has context.',
+    );
 
 String _coachNoMissionUncertainty(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'There is not enough day context yet.',
-  es: 'Todavia no hay suficiente contexto del dia.',
-  ptBr: 'Ainda nao ha contexto suficiente do dia.',
-  ptPt: 'Ainda nao ha contexto suficiente do dia.',
-  fr: 'Il n y a pas encore assez de contexte sur la journee.',
-  it: 'Non c e ancora abbastanza contesto sulla giornata.',
-  de: 'Es gibt noch nicht genug Tageskontext.',
-  ja: 'There is not enough day context yet.',
-  zhHans: 'There is not enough day context yet.',
-  zhHant: 'There is not enough day context yet.',
-);
+      l10n.localeName,
+      en: 'There is not enough day context yet.',
+      es: 'Todavía no hay suficiente contexto del día.',
+      ptBr: 'Ainda nao ha contexto suficiente do dia.',
+      ptPt: 'Ainda nao ha contexto suficiente do dia.',
+      fr: 'Il n y a pas encore assez de contexte sur la journee.',
+      it: 'Non c e ancora abbastanza contesto sulla giornata.',
+      de: 'Es gibt noch nicht genug Tageskontext.',
+      ja: 'There is not enough day context yet.',
+      zhHans: 'There is not enough day context yet.',
+      zhHant: 'There is not enough day context yet.',
+    );
 
 String _shoppingUncertainty(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Evidence is still partial. Review before treating it as a firm recommendation.',
-  es: 'La evidencia sigue siendo parcial. Revisala antes de tomarla como recomendacion firme.',
-  ptBr:
-      'A evidencia ainda e parcial. Revise antes de tratá-la como recomendacao firme.',
-  ptPt:
-      'A evidencia continua parcial. Revê-a antes de a tratar como recomendacao firme.',
-  fr: 'Les preuves restent partielles. Verifie avant de la prendre comme recommandation ferme.',
-  it: 'L evidenza e ancora parziale. Verificala prima di prenderla come raccomandazione definitiva.',
-  de: 'Die Evidenz ist noch unvollstaendig. Pruefe sie, bevor du sie als feste Empfehlung nimmst.',
-  ja: 'Evidence is still partial. Review before treating it as a firm recommendation.',
-  zhHans:
-      'Evidence is still partial. Review before treating it as a firm recommendation.',
-  zhHant:
-      'Evidence is still partial. Review before treating it as a firm recommendation.',
-);
+      l10n.localeName,
+      en: 'Evidence is still partial. Review before treating it as a firm recommendation.',
+      es: 'La evidencia sigue siendo parcial. Revísala antes de tomarla como recomendación firme.',
+      ptBr:
+          'A evidencia ainda e parcial. Revise antes de tratá-la como recomendacao firme.',
+      ptPt:
+          'A evidencia continua parcial. Revê-a antes de a tratar como recomendacao firme.',
+      fr: 'Les preuves restent partielles. Verifie avant de la prendre comme recommandation ferme.',
+      it: 'L evidenza e ancora parziale. Verificala prima di prenderla come raccomandazione definitiva.',
+      de: 'Die Evidenz ist noch unvollstaendig. Pruefe sie, bevor du sie als feste Empfehlung nimmst.',
+      ja: 'Evidence is still partial. Review before treating it as a firm recommendation.',
+      zhHans:
+          'Evidence is still partial. Review before treating it as a firm recommendation.',
+      zhHant:
+          'Evidence is still partial. Review before treating it as a firm recommendation.',
+    );
 
 String _shoppingNeedSummary(
   AppLocalizations l10n,
   String domainLabel,
   int urgencyPercent,
-) => pickLocalizedValue(
-  l10n.localeName,
-  en: '$domainLabel - urgency $urgencyPercent%',
-  es: '$domainLabel - urgencia $urgencyPercent%',
-  ptBr: '$domainLabel - urgencia $urgencyPercent%',
-  ptPt: '$domainLabel - urgencia $urgencyPercent%',
-  fr: '$domainLabel - urgence $urgencyPercent%',
-  it: '$domainLabel - urgenza $urgencyPercent%',
-  de: '$domainLabel - Dringlichkeit $urgencyPercent%',
-  ja: '$domainLabel - urgency $urgencyPercent%',
-  zhHans: '$domainLabel - urgency $urgencyPercent%',
-  zhHant: '$domainLabel - urgency $urgencyPercent%',
-);
+) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: '$domainLabel - urgency $urgencyPercent%',
+      es: '$domainLabel - urgencia $urgencyPercent%',
+      ptBr: '$domainLabel - urgencia $urgencyPercent%',
+      ptPt: '$domainLabel - urgencia $urgencyPercent%',
+      fr: '$domainLabel - urgence $urgencyPercent%',
+      it: '$domainLabel - urgenza $urgencyPercent%',
+      de: '$domainLabel - Dringlichkeit $urgencyPercent%',
+      ja: '$domainLabel - urgency $urgencyPercent%',
+      zhHans: '$domainLabel - urgency $urgencyPercent%',
+      zhHant: '$domainLabel - urgency $urgencyPercent%',
+    );
 
 String _openShoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Open shopping',
-  es: 'Abrir shopping',
-  ptBr: 'Abrir shopping',
-  ptPt: 'Abrir shopping',
-  fr: 'Ouvrir les achats',
-  it: 'Apri shopping',
-  de: 'Shopping oeffnen',
-  ja: 'Open shopping',
-  zhHans: 'Open shopping',
-  zhHant: 'Open shopping',
-);
+      l10n.localeName,
+      en: 'Open shopping',
+      es: 'Abrir shopping',
+      ptBr: 'Abrir shopping',
+      ptPt: 'Abrir shopping',
+      fr: 'Ouvrir les achats',
+      it: 'Apri shopping',
+      de: 'Shopping oeffnen',
+      ja: 'Open shopping',
+      zhHans: 'Open shopping',
+      zhHant: 'Open shopping',
+    );
 
 String _postponeLabel(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Postpone',
-  es: 'Posponer',
-  ptBr: 'Adiar',
-  ptPt: 'Adiar',
-  fr: 'Reporter',
-  it: 'Posticipa',
-  de: 'Verschieben',
-  ja: 'Postpone',
-  zhHans: 'Postpone',
-  zhHant: 'Postpone',
-);
+      l10n.localeName,
+      en: 'Postpone',
+      es: 'Posponer',
+      ptBr: 'Adiar',
+      ptPt: 'Adiar',
+      fr: 'Reporter',
+      it: 'Posticipa',
+      de: 'Verschieben',
+      ja: 'Postpone',
+      zhHans: 'Postpone',
+      zhHant: 'Postpone',
+    );

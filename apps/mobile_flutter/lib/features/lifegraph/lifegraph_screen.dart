@@ -236,37 +236,45 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        GoLifeShortcutGrid(
-          items: [
-            GoLifeShortcutItem(
-              label: _shoppingLabel(l10n),
-              icon: Icons.shopping_bag_outlined,
-              onTap: () => context.go('/shopping'),
-            ),
-            GoLifeShortcutItem(
-              label: _decisionsLabel(l10n),
-              icon: Icons.rule_folder_outlined,
-              onTap: () => context.go('/decisions'),
-            ),
-            GoLifeShortcutItem(
-              label: l10n.navCalendar,
-              icon: Icons.calendar_month_rounded,
-              onTap: () => context.go('/calendar'),
-            ),
-            GoLifeShortcutItem(
-              label: l10n.navRecipes,
-              icon: Icons.restaurant_menu_rounded,
-              onTap: () => context.go('/recipes'),
-            ),
-            GoLifeShortcutItem(
-              label: l10n.navJournal,
-              icon: Icons.menu_book_rounded,
-              onTap: () => context.go('/journal'),
-            ),
-            GoLifeShortcutItem(
-              label: l10n.homeMemoryTitle,
-              icon: Icons.home_work_outlined,
-              onTap: () => context.go('/homememory'),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('memory-more-domains'),
+          title: _moreDomainsTitle(l10n),
+          subtitle: _moreDomainsBody(l10n),
+          accent: GoLifeAccent.blue,
+          children: [
+            GoLifeShortcutGrid(
+              items: [
+                GoLifeShortcutItem(
+                  label: _shoppingLabel(l10n),
+                  icon: Icons.shopping_bag_outlined,
+                  onTap: () => context.go('/shopping'),
+                ),
+                GoLifeShortcutItem(
+                  label: _decisionsLabel(l10n),
+                  icon: Icons.rule_folder_outlined,
+                  onTap: () => context.go('/decisions'),
+                ),
+                GoLifeShortcutItem(
+                  label: l10n.navCalendar,
+                  icon: Icons.calendar_month_rounded,
+                  onTap: () => context.go('/calendar'),
+                ),
+                GoLifeShortcutItem(
+                  label: l10n.navRecipes,
+                  icon: Icons.restaurant_menu_rounded,
+                  onTap: () => context.go('/recipes'),
+                ),
+                GoLifeShortcutItem(
+                  label: l10n.navJournal,
+                  icon: Icons.menu_book_rounded,
+                  onTap: () => context.go('/journal'),
+                ),
+                GoLifeShortcutItem(
+                  label: l10n.homeMemoryTitle,
+                  icon: Icons.home_work_outlined,
+                  onTap: () => context.go('/homememory'),
+                ),
+              ],
             ),
           ],
         ),
@@ -1118,7 +1126,7 @@ String _memorySearchBody(AppLocalizations l10n) => pickLocalizedValue(
 String _filtersLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Search and filters',
-      es: 'Busqueda y filtros',
+      es: 'Búsqueda y filtros',
       ptBr: 'Busca e filtros',
       ptPt: 'Pesquisa e filtros',
       fr: 'Recherche et filtres',
@@ -1132,7 +1140,7 @@ String _filtersLabel(AppLocalizations l10n) => pickLocalizedValue(
 String _filtersBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Keep the timeline readable on a small screen.',
-      es: 'Mantiene la timeline legible en pantalla pequena.',
+      es: 'Mantiene la timeline legible en pantalla pequeña.',
       ptBr: 'Mantem a timeline legivel em tela pequena.',
       ptPt: 'Mantem a timeline legivel em ecra pequeno.',
       fr: 'Garde la timeline lisible sur petit ecran.',
@@ -1201,6 +1209,34 @@ String _domainsBody(AppLocalizations l10n) => pickLocalizedValue(
       zhHant: 'These routes still exist, but Memory keeps them in one place.',
     );
 
+String _moreDomainsTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'More domains',
+      es: 'Más dominios',
+      ptBr: 'Mais dominios',
+      ptPt: 'Mais dominios',
+      fr: 'Plus de domaines',
+      it: 'Altri domini',
+      de: 'Mehr Bereiche',
+      ja: 'More domains',
+      zhHans: 'More domains',
+      zhHant: 'More domains',
+    );
+
+String _moreDomainsBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Keep secondary routes available without crowding Memory.',
+      es: 'Mantiene los secundarios accesibles sin saturar Memory.',
+      ptBr: 'Mantem rotas secundarias acessiveis sem sobrecarregar o Memory.',
+      ptPt: 'Mantem rotas secundarias acessiveis sem sobrecarregar o Memory.',
+      fr: 'Garde les routes secondaires accessibles sans surcharger Memory.',
+      it: 'Mantiene accessibili le rotte secondarie senza saturare Memory.',
+      de: 'Haelt sekundaere Routen verfuegbar, ohne Memory zu saturieren.',
+      ja: 'Keep secondary routes available without crowding Memory.',
+      zhHans: 'Keep secondary routes available without crowding Memory.',
+      zhHant: 'Keep secondary routes available without crowding Memory.',
+    );
+
 String _timelineTitle(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Timeline',
@@ -1232,7 +1268,7 @@ String _timelineBody(AppLocalizations l10n) => pickLocalizedValue(
 String _emptyMemoryTitle(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'No memory yet',
-      es: 'Todavia no hay memoria',
+      es: 'Todavía no hay memoria',
       ptBr: 'Ainda nao ha memoria',
       ptPt: 'Ainda nao ha memoria',
       fr: 'Pas encore de memoire',
@@ -1260,7 +1296,7 @@ String _detailsLabel(AppLocalizations l10n) => pickLocalizedValue(
 String _usedInMissionLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Used in mission',
-      es: 'Usado en mision',
+      es: 'Usado en misión',
       ptBr: 'Usado na missao',
       ptPt: 'Usado na missao',
       fr: 'Utilise dans la mission',

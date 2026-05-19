@@ -137,4 +137,37 @@ void main() {
       expect(filteredEvents.first.metadata['domain_filter'], 'finance');
     },
   );
+
+  testWidgets('lifegraph screen keeps secondary domains behind More domains', (
+    tester,
+  ) async {
+    final controller = _buildController();
+    await controller.bootstrap();
+
+    await _pumpLifeGraphScreen(
+      tester,
+      locale: const Locale('en'),
+      controller: controller,
+    );
+
+    expect(find.text('More domains'), findsOneWidget);
+    expect(find.text('Shopping'), findsNothing);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('memory-more-domains')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('memory-more-domains')));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Shopping'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Shopping'), findsOneWidget);
+    expect(find.text('Decisions'), findsOneWidget);
+    expect(find.text('Calendar'), findsOneWidget);
+  });
 }

@@ -95,32 +95,29 @@ class TasksScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.tasksEmpty,
-        children: controller.tasks
-            .map((task) {
-              return _EntityCard(
-                title: task.title,
-                subtitle: _joinSegments(<String>[
-                  _taskPriorityLabel(l10n, task.priority),
-                  l10n.taskTimeboxFirstBlock(task.estimatedMinutes),
-                ]),
-                chips: <String>[
-                  _taskStatusLabel(l10n, task.status),
-                  _taskPriorityLabel(l10n, task.priority),
-                ],
-                actionLabel: task.status == TaskStatus.done
-                    ? l10n.actionDone
-                    : l10n.actionComplete,
-                onAction: task.status == TaskStatus.done
-                    ? null
-                    : () async =>
-                          (await controller.completeTaskById(task.id)) ??
-                          l10n.messageTaskUpdated,
-                secondaryLabel: l10n.actionEdit,
-                onSecondaryAction: () =>
-                    _showTaskEditor(context, controller, task),
-              );
-            })
-            .toList(growable: false),
+        children: controller.tasks.map((task) {
+          return _EntityCard(
+            title: task.title,
+            subtitle: _joinSegments(<String>[
+              _taskPriorityLabel(l10n, task.priority),
+              l10n.taskTimeboxFirstBlock(task.estimatedMinutes),
+            ]),
+            chips: <String>[
+              _taskStatusLabel(l10n, task.status),
+              _taskPriorityLabel(l10n, task.priority),
+            ],
+            actionLabel: task.status == TaskStatus.done
+                ? l10n.actionDone
+                : l10n.actionComplete,
+            onAction: task.status == TaskStatus.done
+                ? null
+                : () async =>
+                    (await controller.completeTaskById(task.id)) ??
+                    l10n.messageTaskUpdated,
+            secondaryLabel: l10n.actionEdit,
+            onSecondaryAction: () => _showTaskEditor(context, controller, task),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -148,25 +145,23 @@ class HabitsScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.habitsEmpty,
-        children: controller.habits
-            .map((habit) {
-              return _EntityCard(
-                title: habit.title,
-                subtitle: _joinSegments(<String>[
-                  habit.cue,
-                  l10n.habitStreakDays(habit.streak),
-                ]),
-                chips: <String>[_habitCadenceLabel(l10n, habit.cadence)],
-                actionLabel: l10n.actionCheckIn,
-                onAction: () async =>
-                    (await controller.checkInHabitById(habit.id)) ??
-                    l10n.messageHabitCheckedIn,
-                secondaryLabel: l10n.actionEdit,
-                onSecondaryAction: () =>
-                    _showHabitEditor(context, controller, habit),
-              );
-            })
-            .toList(growable: false),
+        children: controller.habits.map((habit) {
+          return _EntityCard(
+            title: habit.title,
+            subtitle: _joinSegments(<String>[
+              habit.cue,
+              l10n.habitStreakDays(habit.streak),
+            ]),
+            chips: <String>[_habitCadenceLabel(l10n, habit.cadence)],
+            actionLabel: l10n.actionCheckIn,
+            onAction: () async =>
+                (await controller.checkInHabitById(habit.id)) ??
+                l10n.messageHabitCheckedIn,
+            secondaryLabel: l10n.actionEdit,
+            onSecondaryAction: () =>
+                _showHabitEditor(context, controller, habit),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -194,22 +189,20 @@ class MoneyScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.moneyEmpty,
-        children: controller.expenses
-            .map((expense) {
-              return _EntityCard(
-                title: expense.label,
-                subtitle: expense.reflectionLabel,
-                chips: <String>[expense.category],
-                actionLabel: l10n.actionReflect,
-                onAction: () async =>
-                    (await controller.logExpenseTouchById(expense.id)) ??
-                    l10n.messageExpenseRevisited,
-                secondaryLabel: l10n.actionEdit,
-                onSecondaryAction: () =>
-                    _showExpenseEditor(context, controller, expense),
-              );
-            })
-            .toList(growable: false),
+        children: controller.expenses.map((expense) {
+          return _EntityCard(
+            title: expense.label,
+            subtitle: expense.reflectionLabel,
+            chips: <String>[expense.category],
+            actionLabel: l10n.actionReflect,
+            onAction: () async =>
+                (await controller.logExpenseTouchById(expense.id)) ??
+                l10n.messageExpenseRevisited,
+            secondaryLabel: l10n.actionEdit,
+            onSecondaryAction: () =>
+                _showExpenseEditor(context, controller, expense),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -237,29 +230,27 @@ class PantryScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.pantryEmpty,
-        children: controller.pantryItems
-            .map((item) {
-              return _EntityCard(
-                title: item.name,
-                subtitle: _joinSegments(<String>[
-                  item.quantityLabel,
-                  item.rescueHint,
-                ]),
-                chips: <String>[l10n.chipRescue],
-                actionLabel: item.quantityLabel == 'used'
-                    ? l10n.actionUsed
-                    : l10n.actionMarkUsed,
-                onAction: item.quantityLabel == 'used'
-                    ? null
-                    : () async =>
-                          (await controller.markPantryItemUsedById(item.id)) ??
-                          l10n.messagePantryItemUpdated,
-                secondaryLabel: l10n.actionEdit,
-                onSecondaryAction: () =>
-                    _showPantryEditor(context, controller, item),
-              );
-            })
-            .toList(growable: false),
+        children: controller.pantryItems.map((item) {
+          return _EntityCard(
+            title: item.name,
+            subtitle: _joinSegments(<String>[
+              item.quantityLabel,
+              item.rescueHint,
+            ]),
+            chips: <String>[l10n.chipRescue],
+            actionLabel: item.quantityLabel == 'used'
+                ? l10n.actionUsed
+                : l10n.actionMarkUsed,
+            onAction: item.quantityLabel == 'used'
+                ? null
+                : () async =>
+                    (await controller.markPantryItemUsedById(item.id)) ??
+                    l10n.messagePantryItemUpdated,
+            secondaryLabel: l10n.actionEdit,
+            onSecondaryAction: () =>
+                _showPantryEditor(context, controller, item),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -287,22 +278,20 @@ class ClosetScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.closetEmpty,
-        children: controller.purchaseIntentions
-            .map((item) {
-              return _EntityCard(
-                title: item.label,
-                subtitle: item.reason,
-                chips: <String>[l10n.chipPurchaseIntention],
-                actionLabel: l10n.actionPause24h,
-                onAction: () async =>
-                    (await controller.pausePurchaseIntentionById(item.id)) ??
-                    l10n.messagePurchaseIntentionPaused,
-                secondaryLabel: l10n.actionEdit,
-                onSecondaryAction: () =>
-                    _showClosetEditor(context, controller, item),
-              );
-            })
-            .toList(growable: false),
+        children: controller.purchaseIntentions.map((item) {
+          return _EntityCard(
+            title: item.label,
+            subtitle: item.reason,
+            chips: <String>[l10n.chipPurchaseIntention],
+            actionLabel: l10n.actionPause24h,
+            onAction: () async =>
+                (await controller.pausePurchaseIntentionById(item.id)) ??
+                l10n.messagePurchaseIntentionPaused,
+            secondaryLabel: l10n.actionEdit,
+            onSecondaryAction: () =>
+                _showClosetEditor(context, controller, item),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -330,24 +319,21 @@ class WeekScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.weekEmpty,
-        children: controller.weekPlans
-            .map((plan) {
-              return _EntityCard(
-                title: plan.theme,
-                subtitle: plan.energyNote,
-                chips: plan.days
-                    .map((day) => _dayPlanLabel(l10n, day.label))
-                    .toList(growable: false),
-                actionLabel: l10n.actionReplan,
-                onAction: () async =>
-                    (await controller.refreshWeekPlanById(plan.id)) ??
-                    l10n.messageWeekPlanUpdated,
-                secondaryLabel: l10n.actionEdit,
-                onSecondaryAction: () =>
-                    _showWeekEditor(context, controller, plan),
-              );
-            })
-            .toList(growable: false),
+        children: controller.weekPlans.map((plan) {
+          return _EntityCard(
+            title: plan.theme,
+            subtitle: plan.energyNote,
+            chips: plan.days
+                .map((day) => _dayPlanLabel(l10n, day.label))
+                .toList(growable: false),
+            actionLabel: l10n.actionReplan,
+            onAction: () async =>
+                (await controller.refreshWeekPlanById(plan.id)) ??
+                l10n.messageWeekPlanUpdated,
+            secondaryLabel: l10n.actionEdit,
+            onSecondaryAction: () => _showWeekEditor(context, controller, plan),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -383,20 +369,18 @@ class JournalScreen extends StatelessWidget {
         children: [
           _EntityList(
             emptyLabel: l10n.journalEmpty,
-            children: controller.journalEntries
-                .map((entry) {
-                  return _EntityCard(
-                    title: entry.title,
-                    subtitle: _joinSegments(<String>[entry.mood, entry.body]),
-                    chips: <String>[l10n.chipJournal, l10n.chipLocalOnly],
-                    actionLabel: l10n.actionReview,
-                    onAction: () async => l10n.messageJournalLocalOnly,
-                    secondaryLabel: l10n.actionEdit,
-                    onSecondaryAction: () =>
-                        _showJournalEditor(context, controller, entry),
-                  );
-                })
-                .toList(growable: false),
+            children: controller.journalEntries.map((entry) {
+              return _EntityCard(
+                title: entry.title,
+                subtitle: _joinSegments(<String>[entry.mood, entry.body]),
+                chips: <String>[l10n.chipJournal, l10n.chipLocalOnly],
+                actionLabel: l10n.actionReview,
+                onAction: () async => l10n.messageJournalLocalOnly,
+                secondaryLabel: l10n.actionEdit,
+                onSecondaryAction: () =>
+                    _showJournalEditor(context, controller, entry),
+              );
+            }).toList(growable: false),
           ),
           const SizedBox(height: 20),
           Text(
@@ -406,20 +390,18 @@ class JournalScreen extends StatelessWidget {
           const SizedBox(height: 10),
           _EntityList(
             emptyLabel: l10n.quickNotesEmpty,
-            children: controller.quickNotes
-                .map((note) {
-                  return _EntityCard(
-                    title: note.text,
-                    subtitle: note.createdAtIso,
-                    chips: <String>[l10n.chipNote, l10n.chipLocalOnly],
-                    actionLabel: l10n.actionKeepLocal,
-                    onAction: () async => l10n.messageNoteLocalOnly,
-                    secondaryLabel: l10n.actionEdit,
-                    onSecondaryAction: () =>
-                        _showQuickNoteEditor(context, controller, note),
-                  );
-                })
-                .toList(growable: false),
+            children: controller.quickNotes.map((note) {
+              return _EntityCard(
+                title: note.text,
+                subtitle: note.createdAtIso,
+                chips: <String>[l10n.chipNote, l10n.chipLocalOnly],
+                actionLabel: l10n.actionKeepLocal,
+                onAction: () async => l10n.messageNoteLocalOnly,
+                secondaryLabel: l10n.actionEdit,
+                onSecondaryAction: () =>
+                    _showQuickNoteEditor(context, controller, note),
+              );
+            }).toList(growable: false),
           ),
         ],
       ),
@@ -458,26 +440,24 @@ class CalendarScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.calendarEmpty,
-        children: controller.calendarItems
-            .map((item) {
-              return _EntityCard(
-                title: item.title,
-                subtitle: _joinSegments(<String>[item.startIso, item.endIso]),
-                chips: <String>[
-                  item.energy,
-                  if (item.location.isNotEmpty) item.location,
-                ],
-                actionLabel: l10n.actionEdit,
-                onAction: () async {
-                  _showCalendarEditor(context, controller, item);
-                  return l10n.messageOpeningEditor;
-                },
-                secondaryLabel: l10n.actionTimeBlock,
-                onSecondaryAction: () =>
-                    _showCalendarEditor(context, controller, item),
-              );
-            })
-            .toList(growable: false),
+        children: controller.calendarItems.map((item) {
+          return _EntityCard(
+            title: item.title,
+            subtitle: _joinSegments(<String>[item.startIso, item.endIso]),
+            chips: <String>[
+              item.energy,
+              if (item.location.isNotEmpty) item.location,
+            ],
+            actionLabel: l10n.actionEdit,
+            onAction: () async {
+              _showCalendarEditor(context, controller, item);
+              return l10n.messageOpeningEditor;
+            },
+            secondaryLabel: l10n.actionTimeBlock,
+            onSecondaryAction: () =>
+                _showCalendarEditor(context, controller, item),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -505,32 +485,30 @@ class RecipesScreen extends StatelessWidget {
       ],
       child: _EntityList(
         emptyLabel: l10n.recipesEmpty,
-        children: controller.recipeRescues
-            .map((recipe) {
-              return _EntityCard(
-                title: recipe.title,
-                subtitle: _joinSegments(<String>[
-                  recipe.summary,
-                  '${recipe.estimatedMinutes} ${l10n.unitMinutesShort}',
-                  recipe.ingredientNames.join(', '),
-                ]),
-                chips: <String>[_recipeStatusLabel(l10n, recipe.status)],
-                actionLabel: recipe.status == 'cooked'
-                    ? l10n.actionCooked
-                    : l10n.actionCookNow,
-                onAction: recipe.status == 'cooked'
-                    ? null
-                    : () async =>
-                          (await controller.markRecipeRescueCookedById(
-                            recipe.id,
-                          )) ??
-                          l10n.messageRecipeUpdated,
-                secondaryLabel: l10n.actionEdit,
-                onSecondaryAction: () =>
-                    _showRecipeEditor(context, controller, recipe),
-              );
-            })
-            .toList(growable: false),
+        children: controller.recipeRescues.map((recipe) {
+          return _EntityCard(
+            title: recipe.title,
+            subtitle: _joinSegments(<String>[
+              recipe.summary,
+              '${recipe.estimatedMinutes} ${l10n.unitMinutesShort}',
+              recipe.ingredientNames.join(', '),
+            ]),
+            chips: <String>[_recipeStatusLabel(l10n, recipe.status)],
+            actionLabel: recipe.status == 'cooked'
+                ? l10n.actionCooked
+                : l10n.actionCookNow,
+            onAction: recipe.status == 'cooked'
+                ? null
+                : () async =>
+                    (await controller.markRecipeRescueCookedById(
+                      recipe.id,
+                    )) ??
+                    l10n.messageRecipeUpdated,
+            secondaryLabel: l10n.actionEdit,
+            onSecondaryAction: () =>
+                _showRecipeEditor(context, controller, recipe),
+          );
+        }).toList(growable: false),
       ),
     );
   }
@@ -805,22 +783,22 @@ GoLifeAccent _toneForAccent(Color accent) {
 }
 
 String _emptyBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'This domain stays available here, but does not need to dominate navigation.',
-  es: 'Este dominio sigue disponible aqui, pero no necesita dominar la navegacion.',
-  ptBr:
-      'Este dominio continua disponivel aqui, mas nao precisa dominar a navegacao.',
-  ptPt:
-      'Este dominio continua disponivel aqui, mas nao precisa dominar a navegacao.',
-  fr: 'Ce domaine reste disponible ici, mais n a pas besoin de dominer la navigation.',
-  it: 'Questo dominio resta disponibile qui, ma non deve dominare la navigazione.',
-  de: 'Dieser Bereich bleibt hier verfuegbar, muss aber die Navigation nicht dominieren.',
-  ja: 'This domain stays available here, but does not need to dominate navigation.',
-  zhHans:
-      'This domain stays available here, but does not need to dominate navigation.',
-  zhHant:
-      'This domain stays available here, but does not need to dominate navigation.',
-);
+      l10n.localeName,
+      en: 'This domain stays available here, but does not need to dominate navigation.',
+      es: 'Este dominio sigue disponible aqui, pero no necesita dominar la navegacion.',
+      ptBr:
+          'Este dominio continua disponivel aqui, mas nao precisa dominar a navegacao.',
+      ptPt:
+          'Este dominio continua disponivel aqui, mas nao precisa dominar a navegacao.',
+      fr: 'Ce domaine reste disponible ici, mais n a pas besoin de dominer la navigation.',
+      it: 'Questo dominio resta disponibile qui, ma non deve dominare la navigazione.',
+      de: 'Dieser Bereich bleibt hier verfuegbar, muss aber die Navigation nicht dominieren.',
+      ja: 'This domain stays available here, but does not need to dominate navigation.',
+      zhHans:
+          'This domain stays available here, but does not need to dominate navigation.',
+      zhHant:
+          'This domain stays available here, but does not need to dominate navigation.',
+    );
 
 Future<void> _showTaskEditor(
   BuildContext context,
@@ -993,8 +971,7 @@ Future<void> _showExpenseEditor(
       final message = await controller.saveExpense(
         id: existing?.id,
         label: labelController.text.trim(),
-        amount:
-            double.tryParse(
+        amount: double.tryParse(
               amountController.text.trim().replaceAll(',', '.'),
             ) ??
             0,
@@ -1259,8 +1236,7 @@ Future<void> _showCalendarEditor(
     text: existing?.startIso ?? DateTime.now().toUtc().toIso8601String(),
   );
   final endController = TextEditingController(
-    text:
-        existing?.endIso ??
+    text: existing?.endIso ??
         DateTime.now().toUtc().add(const Duration(hours: 1)).toIso8601String(),
   );
   final locationController = TextEditingController(
@@ -1397,7 +1373,7 @@ Future<void> _showEditorDialog(
   BuildContext context, {
   required String title,
   required List<Widget> Function(void Function(VoidCallback fn) setState)
-  builder,
+      builder,
   required Future<String> Function() onSave,
   String? deleteLabel,
   Future<String> Function()? onDelete,
@@ -1441,9 +1417,8 @@ Future<void> _showEditorDialog(
                   child: Text(deleteLabel),
                 ),
               TextButton(
-                onPressed: saving
-                    ? null
-                    : () => Navigator.of(dialogContext).pop(),
+                onPressed:
+                    saving ? null : () => Navigator.of(dialogContext).pop(),
                 child: Text(l10n.cancel),
               ),
               FilledButton(

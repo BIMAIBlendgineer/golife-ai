@@ -136,6 +136,29 @@ class _FakeBillingValidationClient implements BillingValidationClient {
   }
 }
 
+Future<void> _expandSettingsSection(
+  WidgetTester tester,
+  String sectionKey,
+) async {
+  final finder = find.byKey(ValueKey<String>(sectionKey));
+  await tester.scrollUntilVisible(
+    finder,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(
+    finder,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('privacy screen reports protected file export', (tester) async {
     final localStore = MemoryLocalStore();
@@ -161,12 +184,11 @@ void main() {
       ),
     );
 
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey<String>('privacy-export-json')),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.byKey(const ValueKey<String>('privacy-export-json')));
+    await _expandSettingsSection(tester, 'settings-section-data-controls');
+    final exportFinder =
+        find.byKey(const ValueKey<String>('privacy-export-json'));
+    await _scrollToFinder(tester, exportFinder);
+    await tester.tap(exportFinder);
     await tester.pumpAndSettle();
 
     expect(
@@ -218,14 +240,16 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Recent LifeGraph events'), findsOneWidget);
-    expect(find.text('Privacy audit'), findsOneWidget);
+    await _expandSettingsSection(tester, 'settings-section-recent-events');
+    await _expandSettingsSection(tester, 'settings-section-privacy-audit');
+
+    expect(find.text('Recent LifeGraph events'), findsWidgets);
+    expect(find.text('Privacy audit'), findsWidgets);
     expect(find.text('No local privacy audit entries yet.'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
+    await _scrollToFinder(
+      tester,
       find.byKey(ValueKey<String>('life-event-${financeEvent.eventId}')),
-      300,
-      scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(
       find.byKey(
@@ -276,11 +300,7 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey<String>('billing-open-decision')),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-billing');
 
     expect(find.text('Plan and billing'), findsWidgets);
     expect(find.text('Feature gates'), findsOneWidget);
@@ -293,20 +313,18 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('billing-open-decision')),
+    final billingDecisionFinder = find.byKey(
+      const ValueKey<String>('billing-open-decision'),
     );
+    await _scrollToFinder(tester, billingDecisionFinder);
+    await tester.tap(billingDecisionFinder);
     await tester.pumpAndSettle();
 
     expect(openedUrls, <String>[
       GoLifeLegalDocuments.billingDisabledDecisionUrl,
     ]);
 
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey<String>('legal-open-privacy_policy')),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-legal');
 
     expect(find.text('Store and legal'), findsWidgets);
     expect(
@@ -314,9 +332,11 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('legal-open-privacy_policy')),
+    final legalPrivacyFinder = find.byKey(
+      const ValueKey<String>('legal-open-privacy_policy'),
     );
+    await _scrollToFinder(tester, legalPrivacyFinder);
+    await tester.tap(legalPrivacyFinder);
     await tester.pumpAndSettle();
 
     expect(openedUrls, <String>[
@@ -385,11 +405,7 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey<String>('billing-restore-purchases')),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-billing');
 
     expect(find.text('Sandbox catalog'), findsOneWidget);
     expect(
@@ -523,11 +539,7 @@ void main() {
     );
 
     await tester.pump();
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey<String>('billing-refresh-status')),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-billing');
 
     expect(find.text('Billing audit'), findsOneWidget);
     expect(

@@ -141,45 +141,93 @@ class _MobileTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final statusPill = GoLifeStatusPill(
+      label: controller.localizedGatewayStatusLabel(l10n),
+      icon: _gatewayIcon(controller.localizedGatewayStatusLabel(l10n)),
+      accent: _gatewayAccent(controller.gatewayStatusLabel),
+    );
+
     return GoLifeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [GoLifePalette.violetBright, GoLifePalette.blue],
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(Icons.bolt_rounded, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+      child: width < 430
+          ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.appTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            GoLifePalette.violetBright,
+                            GoLifePalette.blue,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child:
+                          const Icon(Icons.bolt_rounded, color: Colors.white),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.appTitle,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _shellSubtitle(l10n),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _shellSubtitle(l10n),
-                  style: Theme.of(context).textTheme.bodySmall,
+                const SizedBox(height: 12),
+                statusPill,
+              ],
+            )
+          : Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [GoLifePalette.violetBright, GoLifePalette.blue],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(Icons.bolt_rounded, color: Colors.white),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.appTitle,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _shellSubtitle(l10n),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(child: statusPill),
               ],
             ),
-          ),
-          GoLifeStatusPill(
-            label: controller.localizedGatewayStatusLabel(l10n),
-            icon: _gatewayIcon(controller.localizedGatewayStatusLabel(l10n)),
-            accent: _gatewayAccent(controller.gatewayStatusLabel),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -166,40 +166,38 @@ class HomeMemoryScreen extends StatelessWidget {
           )
         else
           Column(
-            children: controller.ownedItems
-                .map((item) {
-                  final warranty = controller.warrantyRecordForItem(item.id);
-                  final proofs = controller.purchaseProofsForItem(item.id);
-                  final reminders = controller.maintenanceRemindersForItem(
-                    item.id,
-                  );
-                  final claims = controller.claimDraftsForItem(item.id);
-                  final evidence = controller.evidenceAttachmentsForItem(
-                    item.id,
-                  );
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _OwnedItemCard(
-                      item: item,
-                      warranty: warranty,
-                      proofs: proofs,
-                      reminders: reminders,
-                      claims: claims,
-                      evidence: evidence,
-                      onReminder: () => _showReminderEditor(
-                        context,
-                        controller,
-                        initialItemId: item.id,
-                      ),
-                      onClaim: () => _showClaimDraftEditor(
-                        context,
-                        controller,
-                        initialItemId: item.id,
-                      ),
-                    ),
-                  );
-                })
-                .toList(growable: false),
+            children: controller.ownedItems.map((item) {
+              final warranty = controller.warrantyRecordForItem(item.id);
+              final proofs = controller.purchaseProofsForItem(item.id);
+              final reminders = controller.maintenanceRemindersForItem(
+                item.id,
+              );
+              final claims = controller.claimDraftsForItem(item.id);
+              final evidence = controller.evidenceAttachmentsForItem(
+                item.id,
+              );
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _OwnedItemCard(
+                  item: item,
+                  warranty: warranty,
+                  proofs: proofs,
+                  reminders: reminders,
+                  claims: claims,
+                  evidence: evidence,
+                  onReminder: () => _showReminderEditor(
+                    context,
+                    controller,
+                    initialItemId: item.id,
+                  ),
+                  onClaim: () => _showClaimDraftEditor(
+                    context,
+                    controller,
+                    initialItemId: item.id,
+                  ),
+                ),
+              );
+            }).toList(growable: false),
           ),
       ],
     );
@@ -236,34 +234,34 @@ class _HomeMemoryDerivedPanel extends StatelessWidget {
 }
 
 String _homeMemorySignalsTitle(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Derived review signals',
-  es: 'Senales de revision derivadas',
-  ptBr: 'Sinais de revisao derivados',
-  ptPt: 'Sinais de revisao derivados',
-  fr: 'Signaux de revision derives',
-  it: 'Segnali di revisione derivati',
-  de: 'Abgeleitete Pruefsignale',
-  ja: 'Derived review signals',
-  zhHans: 'Derived review signals',
-  zhHant: 'Derived review signals',
-);
+      l10n.localeName,
+      en: 'Derived review signals',
+      es: 'Señales de revisión derivadas',
+      ptBr: 'Sinais de revisao derivados',
+      ptPt: 'Sinais de revisao derivados',
+      fr: 'Signaux de revision derives',
+      it: 'Segnali di revisione derivati',
+      de: 'Abgeleitete Pruefsignale',
+      ja: 'Derived review signals',
+      zhHans: 'Derived review signals',
+      zhHant: 'Derived review signals',
+    );
 
 String _homeMemorySignalsBody(AppLocalizations l10n) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'Warranty, maintenance, and claim events can become local mental-load items before any external action is considered.',
-  es: 'Garantias, mantenimiento y reclamaciones pueden convertirse en carga mental local antes de considerar cualquier accion externa.',
-  ptBr:
-      'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
-  ptPt:
-      'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
-  fr: 'Garantie, maintenance et reclamations peuvent devenir une charge mentale locale avant toute action externe.',
-  it: 'Garanzie, manutenzione e reclami possono diventare carico mentale locale prima di qualsiasi azione esterna.',
-  de: 'Garantie-, Wartungs- und Reklamationsereignisse koennen zuerst als lokale mentale Last sichtbar werden.',
-  ja: 'Derived review signals',
-  zhHans: 'Derived review signals',
-  zhHant: 'Derived review signals',
-);
+      l10n.localeName,
+      en: 'Warranty, maintenance, and claim events can become local mental-load items before any external action is considered.',
+      es: 'Garantías, mantenimiento y reclamaciones pueden convertirse en carga mental local antes de considerar cualquier acción externa.',
+      ptBr:
+          'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
+      ptPt:
+          'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
+      fr: 'Garantie, maintenance et reclamations peuvent devenir une charge mentale locale avant toute action externe.',
+      it: 'Garanzie, manutenzione e reclami possono diventare carico mentale locale prima di qualsiasi azione esterna.',
+      de: 'Garantie-, Wartungs- und Reklamationsereignisse koennen zuerst als lokale mentale Last sichtbar werden.',
+      ja: 'Derived review signals',
+      zhHans: 'Derived review signals',
+      zhHant: 'Derived review signals',
+    );
 
 String _homeMemoryGeneratedDecisionsTitle(AppLocalizations l10n) =>
     pickLocalizedValue(
@@ -282,21 +280,22 @@ String _homeMemoryGeneratedDecisionsTitle(AppLocalizations l10n) =>
 
 String _homeMemoryGeneratedDecisionsBody(
   AppLocalizations l10n,
-) => pickLocalizedValue(
-  l10n.localeName,
-  en: 'GoLife can turn HomeMemory signals into decision cards while still requiring human confirmation for anything external.',
-  es: 'GoLife puede convertir senales de HomeMemory en tarjetas de decision, manteniendo la confirmacion humana para cualquier accion externa.',
-  ptBr:
-      'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
-  ptPt:
-      'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
-  fr: 'GoLife peut transformer les signaux HomeMemory en cartes de decision tout en exigeant une confirmation humaine pour toute action externe.',
-  it: 'GoLife puo trasformare i segnali di HomeMemory in decisioni, mantenendo la conferma umana per qualsiasi azione esterna.',
-  de: 'GoLife kann HomeMemory-Signale in Entscheidungskarten umwandeln und verlangt weiterhin menschliche Bestaetigung fuer externe Aktionen.',
-  ja: 'Generated decisions',
-  zhHans: 'Generated decisions',
-  zhHant: 'Generated decisions',
-);
+) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: 'GoLife can turn HomeMemory signals into decision cards while still requiring human confirmation for anything external.',
+      es: 'GoLife puede convertir señales de HomeMemory en tarjetas de decisión, manteniendo la confirmación humana para cualquier acción externa.',
+      ptBr:
+          'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
+      ptPt:
+          'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
+      fr: 'GoLife peut transformer les signaux HomeMemory en cartes de decision tout en exigeant une confirmation humaine pour toute action externe.',
+      it: 'GoLife puo trasformare i segnali di HomeMemory in decisioni, mantenendo la conferma umana per qualsiasi azione esterna.',
+      de: 'GoLife kann HomeMemory-Signale in Entscheidungskarten umwandeln und verlangt weiterhin menschliche Bestaetigung fuer externe Aktionen.',
+      ja: 'Generated decisions',
+      zhHans: 'Generated decisions',
+      zhHant: 'Generated decisions',
+    );
 
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
@@ -439,12 +438,12 @@ class _OwnedItemCard extends StatelessWidget {
               children: proofs.isEmpty
                   ? [Text(l10n.homeMemoryNoProofs)]
                   : proofs
-                        .map(
-                          (proof) => Text(
-                            '- ${proof.merchantName.isEmpty ? l10n.homeMemoryUnknownMerchant : proof.merchantName} | ${proof.purchaseDate ?? l10n.homeMemoryUnknownDate}',
-                          ),
-                        )
-                        .toList(growable: false),
+                      .map(
+                        (proof) => Text(
+                          '- ${proof.merchantName.isEmpty ? l10n.homeMemoryUnknownMerchant : proof.merchantName} | ${proof.purchaseDate ?? l10n.homeMemoryUnknownDate}',
+                        ),
+                      )
+                      .toList(growable: false),
             ),
             _SectionBlock(
               title: l10n.homeMemorySectionWarranty,
@@ -454,14 +453,12 @@ class _OwnedItemCard extends StatelessWidget {
                 else ...[
                   _KeyValueRow(
                     label: l10n.homeMemoryFieldWarrantyMonths,
-                    value:
-                        warrantyRecord.warrantyMonths?.toString() ??
+                    value: warrantyRecord.warrantyMonths?.toString() ??
                         l10n.homeMemoryUnknownValue,
                   ),
                   _KeyValueRow(
                     label: l10n.homeMemoryFieldWarrantyUntil,
-                    value:
-                        warrantyRecord.warrantyUntil ??
+                    value: warrantyRecord.warrantyUntil ??
                         l10n.homeMemoryUnknownValue,
                   ),
                   Text(warrantyRecord.disclaimer),
@@ -473,29 +470,29 @@ class _OwnedItemCard extends StatelessWidget {
               children: reminders.isEmpty
                   ? [Text(l10n.homeMemoryNoReminders)]
                   : reminders
-                        .map(
-                          (reminder) =>
-                              Text('- ${reminder.title} | ${reminder.dueDate}'),
-                        )
-                        .toList(growable: false),
+                      .map(
+                        (reminder) =>
+                            Text('- ${reminder.title} | ${reminder.dueDate}'),
+                      )
+                      .toList(growable: false),
             ),
             _SectionBlock(
               title: l10n.homeMemorySectionClaims,
               children: claims.isEmpty
                   ? [Text(l10n.homeMemoryNoClaims)]
                   : claims
-                        .map(
-                          (claim) => Text('- ${claim.title} | ${claim.status}'),
-                        )
-                        .toList(growable: false),
+                      .map(
+                        (claim) => Text('- ${claim.title} | ${claim.status}'),
+                      )
+                      .toList(growable: false),
             ),
             _SectionBlock(
               title: l10n.homeMemorySectionEvidence,
               children: evidence.isEmpty
                   ? [Text(l10n.homeMemoryNoEvidence)]
                   : evidence
-                        .map((_) => Text(l10n.homeMemoryEvidencePresent))
-                        .toList(),
+                      .map((_) => Text(l10n.homeMemoryEvidencePresent))
+                      .toList(),
             ),
           ],
         ),
@@ -830,17 +827,14 @@ Future<void> _showReminderEditor(
   String? initialItemId,
 }) {
   final l10n = AppLocalizations.of(context)!;
-  String selectedItemId =
-      initialItemId ??
+  String selectedItemId = initialItemId ??
       (controller.ownedItems.isEmpty ? '' : controller.ownedItems.first.id);
   final titleController = TextEditingController(
     text: l10n.homeMemoryDefaultReminderTitle,
   );
   final dueDateController = TextEditingController(
-    text: DateTime.now()
-        .toUtc()
-        .add(const Duration(days: 14))
-        .toIso8601String(),
+    text:
+        DateTime.now().toUtc().add(const Duration(days: 14)).toIso8601String(),
   );
   final recurrenceController = TextEditingController(text: 'none');
 
@@ -895,8 +889,7 @@ Future<void> _showClaimDraftEditor(
   String? initialItemId,
 }) {
   final l10n = AppLocalizations.of(context)!;
-  String selectedItemId =
-      initialItemId ??
+  String selectedItemId = initialItemId ??
       (controller.ownedItems.isEmpty ? '' : controller.ownedItems.first.id);
   final issueController = TextEditingController();
   final recipientController = TextEditingController();
@@ -955,7 +948,7 @@ Future<void> _showHomeMemoryDialog(
   BuildContext context, {
   required String title,
   required List<Widget> Function(void Function(VoidCallback fn) setState)
-  builder,
+      builder,
   required Future<String> Function() onSave,
 }) {
   final l10n = AppLocalizations.of(context)!;
@@ -978,9 +971,8 @@ Future<void> _showHomeMemoryDialog(
             ),
             actions: [
               TextButton(
-                onPressed: saving
-                    ? null
-                    : () => Navigator.of(dialogContext).pop(),
+                onPressed:
+                    saving ? null : () => Navigator.of(dialogContext).pop(),
                 child: Text(l10n.cancel),
               ),
               FilledButton(
