@@ -39,9 +39,7 @@ Future<void> _pumpLifeGraphScreen(
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: Scaffold(
-        body: LifeGraphScreen(controller: controller),
-      ),
+      home: Scaffold(body: LifeGraphScreen(controller: controller)),
     ),
   );
 
@@ -49,8 +47,100 @@ Future<void> _pumpLifeGraphScreen(
 }
 
 void main() {
-  testWidgets('lifegraph screen renders timeline and filters without overflow',
-      (tester) async {
+  testWidgets(
+    'lifegraph screen renders timeline and filters without overflow',
+    (tester) async {
+      final controller = _buildController();
+      await controller.bootstrap();
+
+      await _pumpLifeGraphScreen(
+        tester,
+        locale: const Locale('en'),
+        controller: controller,
+      );
+
+      expect(find.byType(LifeGraphScreen), findsOneWidget);
+      expect(find.text('Memory'), findsWidgets);
+      expect(find.text('Search and filters'), findsOneWidget);
+      expect(find.text('Timeline'), findsOneWidget);
+      expect(
+        controller.analyticsEvents.any(
+          (event) => event.eventName == 'lifegraph_viewed',
+        ),
+        isTrue,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'lifegraph screen filters by search and shows local audit state',
+    (tester) async {
+      final controller = _buildController();
+      await controller.bootstrap();
+      await controller.updatePermission(
+        DomainKey.finance,
+        DataPermission.aiAllowed,
+      );
+      final financeEvent = controller.lifeEvents.firstWhere(
+        (event) => event.domain == 'finance',
+      );
+      await controller.updateEventPrivacy(
+        financeEvent.eventId,
+        DataPermission.aiAllowed,
+      );
+
+      await _pumpLifeGraphScreen(
+        tester,
+        locale: const Locale('en'),
+        controller: controller,
+      );
+
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('lifegraph-search-field')),
+        'coffee',
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Coffee and sandwich purchase recorded'),
+        findsOneWidget,
+      );
+      expect(find.text('Submit rent receipt'), findsNothing);
+      expect(
+        find.byKey(ValueKey<String>('lifegraph-audit-${financeEvent.eventId}')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Changed at'), findsOneWidget);
+      expect(
+        controller.analyticsEvents.any(
+          (event) => event.eventName == 'lifegraph_search_used',
+        ),
+        isTrue,
+      );
+
+      await tester.tap(find.text('Search and filters'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.widgetWithText(ChoiceChip, 'Money'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Money'));
+      await tester.pumpAndSettle();
+
+      final filteredEvents = controller.analyticsEvents
+          .where((event) => event.eventName == 'lifegraph_filtered')
+          .toList(growable: false);
+      expect(filteredEvents, isNotEmpty);
+      expect(filteredEvents.first.metadata['domain_filter'], 'finance');
+    },
+  );
+
+  testWidgets('lifegraph screen keeps secondary domains behind More domains', (
+    tester,
+  ) async {
     final controller = _buildController();
     await controller.bootstrap();
 
@@ -60,74 +150,24 @@ void main() {
       controller: controller,
     );
 
-    expect(find.byType(LifeGraphScreen), findsOneWidget);
-    expect(find.text('LifeGraph'), findsWidgets);
-    expect(find.text('Search and filters'), findsOneWidget);
-    expect(find.text('Timeline'), findsOneWidget);
-    expect(
-      controller.analyticsEvents.any(
-        (event) => event.eventName == 'lifegraph_viewed',
-      ),
-      isTrue,
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('lifegraph screen filters by search and shows local audit state',
-      (tester) async {
-    final controller = _buildController();
-    await controller.bootstrap();
-    await controller.updatePermission(
-      DomainKey.finance,
-      DataPermission.aiAllowed,
-    );
-    final financeEvent = controller.lifeEvents.firstWhere(
-      (event) => event.domain == 'finance',
-    );
-    await controller.updateEventPrivacy(
-      financeEvent.eventId,
-      DataPermission.aiAllowed,
-    );
-
-    await _pumpLifeGraphScreen(
-      tester,
-      locale: const Locale('en'),
-      controller: controller,
-    );
-
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('lifegraph-search-field')),
-      'coffee',
-    );
-    await tester.pump(const Duration(milliseconds: 350));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Coffee and sandwich purchase recorded'), findsOneWidget);
-    expect(find.text('Submit rent receipt'), findsNothing);
-    expect(
-      find.byKey(ValueKey<String>('lifegraph-audit-${financeEvent.eventId}')),
-      findsOneWidget,
-    );
-    expect(find.textContaining('Changed at:'), findsOneWidget);
-    expect(
-      controller.analyticsEvents.any(
-        (event) => event.eventName == 'lifegraph_search_used',
-      ),
-      isTrue,
-    );
+    expect(find.text('More domains'), findsOneWidget);
+    expect(find.text('Shopping'), findsNothing);
 
     await tester.scrollUntilVisible(
-      find.text('Money').first,
+      find.byKey(const ValueKey<String>('memory-more-domains')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('memory-more-domains')));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Shopping'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Money').first);
-    await tester.pumpAndSettle();
-
-    final filteredEvents = controller.analyticsEvents
-        .where((event) => event.eventName == 'lifegraph_filtered')
-        .toList(growable: false);
-    expect(filteredEvents, isNotEmpty);
-    expect(filteredEvents.first.metadata['domain_filter'], 'finance');
+    expect(find.text('Shopping'), findsOneWidget);
+    expect(find.text('Decisions'), findsOneWidget);
+    expect(find.text('Calendar'), findsOneWidget);
   });
 }

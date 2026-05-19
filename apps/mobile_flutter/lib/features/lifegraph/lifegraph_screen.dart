@@ -11,6 +11,7 @@ import '../../domains/privacy/evidence_item.dart';
 import '../../domains/privacy/privacy_audit_entry.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
+import '../shared/premium_ui.dart';
 
 class LifeGraphScreen extends StatefulWidget {
   const LifeGraphScreen({super.key, required this.controller});
@@ -49,203 +50,261 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     final allEvents = widget.controller.lifeEvents;
     final analyticsSnapshot = _buildAnalyticsSnapshot(allEvents);
     final viewModels = analyticsSnapshot.viewModels;
-    final grouped = _groupByDate(viewModels);
+    final grouped = _groupByDate(viewModels, l10n);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return GoLifeScreen(
+      title: _memoryTitle(l10n),
+      subtitle: _memorySubtitle(l10n),
+      badge: GoLifeStatusPill(
+        label: '${viewModels.length}',
+        icon: Icons.hub_rounded,
+        accent: GoLifeAccent.blue,
+      ),
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: GoLifeMetricCard(
+                label: _eventsLabel(l10n),
+                value: '${viewModels.length}',
+                subtitle: _totalEventsLabel(allEvents.length, l10n),
+                icon: Icons.bolt_outlined,
+                accent: GoLifeAccent.blue,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GoLifeMetricCard(
+                label: _usedByAiLabel(l10n),
+                value: '${widget.controller.aiEligibleEventCount}',
+                subtitle: controllerLabel(_selectedDomain, l10n),
+                icon: Icons.auto_awesome_rounded,
+                accent: GoLifeAccent.emerald,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: GoLifeMetricCard(
+                label: _protectedLocalLabel(l10n),
+                value:
+                    '${widget.controller.totalEventCount - widget.controller.aiEligibleEventCount}',
+                icon: Icons.shield_outlined,
+                accent: GoLifeAccent.amber,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GoLifeMetricCard(
+                label: _relationsLabel(l10n),
+                value: '${analyticsSnapshot.visibleRelationCount}',
+                subtitle: _evidenceCountLabel(
+                  analyticsSnapshot.visibleEvidenceCount,
+                  l10n,
+                ),
+                icon: Icons.alt_route_rounded,
+                accent: GoLifeAccent.violet,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        GoLifeCard(
+          accent: GoLifeAccent.violet,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.lifeGraphTitle,
-                      style: theme.textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      l10n.lifeGraphIntro,
-                      style: theme.textTheme.bodyLarge,
-                    ),
-                  ],
+              GoLifeSectionTitle(
+                title: _memorySearchTitle(l10n),
+                subtitle: _memorySearchBody(l10n),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                key: const ValueKey<String>('lifegraph-search-field'),
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: l10n.lifeGraphSearchHint,
+                  prefixIcon: const Icon(Icons.search_rounded),
                 ),
               ),
-              const SizedBox(width: 16),
-              OutlinedButton.icon(
-                onPressed: () => context.go('/settings'),
-                icon: const Icon(Icons.verified_user_outlined),
-                label: Text(l10n.lifeGraphOpenPrivacyAudit),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              SizedBox(
-                width: 220,
-                child: _MetricCard(
-                  label: l10n.lifeGraphMetricVisibleEvents,
-                  value: '${viewModels.length}/${allEvents.length}',
-                  tone: const Color(0xFF1F4C5B),
+              const SizedBox(height: 14),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.zero,
+                shape: const Border(),
+                collapsedShape: const Border(),
+                title: Text(
+                  _filtersLabel(l10n),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-              ),
-              SizedBox(
-                width: 220,
-                child: _MetricCard(
-                  label: l10n.lifeGraphMetricEvidenceItems,
-                  value: analyticsSnapshot.visibleEvidenceCount.toString(),
-                  tone: const Color(0xFF6C5B3D),
+                subtitle: Text(
+                  _filtersBody(l10n),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-              ),
-              SizedBox(
-                width: 220,
-                child: _MetricCard(
-                  label: l10n.lifeGraphMetricRelations,
-                  value: analyticsSnapshot.visibleRelationCount.toString(),
-                  tone: const Color(0xFF7A5167),
-                ),
-              ),
-              SizedBox(
-                width: 220,
-                child: _MetricCard(
-                  label: l10n.lifeGraphMetricAuditEntries,
-                  value: analyticsSnapshot.visibleAuditCount.toString(),
-                  tone: const Color(0xFF5D7A68),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: _cardDecoration(theme),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.lifeGraphFiltersTitle,
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.lifeGraphFiltersBody,
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  key: const ValueKey<String>('lifegraph-search-field'),
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: l10n.lifeGraphSearchHint,
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    filled: true,
-                    fillColor: theme.brightness == Brightness.dark
-                        ? const Color(0xFF211915)
-                        : const Color(0xFFF6EEE7),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
+                children: [
+                  const SizedBox(height: 10),
+                  _FilterSection(
+                    title: _domainFilterTitle(l10n),
+                    children: [
+                      ChoiceChip(
+                        label: Text(l10n.lifeGraphFilterAll),
+                        selected: _selectedDomain == null,
+                        onSelected: (_) => _updateDomainFilter(null),
+                      ),
+                      for (final domain in _distinctDomains(allEvents))
+                        ChoiceChip(
+                          label: Text(domain.localizedDomainLabel(l10n)),
+                          selected: _selectedDomain == domain,
+                          onSelected: (_) => _updateDomainFilter(domain),
+                        ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
+                  _FilterSection(
+                    title: _dateFilterTitle(l10n),
+                    children: [
+                      for (final window in _DateWindow.values)
+                        ChoiceChip(
+                          label: Text(_dateWindowLabel(window, l10n)),
+                          selected: _dateWindow == window,
+                          onSelected: (_) => _updateDateWindow(window),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _FilterSection(
+                    title: l10n.lifeGraphFilterPrivacyTitle,
+                    children: [
+                      for (final filter in _PrivacyFilter.values)
+                        ChoiceChip(
+                          label: Text(_privacyFilterLabel(filter, l10n)),
+                          selected: _privacyFilter == filter,
+                          onSelected: (_) => _updatePrivacyFilter(filter),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: _domainsTitle(l10n),
+          subtitle: _domainsBody(l10n),
+        ),
+        const SizedBox(height: 12),
+        GoLifeShortcutGrid(
+          items: [
+            GoLifeShortcutItem(
+              label: l10n.navTasks,
+              icon: Icons.checklist_rounded,
+              onTap: () => context.go('/tasks'),
+            ),
+            GoLifeShortcutItem(
+              label: l10n.navHabits,
+              icon: Icons.self_improvement_rounded,
+              onTap: () => context.go('/habits'),
+            ),
+            GoLifeShortcutItem(
+              label: l10n.navMoney,
+              icon: Icons.stacked_line_chart_rounded,
+              onTap: () => context.go('/money'),
+            ),
+            GoLifeShortcutItem(
+              label: l10n.navPantry,
+              icon: Icons.kitchen_rounded,
+              onTap: () => context.go('/pantry'),
+            ),
+            GoLifeShortcutItem(
+              label: l10n.navWeek,
+              icon: Icons.view_week_rounded,
+              onTap: () => context.go('/week'),
+            ),
+            GoLifeShortcutItem(
+              label: l10n.navCloset,
+              icon: Icons.checkroom_rounded,
+              onTap: () => context.go('/closet'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GoLifeExpansionCard(
+          tileKey: const ValueKey<String>('memory-more-domains'),
+          title: _moreDomainsTitle(l10n),
+          subtitle: _moreDomainsBody(l10n),
+          accent: GoLifeAccent.blue,
+          children: [
+            GoLifeShortcutGrid(
+              items: [
+                GoLifeShortcutItem(
+                  label: _shoppingLabel(l10n),
+                  icon: Icons.shopping_bag_outlined,
+                  onTap: () => context.go('/shopping'),
                 ),
-                const SizedBox(height: 16),
-                _FilterSection(
-                  title: l10n.lifeGraphFilterDomainTitle,
-                  children: [
-                    ChoiceChip(
-                      label: Text(l10n.lifeGraphFilterAll),
-                      selected: _selectedDomain == null,
-                      onSelected: (_) => _updateDomainFilter(null),
-                    ),
-                    for (final domain in _distinctDomains(allEvents))
-                      ChoiceChip(
-                        label: Text(domain.localizedDomainLabel(l10n)),
-                        selected: _selectedDomain == domain,
-                        onSelected: (_) => _updateDomainFilter(domain),
-                      ),
-                  ],
+                GoLifeShortcutItem(
+                  label: _decisionsLabel(l10n),
+                  icon: Icons.rule_folder_outlined,
+                  onTap: () => context.go('/decisions'),
                 ),
-                const SizedBox(height: 16),
-                _FilterSection(
-                  title: l10n.lifeGraphFilterDateTitle,
-                  children: [
-                    for (final window in _DateWindow.values)
-                      ChoiceChip(
-                        label: Text(_dateWindowLabel(window, l10n)),
-                        selected: _dateWindow == window,
-                        onSelected: (_) => _updateDateWindow(window),
-                      ),
-                  ],
+                GoLifeShortcutItem(
+                  label: l10n.navCalendar,
+                  icon: Icons.calendar_month_rounded,
+                  onTap: () => context.go('/calendar'),
                 ),
-                const SizedBox(height: 16),
-                _FilterSection(
-                  title: l10n.lifeGraphFilterPrivacyTitle,
-                  children: [
-                    for (final filter in _PrivacyFilter.values)
-                      ChoiceChip(
-                        label: Text(_privacyFilterLabel(filter, l10n)),
-                        selected: _privacyFilter == filter,
-                        onSelected: (_) => _updatePrivacyFilter(filter),
-                      ),
-                  ],
+                GoLifeShortcutItem(
+                  label: l10n.navRecipes,
+                  icon: Icons.restaurant_menu_rounded,
+                  onTap: () => context.go('/recipes'),
+                ),
+                GoLifeShortcutItem(
+                  label: l10n.navJournal,
+                  icon: Icons.menu_book_rounded,
+                  onTap: () => context.go('/journal'),
+                ),
+                GoLifeShortcutItem(
+                  label: l10n.homeMemoryTitle,
+                  icon: Icons.home_work_outlined,
+                  onTap: () => context.go('/homememory'),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.lifeGraphTimelineTitle,
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.lifeGraphTimelineBody,
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 12),
-          if (viewModels.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: _cardDecoration(theme),
+          ],
+        ),
+        const SizedBox(height: 20),
+        GoLifeSectionTitle(
+          title: _timelineTitle(l10n),
+          subtitle: _timelineBody(l10n),
+        ),
+        const SizedBox(height: 12),
+        if (viewModels.isEmpty)
+          GoLifeEmptyState(
+            title: _emptyMemoryTitle(l10n),
+            body: l10n.lifeGraphNoEvents,
+            icon: Icons.history_toggle_off_rounded,
+          )
+        else
+          for (final entry in grouped.entries) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
               child: Text(
-                l10n.lifeGraphNoEvents,
-                style: theme.textTheme.bodyMedium,
+                entry.key,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-            )
-          else
-            for (final entry in grouped.entries) ...[
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  l10n.lifeGraphDateGroupTitle(entry.key, entry.value.length),
-                  style: theme.textTheme.titleMedium,
-                ),
-              ),
-              for (final item in entry.value)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _LifeGraphEventCard(
-                    viewModel: item,
-                    controller: widget.controller,
-                  ),
-                ),
+            ),
+            for (final item in entry.value) ...[
+              _MemoryEventCard(viewModel: item, controller: widget.controller),
+              const SizedBox(height: 12),
             ],
-        ],
-      ),
+          ],
+      ],
     );
   }
 
@@ -452,55 +511,264 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
 
   Map<String, List<_LifeGraphEventViewModel>> _groupByDate(
     List<_LifeGraphEventViewModel> items,
+    AppLocalizations l10n,
   ) {
     final grouped = <String, List<_LifeGraphEventViewModel>>{};
     for (final item in items) {
-      final dateLabel = item.event.timestampIso.split('T').first;
-      grouped
-          .putIfAbsent(dateLabel, () => <_LifeGraphEventViewModel>[])
-          .add(item);
+      final label = _dateGroupLabel(item.event.timestampIso, l10n);
+      grouped.putIfAbsent(label, () => <_LifeGraphEventViewModel>[]).add(item);
     }
     return grouped;
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.tone,
-  });
+String _shoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Shopping',
+      es: 'Shopping',
+      ptBr: 'Shopping',
+      ptPt: 'Shopping',
+      fr: 'Achats',
+      it: 'Shopping',
+      de: 'Einkaufen',
+      ja: 'Shopping',
+      zhHans: 'Shopping',
+      zhHant: 'Shopping',
+    );
 
-  final String label;
-  final String value;
-  final Color tone;
+String _decisionsLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Decisions',
+      es: 'Decisiones',
+      ptBr: 'Decisoes',
+      ptPt: 'Decisoes',
+      fr: 'Decisions',
+      it: 'Decisioni',
+      de: 'Entscheidungen',
+      ja: 'Decisions',
+      zhHans: 'Decisions',
+      zhHant: 'Decisions',
+    );
+
+class _MemoryEventCard extends StatelessWidget {
+  const _MemoryEventCard({required this.viewModel, required this.controller});
+
+  final _LifeGraphEventViewModel viewModel;
+  final GoLifeController controller;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: theme.textTheme.titleMedium),
-          const SizedBox(height: 10),
-          Text(value, style: theme.textTheme.headlineSmall),
-        ],
-      ),
+    final l10n = AppLocalizations.of(context)!;
+    final event = viewModel.event;
+    final latestAudit =
+        viewModel.auditEntries.isEmpty ? null : viewModel.auditEntries.first;
+
+    return GoLifeTimelineCard(
+      title: event.summary,
+      subtitle: event.timestampIso,
+      accent: _eventAccent(event),
+      meta: [
+        GoLifeStatusPill(
+          label: event.domain.localizedDomainLabel(l10n),
+          accent: GoLifeAccent.violet,
+        ),
+        GoLifeStatusPill(
+          label: event.privacyLevel.localizedPermissionLabel(l10n),
+          accent: _privacyAccent(event.privacyLevel),
+        ),
+        GoLifeStatusPill(label: event.source, accent: GoLifeAccent.blue),
+        if (latestAudit != null)
+          Container(
+            key: ValueKey<String>('lifegraph-audit-${event.eventId}'),
+            child: GoLifeStatusPill(
+              label: AppLocalizations.of(context)!.privacyAuditChangedAt,
+              accent: GoLifeAccent.amber,
+            ),
+          ),
+      ],
+      actions: [
+        OutlinedButton.icon(
+          onPressed: () =>
+              _showEventDetails(context, controller, event.eventId),
+          icon: const Icon(Icons.visibility_outlined),
+          label: Text(_detailsLabel(l10n)),
+        ),
+      ],
     );
   }
 }
 
+void _showEventDetails(
+  BuildContext context,
+  GoLifeController controller,
+  String eventId,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    builder: (context) {
+      return AnimatedBuilder(
+        animation: controller,
+        builder: (context, child) {
+          final l10n = AppLocalizations.of(context)!;
+          final event = controller.lifeEvents.firstWhere(
+            (item) => item.eventId == eventId,
+          );
+          final evidence = controller.evidenceItems.where((item) {
+            return item.localPayloadRef == 'life_event:${event.eventId}' ||
+                item.hash == event.evidenceHash;
+          }).toList(growable: false);
+          final relations = controller.lifeGraphRelations.where((relation) {
+            return relation.fromEventId == event.eventId ||
+                relation.toEventId == event.eventId;
+          }).toList(growable: false);
+          final audits = controller.privacyAuditEntries.where((entry) {
+            return entry.eventId == event.eventId;
+          }).toList(growable: false)
+            ..sort((a, b) => b.changedAt.compareTo(a.changedAt));
+
+          final usedInMission = controller.dailyMission != null &&
+              controller
+                  .missionDataUsed(controller.dailyMission!)
+                  .contains(event.summary);
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.summary,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        GoLifeStatusPill(
+                          label: event.domain.localizedDomainLabel(l10n),
+                          accent: GoLifeAccent.violet,
+                        ),
+                        GoLifeStatusPill(
+                          label: event.privacyLevel.localizedPermissionLabel(
+                            l10n,
+                          ),
+                          accent: _privacyAccent(event.privacyLevel),
+                        ),
+                        GoLifeStatusPill(
+                          label: event.source,
+                          accent: GoLifeAccent.blue,
+                        ),
+                        if (usedInMission)
+                          GoLifeStatusPill(
+                            label: _usedInMissionLabel(l10n),
+                            accent: GoLifeAccent.emerald,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    GoLifeCard(
+                      accent: GoLifeAccent.blue,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _privacyChangeTitle(l10n),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final permission in DataPermission.values)
+                                ChoiceChip(
+                                  label: Text(permission.localizedLabel(l10n)),
+                                  selected: event.privacyLevel ==
+                                      permission.storageKey,
+                                  onSelected: (_) async {
+                                    await controller.updateEventPrivacy(
+                                      event.eventId,
+                                      permission,
+                                    );
+                                  },
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GoLifeCard(
+                      accent: GoLifeAccent.emerald,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.lifeGraphEvidenceTitle,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          _DetailList(
+                            items: evidence
+                                .map(
+                                  (item) =>
+                                      '${item.sourceType} | ${item.privacyClass.storageKey}',
+                                )
+                                .toList(growable: false),
+                            emptyLabel: l10n.lifeGraphEvidenceEmpty,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            l10n.lifeGraphRelationsTitle,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          _DetailList(
+                            items: relations
+                                .map((relation) => relation.relationType)
+                                .toList(growable: false),
+                            emptyLabel: l10n.lifeGraphRelationsEmpty,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            l10n.privacyAuditTitle,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          _DetailList(
+                            items: audits
+                                .map(
+                                  (audit) =>
+                                      '${audit.oldPrivacyLevel.localizedPermissionLabel(l10n)} → ${audit.newPrivacyLevel.localizedPermissionLabel(l10n)} | ${audit.changedAt}',
+                                )
+                                .toList(growable: false),
+                            emptyLabel: l10n.lifeGraphAuditNone,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: () => context.go('/settings'),
+                      icon: const Icon(Icons.open_in_new_rounded),
+                      label: Text(l10n.lifeGraphOpenPrivacyAudit),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
 class _FilterSection extends StatelessWidget {
-  const _FilterSection({
-    required this.title,
-    required this.children,
-  });
+  const _FilterSection({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -510,144 +778,40 @@ class _FilterSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: children,
-        ),
+        Wrap(spacing: 8, runSpacing: 8, children: children),
       ],
     );
   }
 }
 
-class _LifeGraphEventCard extends StatelessWidget {
-  const _LifeGraphEventCard({
-    required this.viewModel,
-    required this.controller,
-  });
+class _DetailList extends StatelessWidget {
+  const _DetailList({required this.items, this.emptyLabel});
 
-  final _LifeGraphEventViewModel viewModel;
-  final GoLifeController controller;
+  final List<String> items;
+  final String? emptyLabel;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    final event = viewModel.event;
-    final aiEligible = _isEventAiEligible(controller, event);
-    final latestAudit =
-        viewModel.auditEntries.isEmpty ? null : viewModel.auditEntries.first;
-
-    return Container(
-      key: ValueKey<String>('lifegraph-event-${event.eventId}'),
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(theme),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(event.summary, style: theme.textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(
-            '${event.timestampIso} | ${event.eventType}',
-            style: theme.textTheme.bodySmall,
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Chip(
-                label: Text(
-                    '${l10n.fieldDomain}: ${event.domain.localizedDomainLabel(l10n)}'),
-              ),
-              Chip(
-                label: Text(
-                    '${l10n.fieldPrivacy}: ${event.privacyLevel.localizedPermissionLabel(l10n)}'),
-              ),
-              Chip(
-                label: Text('${l10n.privacyEventSource}: ${event.source}'),
-              ),
-              Chip(
-                label: Text(
-                  '${l10n.privacyEventAiEligible}: ${aiEligible ? l10n.valueYes : l10n.valueNo}',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(l10n.lifeGraphEvidenceTitle, style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          if (viewModel.evidenceItems.isEmpty)
-            Text(l10n.lifeGraphEvidenceEmpty, style: theme.textTheme.bodyMedium)
-          else
-            for (final evidence in viewModel.evidenceItems)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '- ${evidence.sourceType} | ${evidence.privacyClass.storageKey} | ${evidence.hash}',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ),
-          const SizedBox(height: 16),
-          Text(l10n.lifeGraphRelationsTitle,
-              style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          if (viewModel.relations.isEmpty)
-            Text(l10n.lifeGraphRelationsEmpty,
-                style: theme.textTheme.bodyMedium)
-          else
-            for (final relation in viewModel.relations)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '- ${relation.relationType} -> ${viewModel.relatedEventLabel(relation, l10n)}',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ),
-          const SizedBox(height: 16),
-          Text(l10n.privacyAuditTitle, style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          if (latestAudit == null)
-            Text(l10n.lifeGraphAuditNone, style: theme.textTheme.bodyMedium)
-          else
-            Container(
-              key: ValueKey<String>('lifegraph-audit-${event.eventId}'),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF6EEE7).withValues(
-                  alpha: theme.brightness == Brightness.dark ? 0.12 : 1,
-                ),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${latestAudit.oldPrivacyLevel.localizedPermissionLabel(l10n)} -> ${latestAudit.newPrivacyLevel.localizedPermissionLabel(l10n)}',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${l10n.privacyAuditChangedAt}: ${latestAudit.changedAt}',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: () => context.go('/settings'),
-              icon: const Icon(Icons.open_in_new_rounded),
-              label: Text(l10n.lifeGraphOpenPrivacyAudit),
+    if (items.isEmpty) {
+      return Text(
+        emptyLabel ?? '',
+        style: Theme.of(context).textTheme.bodyMedium,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final item in items)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              '• $item',
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -666,20 +830,6 @@ class _LifeGraphEventViewModel {
   final List<LifeGraphRelation> relations;
   final List<PrivacyAuditEntry> auditEntries;
   final Map<String, LifeEvent> relatedEventsById;
-
-  String relatedEventLabel(
-    LifeGraphRelation relation,
-    AppLocalizations l10n,
-  ) {
-    final relatedId = relation.fromEventId == event.eventId
-        ? relation.toEventId
-        : relation.fromEventId;
-    final relatedEvent = relatedEventsById[relatedId];
-    if (relatedEvent == null) {
-      return relatedId;
-    }
-    return '${relatedEvent.summary} (${relatedEvent.domain.localizedDomainLabel(l10n)})';
-  }
 }
 
 class _LifeGraphAnalyticsSnapshot {
@@ -696,19 +846,9 @@ class _LifeGraphAnalyticsSnapshot {
   final int visibleAuditCount;
 }
 
-enum _DateWindow {
-  all,
-  last7Days,
-  last30Days,
-  last90Days,
-}
+enum _DateWindow { all, last7Days, last30Days, last90Days }
 
-enum _PrivacyFilter {
-  all,
-  localOnly,
-  syncAllowed,
-  aiAllowed,
-}
+enum _PrivacyFilter { all, localOnly, syncAllowed, aiAllowed }
 
 extension on _DateWindow {
   String get analyticsKey {
@@ -777,25 +917,406 @@ String _privacyFilterLabel(_PrivacyFilter value, AppLocalizations l10n) {
   }
 }
 
-bool _isEventAiEligible(GoLifeController controller, LifeEvent event) {
-  final domain = domainKeyFromWireName(event.domain);
-  if (domain == null) {
-    return false;
+String controllerLabel(String? selectedDomain, AppLocalizations l10n) {
+  if (selectedDomain == null) {
+    return l10n.lifeGraphFilterAll;
   }
-  return controller.privacySettings.permissionFor(domain) ==
-          DataPermission.aiAllowed &&
-      event.privacyLevel == DataPermission.aiAllowed.storageKey;
+  return selectedDomain.localizedDomainLabel(l10n);
 }
 
-BoxDecoration _cardDecoration(ThemeData theme) {
-  final isDark = theme.brightness == Brightness.dark;
-  return BoxDecoration(
-    color: isDark
-        ? const Color(0xFF241C18).withValues(alpha: 0.92)
-        : Colors.white.withValues(alpha: 0.76),
-    borderRadius: BorderRadius.circular(24),
-    border: Border.all(
-      color: isDark ? const Color(0x33E6CDB9) : const Color(0x12FFFFFF),
-    ),
-  );
+String _dateGroupLabel(String iso, AppLocalizations l10n) {
+  final date = DateTime.tryParse(iso)?.toLocal();
+  if (date == null) {
+    return iso.split('T').first;
+  }
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final eventDay = DateTime(date.year, date.month, date.day);
+  if (eventDay == today) {
+    return l10n.labelToday;
+  }
+  if (eventDay == today.subtract(const Duration(days: 1))) {
+    return pickLocalizedValue(
+      l10n.localeName,
+      en: 'Yesterday',
+      es: 'Ayer',
+      ptBr: 'Ontem',
+      ptPt: 'Ontem',
+      fr: 'Hier',
+      it: 'Ieri',
+      de: 'Gestern',
+      ja: 'Yesterday',
+      zhHans: 'Yesterday',
+      zhHant: 'Yesterday',
+    );
+  }
+  return iso.split('T').first;
 }
+
+GoLifeAccent _eventAccent(LifeEvent event) {
+  if (event.domain == 'finance' || event.domain == 'money') {
+    return GoLifeAccent.amber;
+  }
+  if (event.domain == 'pantry') {
+    return GoLifeAccent.emerald;
+  }
+  if (event.domain == 'task') {
+    return GoLifeAccent.violet;
+  }
+  return GoLifeAccent.blue;
+}
+
+GoLifeAccent _privacyAccent(String privacyLevel) {
+  if (privacyLevel == DataPermission.aiAllowed.storageKey) {
+    return GoLifeAccent.emerald;
+  }
+  if (privacyLevel == DataPermission.syncAllowed.storageKey) {
+    return GoLifeAccent.blue;
+  }
+  return GoLifeAccent.amber;
+}
+
+String _memoryTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Memory',
+      es: 'Memory',
+      ptBr: 'Memory',
+      ptPt: 'Memory',
+      fr: 'Memory',
+      it: 'Memory',
+      de: 'Memory',
+      ja: 'Memory',
+      zhHans: 'Memory',
+      zhHant: 'Memory',
+    );
+
+String _memorySubtitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Your recent life.',
+      es: 'Tu vida reciente.',
+      ptBr: 'Sua vida recente.',
+      ptPt: 'A tua vida recente.',
+      fr: 'Ta vie recente.',
+      it: 'La tua vita recente.',
+      de: 'Dein aktuelles Leben.',
+      ja: 'Your recent life.',
+      zhHans: 'Your recent life.',
+      zhHant: 'Your recent life.',
+    );
+
+String _eventsLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Events',
+      es: 'Eventos',
+      ptBr: 'Eventos',
+      ptPt: 'Eventos',
+      fr: 'Evenements',
+      it: 'Eventi',
+      de: 'Ereignisse',
+      ja: 'Events',
+      zhHans: 'Events',
+      zhHant: 'Events',
+    );
+
+String _usedByAiLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Usable by AI',
+      es: 'Usables por IA',
+      ptBr: 'Usaveis pela IA',
+      ptPt: 'Usaveis pela IA',
+      fr: 'Utilisables par IA',
+      it: 'Usabili dall IA',
+      de: 'Von KI nutzbar',
+      ja: 'Usable by AI',
+      zhHans: 'Usable by AI',
+      zhHant: 'Usable by AI',
+    );
+
+String _protectedLocalLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Protected local',
+      es: 'Protegidos local',
+      ptBr: 'Protegidos no local',
+      ptPt: 'Protegidos no local',
+      fr: 'Proteges en local',
+      it: 'Protetti in locale',
+      de: 'Lokal geschuetzt',
+      ja: 'Protected local',
+      zhHans: 'Protected local',
+      zhHant: 'Protected local',
+    );
+
+String _relationsLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Relations',
+      es: 'Relaciones',
+      ptBr: 'Relacoes',
+      ptPt: 'Relacoes',
+      fr: 'Relations',
+      it: 'Relazioni',
+      de: 'Beziehungen',
+      ja: 'Relations',
+      zhHans: 'Relations',
+      zhHant: 'Relations',
+    );
+
+String _totalEventsLabel(int count, AppLocalizations l10n) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: '$count total',
+      es: '$count total',
+      ptBr: '$count total',
+      ptPt: '$count total',
+      fr: '$count total',
+      it: '$count totale',
+      de: '$count gesamt',
+      ja: '$count total',
+      zhHans: '$count total',
+      zhHant: '$count total',
+    );
+
+String _evidenceCountLabel(
+  int count,
+  AppLocalizations l10n,
+) =>
+    pickLocalizedValue(
+      l10n.localeName,
+      en: '$count evidence',
+      es: '$count evidencias',
+      ptBr: '$count evidencias',
+      ptPt: '$count evidencias',
+      fr: '$count preuves',
+      it: '$count evidenze',
+      de: '$count Evidenzen',
+      ja: '$count evidence',
+      zhHans: '$count evidence',
+      zhHant: '$count evidence',
+    );
+
+String _memorySearchTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Search memory',
+      es: 'Buscar en memoria',
+      ptBr: 'Buscar na memoria',
+      ptPt: 'Procurar na memoria',
+      fr: 'Rechercher dans la memoire',
+      it: 'Cerca nella memoria',
+      de: 'Erinnerung durchsuchen',
+      ja: 'Search memory',
+      zhHans: 'Search memory',
+      zhHant: 'Search memory',
+    );
+
+String _memorySearchBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Search first, then narrow by domain, time or privacy.',
+      es: 'Busca primero y luego ajusta por dominio, tiempo o privacidad.',
+      ptBr:
+          'Busque primeiro e depois ajuste por dominio, tempo ou privacidade.',
+      ptPt:
+          'Procura primeiro e depois ajusta por dominio, tempo ou privacidade.',
+      fr: 'Cherche d abord puis affine par domaine, date ou confidentialite.',
+      it: 'Cerca prima e poi restringi per dominio, tempo o privacy.',
+      de: 'Erst suchen, dann nach Bereich, Zeit oder Datenschutz eingrenzen.',
+      ja: 'Search first, then narrow by domain, time or privacy.',
+      zhHans: 'Search first, then narrow by domain, time or privacy.',
+      zhHant: 'Search first, then narrow by domain, time or privacy.',
+    );
+
+String _filtersLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Search and filters',
+      es: 'Búsqueda y filtros',
+      ptBr: 'Busca e filtros',
+      ptPt: 'Pesquisa e filtros',
+      fr: 'Recherche et filtres',
+      it: 'Ricerca e filtri',
+      de: 'Suche und Filter',
+      ja: 'Search and filters',
+      zhHans: 'Search and filters',
+      zhHant: 'Search and filters',
+    );
+
+String _filtersBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Keep the timeline readable on a small screen.',
+      es: 'Mantiene la timeline legible en pantalla pequeña.',
+      ptBr: 'Mantem a timeline legivel em tela pequena.',
+      ptPt: 'Mantem a timeline legivel em ecra pequeno.',
+      fr: 'Garde la timeline lisible sur petit ecran.',
+      it: 'Mantiene la timeline leggibile su schermo piccolo.',
+      de: 'Haelt die Timeline auf kleinen Bildschirmen lesbar.',
+      ja: 'Keep the timeline readable on a small screen.',
+      zhHans: 'Keep the timeline readable on a small screen.',
+      zhHant: 'Keep the timeline readable on a small screen.',
+    );
+
+String _domainFilterTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Domain',
+      es: 'Dominio',
+      ptBr: 'Dominio',
+      ptPt: 'Dominio',
+      fr: 'Domaine',
+      it: 'Dominio',
+      de: 'Bereich',
+      ja: 'Domain',
+      zhHans: 'Domain',
+      zhHant: 'Domain',
+    );
+
+String _dateFilterTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Time',
+      es: 'Tiempo',
+      ptBr: 'Tempo',
+      ptPt: 'Tempo',
+      fr: 'Temps',
+      it: 'Tempo',
+      de: 'Zeit',
+      ja: 'Time',
+      zhHans: 'Time',
+      zhHant: 'Time',
+    );
+
+String _domainsTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Domains',
+      es: 'Dominios',
+      ptBr: 'Dominios',
+      ptPt: 'Dominios',
+      fr: 'Domaines',
+      it: 'Domini',
+      de: 'Bereiche',
+      ja: 'Domains',
+      zhHans: 'Domains',
+      zhHant: 'Domains',
+    );
+
+String _domainsBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'These routes still exist, but Memory keeps them in one place.',
+      es: 'Estas rutas siguen existiendo, pero Memory las mantiene en un solo lugar.',
+      ptBr:
+          'Essas rotas continuam existindo, mas o Memory as mantem num so lugar.',
+      ptPt:
+          'Estas rotas continuam a existir, mas o Memory mantem-nas num so lugar.',
+      fr: 'Ces routes existent toujours, mais Memory les garde au meme endroit.',
+      it: 'Queste rotte esistono ancora, ma Memory le tiene insieme.',
+      de: 'Diese Routen existieren weiter, aber Memory haelt sie an einem Ort.',
+      ja: 'These routes still exist, but Memory keeps them in one place.',
+      zhHans: 'These routes still exist, but Memory keeps them in one place.',
+      zhHant: 'These routes still exist, but Memory keeps them in one place.',
+    );
+
+String _moreDomainsTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'More domains',
+      es: 'Más dominios',
+      ptBr: 'Mais dominios',
+      ptPt: 'Mais dominios',
+      fr: 'Plus de domaines',
+      it: 'Altri domini',
+      de: 'Mehr Bereiche',
+      ja: 'More domains',
+      zhHans: 'More domains',
+      zhHant: 'More domains',
+    );
+
+String _moreDomainsBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Keep secondary routes available without crowding Memory.',
+      es: 'Mantiene los secundarios accesibles sin saturar Memory.',
+      ptBr: 'Mantem rotas secundarias acessiveis sem sobrecarregar o Memory.',
+      ptPt: 'Mantem rotas secundarias acessiveis sem sobrecarregar o Memory.',
+      fr: 'Garde les routes secondaires accessibles sans surcharger Memory.',
+      it: 'Mantiene accessibili le rotte secondarie senza saturare Memory.',
+      de: 'Haelt sekundaere Routen verfuegbar, ohne Memory zu saturieren.',
+      ja: 'Keep secondary routes available without crowding Memory.',
+      zhHans: 'Keep secondary routes available without crowding Memory.',
+      zhHant: 'Keep secondary routes available without crowding Memory.',
+    );
+
+String _timelineTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Timeline',
+      es: 'Timeline',
+      ptBr: 'Timeline',
+      ptPt: 'Timeline',
+      fr: 'Timeline',
+      it: 'Timeline',
+      de: 'Timeline',
+      ja: 'Timeline',
+      zhHans: 'Timeline',
+      zhHant: 'Timeline',
+    );
+
+String _timelineBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Readable cards first. Detail only when you ask for it.',
+      es: 'Cards legibles primero. El detalle solo cuando lo pides.',
+      ptBr: 'Cards legiveis primeiro. O detalhe so quando voce pedir.',
+      ptPt: 'Cards legiveis primeiro. O detalhe so quando pedires.',
+      fr: 'Des cartes lisibles d abord. Le detail seulement si tu le demandes.',
+      it: 'Carte leggibili prima. Il dettaglio solo quando lo chiedi.',
+      de: 'Zuerst lesbare Karten. Details nur auf Wunsch.',
+      ja: 'Readable cards first. Detail only when you ask for it.',
+      zhHans: 'Readable cards first. Detail only when you ask for it.',
+      zhHant: 'Readable cards first. Detail only when you ask for it.',
+    );
+
+String _emptyMemoryTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'No memory yet',
+      es: 'Todavía no hay memoria',
+      ptBr: 'Ainda nao ha memoria',
+      ptPt: 'Ainda nao ha memoria',
+      fr: 'Pas encore de memoire',
+      it: 'Nessuna memoria ancora',
+      de: 'Noch keine Erinnerung',
+      ja: 'No memory yet',
+      zhHans: 'No memory yet',
+      zhHant: 'No memory yet',
+    );
+
+String _detailsLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Details',
+      es: 'Detalles',
+      ptBr: 'Detalhes',
+      ptPt: 'Detalhes',
+      fr: 'Details',
+      it: 'Dettagli',
+      de: 'Details',
+      ja: 'Details',
+      zhHans: 'Details',
+      zhHant: 'Details',
+    );
+
+String _usedInMissionLabel(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Used in mission',
+      es: 'Usado en misión',
+      ptBr: 'Usado na missao',
+      ptPt: 'Usado na missao',
+      fr: 'Utilise dans la mission',
+      it: 'Usato nella missione',
+      de: 'In Mission verwendet',
+      ja: 'Used in mission',
+      zhHans: 'Used in mission',
+      zhHant: 'Used in mission',
+    );
+
+String _privacyChangeTitle(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'Privacy',
+      es: 'Privacidad',
+      ptBr: 'Privacidade',
+      ptPt: 'Privacidade',
+      fr: 'Confidentialite',
+      it: 'Privacy',
+      de: 'Datenschutz',
+      ja: 'Privacy',
+      zhHans: 'Privacy',
+      zhHant: 'Privacy',
+    );

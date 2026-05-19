@@ -69,10 +69,7 @@ class _FallbackAiGatewayClient extends AiGatewayClient {
       eventType: 'task_captured',
       confidence: 0.8,
       rationale: 'Fallback test client',
-      trace: {
-        'clientFallback': true,
-        'fallbackReason': 'no_connection',
-      },
+      trace: {'clientFallback': true, 'fallbackReason': 'no_connection'},
     );
   }
 
@@ -161,13 +158,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('GoLife AI'), findsOneWidget);
-    expect(find.textContaining('missions for today'), findsOneWidget);
+    expect(find.text('Today'), findsWidgets);
+    expect(find.textContaining('Your focus for today.'), findsOneWidget);
     expect(find.text('Risks today'), findsOneWidget);
-    expect(find.text('Dashboard'), findsWidgets);
+    expect(find.text('Other missions'), findsOneWidget);
   });
 
-  testWidgets('renders the dashboard in Spanish when locale preference is es',
-      (tester) async {
+  testWidgets('renders the dashboard in Spanish when locale preference is es', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     await localStore.saveLocalePreference('es');
 
@@ -181,12 +180,14 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('misiones para hoy'), findsOneWidget);
+    expect(find.text('Hoy'), findsWidgets);
+    expect(find.textContaining('Tu foco de hoy.'), findsOneWidget);
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
-  testWidgets('limits productive supported locales to EN and ES',
-      (tester) async {
+  testWidgets('limits productive supported locales to EN and ES', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
 
     await tester.pumpWidget(
@@ -225,8 +226,9 @@ void main() {
     expect(app.themeMode, ThemeMode.dark);
   });
 
-  testWidgets('shows degraded gateway status when the HTTP client falls back',
-      (tester) async {
+  testWidgets('shows degraded gateway status when the HTTP client falls back', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     final controller = GoLifeController(
       localStore: localStore,
@@ -244,11 +246,7 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: Scaffold(
-          body: DashboardScreen(
-            controller: controller,
-          ),
-        ),
+        home: Scaffold(body: DashboardScreen(controller: controller)),
       ),
     );
 
@@ -264,67 +262,63 @@ void main() {
   });
 
   testWidgets(
-      'shows mission snapshot metadata on home and in explanation sheet',
-      (tester) async {
-    final localStore = MemoryLocalStore();
-    final controller = GoLifeController(
-      localStore: localStore,
-      aiGatewayClient: _FallbackAiGatewayClient(),
-      lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
-    );
-    await controller.bootstrap();
+    'shows mission snapshot metadata on home and in explanation sheet',
+    (tester) async {
+      final localStore = MemoryLocalStore();
+      final controller = GoLifeController(
+        localStore: localStore,
+        aiGatewayClient: _FallbackAiGatewayClient(),
+        lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+      );
+      await controller.bootstrap();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        supportedLocales: supportedAppLocales,
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        home: Scaffold(
-          body: DashboardScreen(
-            controller: controller,
-          ),
+      await tester.pumpWidget(
+        MaterialApp(
+          supportedLocales: supportedAppLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: Scaffold(body: DashboardScreen(controller: controller)),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Mission snapshot'), findsOneWidget);
-    expect(
-      find.textContaining('mission-set-offline-test', findRichText: true),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining('Using local fallback', findRichText: true),
-      findsWidgets,
-    );
+      expect(find.text('AI data disclosure'), findsOneWidget);
+      expect(find.text('Technical trace'), findsNothing);
 
-    await tester.scrollUntilVisible(
-      find.text('Explain').first,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.text('Explain').first);
-    await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Explain').first,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Explain').first);
+      await tester.pumpAndSettle();
 
-    expect(find.text('MissionSet'), findsOneWidget);
-    expect(
-      find.textContaining('policy_v1', findRichText: true),
-      findsWidgets,
-    );
-    expect(
-      find.textContaining('mission_ranker_v1', findRichText: true),
-      findsWidgets,
-    );
-    expect(
-      controller.analyticsEvents.any(
-        (event) => event.eventName == 'mission_viewed',
-      ),
-      isTrue,
-    );
-  });
+      expect(find.text('Technical trace'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Technical trace'),
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.text('Technical trace'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(
+          'MissionSet: mission-set-offline-test',
+          findRichText: true,
+        ),
+        findsWidgets,
+      );
+      expect(
+        controller.analyticsEvents.any(
+          (event) => event.eventName == 'mission_viewed',
+        ),
+        isTrue,
+      );
+    },
+  );
 }

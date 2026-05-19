@@ -136,6 +136,29 @@ class _FakeBillingValidationClient implements BillingValidationClient {
   }
 }
 
+Future<void> _expandSettingsSection(
+  WidgetTester tester,
+  String sectionKey,
+) async {
+  final finder = find.byKey(ValueKey<String>(sectionKey));
+  await tester.scrollUntilVisible(
+    finder,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _scrollToFinder(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(
+    finder,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('privacy screen reports protected file export', (tester) async {
     final localStore = MemoryLocalStore();
@@ -157,18 +180,15 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PrivacyScreen(controller: controller),
-        ),
+        home: Scaffold(body: PrivacyScreen(controller: controller)),
       ),
     );
 
-    await tester.scrollUntilVisible(
-      find.text('Export JSON'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.text('Export JSON'));
+    await _expandSettingsSection(tester, 'settings-section-data-controls');
+    final exportFinder =
+        find.byKey(const ValueKey<String>('privacy-export-json'));
+    await _scrollToFinder(tester, exportFinder);
+    await tester.tap(exportFinder);
     await tester.pumpAndSettle();
 
     expect(
@@ -180,8 +200,9 @@ void main() {
     expect(find.text('Clear AI history'), findsOneWidget);
   });
 
-  testWidgets('privacy screen exposes event controls and visible local audit',
-      (tester) async {
+  testWidgets('privacy screen exposes event controls and visible local audit', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     final controller = GoLifeController(
       localStore: localStore,
@@ -219,14 +240,16 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Recent LifeGraph events'), findsOneWidget);
-    expect(find.text('Privacy audit'), findsOneWidget);
+    await _expandSettingsSection(tester, 'settings-section-recent-events');
+    await _expandSettingsSection(tester, 'settings-section-privacy-audit');
+
+    expect(find.text('Recent LifeGraph events'), findsWidgets);
+    expect(find.text('Privacy audit'), findsWidgets);
     expect(find.text('No local privacy audit entries yet.'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
+    await _scrollToFinder(
+      tester,
       find.byKey(ValueKey<String>('life-event-${financeEvent.eventId}')),
-      300,
-      scrollable: find.byType(Scrollable).first,
     );
     await tester.tap(
       find.byKey(
@@ -238,8 +261,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No local privacy audit entries yet.'), findsNothing);
-    expect(find.textContaining('Event ID: ${financeEvent.eventId}'),
-        findsOneWidget);
+    expect(
+      find.textContaining('Event ID: ${financeEvent.eventId}'),
+      findsOneWidget,
+    );
     expect(find.textContaining('Changed at:'), findsOneWidget);
   });
 
@@ -275,13 +300,9 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Plan and billing'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-billing');
 
-    expect(find.text('Plan and billing'), findsOneWidget);
+    expect(find.text('Plan and billing'), findsWidgets);
     expect(find.text('Feature gates'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('billing-open-decision')),
@@ -292,42 +313,41 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('billing-open-decision')),
+    final billingDecisionFinder = find.byKey(
+      const ValueKey<String>('billing-open-decision'),
     );
+    await _scrollToFinder(tester, billingDecisionFinder);
+    await tester.tap(billingDecisionFinder);
     await tester.pumpAndSettle();
 
-    expect(
-        openedUrls, <String>[GoLifeLegalDocuments.billingDisabledDecisionUrl]);
+    expect(openedUrls, <String>[
+      GoLifeLegalDocuments.billingDisabledDecisionUrl,
+    ]);
 
-    await tester.scrollUntilVisible(
-      find.text('Store and legal'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-legal');
 
-    expect(find.text('Store and legal'), findsOneWidget);
+    expect(find.text('Store and legal'), findsWidgets);
     expect(
       find.byKey(const ValueKey<String>('legal-url-privacy_policy')),
       findsOneWidget,
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('legal-open-privacy_policy')),
+    final legalPrivacyFinder = find.byKey(
+      const ValueKey<String>('legal-open-privacy_policy'),
     );
+    await _scrollToFinder(tester, legalPrivacyFinder);
+    await tester.tap(legalPrivacyFinder);
     await tester.pumpAndSettle();
 
-    expect(
-      openedUrls,
-      <String>[
-        GoLifeLegalDocuments.billingDisabledDecisionUrl,
-        GoLifeLegalDocuments.privacyPolicyUrl,
-      ],
-    );
+    expect(openedUrls, <String>[
+      GoLifeLegalDocuments.billingDisabledDecisionUrl,
+      GoLifeLegalDocuments.privacyPolicyUrl,
+    ]);
   });
 
-  testWidgets('privacy screen shows Google Play sandbox billing controls',
-      (tester) async {
+  testWidgets('privacy screen shows Google Play sandbox billing controls', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     await localStore.saveRuntimeConfig(
       AppRuntimeConfig(
@@ -380,18 +400,12 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PrivacyScreen(controller: controller),
-        ),
+        home: Scaffold(body: PrivacyScreen(controller: controller)),
       ),
     );
 
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Plan and billing'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-billing');
 
     expect(find.text('Sandbox catalog'), findsOneWidget);
     expect(
@@ -406,8 +420,9 @@ void main() {
     );
   });
 
-  testWidgets('privacy screen shows billing refresh and audit after purchase',
-      (tester) async {
+  testWidgets('privacy screen shows billing refresh and audit after purchase', (
+    tester,
+  ) async {
     final localStore = MemoryLocalStore();
     await localStore.saveRuntimeConfig(
       AppRuntimeConfig(
@@ -478,27 +493,23 @@ void main() {
         },
       ),
     );
-    await localStore.saveBillingAuditEntries(
-      const <BillingAuditEntry>[
-        BillingAuditEntry(
-          auditId: 'billing-audit-1',
-          createdAtIso: '2026-05-17T10:01:00Z',
-          eventType: 'validation_applied',
-          provider: entitlementBillingProviderGooglePlay,
-          mode: 'google_play_sandbox',
-          statusCode: 'validated',
-          productId: 'golife_premium_monthly_sandbox',
-          purchaseTokenHash: 'hashed-sandbox-token',
-          renewalState: entitlementRenewalStateActive,
-          sandbox: true,
-          verified: true,
-          restored: false,
-          trace: <String, Object?>{
-            'source_action': 'purchase',
-          },
-        ),
-      ],
-    );
+    await localStore.saveBillingAuditEntries(const <BillingAuditEntry>[
+      BillingAuditEntry(
+        auditId: 'billing-audit-1',
+        createdAtIso: '2026-05-17T10:01:00Z',
+        eventType: 'validation_applied',
+        provider: entitlementBillingProviderGooglePlay,
+        mode: 'google_play_sandbox',
+        statusCode: 'validated',
+        productId: 'golife_premium_monthly_sandbox',
+        purchaseTokenHash: 'hashed-sandbox-token',
+        renewalState: entitlementRenewalStateActive,
+        sandbox: true,
+        verified: true,
+        restored: false,
+        trace: <String, Object?>{'source_action': 'purchase'},
+      ),
+    ]);
     final controller = GoLifeController(
       localStore: localStore,
       aiGatewayClient: MockAiGatewayClient(),
@@ -528,11 +539,7 @@ void main() {
     );
 
     await tester.pump();
-    await tester.scrollUntilVisible(
-      find.text('Plan and billing'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await _expandSettingsSection(tester, 'settings-section-billing');
 
     expect(find.text('Billing audit'), findsOneWidget);
     expect(

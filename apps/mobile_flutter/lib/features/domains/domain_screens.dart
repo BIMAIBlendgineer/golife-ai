@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/i18n/app_localized_values.dart';
 import '../../domains/calendar/calendar_item.dart';
 import '../../domains/finance/expense_record.dart';
 import '../../domains/habits/habit.dart';
@@ -13,6 +14,7 @@ import '../../domains/wardrobe/purchase_intention.dart';
 import '../../domains/week/week_plan.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
+import '../shared/premium_ui.dart';
 
 String _joinSegments(Iterable<String> values) {
   return values
@@ -231,8 +233,10 @@ class PantryScreen extends StatelessWidget {
         children: controller.pantryItems.map((item) {
           return _EntityCard(
             title: item.name,
-            subtitle:
-                _joinSegments(<String>[item.quantityLabel, item.rescueHint]),
+            subtitle: _joinSegments(<String>[
+              item.quantityLabel,
+              item.rescueHint,
+            ]),
             chips: <String>[l10n.chipRescue],
             actionLabel: item.quantityLabel == 'used'
                 ? l10n.actionUsed
@@ -442,7 +446,7 @@ class CalendarScreen extends StatelessWidget {
             subtitle: _joinSegments(<String>[item.startIso, item.endIso]),
             chips: <String>[
               item.energy,
-              if (item.location.isNotEmpty) item.location
+              if (item.location.isNotEmpty) item.location,
             ],
             actionLabel: l10n.actionEdit,
             onAction: () async {
@@ -496,7 +500,9 @@ class RecipesScreen extends StatelessWidget {
             onAction: recipe.status == 'cooked'
                 ? null
                 : () async =>
-                    (await controller.markRecipeRescueCookedById(recipe.id)) ??
+                    (await controller.markRecipeRescueCookedById(
+                      recipe.id,
+                    )) ??
                     l10n.messageRecipeUpdated,
             secondaryLabel: l10n.actionEdit,
             onSecondaryAction: () =>
@@ -551,8 +557,9 @@ class EverydayScreen extends StatelessWidget {
           ),
           _NavigationCard(
             title: l10n.navRecipes,
-            subtitle:
-                l10n.everydayRecipesSubtitle(controller.recipeRescues.length),
+            subtitle: l10n.everydayRecipesSubtitle(
+              controller.recipeRescues.length,
+            ),
             body: l10n.everydayRecipesBody,
             actionLabel: l10n.actionOpenRecipes,
             onTap: () => context.go('/recipes'),
@@ -594,83 +601,30 @@ class _DomainScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(eyebrow.toUpperCase(), style: theme.textTheme.labelLarge),
-          const SizedBox(height: 6),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stackActions = constraints.maxWidth < 760;
-              final textColumn = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.headlineMedium),
-                  const SizedBox(height: 8),
-                  Text(description, style: theme.textTheme.bodyLarge),
-                ],
-              );
-
-              if (stackActions) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    textColumn,
-                    if (actions.isNotEmpty) const SizedBox(height: 16),
-                    if (actions.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: actions,
-                      ),
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: textColumn),
-                  if (actions.isNotEmpty) const SizedBox(width: 16),
-                  if (actions.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: actions,
-                    ),
-                ],
-              );
-            },
-          ),
-          if (topPanel != null) ...[
-            const SizedBox(height: 20),
-            topPanel!,
-          ],
-          const SizedBox(height: 20),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: accent.withValues(alpha: 0.18)),
-            ),
-            child: child,
-          ),
-        ],
+    return GoLifeScreen(
+      title: title,
+      subtitle: description,
+      badge: GoLifeStatusPill(
+        label: eyebrow,
+        icon: Icons.auto_awesome_motion_rounded,
+        accent: _toneForAccent(accent),
       ),
+      children: [
+        if (actions.isNotEmpty)
+          GoLifeCard(
+            accent: _toneForAccent(accent),
+            child: Wrap(spacing: 10, runSpacing: 10, children: actions),
+          ),
+        if (actions.isNotEmpty) const SizedBox(height: 16),
+        if (topPanel != null) ...[topPanel!, const SizedBox(height: 16)],
+        GoLifeCard(accent: _toneForAccent(accent), child: child),
+      ],
     );
   }
 }
 
 class _EntityList extends StatelessWidget {
-  const _EntityList({
-    required this.emptyLabel,
-    required this.children,
-  });
+  const _EntityList({required this.emptyLabel, required this.children});
 
   final String emptyLabel;
   final List<Widget> children;
@@ -678,7 +632,11 @@ class _EntityList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (children.isEmpty) {
-      return Text(emptyLabel, style: Theme.of(context).textTheme.bodyLarge);
+      return GoLifeEmptyState(
+        title: emptyLabel,
+        body: _emptyBody(AppLocalizations.of(context)!),
+        icon: Icons.inbox_outlined,
+      );
     }
     return Column(children: children);
   }
@@ -706,13 +664,8 @@ class _EntityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return GoLifeCard(
+      accent: GoLifeAccent.blue,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -739,9 +692,9 @@ class _EntityCard extends StatelessWidget {
                     : () async {
                         final message = await onAction!.call();
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(message)),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(message)));
                         }
                       },
                 child: Text(actionLabel),
@@ -760,24 +713,15 @@ class _EntityCard extends StatelessWidget {
 }
 
 class _InfoPanel extends StatelessWidget {
-  const _InfoPanel({
-    required this.title,
-    required this.body,
-  });
+  const _InfoPanel({required this.title, required this.body});
 
   final String title;
   final String body;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6EEE7),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFD6C0A7)),
-      ),
+    return GoLifeCard(
+      accent: GoLifeAccent.amber,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -807,14 +751,8 @@ class _NavigationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return GoLifeCard(
+      accent: GoLifeAccent.violet,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -824,15 +762,43 @@ class _NavigationCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(body, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 12),
-          FilledButton.tonal(
-            onPressed: onTap,
-            child: Text(actionLabel),
-          ),
+          FilledButton.tonal(onPressed: onTap, child: Text(actionLabel)),
         ],
       ),
     );
   }
 }
+
+GoLifeAccent _toneForAccent(Color accent) {
+  if (accent == const Color(0xFF4C6A4F) || accent == const Color(0xFF5D7A68)) {
+    return GoLifeAccent.emerald;
+  }
+  if (accent == const Color(0xFF8A6C2F) || accent == const Color(0xFF855A2B)) {
+    return GoLifeAccent.amber;
+  }
+  if (accent == const Color(0xFF7A5167)) {
+    return GoLifeAccent.danger;
+  }
+  return GoLifeAccent.blue;
+}
+
+String _emptyBody(AppLocalizations l10n) => pickLocalizedValue(
+      l10n.localeName,
+      en: 'This domain stays available here, but does not need to dominate navigation.',
+      es: 'Este dominio sigue disponible aqui, pero no necesita dominar la navegacion.',
+      ptBr:
+          'Este dominio continua disponivel aqui, mas nao precisa dominar a navegacao.',
+      ptPt:
+          'Este dominio continua disponivel aqui, mas nao precisa dominar a navegacao.',
+      fr: 'Ce domaine reste disponible ici, mais n a pas besoin de dominer la navigation.',
+      it: 'Questo dominio resta disponibile qui, ma non deve dominare la navigazione.',
+      de: 'Dieser Bereich bleibt hier verfuegbar, muss aber die Navigation nicht dominieren.',
+      ja: 'This domain stays available here, but does not need to dominate navigation.',
+      zhHans:
+          'This domain stays available here, but does not need to dominate navigation.',
+      zhHant:
+          'This domain stays available here, but does not need to dominate navigation.',
+    );
 
 Future<void> _showTaskEditor(
   BuildContext context,
@@ -853,8 +819,9 @@ Future<void> _showTaskEditor(
         : l10n.actionEditEntity(l10n.entityTask),
     builder: (setState) => [
       TextField(
-          controller: titleController,
-          decoration: InputDecoration(labelText: l10n.fieldTitle)),
+        controller: titleController,
+        decoration: InputDecoration(labelText: l10n.fieldTitle),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller: minutesController,
@@ -866,10 +833,12 @@ Future<void> _showTaskEditor(
         initialValue: priority,
         decoration: InputDecoration(labelText: l10n.fieldPriority),
         items: TaskPriority.values
-            .map((value) => DropdownMenuItem(
-                  value: value,
-                  child: Text(_taskPriorityLabel(l10n, value)),
-                ))
+            .map(
+              (value) => DropdownMenuItem(
+                value: value,
+                child: Text(_taskPriorityLabel(l10n, value)),
+              ),
+            )
             .toList(growable: false),
         onChanged: (value) =>
             setState(() => priority = value ?? TaskPriority.standard),
@@ -919,21 +888,25 @@ Future<void> _showHabitEditor(
         : l10n.actionEditEntity(l10n.entityHabit),
     builder: (setState) => [
       TextField(
-          controller: titleController,
-          decoration: InputDecoration(labelText: l10n.fieldTitle)),
+        controller: titleController,
+        decoration: InputDecoration(labelText: l10n.fieldTitle),
+      ),
       const SizedBox(height: 12),
       TextField(
-          controller: cueController,
-          decoration: InputDecoration(labelText: l10n.fieldCue)),
+        controller: cueController,
+        decoration: InputDecoration(labelText: l10n.fieldCue),
+      ),
       const SizedBox(height: 12),
       DropdownButtonFormField<HabitCadence>(
         initialValue: cadence,
         decoration: InputDecoration(labelText: l10n.fieldCadence),
         items: HabitCadence.values
-            .map((value) => DropdownMenuItem(
-                  value: value,
-                  child: Text(_habitCadenceLabel(l10n, value)),
-                ))
+            .map(
+              (value) => DropdownMenuItem(
+                value: value,
+                child: Text(_habitCadenceLabel(l10n, value)),
+              ),
+            )
             .toList(growable: false),
         onChanged: (value) =>
             setState(() => cadence = value ?? HabitCadence.daily),
@@ -969,8 +942,9 @@ Future<void> _showExpenseEditor(
   final amountController = TextEditingController(
     text: (existing?.amount ?? 0).toString(),
   );
-  final categoryController =
-      TextEditingController(text: existing?.category ?? 'general');
+  final categoryController = TextEditingController(
+    text: existing?.category ?? 'general',
+  );
   return _showEditorDialog(
     context,
     title: existing == null
@@ -978,8 +952,9 @@ Future<void> _showExpenseEditor(
         : l10n.actionEditEntity(l10n.entityExpense),
     builder: (_) => [
       TextField(
-          controller: labelController,
-          decoration: InputDecoration(labelText: l10n.fieldLabel)),
+        controller: labelController,
+        decoration: InputDecoration(labelText: l10n.fieldLabel),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller: amountController,
@@ -997,7 +972,8 @@ Future<void> _showExpenseEditor(
         id: existing?.id,
         label: labelController.text.trim(),
         amount: double.tryParse(
-                amountController.text.trim().replaceAll(',', '.')) ??
+              amountController.text.trim().replaceAll(',', '.'),
+            ) ??
             0,
         category: categoryController.text.trim(),
       );
@@ -1023,8 +999,9 @@ Future<void> _showPantryEditor(
   final quantityController = TextEditingController(
     text: existing?.quantityLabel ?? '1 captured item',
   );
-  final hintController =
-      TextEditingController(text: existing?.rescueHint ?? '');
+  final hintController = TextEditingController(
+    text: existing?.rescueHint ?? '',
+  );
   return _showEditorDialog(
     context,
     title: existing == null
@@ -1032,8 +1009,9 @@ Future<void> _showPantryEditor(
         : l10n.actionEditEntity(l10n.entityPantryItem),
     builder: (_) => [
       TextField(
-          controller: nameController,
-          decoration: InputDecoration(labelText: l10n.fieldName)),
+        controller: nameController,
+        decoration: InputDecoration(labelText: l10n.fieldName),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller: quantityController,
@@ -1081,8 +1059,9 @@ Future<void> _showClosetEditor(
         : l10n.actionEditEntity(l10n.entityPurchaseIntention),
     builder: (_) => [
       TextField(
-          controller: labelController,
-          decoration: InputDecoration(labelText: l10n.fieldLabel)),
+        controller: labelController,
+        decoration: InputDecoration(labelText: l10n.fieldLabel),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller: reasonController,
@@ -1116,8 +1095,9 @@ Future<void> _showWeekEditor(
 ]) {
   final l10n = AppLocalizations.of(context)!;
   final themeController = TextEditingController(text: existing?.theme ?? '');
-  final focusController =
-      TextEditingController(text: existing?.energyNote ?? '');
+  final focusController = TextEditingController(
+    text: existing?.energyNote ?? '',
+  );
   return _showEditorDialog(
     context,
     title: existing == null
@@ -1125,8 +1105,9 @@ Future<void> _showWeekEditor(
         : l10n.actionEditEntity(l10n.entityWeekPlan),
     builder: (_) => [
       TextField(
-          controller: themeController,
-          decoration: InputDecoration(labelText: l10n.fieldTheme)),
+        controller: themeController,
+        decoration: InputDecoration(labelText: l10n.fieldTheme),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller: focusController,
@@ -1162,8 +1143,9 @@ Future<void> _showJournalEditor(
   final l10n = AppLocalizations.of(context)!;
   final titleController = TextEditingController(text: existing?.title ?? '');
   final bodyController = TextEditingController(text: existing?.body ?? '');
-  final moodController =
-      TextEditingController(text: existing?.mood ?? 'steady');
+  final moodController = TextEditingController(
+    text: existing?.mood ?? 'steady',
+  );
   return _showEditorDialog(
     context,
     title: existing == null
@@ -1171,12 +1153,14 @@ Future<void> _showJournalEditor(
         : l10n.actionEditEntity(l10n.entityJournalEntry),
     builder: (_) => [
       TextField(
-          controller: titleController,
-          decoration: InputDecoration(labelText: l10n.fieldTitle)),
+        controller: titleController,
+        decoration: InputDecoration(labelText: l10n.fieldTitle),
+      ),
       const SizedBox(height: 12),
       TextField(
-          controller: moodController,
-          decoration: InputDecoration(labelText: l10n.fieldMood)),
+        controller: moodController,
+        decoration: InputDecoration(labelText: l10n.fieldMood),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller: bodyController,
@@ -1255,10 +1239,12 @@ Future<void> _showCalendarEditor(
     text: existing?.endIso ??
         DateTime.now().toUtc().add(const Duration(hours: 1)).toIso8601String(),
   );
-  final locationController =
-      TextEditingController(text: existing?.location ?? '');
-  final energyController =
-      TextEditingController(text: existing?.energy ?? 'steady');
+  final locationController = TextEditingController(
+    text: existing?.location ?? '',
+  );
+  final energyController = TextEditingController(
+    text: existing?.energy ?? 'steady',
+  );
   return _showEditorDialog(
     context,
     title: existing == null
@@ -1266,24 +1252,29 @@ Future<void> _showCalendarEditor(
         : l10n.actionEditEntity(l10n.entityCalendarItem),
     builder: (_) => [
       TextField(
-          controller: titleController,
-          decoration: InputDecoration(labelText: l10n.fieldTitle)),
+        controller: titleController,
+        decoration: InputDecoration(labelText: l10n.fieldTitle),
+      ),
       const SizedBox(height: 12),
       TextField(
-          controller: startController,
-          decoration: InputDecoration(labelText: l10n.fieldStartIso)),
+        controller: startController,
+        decoration: InputDecoration(labelText: l10n.fieldStartIso),
+      ),
       const SizedBox(height: 12),
       TextField(
-          controller: endController,
-          decoration: InputDecoration(labelText: l10n.fieldEndIso)),
+        controller: endController,
+        decoration: InputDecoration(labelText: l10n.fieldEndIso),
+      ),
       const SizedBox(height: 12),
       TextField(
-          controller: locationController,
-          decoration: InputDecoration(labelText: l10n.fieldLocation)),
+        controller: locationController,
+        decoration: InputDecoration(labelText: l10n.fieldLocation),
+      ),
       const SizedBox(height: 12),
       TextField(
-          controller: energyController,
-          decoration: InputDecoration(labelText: l10n.fieldEnergy)),
+        controller: energyController,
+        decoration: InputDecoration(labelText: l10n.fieldEnergy),
+      ),
     ],
     onSave: () async {
       final message = await controller.saveCalendarItem(
@@ -1313,8 +1304,9 @@ Future<void> _showRecipeEditor(
 ]) {
   final l10n = AppLocalizations.of(context)!;
   final titleController = TextEditingController(text: existing?.title ?? '');
-  final summaryController =
-      TextEditingController(text: existing?.summary ?? '');
+  final summaryController = TextEditingController(
+    text: existing?.summary ?? '',
+  );
   final ingredientsController = TextEditingController(
     text: existing?.ingredientNames.join(', ') ?? '',
   );
@@ -1328,8 +1320,9 @@ Future<void> _showRecipeEditor(
         : l10n.actionEditEntity(l10n.entityRecipeRescue),
     builder: (_) => [
       TextField(
-          controller: titleController,
-          decoration: InputDecoration(labelText: l10n.fieldTitle)),
+        controller: titleController,
+        decoration: InputDecoration(labelText: l10n.fieldTitle),
+      ),
       const SizedBox(height: 12),
       TextField(
         controller: summaryController,
@@ -1340,8 +1333,9 @@ Future<void> _showRecipeEditor(
       const SizedBox(height: 12),
       TextField(
         controller: ingredientsController,
-        decoration:
-            InputDecoration(labelText: l10n.fieldIngredientsCommaSeparated),
+        decoration: InputDecoration(
+          labelText: l10n.fieldIngredientsCommaSeparated,
+        ),
       ),
       const SizedBox(height: 12),
       TextField(
@@ -1412,9 +1406,9 @@ Future<void> _showEditorDialog(
                           final message = await onDelete();
                           if (dialogContext.mounted) {
                             Navigator.of(dialogContext).pop();
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(content: Text(message)),
-                            );
+                            ScaffoldMessenger.of(
+                              dialogContext,
+                            ).showSnackBar(SnackBar(content: Text(message)));
                           }
                         },
                   style: TextButton.styleFrom(
@@ -1435,9 +1429,9 @@ Future<void> _showEditorDialog(
                         final message = await onSave();
                         if (dialogContext.mounted) {
                           Navigator.of(dialogContext).pop();
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(content: Text(message)),
-                          );
+                          ScaffoldMessenger.of(
+                            dialogContext,
+                          ).showSnackBar(SnackBar(content: Text(message)));
                         }
                       },
                 child: Text(saving ? l10n.actionSaving : l10n.actionSave),
