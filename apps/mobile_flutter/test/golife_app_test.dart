@@ -157,12 +157,69 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('GoLife AI'), findsOneWidget);
+    expect(find.text('Your daily decision OS.'), findsNothing);
     expect(find.text('Today'), findsWidgets);
     expect(find.textContaining('Your focus for today.'), findsOneWidget);
     expect(find.text('Risks today'), findsOneWidget);
     expect(find.text('Other missions'), findsOneWidget);
   });
+
+  testWidgets(
+    'mobile shell exposes exactly five primary destinations without global product banner',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: MemoryLocalStore(),
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationDestination), findsNWidgets(5));
+
+      final navigationBar =
+          tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(navigationBar.destinations, hasLength(5));
+
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Capture'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Memory'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Coach'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Settings'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Your daily decision OS.'), findsNothing);
+    },
+  );
 
   testWidgets('renders the dashboard in Spanish when locale preference is es', (
     tester,
