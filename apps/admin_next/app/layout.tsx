@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import "./globals.css";
+
 import { PageShell } from "@/components/page-shell";
 import { getAdminMessages } from "@/lib/i18n";
 

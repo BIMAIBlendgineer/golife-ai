@@ -79,25 +79,25 @@ export default async function MindFlowPage() {
           note={t.openLoopsNote}
         >
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
+            <div className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
               <p className="text-sm font-semibold text-ink">{t.mentalLoadQueueLabel}</p>
               <p className="mt-2 text-3xl font-semibold text-ink">
                 {formatNumber(openLoops.mental_load_items, locale)}
               </p>
             </div>
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
+            <div className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
               <p className="text-sm font-semibold text-ink">{t.pendingDecisionsLabel}</p>
               <p className="mt-2 text-3xl font-semibold text-ink">
                 {formatNumber(openLoops.pending_decisions, locale)}
               </p>
             </div>
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
+            <div className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
               <p className="text-sm font-semibold text-ink">{t.pendingShoppingLabel}</p>
               <p className="mt-2 text-3xl font-semibold text-ink">
                 {formatNumber(openLoops.pending_shopping_needs, locale)}
               </p>
             </div>
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
+            <div className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
               <p className="text-sm font-semibold text-ink">{t.warrantyReviewLabel}</p>
               <p className="mt-2 text-3xl font-semibold text-ink">
                 {formatNumber(openLoops.warranty_review_needs, locale)}
@@ -112,7 +112,7 @@ export default async function MindFlowPage() {
               {t.fallbackTitle}: {formatPercent(summary.fallback_rate, locale)}
             </StatusPill>
             <StatusPill tone="neutral">
-              Open loop rate: {formatPercent(summary.open_loop_rate, locale)}
+              {t.openLoopRateLabel}: {formatPercent(summary.open_loop_rate, locale)}
             </StatusPill>
           </div>
         </Panel>
@@ -133,7 +133,7 @@ export default async function MindFlowPage() {
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4"
+                className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4"
               >
                 <p className="text-sm font-semibold text-ink">{label}</p>
                 <p className="mt-2 text-2xl font-semibold text-ink">

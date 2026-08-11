@@ -11,6 +11,7 @@ import { StatusPill } from "@/components/status-pill";
 import { getOrganization, getOrganizations } from "@/lib/api";
 import { formatDateTime, formatNumber } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
+import { labelAdminPlan, labelAdminStatus } from "@/lib/labels";
 import type { OrganizationRow } from "@/lib/types";
 import { withSearchParams } from "@/lib/url";
 
@@ -82,14 +83,16 @@ export default async function OrganizationsPage({
       header: t.tableStatus,
       cell: (organization) => (
         <StatusPill tone={organization.status === "active" ? "good" : "warn"}>
-          {organization.status}
+          {labelAdminStatus(organization.status, messages)}
         </StatusPill>
       ),
     },
     {
       id: "plan",
       header: t.tablePlan,
-      cell: (organization) => <StatusPill tone="info">{organization.plan}</StatusPill>,
+      cell: (organization) => (
+        <StatusPill tone="info">{labelAdminPlan(organization.plan, messages)}</StatusPill>
+      ),
     },
     {
       id: "users",
@@ -180,9 +183,9 @@ export default async function OrganizationsPage({
             className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] px-3 py-2 text-sm text-ink"
           >
             <option value="">{messages.shared.none}</option>
-            <option value="active">active</option>
-            <option value="trial">trial</option>
-            <option value="paused">paused</option>
+            <option value="active">{messages.shared.statusActive}</option>
+            <option value="trial">{messages.shared.statusTrial}</option>
+            <option value="paused">{messages.shared.statusPaused}</option>
           </select>
         </label>
         <label className="space-y-2">
@@ -251,8 +254,12 @@ export default async function OrganizationsPage({
           {detailResult?.data ? (
             <div className="space-y-4 text-sm leading-6 text-[color:var(--ink-soft)]">
               <div className="flex flex-wrap gap-2">
-                <StatusPill tone="good">{detailResult.data.status}</StatusPill>
-                <StatusPill tone="info">{detailResult.data.plan}</StatusPill>
+                <StatusPill tone="good">
+                  {labelAdminStatus(detailResult.data.status, messages)}
+                </StatusPill>
+                <StatusPill tone="info">
+                  {labelAdminPlan(detailResult.data.plan, messages)}
+                </StatusPill>
                 <StatusPill tone="neutral">{detailResult.data.ai_mode_default}</StatusPill>
               </div>
               <p>

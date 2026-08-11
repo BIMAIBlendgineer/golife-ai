@@ -108,7 +108,7 @@ export default async function OpenRouterKeysPage() {
             {keys.map((key) => (
               <div
                 key={key.key_id}
-                className="rounded-[20px] border border-[color:var(--line)] bg-white/50 p-4"
+                className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost-strong)] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -174,7 +174,7 @@ export default async function OpenRouterKeysPage() {
             {events.map((event) => (
               <div
                 key={event.event_id}
-                className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4"
+                className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="font-semibold text-ink">{event.key_label}</p>

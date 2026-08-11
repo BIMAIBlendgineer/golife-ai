@@ -57,7 +57,7 @@ export default async function MissionsPage() {
           {missions.map((mission) => (
             <div
               key={mission.mission_id}
-              className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4"
+              className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4"
             >
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">

@@ -34,7 +34,7 @@ export default async function RoutingProfilesPage() {
           {profiles.map((profile) => (
             <div
               key={profile.capability}
-              className="rounded-[20px] border border-[color:var(--line)] bg-white/48 p-5"
+              className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-5"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>

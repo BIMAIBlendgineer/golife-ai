@@ -14,6 +14,11 @@ import {
 } from "@/lib/api";
 import { formatDateTime, formatLatency, formatPercent } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
+import {
+  labelAdminPlan,
+  labelAdminPrivacyRequestStatus,
+  labelAdminStatus,
+} from "@/lib/labels";
 
 export default async function UserDetailPage({
   params,
@@ -89,10 +94,10 @@ export default async function UserDetailPage({
           <div className="space-y-4 text-sm leading-6 text-[color:var(--ink-soft)]">
             <div className="flex flex-wrap gap-2">
               <StatusPill tone={summary.status === "active" ? "good" : "warn"}>
-                {summary.status}
+                {labelAdminStatus(summary.status, messages)}
               </StatusPill>
               <StatusPill tone="neutral">{summary.locale}</StatusPill>
-              <StatusPill tone="neutral">{summary.plan}</StatusPill>
+              <StatusPill tone="neutral">{labelAdminPlan(summary.plan, messages)}</StatusPill>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-4">
@@ -145,10 +150,10 @@ export default async function UserDetailPage({
                   {t.usageSummaryLabel}
                 </p>
                 <p className="mt-2">
-                  {usageResult.data.capture_events} capture events,{" "}
-                  {usageResult.data.missions_generated} missions generated,{" "}
-                  {usageResult.data.missions_completed} missions completed,{" "}
-                  {formatPercent(usageResult.data.fallback_rate, locale)} fallback,{" "}
+                  {usageResult.data.capture_events} {t.usageCaptureEventsLabel},{" "}
+                  {usageResult.data.missions_generated} {t.usageMissionsGeneratedLabel},{" "}
+                  {usageResult.data.missions_completed} {t.usageMissionsCompletedLabel},{" "}
+                  {formatPercent(usageResult.data.fallback_rate, locale)} {t.usageFallbackLabel},{" "}
                   {formatLatency(
                     usageResult.data.latency_ms_avg,
                     locale,
@@ -165,7 +170,11 @@ export default async function UserDetailPage({
                   {t.privacySummaryLabel}
                 </p>
                 <p className="mt-2">
-                  {privacyResult.data.privacy_request_status}.{" "}
+                  {labelAdminPrivacyRequestStatus(
+                    privacyResult.data.privacy_request_status,
+                    messages,
+                  )}
+                  .{" "}
                   {privacyResult.data.open_requests.length > 0
                     ? privacyResult.data.open_requests.join(", ")
                     : messages.shared.none}

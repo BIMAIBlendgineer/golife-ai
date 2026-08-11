@@ -84,7 +84,7 @@ export default async function RoutingSnapshotsPage() {
                 .map((snapshot) => (
                   <div
                     key={`${snapshot.capability}-${snapshot.rank_index}`}
-                    className="rounded-[20px] border border-[color:var(--line)] bg-white/50 p-5"
+                    className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost-strong)] p-5"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold text-ink">
