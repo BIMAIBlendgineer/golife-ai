@@ -257,19 +257,37 @@ pause
 goto menu
 
 :resolve_serial
-if defined ANDROID_SERIAL exit /b 0
-for /f "tokens=1,2" %%A in ('"%ADB%" devices 2^>nul ^| findstr /R /C:"device$"') do (
-    if not defined ANDROID_SERIAL set "ANDROID_SERIAL=%%A"
+if defined ANDROID_SERIAL (
+    "%ADB%" -s "!ANDROID_SERIAL!" get-state >nul 2>&1
+    if not errorlevel 1 (
+        echo [OK] Android seleccionado: !ANDROID_SERIAL!
+        exit /b 0
+    )
+    set "ANDROID_SERIAL="
 )
+
+set "ADB_DEVICE_FILE=%TEMP%\golife-adb-devices-%RANDOM%-%RANDOM%.txt"
+"%ADB%" devices > "!ADB_DEVICE_FILE!" 2>nul
+
+for /f "usebackq tokens=1,2" %%A in ("!ADB_DEVICE_FILE!") do (
+    if /I "%%B"=="device" (
+        if not defined ANDROID_SERIAL set "ANDROID_SERIAL=%%A"
+    )
+)
+
+del /q "!ADB_DEVICE_FILE!" >nul 2>&1
+
 if not defined ANDROID_SERIAL (
     echo.
     echo [!!] No hay Android ADB en estado device.
     "%ADB%" devices -l
     echo.
-    echo Usa primero [1]/[2] para Wireless Debugging.
+    echo Si Flutter ya muestra el telefono como wireless, vuelve a ejecutar [3].
+    echo Si no aparece, revisa Wireless Debugging o reconecta desde Android Studio.
     pause
     exit /b 1
 )
+
 echo [OK] Android seleccionado: !ANDROID_SERIAL!
 exit /b 0
 
@@ -323,7 +341,21 @@ echo [MOBL] Instalando en !ANDROID_SERIAL!...
 "%ADB%" -s "!ANDROID_SERIAL!" install --no-streaming -r "%QA_APK%"
 if errorlevel 1 (
     echo.
-    echo [!!] Instalacion ADB fallo. Puedes usar [8] para copiar APK a Descargas.
+    echo [!!] Instalacion ADB fallo.
+    echo      Si Android muestra INSTALL_FAILED_USER_RESTRICTED, el APK esta bien:
+    echo      el telefono bloqueo la instalacion automatica.
+    echo.
+    set "COPY_AFTER_FAIL="
+    set /p "COPY_AFTER_FAIL=Copiar ahora el APK a Descargas del Android? [S/N]: "
+    if /I "!COPY_AFTER_FAIL!"=="S" (
+        "%ADB%" -s "!ANDROID_SERIAL!" push "%QA_APK%" "%APK_PUSH_TARGET%"
+        if errorlevel 1 (
+            echo [!!] Tampoco se pudo copiar el APK.
+        ) else (
+            echo [OK] APK copiado a %APK_PUSH_TARGET%
+            echo      Abre el Administrador de archivos del telefono y toca el APK.
+        )
+    )
 ) else (
     echo.
     echo [OK] APK instalado.
