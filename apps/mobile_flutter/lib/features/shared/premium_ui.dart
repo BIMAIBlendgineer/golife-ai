@@ -105,15 +105,17 @@ class GoLifeScreen extends StatelessWidget {
                     color: GoLifePalette.textSecondary,
                   ),
                 ),
-                const SizedBox(height: GoLifeSpacing.sm),
-                Wrap(
-                  spacing: GoLifeSpacing.sm,
-                  runSpacing: GoLifeSpacing.sm,
-                  children: [
-                    if (badge != null) badge!,
-                    if (trailing != null) trailing!,
-                  ],
-                ),
+                if (badge != null || trailing != null) ...[
+                  const SizedBox(height: GoLifeSpacing.sm),
+                  Wrap(
+                    spacing: GoLifeSpacing.sm,
+                    runSpacing: GoLifeSpacing.sm,
+                    children: [
+                      if (badge != null) badge!,
+                      if (trailing != null) trailing!,
+                    ],
+                  ),
+                ],
               ],
             )
           else
