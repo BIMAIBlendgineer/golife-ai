@@ -770,7 +770,7 @@ String _draftEventTypeLabel(AppLocalizations l10n, CaptureDraftItem draft) {
       return pickLocalizedValue(
         l10n.localeName,
         en: 'Habit',
-        es: 'Habito',
+        es: 'Hábito',
         ptBr: 'Hábito',
         ptPt: 'Habito',
         fr: 'Habitude',
@@ -798,7 +798,7 @@ String _draftEventTypeLabel(AppLocalizations l10n, CaptureDraftItem draft) {
       return pickLocalizedValue(
         l10n.localeName,
         en: 'Pantry',
-        es: 'Pantry',
+        es: 'Despensa',
         ptBr: 'Despensa',
         ptPt: 'Pantry',
         fr: 'Pantry',
