@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +18,22 @@ import 'package:golife_flutter/domains/missions/mission_set.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
 import 'package:golife_flutter/features/dashboard/dashboard_screen.dart';
 import 'package:golife_flutter/l10n/app_localizations.dart';
+
+class _BlockingBootstrapStore extends MemoryLocalStore {
+  final Completer<void> gate = Completer<void>();
+
+  void release() {
+    if (!gate.isCompleted) {
+      gate.complete();
+    }
+  }
+
+  @override
+  Future<PrivacySettings> loadPrivacySettings() async {
+    await gate.future;
+    return super.loadPrivacySettings();
+  }
+}
 
 class _FallbackAiGatewayClient extends AiGatewayClient {
   @override
@@ -218,6 +236,43 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Your daily decision OS.'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'shows premium bootstrap screen until controller is ready',
+    (tester) async {
+      final localStore = _BlockingBootstrapStore();
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(
+        find.byKey(const Key('golife-bootstrap-screen')),
+        findsOneWidget,
+      );
+      expect(find.text('GoLife AI'), findsOneWidget);
+      expect(find.text('Preparing your day...'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+
+      localStore.release();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('golife-bootstrap-screen')),
+        findsNothing,
+      );
+      expect(find.byType(NavigationBar), findsOneWidget);
     },
   );
 
