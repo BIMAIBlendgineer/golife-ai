@@ -1800,7 +1800,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get navigate => 'Navegar';
 
   @override
-  String get navDashboard => 'Inicio';
+  String get navDashboard => 'Início';
 
   @override
   String get navCapture => 'Capturar';
@@ -2230,10 +2230,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get gatewayLive => 'Gateway ativo';
 
   @override
-  String get gatewayNoConnection => 'Sem conexao';
+  String get gatewayNoConnection => 'Sem conexão';
 
   @override
-  String get gatewayUnavailable => 'IA temporariamente indisponivel';
+  String get gatewayUnavailable => 'IA temporariamente indisponível';
 
   @override
   String get gatewayLocalFallback => 'Usando fallback local';
@@ -2242,7 +2242,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get feedbackNone => 'Sem feedback ainda';
 
   @override
-  String get feedbackUseful => 'Util';
+  String get feedbackUseful => 'Útil';
 
   @override
   String get feedbackRejected => 'Rejeitado';
@@ -2251,7 +2251,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get feedbackAccepted => 'Aceito';
 
   @override
-  String get feedbackCompleted => 'Concluido';
+  String get feedbackCompleted => 'Concluído';
 
   @override
   String get feedbackEdited => 'Editado';
@@ -2267,15 +2267,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get missionDeliverySummaryAi =>
-      'GoLife usou IA para esta missao depois do filtro local de privacidade.';
+      'GoLife usou IA para esta missão depois do filtro local de privacidade.';
 
   @override
   String get missionDeliverySummaryFallback =>
-      'GoLife ficou local porque o gateway estava indisponivel ou degradado.';
+      'GoLife ficou local porque o gateway estava indisponível ou degradado.';
 
   @override
   String get missionDeliverySummaryLocal =>
-      'GoLife manteve esta missao local no dispositivo.';
+      'GoLife manteve esta missão local no dispositivo.';
 
   @override
   String get actionWrite => 'Escrever';
@@ -2287,7 +2287,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get actionExplain => 'Explicar';
 
   @override
-  String get actionUseful => 'Util';
+  String get actionUseful => 'Útil';
 
   @override
   String get actionDoNow => 'Fazer agora';
@@ -2356,23 +2356,23 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboardDisclosurePending =>
-      'GoLife mantem os dados locais ate uma missao ficar pronta.';
+      'GoLife mantém os dados locais até uma missão ficar pronta.';
 
   @override
   String dashboardMissionCountTitle(int count) {
-    return '$count missoes para hoje';
+    return '$count missões para hoje';
   }
 
   @override
   String get dashboardMissionIntro =>
-      'Home Today transforma o grafo em acoes pequenas: uma missao principal, duas de apoio, evidencia visivel e feedback rapido.';
+      'Hoje transforma o grafo em ações pequenas: uma missão principal, duas de apoio, evidência visível e feedback rápido.';
 
   @override
-  String get dashboardLoadingMissions => 'Carregando missoes...';
+  String get dashboardLoadingMissions => 'Carregando missões...';
 
   @override
   String get dashboardBootstrappingMission =>
-      'Inicializando eventos locais, ranking de missoes e trace do gateway.';
+      'Inicializando eventos locais, ranking de missões e rastreio do gateway.';
 
   @override
   String dashboardRiskCount(int count) {
@@ -2408,10 +2408,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Missões secundárias aparecerão quando o plano diário estiver disponível.';
 
   @override
-  String get signalCriticalTask => 'Tarefa critica';
+  String get signalCriticalTask => 'Tarefa crítica';
 
   @override
-  String get signalRecoveryHabit => 'Habito de recuperacao';
+  String get signalRecoveryHabit => 'Hábito de recuperação';
 
   @override
   String signalRecoveryHabitBody(Object cue, Object streak) {
@@ -2425,16 +2425,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get signalUseThisFood => 'Use este alimento';
 
   @override
-  String get dashboardWhyThisToday => 'Por que está hoje';
+  String get dashboardWhyThisToday => 'Por que esta missão hoje';
 
   @override
   String dashboardConfidenceWithType(int percent, Object type) {
-    return 'Confianca $percent% - $type';
+    return 'Confiança $percent% - $type';
   }
 
   @override
   String get dashboardNothingSent =>
-      'Nada foi enviado para esta missao. GoLife ficou local neste passo.';
+      'Nada foi enviado para esta missão. GoLife ficou local neste passo.';
 
   @override
   String get dashboardNothingBlocked =>
@@ -2442,11 +2442,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboardNoAlwaysLocalCollections =>
-      'Nenhuma colecao sempre local configurada.';
+      'Nenhuma coleção sempre local configurada.';
 
   @override
   String get dashboardNoEncryptedCollections =>
-      'Nenhuma colecao criptografada configurada.';
+      'Nenhuma coleção criptografada configurada.';
 
   @override
   String dashboardRiskSeverityLabel(Object severity) {

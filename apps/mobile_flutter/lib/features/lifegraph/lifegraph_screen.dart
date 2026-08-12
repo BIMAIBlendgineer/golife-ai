@@ -525,7 +525,7 @@ class _LifeGraphScreenState extends State<LifeGraphScreen> {
 String _shoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Shopping',
-      es: 'Shopping',
+      es: 'Compras',
       ptBr: 'Compras',
       ptPt: 'Shopping',
       fr: 'Achats',
@@ -1035,8 +1035,8 @@ String _usedByAiLabel(AppLocalizations l10n) => pickLocalizedValue(
 String _protectedLocalLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Protected local',
-      es: 'Protegidos local',
-      ptBr: 'Protegidos no local',
+      es: 'Protegidos localmente',
+      ptBr: 'Protegidos localmente',
       ptPt: 'Protegidos no local',
       fr: 'Proteges en local',
       it: 'Protetti in locale',
@@ -1140,7 +1140,7 @@ String _filtersLabel(AppLocalizations l10n) => pickLocalizedValue(
 String _filtersBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Keep the timeline readable on a small screen.',
-      es: 'Mantiene la timeline legible en pantalla pequeña.',
+      es: 'Mantiene la línea de tiempo legible en una pantalla pequeña.',
       ptBr: 'Mantenha a linha do tempo legível em uma tela pequena.',
       ptPt: 'Mantem a timeline legivel em ecra pequeno.',
       fr: 'Garde la timeline lisible sur petit ecran.',
@@ -1196,7 +1196,7 @@ String _domainsTitle(AppLocalizations l10n) => pickLocalizedValue(
 String _domainsBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'These routes still exist, but Memory keeps them in one place.',
-      es: 'Estas rutas siguen existiendo, pero Memory las mantiene en un solo lugar.',
+      es: 'Estas rutas siguen existiendo, pero Memoria las mantiene en un solo lugar.',
       ptBr:
           'Essas rotas continuam existindo, mas a Memória as mantém em um só lugar.',
       ptPt:
@@ -1226,7 +1226,7 @@ String _moreDomainsTitle(AppLocalizations l10n) => pickLocalizedValue(
 String _moreDomainsBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Keep secondary routes available without crowding Memory.',
-      es: 'Mantiene los secundarios accesibles sin saturar Memory.',
+      es: 'Mantiene las rutas secundarias accesibles sin saturar Memoria.',
       ptBr: 'Mantém rotas secundárias acessíveis sem sobrecarregar a Memória.',
       ptPt: 'Mantem rotas secundarias acessiveis sem sobrecarregar o Memory.',
       fr: 'Garde les routes secondaires accessibles sans surcharger Memory.',
@@ -1240,7 +1240,7 @@ String _moreDomainsBody(AppLocalizations l10n) => pickLocalizedValue(
 String _timelineTitle(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Timeline',
-      es: 'Timeline',
+      es: 'Línea de tiempo',
       ptBr: 'Linha do tempo',
       ptPt: 'Timeline',
       fr: 'Timeline',
@@ -1254,8 +1254,8 @@ String _timelineTitle(AppLocalizations l10n) => pickLocalizedValue(
 String _timelineBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Readable cards first. Detail only when you ask for it.',
-      es: 'Cards legibles primero. El detalle solo cuando lo pides.',
-      ptBr: 'Cards legíveis primeiro. O detalhe só quando você pedir.',
+      es: 'Tarjetas legibles primero. El detalle solo cuando lo pides.',
+      ptBr: 'Cartões legíveis primeiro. O detalhe só quando você pedir.',
       ptPt: 'Cards legiveis primeiro. O detalhe so quando pedires.',
       fr: 'Des cartes lisibles d abord. Le detail seulement si tu le demandes.',
       it: 'Carte leggibili prima. Il dettaglio solo quando lo chiedi.',

@@ -337,6 +337,14 @@ void main() {
         findsNothing,
       );
       expect(find.text('Seu foco de hoje.'), findsOneWidget);
+      expect(find.text('Escolha uma vitória visível'), findsOneWidget);
+      expect(find.textContaining('Esforço'), findsWidgets);
+      expect(
+        find.text(
+          'GoLife ficou local porque o gateway estava indisponível ou degradado.',
+        ),
+        findsWidgets,
+      );
 
       await tester.tap(
         find.descendant(
@@ -357,6 +365,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Memória'), findsWidgets);
       expect(find.text('Sua vida recente.'), findsOneWidget);
+      expect(find.text('Linha do tempo'), findsOneWidget);
+      expect(
+        find.text('Cartões legíveis primeiro. O detalhe só quando você pedir.'),
+        findsOneWidget,
+      );
 
       await tester.tap(
         find.descendant(
@@ -366,6 +379,47 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Pergunte sobre o seu dia.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'PT-BR mission explanation uses localized mock uncertainty',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('pt-BR');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('Explicar').first,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Explicar').first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Missão simulada com contexto entre domínios limitado.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Missao simulada com contexto entre dominios limitado.'),
+        findsNothing,
+      );
     },
   );
 
@@ -421,6 +475,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Memoria'), findsWidgets);
       expect(find.text('Tu vida reciente.'), findsOneWidget);
+      expect(find.text('Línea de tiempo'), findsOneWidget);
+      expect(
+        find.text(
+            'Tarjetas legibles primero. El detalle solo cuando lo pides.'),
+        findsOneWidget,
+      );
 
       await tester.tap(
         find.descendant(

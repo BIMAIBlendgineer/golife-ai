@@ -654,7 +654,7 @@ String _savedBody(int count, AppLocalizations l10n) => pickLocalizedValue(
 String _viewUpdatedTodayLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'View updated Today',
-      es: 'Ver Today actualizado',
+      es: 'Ver Hoy actualizado',
       ptBr: 'Ver Hoje atualizado',
       ptPt: 'Ver Today atualizado',
       fr: 'Voir Today mis a jour',

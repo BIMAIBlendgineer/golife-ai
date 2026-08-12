@@ -32,8 +32,8 @@ extension LocalizedDomainKey on DomainKey {
         return pickLocalizedValue(
           l10n.localeName,
           en: 'Shopping',
-          es: 'Shopping',
-          ptBr: 'Shopping',
+          es: 'Compras',
+          ptBr: 'Compras',
           ptPt: 'Shopping',
           fr: 'Achats',
           it: 'Shopping',
@@ -47,7 +47,7 @@ extension LocalizedDomainKey on DomainKey {
           l10n.localeName,
           en: 'Decisions',
           es: 'Decisiones',
-          ptBr: 'Decisoes',
+          ptBr: 'Decisões',
           ptPt: 'Decisoes',
           fr: 'Decisions',
           it: 'Decisioni',
@@ -315,7 +315,7 @@ extension LocalizedGoLifeController on GoLifeController {
         l10n.localeName,
         en: 'Effort not estimated',
         es: 'Esfuerzo no estimado',
-        ptBr: 'Esforco nao estimado',
+        ptBr: 'Esforço não estimado',
         ja: '必要な負荷は未推定です',
         zhHans: '尚未估算投入强度',
       );
@@ -325,7 +325,7 @@ extension LocalizedGoLifeController on GoLifeController {
         l10n.localeName,
         en: 'Low effort',
         es: 'Esfuerzo bajo',
-        ptBr: 'Esforco baixo',
+        ptBr: 'Esforço baixo',
         ja: '低負荷',
         zhHans: '低投入',
       );
@@ -335,7 +335,7 @@ extension LocalizedGoLifeController on GoLifeController {
         l10n.localeName,
         en: 'Balanced effort',
         es: 'Esfuerzo equilibrado',
-        ptBr: 'Esforco equilibrado',
+        ptBr: 'Esforço equilibrado',
         ja: '中くらいの負荷',
         zhHans: '投入适中',
       );
@@ -344,7 +344,7 @@ extension LocalizedGoLifeController on GoLifeController {
       l10n.localeName,
       en: 'Higher effort',
       es: 'Esfuerzo alto',
-      ptBr: 'Esforco alto',
+      ptBr: 'Esforço alto',
       ja: '高めの負荷',
       zhHans: '投入较高',
     );
@@ -423,7 +423,7 @@ _MissionContent? _localizedMockMissionContent(
           en: 'Enable AI on at least one domain to generate daily missions.',
           es: 'Activa IA en al menos un dominio para generar misiones diarias.',
           ptBr:
-              'Ative a IA em pelo menos um dominio para gerar missoes diarias.',
+              'Ative a IA em pelo menos um domínio para gerar missões diárias.',
           ja: '毎日のミッションを生成するには、少なくとも1つのドメインでAIを有効にしてください。',
           zhHans: '请至少为一个领域启用 AI，才能生成今日任务。',
         ),
@@ -431,10 +431,10 @@ _MissionContent? _localizedMockMissionContent(
           localeName,
           en: const ['No domain is currently marked as AI-allowed.'],
           es: const [
-            'Ahora mismo no hay ningun dominio marcado como apto para IA.'
+            'Ahora mismo no hay ningún dominio marcado como apto para IA.'
           ],
           ptBr: const [
-            'Nenhum dominio esta marcado como permitido para IA no momento.'
+            'Nenhum domínio está marcado como permitido para IA no momento.'
           ],
           ja: const ['現在、AI利用可として設定されたドメインはありません。'],
           zhHans: const ['当前没有任何领域被标记为允许使用 AI。'],
@@ -442,8 +442,8 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'No cross-domain inference was attempted.',
-          es: 'No se intento ninguna inferencia entre dominios.',
-          ptBr: 'Nenhuma inferencia entre dominios foi tentada.',
+          es: 'No se intentó ninguna inferencia entre dominios.',
+          ptBr: 'Nenhuma inferência entre domínios foi tentada.',
           ja: 'ドメイン横断の推論は実行されませんでした。',
           zhHans: '未尝试跨领域推断。',
         ),
@@ -461,9 +461,9 @@ _MissionContent? _localizedMockMissionContent(
         body: _pickLocale(
           localeName,
           en: 'Finish the shortest critical task first, then log one low-friction habit so the day ends with traction instead of spillover.',
-          es: 'Termina primero la tarea critica mas corta y luego registra un habito de baja friccion para que el dia cierre con traccion y no con arrastre.',
+          es: 'Termina primero la tarea crítica más corta y luego registra un hábito de baja fricción para que el día cierre con tracción y no con arrastre.',
           ptBr:
-              'Conclua primeiro a tarefa critica mais curta e depois registre um habito de baixa friccao para terminar o dia com tracao, e nao com acumulacao.',
+              'Conclua primeiro a tarefa crítica mais curta e depois registre um hábito de baixa fricção para terminar o dia com tração, e não com acumulação.',
           ja: '最も短い重要タスクを先に終え、その後で負荷の低い習慣を1つ記録して、1日を惰性ではなく前進で締めます。',
           zhHans: '先完成最短的关键任务，再记录一个低摩擦习惯，让今天以推进感而不是拖延感结束。',
         ),
@@ -474,12 +474,12 @@ _MissionContent? _localizedMockMissionContent(
             'The life graph already has events in both domains.',
           ],
           es: const [
-            'Tareas y habitos estan permitidos para IA.',
+            'Tareas y hábitos están permitidos para IA.',
             'El grafo ya tiene eventos en ambos dominios.',
           ],
           ptBr: const [
-            'Tarefas e habitos estao permitidos para IA.',
-            'O grafo ja tem eventos nos dois dominios.',
+            'Tarefas e hábitos estão permitidos para IA.',
+            'O grafo já tem eventos nos dois domínios.',
           ],
           ja: const [
             'タスクと習慣の両方でAIが許可されています。',
@@ -493,9 +493,9 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission based on consented domains, not a real remote call.',
-          es: 'Mision simulada basada en dominios consentidos, no en una llamada remota real.',
+          es: 'Misión simulada basada en dominios consentidos, no en una llamada remota real.',
           ptBr:
-              'Missao simulada com base nos dominios consentidos, nao em uma chamada remota real.',
+              'Missão simulada com base nos domínios consentidos, não em uma chamada remota real.',
           ja: '同意済みドメインに基づく模擬ミッションであり、実際のリモート呼び出しではありません。',
           zhHans: '这是基于已同意领域的模拟任务，不是真实的远程调用。',
         ),
@@ -505,8 +505,8 @@ _MissionContent? _localizedMockMissionContent(
         title: _pickLocale(
           localeName,
           en: 'Reduce friction in one important task',
-          es: 'Reduce friccion en una tarea importante',
-          ptBr: 'Reduza a friccao em uma tarefa importante',
+          es: 'Reduce fricción en una tarea importante',
+          ptBr: 'Reduza a fricção em uma tarefa importante',
           ja: '重要なタスク1件の摩擦を減らす',
           zhHans: '降低一项重要任务的阻力',
         ),
@@ -515,23 +515,23 @@ _MissionContent? _localizedMockMissionContent(
           en: 'Define the next visible step for one task and finish that block before opening another thread.',
           es: 'Define el siguiente paso visible de una tarea y termina ese bloque antes de abrir otro frente.',
           ptBr:
-              'Defina a proxima etapa visivel de uma tarefa e conclua esse bloco antes de abrir outra frente.',
+              'Defina a próxima etapa visível de uma tarefa e conclua esse bloco antes de abrir outra frente.',
           ja: '1つのタスクの次に見えるステップを定義し、そのブロックを終えてから別の作業を開きます。',
           zhHans: '先定义一项任务的下一步可见动作，并在开启新线程之前完成这一段。',
         ),
         evidence: _pickLocale(
           localeName,
           en: const ['Task activity is available for AI.'],
-          es: const ['La actividad de tareas esta disponible para IA.'],
-          ptBr: const ['A atividade de tarefas esta disponivel para IA.'],
+          es: const ['La actividad de tareas está disponible para IA.'],
+          ptBr: const ['A atividade de tarefas está disponível para IA.'],
           ja: const ['タスクの活動データをAIが利用できます。'],
           zhHans: const ['任务活动数据可供 AI 使用。'],
         ),
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission with local prioritization only.',
-          es: 'Mision simulada con priorizacion solo local.',
-          ptBr: 'Missao simulada com priorizacao apenas local.',
+          es: 'Misión simulada con priorización solo local.',
+          ptBr: 'Missão simulada com priorização apenas local.',
           ja: 'ローカル優先度のみを使った模擬ミッションです。',
           zhHans: '这是只使用本地优先级的模拟任务。',
         ),
@@ -541,33 +541,33 @@ _MissionContent? _localizedMockMissionContent(
         title: _pickLocale(
           localeName,
           en: 'Keep one recovery habit alive',
-          es: 'Mantene vivo un habito de recuperacion',
-          ptBr: 'Mantenha vivo um habito de recuperacao',
+          es: 'Mantén vivo un hábito de recuperación',
+          ptBr: 'Mantenha vivo um hábito de recuperação',
           ja: '回復の習慣を1つ維持する',
           zhHans: '保持一个恢复习惯不断线',
         ),
         body: _pickLocale(
           localeName,
           en: 'Protect a 5 to 10 minute habit so the day does not become pure reaction mode.',
-          es: 'Protege un habito de 5 a 10 minutos para que el dia no se convierta en pura reaccion.',
+          es: 'Protege un hábito de 5 a 10 minutos para que el día no se convierta en pura reacción.',
           ptBr:
-              'Proteja um habito de 5 a 10 minutos para que o dia nao vire apenas reacao.',
+              'Proteja um hábito de 5 a 10 minutos para que o dia não vire apenas reação.',
           ja: '5〜10分の習慣を守り、1日が反応だけで終わらないようにします。',
           zhHans: '守住一个 5 到 10 分钟的习惯，别让今天完全变成被动应对。',
         ),
         evidence: _pickLocale(
           localeName,
           en: const ['Habit continuity is visible in the local graph.'],
-          es: const ['La continuidad del habito es visible en el grafo local.'],
-          ptBr: const ['A continuidade do habito esta visivel no grafo local.'],
+          es: const ['La continuidad del hábito es visible en el grafo local.'],
+          ptBr: const ['A continuidade do hábito está visível no grafo local.'],
           ja: const ['習慣の継続状況がローカルグラフに見えています。'],
           zhHans: const ['本地图谱中可以看到习惯连续性。'],
         ),
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission; the final effort still depends on energy.',
-          es: 'Mision simulada; el esfuerzo final sigue dependiendo de la energia.',
-          ptBr: 'Missao simulada; o esforco final ainda depende da energia.',
+          es: 'Misión simulada; el esfuerzo final sigue dependiendo de la energía.',
+          ptBr: 'Missão simulada; o esforço final ainda depende da energia.',
           ja: '模擬ミッションです。最終的な実行量はその日のエネルギー次第です。',
           zhHans: '这是模拟任务；最终投入仍取决于你的精力。',
         ),
@@ -577,8 +577,8 @@ _MissionContent? _localizedMockMissionContent(
         title: _pickLocale(
           localeName,
           en: 'Use what is already paid for',
-          es: 'Usa lo que ya esta pagado',
-          ptBr: 'Use o que ja foi pago',
+          es: 'Usa lo que ya está pagado',
+          ptBr: 'Use o que já foi pago',
           ja: 'すでに支払ったものを使う',
           zhHans: '先用已经买过的东西',
         ),
@@ -587,7 +587,7 @@ _MissionContent? _localizedMockMissionContent(
           en: 'Before adding anything to a shopping list, build one meal around an ingredient you already have at home.',
           es: 'Antes de agregar algo a la lista de compra, arma una comida con un ingrediente que ya tengas en casa.',
           ptBr:
-              'Antes de adicionar algo a lista de compras, monte uma refeicao com um ingrediente que ja exista em casa.',
+              'Antes de adicionar algo à lista de compras, monte uma refeição com um ingrediente que já exista em casa.',
           ja: '買い物リストに追加する前に、家にある食材を中心に1食組み立てます。',
           zhHans: '在往购物清单里加东西之前，先用家里已有的食材做一顿饭。',
         ),
@@ -598,12 +598,12 @@ _MissionContent? _localizedMockMissionContent(
             'The mission avoids purchase advice and focuses on using existing items.',
           ],
           es: const [
-            'Finanzas y pantry estan permitidos para IA.',
-            'La mision evita dar consejo de compra y se centra en usar lo que ya existe.',
+            'Finanzas y despensa están permitidas para IA.',
+            'La misión evita dar consejo de compra y se centra en usar lo que ya existe.',
           ],
           ptBr: const [
-            'Financas e despensa estao permitidos para IA.',
-            'A missao evita conselho de compra e foca em usar o que ja existe.',
+            'Finanças e despensa estão permitidas para IA.',
+            'A missão evita conselho de compra e foca em usar o que já existe.',
           ],
           ja: const [
             '家計とパントリーの両方でAIが許可されています。',
@@ -617,9 +617,9 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission; pantry availability still needs human confirmation.',
-          es: 'Mision simulada; la disponibilidad real en pantry aun necesita confirmacion humana.',
+          es: 'Misión simulada; la disponibilidad real en despensa aún necesita confirmación humana.',
           ptBr:
-              'Missao simulada; a disponibilidade real da despensa ainda precisa de confirmacao humana.',
+              'Missão simulada; a disponibilidade real da despensa ainda precisa de confirmação humana.',
           ja: '模擬ミッションです。実際の在庫有無は本人確認が必要です。',
           zhHans: '这是模拟任务；食材是否真的还有库存仍需人工确认。',
         ),
@@ -630,33 +630,33 @@ _MissionContent? _localizedMockMissionContent(
           localeName,
           en: 'Pause one avoidable spend',
           es: 'Pausa un gasto evitable',
-          ptBr: 'Pause um gasto evitavel',
+          ptBr: 'Pause um gasto evitável',
           ja: '避けられる支出を1つ止める',
           zhHans: '暂停一笔可以避免的支出',
         ),
         body: _pickLocale(
           localeName,
           en: 'Delay one small non-urgent purchase until you review whether it solves a real need today.',
-          es: 'Retrasa una compra pequena y no urgente hasta revisar si realmente resuelve una necesidad hoy.',
+          es: 'Retrasa una compra pequeña y no urgente hasta revisar si realmente resuelve una necesidad hoy.',
           ptBr:
-              'Adie uma compra pequena e nao urgente ate revisar se ela realmente resolve uma necessidade hoje.',
+              'Adie uma compra pequena e não urgente até revisar se ela realmente resolve uma necessidade hoje.',
           ja: '小さくて緊急ではない購入を1件保留し、今日の本当の必要を満たすか確認します。',
           zhHans: '先延后一笔小额且不紧急的购买，确认它今天是否真的解决了实际需要。',
         ),
         evidence: _pickLocale(
           localeName,
           en: const ['Finance is AI-allowed.'],
-          es: const ['Finanzas esta permitido para IA.'],
-          ptBr: const ['Financas esta permitido para IA.'],
+          es: const ['Finanzas están permitidas para IA.'],
+          ptBr: const ['Finanças estão permitidas para IA.'],
           ja: const ['家計ドメインでAIが許可されています。'],
           zhHans: const ['财务领域允许使用 AI。'],
         ),
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock reflection; this is not financial advice or a universal rule.',
-          es: 'Reflexion simulada; esto no es consejo financiero ni una regla universal.',
+          es: 'Reflexión simulada; esto no es consejo financiero ni una regla universal.',
           ptBr:
-              'Reflexao simulada; isto nao e aconselhamento financeiro nem uma regra universal.',
+              'Reflexão simulada; isto não é aconselhamento financeiro nem uma regra universal.',
           ja: '模擬的な振り返りであり、金融助言でも普遍的なルールでもありません。',
           zhHans: '这是模拟反思，不构成财务建议，也不是通用规则。',
         ),
@@ -674,25 +674,25 @@ _MissionContent? _localizedMockMissionContent(
         body: _pickLocale(
           localeName,
           en: 'Turn one existing ingredient into a low-effort meal before opening a new buying decision.',
-          es: 'Convierte un ingrediente existente en una comida simple antes de abrir una nueva decision de compra.',
+          es: 'Convierte un ingrediente existente en una comida simple antes de abrir una nueva decisión de compra.',
           ptBr:
-              'Transforme um ingrediente que ja existe em uma refeicao simples antes de abrir uma nova decisao de compra.',
+              'Transforme um ingrediente que já existe em uma refeição simples antes de abrir uma nova decisão de compra.',
           ja: '新しい購入判断を始める前に、今ある食材を1つ使って負荷の低い食事にします。',
           zhHans: '在开始新的购买决策之前，先把现有食材做成一顿低成本的餐食。',
         ),
         evidence: _pickLocale(
           localeName,
           en: const ['Pantry activity is visible to AI.'],
-          es: const ['La actividad de pantry es visible para IA.'],
-          ptBr: const ['A atividade da despensa esta visivel para IA.'],
+          es: const ['La actividad de la despensa es visible para IA.'],
+          ptBr: const ['A atividade da despensa está visível para IA.'],
           ja: const ['パントリーの活動がAIに見えています。'],
           zhHans: const ['AI 可以看到 pantry 领域的活动。'],
         ),
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission; confirm real stock locally first.',
-          es: 'Mision simulada; primero confirma el stock real localmente.',
-          ptBr: 'Missao simulada; confirme primeiro o estoque real localmente.',
+          es: 'Misión simulada; primero confirma el stock real localmente.',
+          ptBr: 'Missão simulada; confirme primeiro o estoque real localmente.',
           ja: '模擬ミッションです。実在庫はまずローカルで確認してください。',
           zhHans: '这是模拟任务；请先在本地确认真实库存。',
         ),
@@ -710,9 +710,9 @@ _MissionContent? _localizedMockMissionContent(
         body: _pickLocale(
           localeName,
           en: 'Review one outfit you already own before acting on any clothing purchase intention today.',
-          es: 'Revisa una combinacion que ya tengas antes de actuar sobre cualquier intencion de compra de ropa hoy.',
+          es: 'Revisa una combinación que ya tengas antes de actuar sobre cualquier intención de compra de ropa hoy.',
           ptBr:
-              'Revise uma combinacao que voce ja possui antes de agir sobre qualquer intencao de compra de roupa hoje.',
+              'Revise uma combinação que você já possui antes de agir sobre qualquer intenção de compra de roupa hoje.',
           ja: '今日服を買う前に、すでに持っているコーデを1つ見直します。',
           zhHans: '今天在为服装购买做决定之前，先回看一套你已经拥有的搭配。',
         ),
@@ -723,12 +723,12 @@ _MissionContent? _localizedMockMissionContent(
             'The mission keeps the final decision with the user.',
           ],
           es: const [
-            'Closet esta permitido para IA.',
-            'La decision final sigue quedando en la persona.',
+            'El armario está permitido para IA.',
+            'La decisión final sigue quedando en la persona.',
           ],
           ptBr: const [
-            'Guarda-roupa esta permitido para IA.',
-            'A decisao final continua com a pessoa.',
+            'Guarda-roupa está permitido para IA.',
+            'A decisão final continua com a pessoa.',
           ],
           ja: const [
             'ワードローブでAIが許可されています。',
@@ -742,8 +742,8 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission; visual comparison still needs the person.',
-          es: 'Mision simulada; la comparacion visual sigue necesitando a la persona.',
-          ptBr: 'Missao simulada; a comparacao visual ainda depende da pessoa.',
+          es: 'Misión simulada; la comparación visual sigue necesitando a la persona.',
+          ptBr: 'Missão simulada; a comparação visual ainda depende da pessoa.',
           ja: '模擬ミッションです。視覚的な比較は本人が行う必要があります。',
           zhHans: '这是模拟任务；视觉比较仍然需要你本人完成。',
         ),
@@ -753,17 +753,17 @@ _MissionContent? _localizedMockMissionContent(
         title: _pickLocale(
           localeName,
           en: 'Delay the decision 24 hours',
-          es: 'Retrasa la decision 24 horas',
-          ptBr: 'Adie a decisao por 24 horas',
+          es: 'Retrasa la decisión 24 horas',
+          ptBr: 'Adie a decisão por 24 horas',
           ja: '判断を24時間遅らせる',
           zhHans: '将决定延后 24 小时',
         ),
         body: _pickLocale(
           localeName,
           en: 'If the purchase is not solving an immediate gap, wait one day and compare it again with what you already own.',
-          es: 'Si la compra no resuelve una necesidad inmediata, espera un dia y comparala otra vez con lo que ya tienes.',
+          es: 'Si la compra no resuelve una necesidad inmediata, espera un día y compárala otra vez con lo que ya tienes.',
           ptBr:
-              'Se a compra nao resolve uma necessidade imediata, espere um dia e compare novamente com o que voce ja possui.',
+              'Se a compra não resolve uma necessidade imediata, espere um dia e compare novamente com o que você já possui.',
           ja: 'その購入が今すぐの不足を埋めないなら、1日待ってから手持ちともう一度比べます。',
           zhHans: '如果这次购买并不能解决眼前缺口，先等一天，再和你已有的物品重新比较。',
         ),
@@ -771,10 +771,10 @@ _MissionContent? _localizedMockMissionContent(
           localeName,
           en: const ['Wardrobe intent can benefit from a pause.'],
           es: const [
-            'La intencion de compra en closet puede beneficiarse de una pausa.'
+            'La intención de compra en el armario puede beneficiarse de una pausa.'
           ],
           ptBr: const [
-            'A intencao de compra no guarda-roupa pode se beneficiar de uma pausa.'
+            'A intenção de compra no guarda-roupa pode se beneficiar de uma pausa.'
           ],
           ja: const ['ワードローブ関連の購買意図は一度止めると判断しやすくなります。'],
           zhHans: const ['衣橱相关的购买意图往往会因短暂停顿而更清晰。'],
@@ -782,8 +782,8 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission; the decision remains fully manual.',
-          es: 'Mision simulada; la decision sigue siendo completamente manual.',
-          ptBr: 'Missao simulada; a decisao continua totalmente manual.',
+          es: 'Misión simulada; la decisión sigue siendo completamente manual.',
+          ptBr: 'Missão simulada; a decisão continua totalmente manual.',
           ja: '模擬ミッションです。判断は完全に本人の手元にあります。',
           zhHans: '这是模拟任务；决定权仍完全在你手里。',
         ),
@@ -793,17 +793,17 @@ _MissionContent? _localizedMockMissionContent(
         title: _pickLocale(
           localeName,
           en: 'Try one existing combination first',
-          es: 'Prueba primero una combinacion existente',
-          ptBr: 'Teste primeiro uma combinacao existente',
+          es: 'Prueba primero una combinación existente',
+          ptBr: 'Teste primeiro uma combinação existente',
           ja: '手持ちの組み合わせを先に試す',
           zhHans: '先试一套现有搭配',
         ),
         body: _pickLocale(
           localeName,
           en: 'Build one outfit with a piece you already have before creating a new shopping loop.',
-          es: 'Arma un outfit con una prenda que ya tienes antes de abrir un nuevo ciclo de compra.',
+          es: 'Arma un conjunto con una prenda que ya tienes antes de abrir un nuevo ciclo de compra.',
           ptBr:
-              'Monte um look com uma peca que voce ja possui antes de abrir um novo ciclo de compra.',
+              'Monte uma combinação com uma peça que você já possui antes de abrir um novo ciclo de compra.',
           ja: '新しい買い物ループを始める前に、手持ちの服で1つコーデを作ってみます。',
           zhHans: '在开启新的购物循环之前，先用已有单品搭一套穿搭。',
         ),
@@ -813,10 +813,10 @@ _MissionContent? _localizedMockMissionContent(
             'Closet context is available without needing a new purchase.'
           ],
           es: const [
-            'El contexto del closet esta disponible sin necesidad de una compra nueva.'
+            'El contexto del armario está disponible sin necesidad de una compra nueva.'
           ],
           ptBr: const [
-            'O contexto do guarda-roupa esta disponivel sem precisar de uma nova compra.'
+            'O contexto do guarda-roupa está disponível sem precisar de uma nova compra.'
           ],
           ja: const ['新しい購入をしなくてもクローゼット文脈は利用できます。'],
           zhHans: const ['无需新增购买，也能利用现有衣橱上下文。'],
@@ -824,8 +824,8 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission; still requires a visual check.',
-          es: 'Mision simulada; aun requiere una comprobacion visual.',
-          ptBr: 'Missao simulada; ainda requer uma verificacao visual.',
+          es: 'Misión simulada; aún requiere una comprobación visual.',
+          ptBr: 'Missão simulada; ainda requer uma verificação visual.',
           ja: '模擬ミッションです。最終的には見た目の確認が必要です。',
           zhHans: '这是模拟任务；最终仍需要你做视觉确认。',
         ),
@@ -836,16 +836,16 @@ _MissionContent? _localizedMockMissionContent(
           localeName,
           en: 'Pick one visible win',
           es: 'Elige una victoria visible',
-          ptBr: 'Escolha uma vitoria visivel',
+          ptBr: 'Escolha uma vitória visível',
           ja: '見える前進を1つ選ぶ',
           zhHans: '选一个看得见的进展',
         ),
         body: _pickLocale(
           localeName,
           en: 'Choose the smallest action that clearly reduces friction in one AI-allowed area and review it once it is done.',
-          es: 'Elige la accion mas pequena que reduzca claramente la friccion en un area con IA permitida y revisala al terminar.',
+          es: 'Elige la acción más pequeña que reduzca claramente la fricción en un área con IA permitida y revísala al terminar.',
           ptBr:
-              'Escolha a menor acao que reduza claramente a friccao em uma area com IA permitida e revise depois de concluir.',
+              'Escolha a menor ação que reduza claramente a fricção em uma área com IA permitida e revise depois de concluir.',
           ja: 'AIが許可された領域で摩擦を確実に減らす最小の行動を1つ選び、終わったら見直します。',
           zhHans: '在允许使用 AI 的领域里，选一个能明确降低阻力的最小动作，完成后再回看。',
         ),
@@ -853,15 +853,15 @@ _MissionContent? _localizedMockMissionContent(
           localeName,
           en: const ['At least one domain allows AI.'],
           es: const ['Al menos un dominio permite IA.'],
-          ptBr: const ['Pelo menos um dominio permite IA.'],
+          ptBr: const ['Pelo menos um domínio permite IA.'],
           ja: const ['少なくとも1つのドメインでAIが許可されています。'],
           zhHans: const ['至少有一个领域允许使用 AI。'],
         ),
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission with limited cross-domain context.',
-          es: 'Mision simulada con contexto entre dominios limitado.',
-          ptBr: 'Missao simulada com contexto entre dominios limitado.',
+          es: 'Misión simulada con contexto entre dominios limitado.',
+          ptBr: 'Missão simulada com contexto entre domínios limitado.',
           ja: 'ドメイン横断の文脈が限られた模擬ミッションです。',
           zhHans: '这是跨领域上下文有限的模拟任务。',
         ),
@@ -871,17 +871,17 @@ _MissionContent? _localizedMockMissionContent(
         title: _pickLocale(
           localeName,
           en: 'Prevent one small risk from rolling into tomorrow',
-          es: 'Evita que un pequeno riesgo llegue a manana',
-          ptBr: 'Evite que um pequeno risco chegue a amanha',
+          es: 'Evita que un pequeño riesgo llegue a mañana',
+          ptBr: 'Evite que um pequeno risco chegue a amanhã',
           ja: '小さなリスクを明日に持ち越さない',
           zhHans: '别让一个小风险滚到明天',
         ),
         body: _pickLocale(
           localeName,
           en: 'Identify one small friction point and take the minimum action that stops it from carrying over.',
-          es: 'Identifica un pequeno punto de friccion y toma la accion minima que impida que se arrastre.',
+          es: 'Identifica un pequeño punto de fricción y toma la acción mínima que impida que se arrastre.',
           ptBr:
-              'Identifique um pequeno ponto de friccao e tome a acao minima para impedir que ele siga adiante.',
+              'Identifique um pequeno ponto de fricção e tome a ação mínima para impedir que ele siga adiante.',
           ja: '小さな摩擦点を1つ特定し、持ち越しを防ぐ最小の行動を取ります。',
           zhHans: '识别一个小摩擦点，并采取最小动作阻止它继续拖延下去。',
         ),
@@ -891,10 +891,10 @@ _MissionContent? _localizedMockMissionContent(
             'The graph has enough local context for a small preventive action.',
           ],
           es: const [
-            'El grafo tiene suficiente contexto local para una accion preventiva pequena.',
+            'El grafo tiene suficiente contexto local para una acción preventiva pequeña.',
           ],
           ptBr: const [
-            'O grafo tem contexto local suficiente para uma pequena acao preventiva.',
+            'O grafo tem contexto local suficiente para uma pequena ação preventiva.',
           ],
           ja: const [
             '小さな予防行動を取るには十分なローカル文脈があります。',
@@ -906,8 +906,8 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission with partial local context.',
-          es: 'Mision simulada con contexto local parcial.',
-          ptBr: 'Missao simulada com contexto local parcial.',
+          es: 'Misión simulada con contexto local parcial.',
+          ptBr: 'Missão simulada com contexto local parcial.',
           ja: 'ローカル文脈が部分的な模擬ミッションです。',
           zhHans: '这是仅有部分本地上下文的模拟任务。',
         ),
@@ -917,7 +917,7 @@ _MissionContent? _localizedMockMissionContent(
         title: _pickLocale(
           localeName,
           en: 'Leave one clear closing signal',
-          es: 'Deja una senal clara de cierre',
+          es: 'Deja una señal clara de cierre',
           ptBr: 'Deixe um sinal claro de fechamento',
           ja: '明確な締めのサインを1つ残す',
           zhHans: '留下一条清晰的收尾信号',
@@ -925,9 +925,9 @@ _MissionContent? _localizedMockMissionContent(
         body: _pickLocale(
           localeName,
           en: 'Finish one small closing action so tomorrow does not start with the same open loop.',
-          es: 'Termina una pequena accion de cierre para que manana no empiece con el mismo bucle abierto.',
+          es: 'Termina una pequeña acción de cierre para que mañana no empiece con el mismo bucle abierto.',
           ptBr:
-              'Conclua uma pequena acao de fechamento para que amanha nao comece com o mesmo ciclo em aberto.',
+              'Conclua uma pequena ação de fechamento para que amanhã não comece com o mesmo ciclo em aberto.',
           ja: '小さな締めの行動を1つ終え、明日が同じ未完了ループから始まらないようにします。',
           zhHans: '完成一个小的收尾动作，避免明天从同一个未闭环开始。',
         ),
@@ -935,10 +935,10 @@ _MissionContent? _localizedMockMissionContent(
           localeName,
           en: const ['A small closure often reduces next-day friction.'],
           es: const [
-            'Un pequeno cierre suele reducir la friccion del dia siguiente.'
+            'Un pequeño cierre suele reducir la fricción del día siguiente.'
           ],
           ptBr: const [
-            'Um pequeno fechamento costuma reduzir a friccao do dia seguinte.'
+            'Um pequeno fechamento costuma reduzir a fricção do dia seguinte.'
           ],
           ja: const ['小さな締めは翌日の摩擦を減らすことがよくあります。'],
           zhHans: const ['一个小的收尾动作往往能减少次日的阻力。'],
@@ -946,8 +946,8 @@ _MissionContent? _localizedMockMissionContent(
         uncertainty: _pickLocale(
           localeName,
           en: 'Mock mission; the exact action still depends on the day.',
-          es: 'Mision simulada; la accion exacta sigue dependiendo del dia.',
-          ptBr: 'Missao simulada; a acao exata ainda depende do dia.',
+          es: 'Misión simulada; la acción exacta sigue dependiendo del día.',
+          ptBr: 'Missão simulada; a ação exata ainda depende do dia.',
           ja: '模擬ミッションです。具体的な行動はその日の状況に依存します。',
           zhHans: '这是模拟任务；具体动作仍取决于当天情况。',
         ),

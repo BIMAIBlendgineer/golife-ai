@@ -329,7 +329,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         GoLifeSectionTitle(
                           title: _uncertaintyTitle(l10n),
-                          subtitle: mission.uncertainty,
+                          subtitle:
+                              widget.controller.localizedMissionUncertainty(
+                            mission,
+                            l10n,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -859,7 +863,7 @@ List<String> _captureExamples(AppLocalizations l10n) => <String>[
       pickLocalizedValue(
         l10n.localeName,
         en: 'coffee cost 4.50',
-        es: 'cafe 4,50',
+        es: 'café 4,50',
         ptBr: 'café 4,50',
         ptPt: 'cafe 4,50',
         fr: 'cafe 4,50',
@@ -872,7 +876,7 @@ List<String> _captureExamples(AppLocalizations l10n) => <String>[
       pickLocalizedValue(
         l10n.localeName,
         en: 'lettuce expires tomorrow',
-        es: 'la lechuga vence manana',
+        es: 'la lechuga vence mañana',
         ptBr: 'a alface vence amanhã',
         ptPt: 'a alface vence amanha',
         fr: 'la laitue expire demain',
@@ -885,7 +889,7 @@ List<String> _captureExamples(AppLocalizations l10n) => <String>[
       pickLocalizedValue(
         l10n.localeName,
         en: 'call the doctor',
-        es: 'llamar al medico',
+        es: 'llamar al médico',
         ptBr: 'ligar para o médico',
         ptPt: 'ligar ao medico',
         fr: 'appeler le medecin',
@@ -970,8 +974,8 @@ String _capturePromptTitle(AppLocalizations l10n) => pickLocalizedValue(
 String _capturePromptBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Capture keeps Today fresh without opening every module.',
-      es: 'Capture mantiene Today fresco sin abrir todos los módulos.',
-      ptBr: 'O Capture mantém o Hoje atualizado sem abrir todos os módulos.',
+      es: 'La captura mantiene Hoy actualizado sin abrir todos los módulos.',
+      ptBr: 'A captura mantém o Hoje atualizado sem abrir todos os módulos.',
       ptPt: 'Capture mantem o Today atualizado sem abrir todos os modulos.',
       fr: 'Capture garde Today a jour sans ouvrir tous les modules.',
       it: 'Capture mantiene Today fresco senza aprire ogni modulo.',
@@ -1054,7 +1058,7 @@ String _technicalTraceBody(AppLocalizations l10n) => pickLocalizedValue(
 String _missionCompletedLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Mission completed',
-      es: 'Mision completada',
+      es: 'Misión completada',
       ptBr: 'Missão concluída',
       ptPt: 'Missao concluida',
       fr: 'Mission terminee',
@@ -1068,7 +1072,7 @@ String _missionCompletedLabel(AppLocalizations l10n) => pickLocalizedValue(
 String _wasUsefulLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Was it useful?',
-      es: 'Fue util?',
+      es: '¿Fue útil?',
       ptBr: 'Foi útil?',
       ptPt: 'Foi util?',
       fr: 'Etait-ce utile ?',
@@ -1082,7 +1086,7 @@ String _wasUsefulLabel(AppLocalizations l10n) => pickLocalizedValue(
 String _laterLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Later',
-      es: 'Mas tarde',
+      es: 'Más tarde',
       ptBr: 'Depois',
       ptPt: 'Mais tarde',
       fr: 'Plus tard',
@@ -1124,7 +1128,7 @@ String _impactPurchaseAvoided(AppLocalizations l10n) => pickLocalizedValue(
 String _impactHabitReinforced(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Habit continuity reinforced.',
-      es: 'Habito reforzado.',
+      es: 'Hábito reforzado.',
       ptBr: 'Hábito reforçado.',
       ptPt: 'Habito reforcado.',
       fr: 'Continuite de l habitude renforcee.',

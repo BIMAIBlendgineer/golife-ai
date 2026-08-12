@@ -408,7 +408,7 @@ _CoachResponse _missionResponse(
     recommendation: controller.localizedMissionBody(mission, l10n),
     evidence:
         controller.localizedMissionEvidence(mission, l10n).take(3).toList(),
-    uncertainty: mission.uncertainty,
+    uncertainty: controller.localizedMissionUncertainty(mission, l10n),
     primaryActionLabel: l10n.actionDoNow,
     secondaryActionLabel: l10n.actionNotUseful,
     primaryIcon: Icons.check_circle_outline,
@@ -749,7 +749,7 @@ String _shoppingNeedSummary(
 String _openShoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Open shopping',
-      es: 'Abrir shopping',
+      es: 'Abrir compras',
       ptBr: 'Abrir compras',
       ptPt: 'Abrir shopping',
       fr: 'Ouvrir les achats',
