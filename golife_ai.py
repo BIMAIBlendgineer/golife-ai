@@ -73,6 +73,7 @@ class GoLifeControlTower:
                     "ADMIN_TOKEN": "golife-admin-dev",
                     "INGESTION_TOKEN": "golife-ingest-dev",
                     "OPERATIONAL_DATABASE_PATH": ".runtime/web_backend.db",
+                    "MOBILE_GATEWAY_BASE_URL": self._mobile_gateway_base_url(),
                     "PYTHONUNBUFFERED": "1",
                 },
                 startup_url=f"http://{LOCAL_HOST}:{BACKEND_PORT}",
@@ -119,6 +120,9 @@ class GoLifeControlTower:
                 startup_url=None,
             ),
         }
+
+    def _mobile_gateway_base_url(self) -> str:
+        return f"http://{self.lan_host}:{GATEWAY_PORT}"
 
     def _detect_lan_host(self) -> str:
         try:
@@ -561,6 +565,35 @@ class GoLifeControlTower:
                     self.log(key, f"{url} -> {response.status}", "INFO")
             except Exception as exc:
                 self.log(key, f"{url} -> offline ({exc})", "WARN")
+
+        runtime_config_url = (
+            f"http://{LOCAL_HOST}:{BACKEND_PORT}/public/mobile/runtime-config"
+        )
+        expected_gateway = self._mobile_gateway_base_url()
+        try:
+            with urlopen(runtime_config_url, timeout=3) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            advertised_gateway = payload["gateway_base_url"]
+            if advertised_gateway == expected_gateway:
+                self.log(
+                    "BACKEND",
+                    f"Runtime config mobile gateway OK: {advertised_gateway}",
+                    "INFO",
+                )
+            else:
+                self.log(
+                    "BACKEND",
+                    "Runtime config mobile gateway MISMATCH: "
+                    f"advertised={advertised_gateway} expected={expected_gateway}; "
+                    "restart the managed stack with R/T",
+                    "WARN",
+                )
+        except Exception as exc:
+            self.log(
+                "BACKEND",
+                f"{runtime_config_url} -> offline ({exc})",
+                "WARN",
+            )
 
     def status(self) -> None:
         self.validate_repo_context()
