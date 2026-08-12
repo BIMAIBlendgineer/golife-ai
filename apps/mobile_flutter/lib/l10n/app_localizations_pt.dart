@@ -1790,11 +1790,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get appShellTaglineReady =>
-      'Shell do sistema de vida com limites de privacidade explicitos.';
+      'Shell do sistema de vida com limites de privacidade explícitos.';
 
   @override
   String get appShellTaglineBooting =>
-      'Inicializando privacidade, missoes e grafo local...';
+      'Inicializando privacidade, missões e grafo local...';
 
   @override
   String get navigate => 'Navegar';
@@ -1812,7 +1812,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get navTasks => 'Tarefas';
 
   @override
-  String get navHabits => 'Habitos';
+  String get navHabits => 'Hábitos';
 
   @override
   String get navMoney => 'Dinheiro';
@@ -1821,7 +1821,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get navPantry => 'Despensa';
 
   @override
-  String get navCloset => 'Armario';
+  String get navCloset => 'Armário';
 
   @override
   String get navEveryday => 'Cotidiano';
@@ -2117,16 +2117,62 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String get privacyAuditTitle => 'Auditoria de privacidade';
+
+  @override
+  String get lifeGraphSearchHint => 'Buscar resumo, domínio, tipo ou origem';
+
+  @override
+  String get lifeGraphFilterPrivacyTitle => 'Privacidade';
+
+  @override
+  String get lifeGraphFilterAll => 'Todos';
+
+  @override
+  String get lifeGraphFilterDate7d => '7d';
+
+  @override
+  String get lifeGraphFilterDate30d => '30d';
+
+  @override
+  String get lifeGraphFilterDate90d => '90d';
+
+  @override
+  String get lifeGraphNoEvents =>
+      'Nenhum evento corresponde aos filtros atuais.';
+
+  @override
+  String get lifeGraphEvidenceTitle => 'Evidências vinculadas';
+
+  @override
+  String get lifeGraphEvidenceEmpty =>
+      'Nenhuma evidência vinculada a este evento.';
+
+  @override
+  String get lifeGraphRelationsTitle => 'Relações vinculadas';
+
+  @override
+  String get lifeGraphRelationsEmpty =>
+      'Nenhuma relação vinculada a este evento.';
+
+  @override
+  String get lifeGraphAuditNone =>
+      'Nenhuma alteração de privacidade no nível do evento foi registrada para este evento.';
+
+  @override
+  String get lifeGraphOpenPrivacyAudit => 'Abrir auditoria de privacidade';
+
+  @override
   String get permissionLocal => 'Local';
 
   @override
-  String get permissionSync => 'Sync';
+  String get permissionSync => 'Sincronização';
 
   @override
   String get permissionAi => 'IA';
 
   @override
-  String get domainHabits => 'Habitos';
+  String get domainHabits => 'Hábitos';
 
   @override
   String get domainTasks => 'Tarefas';
@@ -2141,7 +2187,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get domainPantry => 'Despensa';
 
   @override
-  String get domainWardrobe => 'Armario';
+  String get domainWardrobe => 'Armário';
 
   @override
   String get domainCopilot => 'Copilot';
@@ -2178,7 +2224,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Chave de criptografia do dispositivo';
 
   @override
-  String get nothingAiEnabled => 'Nenhum dominio esta com IA ativa agora';
+  String get nothingAiEnabled => 'Nenhum domínio está com IA ativa agora';
 
   @override
   String get gatewayLive => 'Gateway ativo';
@@ -2247,7 +2293,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get actionDoNow => 'Fazer agora';
 
   @override
-  String get actionNotUseful => 'Nao util';
+  String get actionNotUseful => 'Não útil';
 
   @override
   String get actionAccept => 'Aceitar';
@@ -2279,10 +2325,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get statusBooting => 'Inicializando';
 
   @override
-  String get labelEvidence => 'Evidencia';
+  String get labelEvidence => 'Evidência';
 
   @override
-  String get labelDataUsedForMission => 'Dados usados para esta missao';
+  String get labelDataUsedForMission => 'Dados usados para esta missão';
 
   @override
   String get labelDataSentToAi => 'Dados enviados para IA';
@@ -2303,7 +2349,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get labelTrace => 'Trace';
 
   @override
-  String get fieldDomain => 'Dominio';
+  String get fieldDomain => 'Domínio';
 
   @override
   String get fieldPrivacy => 'Privacidade';
@@ -2335,11 +2381,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String dashboardConfidencePill(int percent) {
-    return '$percent% de confianca';
+    return '$percent% de confiança';
   }
 
   @override
-  String get dashboardAiDisclosureTitle => 'Disclosure de dados para IA';
+  String get dashboardAiDisclosureTitle => 'Transparência de dados para IA';
 
   @override
   String dashboardAiDisclosureSummary(
@@ -2352,14 +2398,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboardNoRisks =>
-      'Nenhum risco diario explicito foi detectado no grafo atual elegivel para IA.';
+      'Nenhum risco diário explícito foi detectado no grafo atual elegível para IA.';
 
   @override
-  String get dashboardSupportMissionsTitle => 'Missoes de apoio';
+  String get dashboardSupportMissionsTitle => 'Missões de apoio';
 
   @override
   String get dashboardNoSupportMissions =>
-      'Missoes secundarias aparecerao quando o plano diario estiver disponivel.';
+      'Missões secundárias aparecerão quando o plano diário estiver disponível.';
 
   @override
   String get signalCriticalTask => 'Tarefa critica';
@@ -2379,7 +2425,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get signalUseThisFood => 'Use este alimento';
 
   @override
-  String get dashboardWhyThisToday => 'Por que esta hoje';
+  String get dashboardWhyThisToday => 'Por que está hoje';
 
   @override
   String dashboardConfidenceWithType(int percent, Object type) {
@@ -2392,7 +2438,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboardNothingBlocked =>
-      'Nenhum item especifico desta missao foi bloqueado para IA.';
+      'Nenhum item específico desta missão foi bloqueado para IA.';
 
   @override
   String get dashboardNoAlwaysLocalCollections =>
@@ -2412,7 +2458,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get captureIntro =>
-      'Escreva uma frase. GoLife pode dividir em varios rascunhos, deixar voce editar dominio e privacidade por item, e salvar tudo junto.';
+      'Escreva uma frase. GoLife pode dividir em vários rascunhos, deixar você editar domínio e privacidade por item, e salvar tudo junto.';
 
   @override
   String get captureRouteTitle => 'Rota';
@@ -2422,11 +2468,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get captureAutoModeBody =>
-      'O modo auto tenta dividir e classificar cada clausula primeiro.';
+      'O modo auto tenta dividir e classificar cada cláusula primeiro.';
 
   @override
   String captureCurrentDefaultPrivacy(Object domain, Object permission) {
-    return 'Privacidade padrao atual para $domain: $permission';
+    return 'Privacidade padrão atual para $domain: $permission';
   }
 
   @override
@@ -2450,11 +2496,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get captureHintAuto =>
-      'Exemplo: comprei cafe por 4.50, a alface vence amanha e preciso pagar internet.';
+      'Exemplo: comprei café por 4.50, a alface vence amanhã e preciso pagar internet.';
 
   @override
   String get captureHintTasks =>
-      'Exemplo: enviar recibo do aluguel antes do almoco';
+      'Exemplo: enviar recibo do aluguel antes do almoço';
 
   @override
   String get captureHintHabits =>
@@ -2465,17 +2511,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Exemplo: o foco de sexta deve ficar em trabalho admin';
 
   @override
-  String get captureHintFinance => 'Exemplo: comprei cafe e sanduiche por 8.50';
+  String get captureHintFinance => 'Exemplo: comprei café e sanduíche por 8.50';
 
   @override
-  String get captureHintPantry => 'Exemplo: o espinafre vence amanha';
+  String get captureHintPantry => 'Exemplo: o espinafre vence amanhã';
 
   @override
   String get captureHintWardrobe =>
       'Exemplo: pensando em comprar outra jaqueta preta';
 
   @override
-  String get captureHintCopilot => 'Exemplo: uma nota de missao';
+  String get captureHintCopilot => 'Exemplo: uma nota de missão';
 
   @override
   String get copilotTitle => 'Copilot';
@@ -2504,10 +2550,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get copilotNoTrace => 'Nenhuma missao carregada ainda.';
 
   @override
-  String get navJournal => 'Journal';
+  String get navJournal => 'Diário';
 
   @override
-  String get navCalendar => 'Calendario';
+  String get navCalendar => 'Calendário';
 
   @override
   String get navRecipes => 'Receitas';

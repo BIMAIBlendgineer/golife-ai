@@ -297,6 +297,142 @@ void main() {
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
+  testWidgets(
+    'PT-BR keeps primary mobile surfaces coherently localized',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('pt-BR');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final navigationBar = find.byType(NavigationBar);
+      for (final label in const [
+        'Hoje',
+        'Capturar',
+        'Memória',
+        'Coach',
+        'Ajustes',
+      ]) {
+        expect(
+          find.descendant(of: navigationBar, matching: find.text(label)),
+          findsOneWidget,
+        );
+      }
+      expect(
+        find.descendant(of: navigationBar, matching: find.text('Memory')),
+        findsNothing,
+      );
+      expect(find.text('Seu foco de hoje.'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: navigationBar,
+          matching: find.text('Capturar'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Solte o que está na sua cabeça.'), findsOneWidget);
+      expect(find.text('Capture primeiro. Organize depois.'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Memória'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Memória'), findsWidgets);
+      expect(find.text('Sua vida recente.'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Coach'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Pergunte sobre o seu dia.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Spanish keeps primary navigation and P0 headings localized',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('es');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final navigationBar = find.byType(NavigationBar);
+      for (final label in const [
+        'Hoy',
+        'Capturar',
+        'Memoria',
+        'Coach',
+        'Ajustes',
+      ]) {
+        expect(
+          find.descendant(of: navigationBar, matching: find.text(label)),
+          findsOneWidget,
+        );
+      }
+
+      await tester.tap(
+        find.descendant(of: navigationBar, matching: find.text('Capturar')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Suelta lo que tienes en la cabeza.'), findsOneWidget);
+      expect(find.text('Captura primero. Ordena después.'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Memoria'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Memoria'), findsWidgets);
+      expect(find.text('Tu vida reciente.'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Coach'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Pregunta sobre tu día.'), findsOneWidget);
+    },
+  );
+
   testWidgets('limits productive supported locales to EN ES and PT-BR', (
     tester,
   ) async {
