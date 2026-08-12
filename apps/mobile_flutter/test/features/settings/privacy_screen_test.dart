@@ -695,5 +695,6 @@ void main() {
 
     await _expandSettingsSection(tester, 'settings-section-domain-permissions');
     expect(find.text('Controles por domínio'), findsOneWidget);
+    expect(find.textContaining('elegíveis para IA agora'), findsWidgets);
   });
 }

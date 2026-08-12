@@ -2017,11 +2017,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get privacyEncryptedActive =>
-      'A criptografia local sensível está ativa para Journal, Quick Notes e Finance neste dispositivo.';
+      'A criptografia local sensível está ativa para Diário, Notas rápidas e registros financeiros neste dispositivo.';
 
   @override
   String get privacyEncryptedUnavailable =>
-      'A criptografia local sensível não está disponível neste ambiente. Trate Journal, Quick Notes e Finance como não protegidos em repouso até o secure storage voltar.';
+      'A criptografia local sensível não está disponível neste ambiente. Trate Diário, Notas rápidas e registros financeiros como não protegidos em repouso até o armazenamento seguro voltar a estar disponível.';
 
   @override
   String get privacyCenter => 'Centro de privacidade';
@@ -2321,7 +2321,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String domainEventsEligible(int eventCount, int aiCount) {
-    return '$eventCount eventos · $aiCount elegiveis para IA agora';
+    return '$eventCount eventos · $aiCount elegíveis para IA agora';
   }
 
   @override

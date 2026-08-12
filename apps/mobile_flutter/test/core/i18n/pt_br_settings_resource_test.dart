@@ -63,6 +63,20 @@ const requiredSettingsPtBrKeys = <String>[
   'clearAiHistoryBody',
   'clearAiHistoryDone',
   'clearAiHistoryTitle',
+  'collectionClaimDrafts',
+  'collectionDeviceEncryptionKey',
+  'collectionEvidenceAttachments',
+  'collectionEvidenceItems',
+  'collectionFinanceRecords',
+  'collectionJournalEntries',
+  'collectionLifeGraphRelations',
+  'collectionMissionSets',
+  'collectionOwnedItems',
+  'collectionPrivacyAuditEntries',
+  'collectionPrivacySettings',
+  'collectionPurchaseProofs',
+  'collectionQuickNotes',
+  'collectionRuntimeConfigCache',
   'cancel',
   'dataControls',
   'dataControlsBody',
@@ -73,11 +87,19 @@ const requiredSettingsPtBrKeys = <String>[
   'deleteAllTitle',
   'deliveryPreferencesTitle',
   'domainControls',
+  'domainCopilot',
+  'domainFinance',
+  'domainHabits',
+  'domainPantry',
+  'domainTasks',
+  'domainWardrobe',
+  'domainWeek',
   'exportCopied',
   'exportJson',
   'exportSavedFile',
   'fieldDomain',
   'fieldPrivacy',
+  'homeMemoryTitle',
   'language',
   'languageEnglish',
   'languagePortugueseBrazil',
@@ -85,11 +107,17 @@ const requiredSettingsPtBrKeys = <String>[
   'languageSystem',
   'lifeGraphOpenTimeline',
   'measurementUnitsPreference',
+  'navCalendar',
+  'navJournal',
+  'navRecipes',
   'navSettings',
   'nothingAiEnabled',
   'notificationsDisabled',
   'notificationsEnabled',
   'notificationsPreference',
+  'permissionAi',
+  'permissionLocal',
+  'permissionSync',
   'preferencesLocalOnlyHint',
   'privacyAuditBody',
   'privacyAuditChangedAt',
@@ -199,5 +227,17 @@ void main() {
     expect(resources['profilePreferencesTitle'], 'Preferências do perfil');
     expect(resources['billingPlanTitle'], 'Plano e cobrança');
     expect(resources['privacyLegalPolicyTitle'], 'Política de privacidade');
+    expect(
+      resources['domainEventsEligible'],
+      '{eventCount} eventos · {aiCount} elegíveis para IA agora',
+    );
+    expect(
+      resources['privacyEncryptedActive'],
+      'A criptografia local sensível está ativa para Diário, Notas rápidas e registros financeiros neste dispositivo.',
+    );
+    expect(
+      resources['privacyEncryptedUnavailable'],
+      'A criptografia local sensível não está disponível neste ambiente. Trate Diário, Notas rápidas e registros financeiros como não protegidos em repouso até o armazenamento seguro voltar a estar disponível.',
+    );
   });
 }

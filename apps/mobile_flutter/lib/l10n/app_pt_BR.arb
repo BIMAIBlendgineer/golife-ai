@@ -75,8 +75,8 @@
   "planPro": "Pro",
   "privacyTitle": "Privacidade",
   "privacyIntro": "Cada evento fica local, salvo quando a permissão do domínio e o nível de privacidade permitem IA. Esta tela também oferece exportação local e limpeza completa.",
-  "privacyEncryptedActive": "A criptografia local sensível está ativa para Journal, Quick Notes e Finance neste dispositivo.",
-  "privacyEncryptedUnavailable": "A criptografia local sensível não está disponível neste ambiente. Trate Journal, Quick Notes e Finance como não protegidos em repouso até o secure storage voltar.",
+  "privacyEncryptedActive": "A criptografia local sensível está ativa para Diário, Notas rápidas e registros financeiros neste dispositivo.",
+  "privacyEncryptedUnavailable": "A criptografia local sensível não está disponível neste ambiente. Trate Diário, Notas rápidas e registros financeiros como não protegidos em repouso até o armazenamento seguro voltar a estar disponível.",
   "privacyCenter": "Centro de privacidade",
   "privacyDisclosureEncryptedTitle": "Criptografado localmente",
   "privacyDisclosureEncryptedBody": "Estas coleções ficam protegidas em repouso neste dispositivo.",
@@ -108,7 +108,7 @@
   "clearAiHistoryDone": "Histórico da IA limpo.",
   "deleteAll": "Apagar tudo",
   "deleteAllDone": "Todos os dados locais foram apagados.",
-  "domainEventsEligible": "{eventCount} eventos · {aiCount} elegiveis para IA agora",
+  "domainEventsEligible": "{eventCount} eventos · {aiCount} elegíveis para IA agora",
   "@domainEventsEligible": {
     "placeholders": {
       "eventCount": {
