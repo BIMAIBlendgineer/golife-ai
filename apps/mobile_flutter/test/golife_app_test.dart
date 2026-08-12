@@ -297,7 +297,7 @@ void main() {
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
-  testWidgets('limits productive supported locales to EN and ES', (
+  testWidgets('limits productive supported locales to EN ES and PT-BR', (
     tester,
   ) async {
     final localStore = MemoryLocalStore();
@@ -313,8 +313,104 @@ void main() {
     await tester.pumpAndSettle();
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    expect(app.supportedLocales, const <Locale>[Locale('en'), Locale('es')]);
+    expect(
+      app.supportedLocales,
+      const <Locale>[
+        Locale('en'),
+        Locale('es'),
+        Locale('pt', 'BR'),
+      ],
+    );
   });
+
+  testWidgets(
+    'uses Brazilian Portuguese automatically when device locale is pt-BR',
+    (tester) async {
+      final platformDispatcher = tester.binding.platformDispatcher;
+      platformDispatcher.localeTestValue = const Locale('pt', 'BR');
+      platformDispatcher.localesTestValue = const [Locale('pt', 'BR')];
+      addTearDown(() {
+        platformDispatcher.clearLocaleTestValue();
+        platformDispatcher.clearLocalesTestValue();
+      });
+
+      final localStore = _BlockingBootstrapStore();
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.text('Preparando o seu dia...'), findsOneWidget);
+
+      localStore.release();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Capturar'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Ajustes'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'stored PT-BR preference overrides a non-Portuguese device locale',
+    (tester) async {
+      final platformDispatcher = tester.binding.platformDispatcher;
+      platformDispatcher.localeTestValue = const Locale('en', 'US');
+      platformDispatcher.localesTestValue = const [Locale('en', 'US')];
+      addTearDown(() {
+        platformDispatcher.clearLocaleTestValue();
+        platformDispatcher.clearLocalesTestValue();
+      });
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('pt-BR');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Capturar'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Ajustes'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('uses stored dark theme preference', (tester) async {
     final localStore = MemoryLocalStore();
