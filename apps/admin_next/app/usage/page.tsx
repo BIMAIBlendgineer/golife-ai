@@ -89,7 +89,7 @@ export default async function UsagePage({
             </thead>
             <tbody>
               {usage.map((item) => (
-                <tr key={item.user_id} className="bg-white/45">
+                <tr key={item.user_id} className="bg-[color:var(--surface-frost)]">
                   <td className="rounded-l-[18px] px-3 py-4 font-mono text-xs text-ink">
                     {item.user_id}
                   </td>

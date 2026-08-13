@@ -30,7 +30,7 @@ export function PaginationFooter({
         {nextHref ? (
           <Link
             href={nextHref}
-            className="rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-3 py-2 font-medium text-ink transition-colors hover:bg-white"
+            className="rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-3 py-2 font-medium text-ink transition-colors hover:bg-[color:var(--surface-hover)]"
           >
             {nextLabel}
           </Link>

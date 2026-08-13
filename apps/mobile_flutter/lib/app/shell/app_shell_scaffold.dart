@@ -46,188 +46,69 @@ class AppShellScaffold extends StatelessWidget {
           child: Stack(
             children: [
               const Positioned(
-                top: -120,
-                left: -80,
-                child: _Orb(size: 260, color: Color(0x557A5CFF)),
-              ),
-              const Positioned(
                 top: 120,
                 right: -70,
-                child: _Orb(size: 220, color: Color(0x443EB4FF)),
+                child: _Orb(size: 220, color: Color(0x14349CFF)),
               ),
               const Positioned(
-                bottom: -140,
-                left: 40,
-                child: _Orb(size: 320, color: Color(0x2225C79B)),
+                bottom: -160,
+                left: 60,
+                child: _Orb(size: 280, color: Color(0x12349CFF)),
               ),
               SafeArea(
                 bottom: false,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    isWide ? 24 : 16,
-                    16,
-                    isWide ? 24 : 16,
-                    16,
-                  ),
-                  child: isWide
-                      ? Row(
+                child: isWide
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                        child: Row(
                           children: [
                             _DesktopRail(
                               controller: controller,
                               selectedSection: selectedSection,
                               l10n: l10n,
                             ),
-                            const SizedBox(width: 20),
-                            Expanded(child: _ContentFrame(child: child)),
-                          ],
-                        )
-                      : Column(
-                          children: [
-                            _MobileTopBar(controller: controller, l10n: l10n),
-                            const SizedBox(height: 16),
+                            const SizedBox(width: GoLifeSpacing.lg),
                             Expanded(child: _ContentFrame(child: child)),
                           ],
                         ),
-                ),
+                      )
+                    : child,
               ),
             ],
           ),
         ),
         bottomNavigationBar: isWide
             ? null
-            : SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(28),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: GoLifePalette.lineStrong.withValues(
-                            alpha: 0.88,
-                          ),
-                        ),
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: NavigationBar(
-                        selectedIndex: selectedSection.index,
-                        destinations: [
-                          for (final destination in _primaryDestinations)
-                            NavigationDestination(
-                              icon: Icon(destination.icon),
-                              selectedIcon: Icon(destination.selectedIcon),
-                              label: destination.localizedLabel(l10n),
-                            ),
-                        ],
-                        onDestinationSelected: (index) {
-                          context.go(_primaryDestinations[index].path);
-                        },
-                      ),
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  color: GoLifePalette.ink900.withValues(alpha: 0.98),
+                  border: Border(
+                    top: BorderSide(
+                      color: GoLifePalette.line.withValues(alpha: 0.75),
                     ),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: NavigationBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    selectedIndex: selectedSection.index,
+                    destinations: [
+                      for (final destination in _primaryDestinations)
+                        NavigationDestination(
+                          icon: Icon(destination.icon),
+                          selectedIcon: Icon(destination.selectedIcon),
+                          label: destination.localizedLabel(l10n),
+                        ),
+                    ],
+                    onDestinationSelected: (index) {
+                      context.go(_primaryDestinations[index].path);
+                    },
                   ),
                 ),
               ),
       ),
-    );
-  }
-}
-
-class _MobileTopBar extends StatelessWidget {
-  const _MobileTopBar({required this.controller, required this.l10n});
-
-  final GoLifeController controller;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final statusPill = GoLifeStatusPill(
-      label: controller.localizedGatewayStatusLabel(l10n),
-      icon: _gatewayIcon(controller.localizedGatewayStatusLabel(l10n)),
-      accent: _gatewayAccent(controller.gatewayStatusLabel),
-    );
-
-    return GoLifeCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: width < 430
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            GoLifePalette.violetBright,
-                            GoLifePalette.blue,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child:
-                          const Icon(Icons.bolt_rounded, color: Colors.white),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.appTitle,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _shellSubtitle(l10n),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                statusPill,
-              ],
-            )
-          : Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [GoLifePalette.violetBright, GoLifePalette.blue],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(Icons.bolt_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.appTitle,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _shellSubtitle(l10n),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(child: statusPill),
-              ],
-            ),
     );
   }
 }
@@ -439,10 +320,10 @@ String _memoryLabel(AppLocalizations l10n) {
   return pickLocalizedValue(
     l10n.localeName,
     en: 'Memory',
-    es: 'Memory',
-    ptBr: 'Memory',
-    ptPt: 'Memory',
-    fr: 'Memory',
+    es: 'Memoria',
+    ptBr: 'Memória',
+    ptPt: 'Memória',
+    fr: 'Mémoire',
     it: 'Memory',
     de: 'Memory',
     ja: 'Memory',
@@ -472,7 +353,7 @@ String _shellSubtitle(AppLocalizations l10n) {
     l10n.localeName,
     en: 'Your daily decision OS.',
     es: 'Tu sistema operativo de decisiones diarias.',
-    ptBr: 'Seu sistema operacional de decisoes diarias.',
+    ptBr: 'Seu sistema operacional de decisões diárias.',
     ptPt: 'O teu sistema operativo de decisoes diarias.',
     fr: 'Ton systeme d exploitation des decisions quotidiennes.',
     it: 'Il tuo sistema operativo per le decisioni quotidiane.',

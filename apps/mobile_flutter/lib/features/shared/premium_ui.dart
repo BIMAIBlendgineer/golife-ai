@@ -1,25 +1,43 @@
 import 'package:flutter/material.dart';
 
 class GoLifePalette {
-  static const Color ink900 = Color(0xFF060B1A);
-  static const Color ink800 = Color(0xFF0B1224);
-  static const Color ink700 = Color(0xFF111A31);
-  static const Color ink600 = Color(0xFF15203B);
-  static const Color surface900 = Color(0xFF0B1020);
-  static const Color surface800 = Color(0xFF121A2F);
-  static const Color surface700 = Color(0xFF17223C);
-  static const Color surface600 = Color(0xFF1D2B4D);
-  static const Color line = Color(0xFF263555);
-  static const Color lineStrong = Color(0xFF32456F);
-  static const Color textPrimary = Color(0xFFF5F7FF);
-  static const Color textSecondary = Color(0xFFB4C1E1);
-  static const Color textMuted = Color(0xFF8090B7);
-  static const Color violet = Color(0xFF7A5CFF);
-  static const Color violetBright = Color(0xFF9E7CFF);
-  static const Color blue = Color(0xFF46B5FF);
-  static const Color emerald = Color(0xFF32D4A4);
-  static const Color amber = Color(0xFFF2B766);
-  static const Color danger = Color(0xFFFF6B77);
+  static const Color ink900 = Color(0xFF030814);
+  static const Color ink800 = Color(0xFF061122);
+  static const Color ink700 = Color(0xFF0A1830);
+  static const Color ink600 = Color(0xFF10213D);
+  static const Color surface900 = Color(0xFF061020);
+  static const Color surface800 = Color(0xFF09172C);
+  static const Color surface700 = Color(0xFF0D1D36);
+  static const Color surface600 = Color(0xFF142745);
+  static const Color line = Color(0xFF203451);
+  static const Color lineStrong = Color(0xFF304967);
+  static const Color textPrimary = Color(0xFFF7F9FF);
+  static const Color textSecondary = Color(0xFFC1CAE0);
+  static const Color textMuted = Color(0xFF8795B2);
+  static const Color violet = Color(0xFF7045F5);
+  static const Color violetBright = Color(0xFF9C70FF);
+  static const Color blue = Color(0xFF349CFF);
+  static const Color emerald = Color(0xFF35C994);
+  static const Color amber = Color(0xFFE8B258);
+  static const Color danger = Color(0xFFFF6577);
+}
+
+abstract final class GoLifeSpacing {
+  static const double xxs = 4;
+  static const double xs = 8;
+  static const double sm = 12;
+  static const double md = 16;
+  static const double lg = 20;
+  static const double xl = 24;
+  static const double xxl = 32;
+}
+
+abstract final class GoLifeRadii {
+  static const double small = 10;
+  static const double medium = 14;
+  static const double large = 18;
+  static const double xlarge = 24;
+  static const double pill = 999;
 }
 
 enum GoLifeAccent { neutral, violet, blue, emerald, amber, danger }
@@ -64,8 +82,7 @@ class GoLifeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isCompactHeader = MediaQuery.sizeOf(context).width < 520 &&
-        (badge != null || trailing != null);
+    final isCompactHeader = MediaQuery.sizeOf(context).width < 520;
     return SingleChildScrollView(
       padding: padding ?? goLifeContentPadding(context),
       child: Column(
@@ -77,26 +94,28 @@ class GoLifeScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.headlineMedium?.copyWith(
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: GoLifeSpacing.xs),
                 Text(
                   subtitle,
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: GoLifePalette.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    if (badge != null) badge!,
-                    if (trailing != null) trailing!,
-                  ],
-                ),
+                if (badge != null || trailing != null) ...[
+                  const SizedBox(height: GoLifeSpacing.sm),
+                  Wrap(
+                    spacing: GoLifeSpacing.sm,
+                    runSpacing: GoLifeSpacing.sm,
+                    children: [
+                      if (badge != null) badge!,
+                      if (trailing != null) trailing!,
+                    ],
+                  ),
+                ],
               ],
             )
           else
@@ -113,10 +132,10 @@ class GoLifeScreen extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: GoLifeSpacing.xs),
                       Text(
                         subtitle,
-                        style: theme.textTheme.bodyLarge?.copyWith(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: GoLifePalette.textSecondary,
                         ),
                       ),
@@ -127,7 +146,7 @@ class GoLifeScreen extends StatelessWidget {
                 if (trailing != null) ...[const SizedBox(width: 12), trailing!],
               ],
             ),
-          const SizedBox(height: 20),
+          const SizedBox(height: GoLifeSpacing.lg),
           ...children,
         ],
       ),
@@ -137,9 +156,9 @@ class GoLifeScreen extends StatelessWidget {
 
 EdgeInsets goLifeContentPadding(
   BuildContext context, {
-  double horizontal = 20,
-  double top = 20,
-  double mobileBottom = 128,
+  double horizontal = 16,
+  double top = 16,
+  double mobileBottom = 96,
   double wideBottom = 32,
 }) {
   final width = MediaQuery.sizeOf(context).width;
@@ -152,7 +171,7 @@ class GoLifeCard extends StatelessWidget {
   const GoLifeCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(18),
+    this.padding = const EdgeInsets.all(GoLifeSpacing.md),
     this.accent = GoLifeAccent.neutral,
     this.filled = false,
     this.onTap,
@@ -169,20 +188,25 @@ class GoLifeCard extends StatelessWidget {
     final accentColor = accent.color;
     final decoration = BoxDecoration(
       color: filled
-          ? accentColor.withValues(alpha: 0.18)
-          : GoLifePalette.surface700.withValues(alpha: 0.78),
-      borderRadius: BorderRadius.circular(26),
+          ? accentColor.withValues(alpha: 0.12)
+          : GoLifePalette.surface700.withValues(alpha: 0.88),
+      borderRadius: BorderRadius.circular(GoLifeRadii.large),
       border: Border.all(
         color: filled
-            ? accentColor.withValues(alpha: 0.32)
+            ? accentColor.withValues(alpha: 0.28)
             : GoLifePalette.line.withValues(alpha: 0.9),
       ),
       boxShadow: [
         BoxShadow(
-          color: accentColor.withValues(alpha: filled ? 0.12 : 0.04),
-          blurRadius: filled ? 28 : 16,
-          offset: const Offset(0, 10),
+          color: Colors.black.withValues(alpha: 0.16),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
         ),
+        if (filled)
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.08),
+            blurRadius: 20,
+          ),
       ],
     );
 
@@ -202,7 +226,7 @@ class GoLifeCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(GoLifeRadii.large),
         child: card,
       ),
     );
@@ -225,10 +249,13 @@ class GoLifeStatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final accentColor = accent.color;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: GoLifeSpacing.xs + 2,
+        vertical: 6,
+      ),
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(GoLifeRadii.pill),
         border: Border.all(color: accentColor.withValues(alpha: 0.26)),
       ),
       child: ConstrainedBox(
@@ -237,14 +264,14 @@ class GoLifeStatusPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 15, color: GoLifePalette.textPrimary),
-              const SizedBox(width: 6),
+              Icon(icon, size: 14, color: GoLifePalette.textPrimary),
+              const SizedBox(width: GoLifeSpacing.xs),
             ],
             Flexible(
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: GoLifePalette.textPrimary,
                       fontWeight: FontWeight.w700,
                     ),
@@ -282,7 +309,7 @@ class GoLifeMetricCard extends StatelessWidget {
         children: [
           if (icon != null) ...[
             Icon(icon, color: accent.color, size: 20),
-            const SizedBox(height: 12),
+            const SizedBox(height: GoLifeSpacing.sm),
           ],
           Text(
             label,
@@ -290,7 +317,7 @@ class GoLifeMetricCard extends StatelessWidget {
                   color: GoLifePalette.textSecondary,
                 ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: GoLifeSpacing.xs),
           Text(
             value,
             style: Theme.of(
@@ -298,7 +325,7 @@ class GoLifeMetricCard extends StatelessWidget {
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: GoLifeSpacing.xs),
             Text(
               subtitle!,
               style: Theme.of(
@@ -330,7 +357,7 @@ class GoLifeSectionTitle extends StatelessWidget {
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
         ),
         if (subtitle != null) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: GoLifeSpacing.xs),
           Text(
             subtitle!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -398,10 +425,11 @@ class GoLifeExpansionCard extends StatelessWidget {
                   ),
                 ),
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: GoLifeSpacing.md),
             for (var index = 0; index < children.length; index++) ...[
               children[index],
-              if (index < children.length - 1) const SizedBox(height: 12),
+              if (index < children.length - 1)
+                const SizedBox(height: GoLifeSpacing.sm),
             ],
           ],
         ),
@@ -437,25 +465,28 @@ class GoLifeEmptyState extends StatelessWidget {
             height: 54,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(GoLifeRadii.medium),
             ),
             child: Icon(icon, color: Colors.white),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: GoLifeSpacing.md),
           Text(
             title,
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: GoLifeSpacing.xs),
           Text(
             body,
             style: Theme.of(
               context,
             ).textTheme.bodyLarge?.copyWith(color: GoLifePalette.textSecondary),
           ),
-          if (action != null) ...[const SizedBox(height: 18), action!],
+          if (action != null) ...[
+            const SizedBox(height: GoLifeSpacing.md),
+            action!,
+          ],
         ],
       ),
     );
@@ -495,8 +526,8 @@ class GoLifeShortcutGrid extends StatelessWidget {
       itemCount: items.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: GoLifeSpacing.sm,
+        mainAxisSpacing: GoLifeSpacing.sm,
         childAspectRatio: 1.15,
       ),
       itemBuilder: (context, index) {
@@ -511,7 +542,7 @@ class GoLifeShortcutGrid extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   color: GoLifePalette.violet.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(GoLifeRadii.small),
                 ),
                 child: Icon(item.icon, color: GoLifePalette.violetBright),
               ),
@@ -523,7 +554,7 @@ class GoLifeShortcutGrid extends StatelessWidget {
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               if (item.badge != null) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: GoLifeSpacing.xs),
                 Text(
                   item.badge!,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -568,18 +599,26 @@ class GoLifeTimelineCard extends StatelessWidget {
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: GoLifeSpacing.xs),
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: GoLifePalette.textSecondary,
                 ),
           ),
-          const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: meta),
+          const SizedBox(height: GoLifeSpacing.sm),
+          Wrap(
+            spacing: GoLifeSpacing.xs,
+            runSpacing: GoLifeSpacing.xs,
+            children: meta,
+          ),
           if (actions.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Wrap(spacing: 10, runSpacing: 10, children: actions),
+            const SizedBox(height: GoLifeSpacing.sm),
+            Wrap(
+              spacing: GoLifeSpacing.xs + 2,
+              runSpacing: GoLifeSpacing.xs + 2,
+              children: actions,
+            ),
           ],
         ],
       ),

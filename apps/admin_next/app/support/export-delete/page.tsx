@@ -77,7 +77,7 @@ export default async function SupportExportDeletePage({
           {requests.map((item) => (
             <div
               key={item.request_id}
-              className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4 md:flex-row md:items-center md:justify-between"
+              className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4 md:flex-row md:items-center md:justify-between"
             >
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
@@ -103,7 +103,7 @@ export default async function SupportExportDeletePage({
                       <>
                         <a
                           href={`/support/export-delete/${item.request_id}/bundle`}
-                          className="rounded-full border border-[color:var(--line-strong)] bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-moss hover:text-moss"
+                          className="rounded-full border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-moss hover:bg-[color:var(--surface-hover)] hover:text-moss"
                         >
                           {t.downloadBundleLabel}
                         </a>
@@ -111,7 +111,7 @@ export default async function SupportExportDeletePage({
                           <input type="hidden" name="requestId" value={item.request_id} />
                           <button
                             type="submit"
-                            className="rounded-full border border-[color:var(--line-strong)] bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-moss hover:text-moss"
+                            className="rounded-full border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-moss hover:bg-[color:var(--surface-hover)] hover:text-moss"
                           >
                             {t.markResolvedLabel}
                           </button>

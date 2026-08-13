@@ -408,7 +408,7 @@ _CoachResponse _missionResponse(
     recommendation: controller.localizedMissionBody(mission, l10n),
     evidence:
         controller.localizedMissionEvidence(mission, l10n).take(3).toList(),
-    uncertainty: mission.uncertainty,
+    uncertainty: controller.localizedMissionUncertainty(mission, l10n),
     primaryActionLabel: l10n.actionDoNow,
     secondaryActionLabel: l10n.actionNotUseful,
     primaryIcon: Icons.check_circle_outline,
@@ -519,7 +519,7 @@ String _promptIntroTitle(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Explain, adjust, or slow a decision down.',
       es: 'Explica, ajusta o frena una decisión.',
-      ptBr: 'Explique, ajuste ou desacelere uma decisao.',
+      ptBr: 'Explique, ajuste ou desacelere uma decisão.',
       ptPt: 'Explica, ajusta ou abranda uma decisao.',
       fr: 'Explique, ajuste ou ralentis une decision.',
       it: 'Spiega, regola o rallenta una decisione.',
@@ -534,7 +534,7 @@ String _promptIntroBody(AppLocalizations l10n) => pickLocalizedValue(
       en: 'Coach explains the current mission, memory, and decision context already available in GoLife.',
       es: 'Coach explica el contexto de misión, memoria y decisiones ya disponible en GoLife.',
       ptBr:
-          'O Coach permanece contextual. Ele le o plano de missoes, a memoria permitida e o estado de fallback antes de responder.',
+          'O Coach permanece contextual. Ele lê o plano de missões, a memória permitida e o estado de fallback antes de responder.',
       ptPt:
           'O Coach mantem-se contextual. Le o plano de missoes, a memoria permitida e o estado de fallback antes de responder.',
       fr: 'Coach reste contextuel. Il lit le plan de mission, la memoire autorisee et l etat de repli avant de repondre.',
@@ -551,7 +551,7 @@ String _promptWhyMission(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Why this mission?',
       es: '¿Por qué esta misión?',
-      ptBr: 'Por que esta missao?',
+      ptBr: 'Por que esta missão?',
       ptPt: 'Porque esta missao?',
       fr: 'Pourquoi cette mission ?',
       it: 'Perche questa missione?',
@@ -579,7 +579,7 @@ String _promptDontBuy(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'What should I not buy today?',
       es: '¿Qué no debería comprar hoy?',
-      ptBr: 'O que eu nao deveria comprar hoje?',
+      ptBr: 'O que eu não deveria comprar hoje?',
       ptPt: 'O que nao devo comprar hoje?',
       fr: 'Que ne devrais-je pas acheter aujourd hui ?',
       it: 'Cosa non dovrei comprare oggi?',
@@ -622,7 +622,7 @@ String _privacyContextBody(AppLocalizations l10n) => pickLocalizedValue(
       en: 'These domains are part of your current privacy setup and visible context in GoLife.',
       es: 'Estos dominios forman parte de tu configuración actual de privacidad y contexto visible en GoLife.',
       ptBr:
-          'O Coach usa apenas os dominios ja permitidos para IA ou explicacao local.',
+          'O Coach usa apenas os domínios já permitidos para IA ou explicação local.',
       ptPt:
           'O Coach usa apenas os dominios ja permitidos para IA ou explicacao local.',
       fr: 'Coach utilise uniquement les domaines deja autorises pour l IA ou l explication locale.',
@@ -654,7 +654,7 @@ String _coachEmptyBody(AppLocalizations l10n) => pickLocalizedValue(
       en: 'Start with the mission, the load, or the shopping tension you want explained.',
       es: 'Empieza por la misión, la carga o la tensión de compra que quieres entender.',
       ptBr:
-          'Comece pela missao, pela carga ou pela tensao de compra que voce quer entender.',
+          'Comece pela missão, pela carga ou pela tensão de compra que você quer entender.',
       ptPt:
           'Comeca pela missao, pela carga ou pela tensao de compra que queres perceber.',
       fr: 'Commence par la mission, la charge ou la tension d achat que tu veux comprendre.',
@@ -699,7 +699,7 @@ String _coachNoMissionUncertainty(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'There is not enough day context yet.',
       es: 'Todavía no hay suficiente contexto del día.',
-      ptBr: 'Ainda nao ha contexto suficiente do dia.',
+      ptBr: 'Ainda não há contexto suficiente do dia.',
       ptPt: 'Ainda nao ha contexto suficiente do dia.',
       fr: 'Il n y a pas encore assez de contexte sur la journee.',
       it: 'Non c e ancora abbastanza contesto sulla giornata.',
@@ -714,7 +714,7 @@ String _shoppingUncertainty(AppLocalizations l10n) => pickLocalizedValue(
       en: 'Evidence is still partial. Review before treating it as a firm recommendation.',
       es: 'La evidencia sigue siendo parcial. Revísala antes de tomarla como recomendación firme.',
       ptBr:
-          'A evidencia ainda e parcial. Revise antes de tratá-la como recomendacao firme.',
+          'A evidência ainda é parcial. Revise antes de tratá-la como uma recomendação firme.',
       ptPt:
           'A evidencia continua parcial. Revê-a antes de a tratar como recomendacao firme.',
       fr: 'Les preuves restent partielles. Verifie avant de la prendre comme recommandation ferme.',
@@ -736,7 +736,7 @@ String _shoppingNeedSummary(
       l10n.localeName,
       en: '$domainLabel - urgency $urgencyPercent%',
       es: '$domainLabel - urgencia $urgencyPercent%',
-      ptBr: '$domainLabel - urgencia $urgencyPercent%',
+      ptBr: '$domainLabel - urgência $urgencyPercent%',
       ptPt: '$domainLabel - urgencia $urgencyPercent%',
       fr: '$domainLabel - urgence $urgencyPercent%',
       it: '$domainLabel - urgenza $urgencyPercent%',
@@ -749,8 +749,8 @@ String _shoppingNeedSummary(
 String _openShoppingLabel(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Open shopping',
-      es: 'Abrir shopping',
-      ptBr: 'Abrir shopping',
+      es: 'Abrir compras',
+      ptBr: 'Abrir compras',
       ptPt: 'Abrir shopping',
       fr: 'Ouvrir les achats',
       it: 'Apri shopping',

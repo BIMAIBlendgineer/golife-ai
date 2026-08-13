@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +18,22 @@ import 'package:golife_flutter/domains/missions/mission_set.dart';
 import 'package:golife_flutter/features/app_state/golife_controller.dart';
 import 'package:golife_flutter/features/dashboard/dashboard_screen.dart';
 import 'package:golife_flutter/l10n/app_localizations.dart';
+
+class _BlockingBootstrapStore extends MemoryLocalStore {
+  final Completer<void> gate = Completer<void>();
+
+  void release() {
+    if (!gate.isCompleted) {
+      gate.complete();
+    }
+  }
+
+  @override
+  Future<PrivacySettings> loadPrivacySettings() async {
+    await gate.future;
+    return super.loadPrivacySettings();
+  }
+}
 
 class _FallbackAiGatewayClient extends AiGatewayClient {
   @override
@@ -157,12 +175,106 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('GoLife AI'), findsOneWidget);
+    expect(find.text('Your daily decision OS.'), findsNothing);
     expect(find.text('Today'), findsWidgets);
     expect(find.textContaining('Your focus for today.'), findsOneWidget);
     expect(find.text('Risks today'), findsOneWidget);
     expect(find.text('Other missions'), findsOneWidget);
   });
+
+  testWidgets(
+    'mobile shell exposes exactly five primary destinations without global product banner',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: MemoryLocalStore(),
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationDestination), findsNWidgets(5));
+
+      final navigationBar =
+          tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(navigationBar.destinations, hasLength(5));
+
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Capture'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Memory'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Coach'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Settings'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Your daily decision OS.'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'shows premium bootstrap screen until controller is ready',
+    (tester) async {
+      final localStore = _BlockingBootstrapStore();
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(
+        find.byKey(const Key('golife-bootstrap-screen')),
+        findsOneWidget,
+      );
+      expect(find.text('GoLife AI'), findsOneWidget);
+      expect(find.text('Preparing your day...'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+
+      localStore.release();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('golife-bootstrap-screen')),
+        findsNothing,
+      );
+      expect(find.byType(NavigationBar), findsOneWidget);
+    },
+  );
 
   testWidgets('renders the dashboard in Spanish when locale preference is es', (
     tester,
@@ -185,7 +297,203 @@ void main() {
     expect(find.text('Riesgos de hoy'), findsOneWidget);
   });
 
-  testWidgets('limits productive supported locales to EN and ES', (
+  testWidgets(
+    'PT-BR keeps primary mobile surfaces coherently localized',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('pt-BR');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final navigationBar = find.byType(NavigationBar);
+      for (final label in const [
+        'Hoje',
+        'Capturar',
+        'Memória',
+        'Coach',
+        'Ajustes',
+      ]) {
+        expect(
+          find.descendant(of: navigationBar, matching: find.text(label)),
+          findsOneWidget,
+        );
+      }
+      expect(
+        find.descendant(of: navigationBar, matching: find.text('Memory')),
+        findsNothing,
+      );
+      expect(find.text('Seu foco de hoje.'), findsOneWidget);
+      expect(find.text('Escolha uma vitória visível'), findsOneWidget);
+      expect(find.textContaining('Esforço'), findsWidgets);
+      expect(
+        find.text(
+          'GoLife ficou local porque o gateway estava indisponível ou degradado.',
+        ),
+        findsWidgets,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: navigationBar,
+          matching: find.text('Capturar'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Solte o que está na sua cabeça.'), findsOneWidget);
+      expect(find.text('Capture primeiro. Organize depois.'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Memória'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Memória'), findsWidgets);
+      expect(find.text('Sua vida recente.'), findsOneWidget);
+      expect(find.text('Linha do tempo'), findsOneWidget);
+      expect(
+        find.text('Cartões legíveis primeiro. O detalhe só quando você pedir.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Coach'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Pergunte sobre o seu dia.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'PT-BR mission explanation uses localized mock uncertainty',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('pt-BR');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('Explicar').first,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Explicar').first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Missão simulada com contexto entre domínios limitado.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Missao simulada com contexto entre dominios limitado.'),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'Spanish keeps primary navigation and P0 headings localized',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('es');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final navigationBar = find.byType(NavigationBar);
+      for (final label in const [
+        'Hoy',
+        'Capturar',
+        'Memoria',
+        'Coach',
+        'Ajustes',
+      ]) {
+        expect(
+          find.descendant(of: navigationBar, matching: find.text(label)),
+          findsOneWidget,
+        );
+      }
+
+      await tester.tap(
+        find.descendant(of: navigationBar, matching: find.text('Capturar')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Suelta lo que tienes en la cabeza.'), findsOneWidget);
+      expect(find.text('Captura primero. Ordena después.'), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Memoria'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Memoria'), findsWidgets);
+      expect(find.text('Tu vida reciente.'), findsOneWidget);
+      expect(find.text('Línea de tiempo'), findsOneWidget);
+      expect(
+        find.text(
+            'Tarjetas legibles primero. El detalle solo cuando lo pides.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Coach'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Pregunta sobre tu día.'), findsOneWidget);
+    },
+  );
+
+  testWidgets('limits productive supported locales to EN ES and PT-BR', (
     tester,
   ) async {
     final localStore = MemoryLocalStore();
@@ -201,8 +509,104 @@ void main() {
     await tester.pumpAndSettle();
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    expect(app.supportedLocales, const <Locale>[Locale('en'), Locale('es')]);
+    expect(
+      app.supportedLocales,
+      const <Locale>[
+        Locale('en'),
+        Locale('es'),
+        Locale('pt', 'BR'),
+      ],
+    );
   });
+
+  testWidgets(
+    'uses Brazilian Portuguese automatically when device locale is pt-BR',
+    (tester) async {
+      final platformDispatcher = tester.binding.platformDispatcher;
+      platformDispatcher.localeTestValue = const Locale('pt', 'BR');
+      platformDispatcher.localesTestValue = const [Locale('pt', 'BR')];
+      addTearDown(() {
+        platformDispatcher.clearLocaleTestValue();
+        platformDispatcher.clearLocalesTestValue();
+      });
+
+      final localStore = _BlockingBootstrapStore();
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.text('Preparando o seu dia...'), findsOneWidget);
+
+      localStore.release();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Capturar'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Ajustes'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'stored PT-BR preference overrides a non-Portuguese device locale',
+    (tester) async {
+      final platformDispatcher = tester.binding.platformDispatcher;
+      platformDispatcher.localeTestValue = const Locale('en', 'US');
+      platformDispatcher.localesTestValue = const [Locale('en', 'US')];
+      addTearDown(() {
+        platformDispatcher.clearLocaleTestValue();
+        platformDispatcher.clearLocalesTestValue();
+      });
+
+      final localStore = MemoryLocalStore();
+      await localStore.saveLocalePreference('pt-BR');
+
+      await tester.pumpWidget(
+        GoLifeApp(
+          localStore: localStore,
+          aiGatewayClient: MockAiGatewayClient(),
+          lifeGraphRepository: LifeGraphRepository.seeded(
+            localStore: localStore,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Capturar'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Ajustes'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('uses stored dark theme preference', (tester) async {
     final localStore = MemoryLocalStore();

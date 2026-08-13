@@ -9,11 +9,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#171412",
-        sand: "#f6eee7",
-        moss: "#5d7a68",
-        clay: "#d06447",
-        bronze: "#8a6c2f",
+        ink: "var(--ink)",
+        sand: "var(--paper)",
+        moss: "var(--moss)",
+        sage: "var(--sage)",
+        clay: "var(--clay)",
+        amber: "var(--amber)",
+        bronze: "var(--bronze)",
+        steel: "var(--steel)",
       },
     },
   },

@@ -13,10 +13,12 @@ export function CommandPalette({
   sections,
   triggerLabel,
   searchPlaceholder,
+  compact = false,
 }: {
   sections: PaletteSection[];
   triggerLabel: string;
   searchPlaceholder: string;
+  compact?: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -60,12 +62,36 @@ export function CommandPalette({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-3 rounded-lg border border-[color:var(--line)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink-soft)]"
+        className={
+          compact
+            ? "inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--surface)] text-[color:var(--ink-soft)] transition-colors hover:bg-[color:var(--surface-2)] hover:text-ink"
+            : "inline-flex items-center gap-3 rounded-lg border border-[color:var(--line)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink-soft)]"
+        }
+        title={`${triggerLabel} (Ctrl+K)`}
+        aria-label={triggerLabel}
       >
-        <span>{triggerLabel}</span>
-        <span className="rounded border border-[color:var(--line)] bg-[color:var(--surface-2)] px-2 py-0.5 font-mono text-[11px] text-[color:var(--ink-muted)]">
-          Ctrl K
-        </span>
+        {compact ? (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="8.5" cy="8.5" r="5.25" />
+            <path d="m12.5 12.5 4 4" />
+          </svg>
+        ) : (
+          <>
+            <span>{triggerLabel}</span>
+            <span className="rounded border border-[color:var(--line)] bg-[color:var(--surface-2)] px-2 py-0.5 font-mono text-[11px] text-[color:var(--ink-muted)]">
+              Ctrl K
+            </span>
+          </>
+        )}
       </button>
       {open ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-[color:rgba(19,24,23,0.28)] p-4 pt-[12vh]">

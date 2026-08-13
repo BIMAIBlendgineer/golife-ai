@@ -41,49 +41,60 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
     return base.copyWith(
       headlineLarge: displayTheme.headlineLarge?.copyWith(
         color: colorScheme.onSurface,
+        fontSize: 30,
         fontWeight: FontWeight.w700,
         letterSpacing: -1.2,
       ),
       headlineMedium: displayTheme.headlineMedium?.copyWith(
         color: colorScheme.onSurface,
+        fontSize: 26,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.9,
       ),
       headlineSmall: displayTheme.headlineSmall?.copyWith(
         color: colorScheme.onSurface,
+        fontSize: 22,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.6,
       ),
       titleLarge: bodyTheme.titleLarge?.copyWith(
         color: colorScheme.onSurface,
+        fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
       titleMedium: bodyTheme.titleMedium?.copyWith(
         color: colorScheme.onSurface,
+        fontSize: 16,
         fontWeight: FontWeight.w700,
       ),
       titleSmall: bodyTheme.titleSmall?.copyWith(
         color: colorScheme.onSurface,
+        fontSize: 14,
         fontWeight: FontWeight.w700,
       ),
       bodyLarge: bodyTheme.bodyLarge?.copyWith(
         color: isDark ? GoLifePalette.textPrimary : colorScheme.onSurface,
+        fontSize: 16,
         height: 1.45,
       ),
       bodyMedium: bodyTheme.bodyMedium?.copyWith(
         color: isDark ? GoLifePalette.textSecondary : const Color(0xFF43506E),
+        fontSize: 14,
         height: 1.45,
       ),
       bodySmall: bodyTheme.bodySmall?.copyWith(
         color: isDark ? GoLifePalette.textMuted : const Color(0xFF667493),
+        fontSize: 13,
         height: 1.35,
       ),
       labelLarge: bodyTheme.labelLarge?.copyWith(
         color: isDark ? GoLifePalette.textPrimary : colorScheme.onSurface,
+        fontSize: 14,
         fontWeight: FontWeight.w700,
       ),
       labelMedium: bodyTheme.labelMedium?.copyWith(
         color: isDark ? GoLifePalette.textSecondary : const Color(0xFF5A6786),
+        fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
     );
@@ -110,7 +121,7 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(GoLifeRadii.large),
         side: BorderSide(color: line),
       ),
     ),
@@ -118,12 +129,14 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
       backgroundColor: surfaceAlt,
       selectedColor: GoLifePalette.violet.withValues(alpha: 0.24),
       side: BorderSide(color: line),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(GoLifeRadii.small),
+      ),
       labelStyle: bodyTheme.labelLarge?.copyWith(
         color: isDark ? GoLifePalette.textSecondary : const Color(0xFF31415E),
         fontWeight: FontWeight.w700,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -135,30 +148,32 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
         color: isDark ? GoLifePalette.textSecondary : const Color(0xFF5B6989),
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(GoLifeRadii.medium),
         borderSide: BorderSide(color: line),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(GoLifeRadii.medium),
         borderSide: BorderSide(color: line),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(GoLifeRadii.medium),
         borderSide: const BorderSide(color: GoLifePalette.violetBright),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(GoLifeRadii.medium),
         borderSide: const BorderSide(color: GoLifePalette.danger),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: GoLifePalette.violet,
         foregroundColor: Colors.white,
         minimumSize: const Size(0, 52),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GoLifeRadii.medium),
+        ),
         textStyle: bodyTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
       ),
     ),
@@ -167,8 +182,10 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
         foregroundColor:
             isDark ? GoLifePalette.textPrimary : const Color(0xFF18233D),
         minimumSize: const Size(0, 52),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GoLifeRadii.medium),
+        ),
         side: BorderSide(color: line),
         textStyle: bodyTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
@@ -185,7 +202,7 @@ ThemeData buildGoLifeTheme(Brightness brightness) {
           ? GoLifePalette.ink800.withValues(alpha: 0.96)
           : Colors.white.withValues(alpha: 0.95),
       indicatorColor: GoLifePalette.violet.withValues(alpha: 0.2),
-      height: 72,
+      height: 66,
       labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>((states) {
         final selected = states.contains(WidgetState.selected);
         return bodyTheme.labelMedium?.copyWith(

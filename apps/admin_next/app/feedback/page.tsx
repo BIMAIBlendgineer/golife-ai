@@ -76,7 +76,7 @@ export default async function FeedbackPage({
           {feedback.map((item) => (
             <div
               key={item.feedback_id}
-              className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4"
+              className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-2">

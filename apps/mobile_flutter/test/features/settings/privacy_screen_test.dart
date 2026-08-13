@@ -195,7 +195,7 @@ void main() {
       find.text(
         'Protected local export bundle saved as golife_local_export_20260504T103015Z.',
       ),
-      findsOneWidget,
+      findsWidgets,
     );
     expect(find.text('Clear AI history'), findsOneWidget);
   });
@@ -548,5 +548,153 @@ void main() {
     );
     expect(find.textContaining('validation_applied'), findsWidgets);
     expect(find.text('golife_premium_monthly_sandbox'), findsWidgets);
+  });
+
+  testWidgets('PT-BR Settings index and preferences are explicit',
+      (tester) async {
+    final localStore = MemoryLocalStore();
+    final controller = GoLifeController(
+      localStore: localStore,
+      aiGatewayClient: MockAiGatewayClient(),
+      lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+      localExportService: _FakeLocalExportService(),
+    );
+    addTearDown(controller.dispose);
+    await controller.bootstrap();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: PrivacyScreen(controller: controller)),
+      ),
+    );
+
+    expect(find.text('Índice rápido'), findsOneWidget);
+    expect(find.text('Plano e cobrança'), findsWidgets);
+    expect(find.text('Preferências'), findsOneWidget);
+
+    await _expandSettingsSection(tester, 'settings-section-preferences');
+    expect(find.text('Padrão do sistema'), findsOneWidget);
+    expect(find.text('Inglês'), findsOneWidget);
+    expect(find.text('Espanhol'), findsOneWidget);
+    expect(find.text('Português (Brasil)'), findsOneWidget);
+    expect(find.text('Notificações'), findsOneWidget);
+    expect(find.text('Horário silencioso'), findsOneWidget);
+    expect(find.text('Unidades de medida'), findsOneWidget);
+    expect(find.text('Métrico'), findsOneWidget);
+    expect(find.text('Preferência de IA'), findsOneWidget);
+    expect(find.text('Backup e sincronização'), findsOneWidget);
+  });
+
+  testWidgets('PT-BR privacy and AI data sections are explicit',
+      (tester) async {
+    final localStore = MemoryLocalStore();
+    final controller = GoLifeController(
+      localStore: localStore,
+      aiGatewayClient: MockAiGatewayClient(),
+      lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+      localExportService: _FakeLocalExportService(),
+    );
+    addTearDown(controller.dispose);
+    await controller.bootstrap();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: PrivacyScreen(controller: controller)),
+      ),
+    );
+
+    await _expandSettingsSection(tester, 'settings-section-privacy-dashboard');
+    expect(find.text('Painel de privacidade'), findsOneWidget);
+    expect(find.text('Eventos totais'), findsOneWidget);
+    expect(find.text('Elegíveis para IA'), findsOneWidget);
+    expect(find.text('Bloqueados localmente'), findsOneWidget);
+    expect(find.text('Criptografado localmente'), findsOneWidget);
+    expect(find.text('Sempre local'), findsOneWidget);
+    expect(find.textContaining('Missões diárias'), findsOneWidget);
+
+    await _expandSettingsSection(tester, 'settings-section-ai-data');
+    expect(find.text('IA e dados'), findsWidgets);
+    expect(find.text('Itens de evidência'), findsOneWidget);
+    expect(find.text('Relações'), findsOneWidget);
+    expect(find.text('Entradas de auditoria'), findsOneWidget);
+    expect(find.text('Abrir linha do tempo do LifeGraph'), findsOneWidget);
+  });
+
+  testWidgets('PT-BR billing, legal, data and domain controls are explicit', (
+    tester,
+  ) async {
+    final localStore = MemoryLocalStore();
+    final controller = GoLifeController(
+      localStore: localStore,
+      aiGatewayClient: MockAiGatewayClient(),
+      lifeGraphRepository: LifeGraphRepository.seeded(localStore: localStore),
+      localExportService: _FakeLocalExportService(),
+    );
+    addTearDown(controller.dispose);
+    await controller.bootstrap();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: PrivacyScreen(controller: controller)),
+      ),
+    );
+
+    await _expandSettingsSection(tester, 'settings-section-billing');
+    expect(find.text('Plano e cobrança'), findsWidgets);
+    expect(find.text('Limites do plano'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.text.toPlainText().contains('Desativado nesta versão'),
+      ),
+      findsWidgets,
+    );
+    expect(find.textContaining('Sempre disponível'), findsOneWidget);
+    expect(
+        find.textContaining('Atualizações diárias de missões'), findsOneWidget);
+    expect(find.textContaining('Dentro da cota local'), findsWidgets);
+
+    await _expandSettingsSection(tester, 'settings-section-legal');
+    expect(find.text('Loja e informações legais'), findsWidgets);
+    expect(find.text('Política de privacidade'), findsOneWidget);
+    expect(find.text('Termos de serviço'), findsOneWidget);
+    expect(find.text('Suporte'), findsOneWidget);
+    expect(find.text('Abrir link'), findsWidgets);
+    expect(find.text('Copiar URL'), findsWidgets);
+
+    await _expandSettingsSection(tester, 'settings-section-data-controls');
+    expect(find.text('Controles de dados'), findsOneWidget);
+    expect(find.text('Exportar JSON'), findsWidgets);
+    expect(find.text('Apagar todos os dados locais'), findsWidgets);
+    expect(find.text('Limpar histórico da IA'), findsWidgets);
+
+    await _expandSettingsSection(tester, 'settings-section-domain-permissions');
+    expect(find.text('Controles por domínio'), findsOneWidget);
+    expect(find.textContaining('elegíveis para IA agora'), findsWidgets);
   });
 }
