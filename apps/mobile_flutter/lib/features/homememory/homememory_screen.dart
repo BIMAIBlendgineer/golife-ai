@@ -10,6 +10,7 @@ import '../../domains/homememory/purchase_proof.dart';
 import '../../domains/homememory/warranty_record.dart';
 import '../../l10n/app_localizations.dart';
 import '../app_state/golife_controller.dart';
+import '../shared/premium_ui.dart';
 
 class HomeMemoryScreen extends StatelessWidget {
   const HomeMemoryScreen({super.key, required this.controller});
@@ -21,198 +22,184 @@ class HomeMemoryScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.homeMemoryEyebrow.toUpperCase(),
-            style: theme.textTheme.labelLarge,
-          ),
-          const SizedBox(height: 6),
-          Text(l10n.homeMemoryTitle, style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            l10n.homeMemorySubtitle,
-            style: theme.textTheme.bodyLarge,
-          ),
-          const SizedBox(height: 20),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.78),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.homeMemoryDisclosureTitle,
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.homeMemoryDisclosureBody,
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+    return GoLifeScreen(
+      title: l10n.homeMemoryTitle,
+      subtitle: l10n.homeMemorySubtitle,
+      badge: GoLifeStatusPill(
+        label: l10n.homeMemoryEyebrow,
+        icon: Icons.home_work_outlined,
+        accent: GoLifeAccent.blue,
+      ),
+      children: [
+        GoLifeCard(
+          accent: GoLifeAccent.blue,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SummaryCard(
-                title: l10n.homeMemoryWarrantySoonTitle,
-                value: controller.warrantyEndingSoonItems.length.toString(),
-                subtitle: controller.warrantyEndingSoonItems.isEmpty
-                    ? l10n.homeMemoryWarrantySoonEmpty
-                    : _compactWarrantyDate(
-                        controller.warrantyEndingSoonItems.first.warrantyUntil,
-                        l10n,
-                      ),
+              Text(
+                l10n.homeMemoryDisclosureTitle,
+                style: theme.textTheme.titleLarge,
               ),
-              _SummaryCard(
-                title: l10n.homeMemoryRecentProofsTitle,
-                value: controller.recentPurchaseProofs.length.toString(),
-                subtitle: controller.recentPurchaseProofs.isEmpty
-                    ? l10n.homeMemoryRecentProofsEmpty
-                    : controller.recentPurchaseProofs.first.merchantName,
-              ),
-              _SummaryCard(
-                title: l10n.homeMemoryRemindersTitle,
-                value:
-                    controller.upcomingMaintenanceReminders.length.toString(),
-                subtitle: controller.upcomingMaintenanceReminders.isEmpty
-                    ? l10n.homeMemoryRemindersEmpty
-                    : controller.upcomingMaintenanceReminders.first.title,
-              ),
-              _SummaryCard(
-                title: l10n.homeMemoryClaimsTitle,
-                value: controller.activeClaimDrafts.length.toString(),
-                subtitle: controller.activeClaimDrafts.isEmpty
-                    ? l10n.homeMemoryClaimsEmpty
-                    : controller.activeClaimDrafts.first.title,
+              const SizedBox(height: 8),
+              Text(
+                l10n.homeMemoryDisclosureBody,
+                style: theme.textTheme.bodyMedium,
               ),
             ],
           ),
-          if (controller.homeMemoryMentalLoadItems.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _HomeMemoryDerivedPanel(
-              title: _homeMemorySignalsTitle(l10n),
-              body: _homeMemorySignalsBody(l10n),
-              children: controller.homeMemoryMentalLoadItems
-                  .take(3)
-                  .map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        '- ${item.title}: ${item.summary}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _SummaryCard(
+              title: l10n.homeMemoryWarrantySoonTitle,
+              value: controller.warrantyEndingSoonItems.length.toString(),
+              subtitle: controller.warrantyEndingSoonItems.isEmpty
+                  ? l10n.homeMemoryWarrantySoonEmpty
+                  : _compactWarrantyDate(
+                      controller.warrantyEndingSoonItems.first.warrantyUntil,
+                      l10n,
                     ),
-                  )
-                  .toList(growable: false),
+            ),
+            _SummaryCard(
+              title: l10n.homeMemoryRecentProofsTitle,
+              value: controller.recentPurchaseProofs.length.toString(),
+              subtitle: controller.recentPurchaseProofs.isEmpty
+                  ? l10n.homeMemoryRecentProofsEmpty
+                  : controller.recentPurchaseProofs.first.merchantName,
+            ),
+            _SummaryCard(
+              title: l10n.homeMemoryRemindersTitle,
+              value: controller.upcomingMaintenanceReminders.length.toString(),
+              subtitle: controller.upcomingMaintenanceReminders.isEmpty
+                  ? l10n.homeMemoryRemindersEmpty
+                  : controller.upcomingMaintenanceReminders.first.title,
+            ),
+            _SummaryCard(
+              title: l10n.homeMemoryClaimsTitle,
+              value: controller.activeClaimDrafts.length.toString(),
+              subtitle: controller.activeClaimDrafts.isEmpty
+                  ? l10n.homeMemoryClaimsEmpty
+                  : controller.activeClaimDrafts.first.title,
             ),
           ],
-          if (controller.homeMemoryDecisionCards.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            _HomeMemoryDerivedPanel(
-              title: _homeMemoryGeneratedDecisionsTitle(l10n),
-              body: _homeMemoryGeneratedDecisionsBody(l10n),
-              children: controller.homeMemoryDecisionCards
-                  .take(3)
-                  .map(
-                    (card) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        '- ${card.title}: ${card.recommendedAction}',
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  )
-                  .toList(growable: false),
-            ),
-          ],
+        ),
+        if (controller.homeMemoryMentalLoadItems.isNotEmpty) ...[
           const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilledButton.icon(
-                onPressed: () => _showOwnedItemEditor(context, controller),
-                icon: const Icon(Icons.inventory_2_outlined),
-                label: Text(l10n.homeMemoryActionAddItem),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: () => _showManualProofEditor(context, controller),
-                icon: const Icon(Icons.receipt_long_outlined),
-                label: Text(l10n.homeMemoryActionAddProof),
-              ),
-              OutlinedButton.icon(
-                onPressed: controller.ownedItems.isEmpty
-                    ? null
-                    : () => _showReminderEditor(context, controller),
-                icon: const Icon(Icons.event_repeat_outlined),
-                label: Text(l10n.homeMemoryActionCreateReminder),
-              ),
-              OutlinedButton.icon(
-                onPressed: controller.ownedItems.isEmpty
-                    ? null
-                    : () => _showClaimDraftEditor(context, controller),
-                icon: const Icon(Icons.gavel_outlined),
-                label: Text(l10n.homeMemoryActionDraftClaim),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.homeMemoryItemsTitle,
-            style: theme.textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          if (controller.ownedItems.isEmpty)
-            Text(
-              l10n.homeMemoryItemsEmpty,
-              style: theme.textTheme.bodyLarge,
-            )
-          else
-            Column(
-              children: controller.ownedItems.map((item) {
-                final warranty = controller.warrantyRecordForItem(item.id);
-                final proofs = controller.purchaseProofsForItem(item.id);
-                final reminders =
-                    controller.maintenanceRemindersForItem(item.id);
-                final claims = controller.claimDraftsForItem(item.id);
-                final evidence = controller.evidenceAttachmentsForItem(item.id);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _OwnedItemCard(
-                    item: item,
-                    warranty: warranty,
-                    proofs: proofs,
-                    reminders: reminders,
-                    claims: claims,
-                    evidence: evidence,
-                    onReminder: () => _showReminderEditor(
-                      context,
-                      controller,
-                      initialItemId: item.id,
-                    ),
-                    onClaim: () => _showClaimDraftEditor(
-                      context,
-                      controller,
-                      initialItemId: item.id,
+          _HomeMemoryDerivedPanel(
+            title: _homeMemorySignalsTitle(l10n),
+            body: _homeMemorySignalsBody(l10n),
+            children: controller.homeMemoryMentalLoadItems
+                .take(3)
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      '- ${item.title}: ${item.summary}',
+                      style: theme.textTheme.bodyMedium,
                     ),
                   ),
-                );
-              }).toList(growable: false),
-            ),
+                )
+                .toList(growable: false),
+          ),
         ],
-      ),
+        if (controller.homeMemoryDecisionCards.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _HomeMemoryDerivedPanel(
+            title: _homeMemoryGeneratedDecisionsTitle(l10n),
+            body: _homeMemoryGeneratedDecisionsBody(l10n),
+            children: controller.homeMemoryDecisionCards
+                .take(3)
+                .map(
+                  (card) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      '- ${card.title}: ${card.recommendedAction}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        ],
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton.icon(
+              onPressed: () => _showOwnedItemEditor(context, controller),
+              icon: const Icon(Icons.inventory_2_outlined),
+              label: Text(l10n.homeMemoryActionAddItem),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: () => _showManualProofEditor(context, controller),
+              icon: const Icon(Icons.receipt_long_outlined),
+              label: Text(l10n.homeMemoryActionAddProof),
+            ),
+            OutlinedButton.icon(
+              onPressed: controller.ownedItems.isEmpty
+                  ? null
+                  : () => _showReminderEditor(context, controller),
+              icon: const Icon(Icons.event_repeat_outlined),
+              label: Text(l10n.homeMemoryActionCreateReminder),
+            ),
+            OutlinedButton.icon(
+              onPressed: controller.ownedItems.isEmpty
+                  ? null
+                  : () => _showClaimDraftEditor(context, controller),
+              icon: const Icon(Icons.gavel_outlined),
+              label: Text(l10n.homeMemoryActionDraftClaim),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        GoLifeSectionTitle(title: l10n.homeMemoryItemsTitle),
+        const SizedBox(height: 12),
+        if (controller.ownedItems.isEmpty)
+          GoLifeEmptyState(
+            title: l10n.homeMemoryItemsTitle,
+            body: l10n.homeMemoryItemsEmpty,
+            icon: Icons.inventory_2_outlined,
+          )
+        else
+          Column(
+            children: controller.ownedItems.map((item) {
+              final warranty = controller.warrantyRecordForItem(item.id);
+              final proofs = controller.purchaseProofsForItem(item.id);
+              final reminders = controller.maintenanceRemindersForItem(
+                item.id,
+              );
+              final claims = controller.claimDraftsForItem(item.id);
+              final evidence = controller.evidenceAttachmentsForItem(
+                item.id,
+              );
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _OwnedItemCard(
+                  item: item,
+                  warranty: warranty,
+                  proofs: proofs,
+                  reminders: reminders,
+                  claims: claims,
+                  evidence: evidence,
+                  onReminder: () => _showReminderEditor(
+                    context,
+                    controller,
+                    initialItemId: item.id,
+                  ),
+                  onClaim: () => _showClaimDraftEditor(
+                    context,
+                    controller,
+                    initialItemId: item.id,
+                  ),
+                ),
+              );
+            }).toList(growable: false),
+          ),
+      ],
     );
   }
 }
@@ -230,13 +217,8 @@ class _HomeMemoryDerivedPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F0E4),
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return GoLifeCard(
+      accent: GoLifeAccent.violet,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -254,7 +236,7 @@ class _HomeMemoryDerivedPanel extends StatelessWidget {
 String _homeMemorySignalsTitle(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Derived review signals',
-      es: 'Senales de revision derivadas',
+      es: 'Señales de revisión derivadas',
       ptBr: 'Sinais de revisao derivados',
       ptPt: 'Sinais de revisao derivados',
       fr: 'Signaux de revision derives',
@@ -268,9 +250,11 @@ String _homeMemorySignalsTitle(AppLocalizations l10n) => pickLocalizedValue(
 String _homeMemorySignalsBody(AppLocalizations l10n) => pickLocalizedValue(
       l10n.localeName,
       en: 'Warranty, maintenance, and claim events can become local mental-load items before any external action is considered.',
-      es: 'Garantias, mantenimiento y reclamaciones pueden convertirse en carga mental local antes de considerar cualquier accion externa.',
-      ptBr: 'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
-      ptPt: 'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
+      es: 'Garantías, mantenimiento y reclamaciones pueden convertirse en carga mental local antes de considerar cualquier acción externa.',
+      ptBr:
+          'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
+      ptPt:
+          'Garantia, manutencao e reclamacoes podem virar carga mental local antes de qualquer acao externa.',
       fr: 'Garantie, maintenance et reclamations peuvent devenir une charge mentale locale avant toute action externe.',
       it: 'Garanzie, manutenzione e reclami possono diventare carico mentale locale prima di qualsiasi azione esterna.',
       de: 'Garantie-, Wartungs- und Reklamationsereignisse koennen zuerst als lokale mentale Last sichtbar werden.',
@@ -294,13 +278,17 @@ String _homeMemoryGeneratedDecisionsTitle(AppLocalizations l10n) =>
       zhHant: 'Generated decisions',
     );
 
-String _homeMemoryGeneratedDecisionsBody(AppLocalizations l10n) =>
+String _homeMemoryGeneratedDecisionsBody(
+  AppLocalizations l10n,
+) =>
     pickLocalizedValue(
       l10n.localeName,
       en: 'GoLife can turn HomeMemory signals into decision cards while still requiring human confirmation for anything external.',
-      es: 'GoLife puede convertir senales de HomeMemory en tarjetas de decision, manteniendo la confirmacion humana para cualquier accion externa.',
-      ptBr: 'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
-      ptPt: 'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
+      es: 'GoLife puede convertir señales de HomeMemory en tarjetas de decisión, manteniendo la confirmación humana para cualquier acción externa.',
+      ptBr:
+          'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
+      ptPt:
+          'GoLife pode transformar sinais do HomeMemory em cartoes de decisao, mantendo confirmacao humana para acoes externas.',
       fr: 'GoLife peut transformer les signaux HomeMemory en cartes de decision tout en exigeant une confirmation humaine pour toute action externe.',
       it: 'GoLife puo trasformare i segnali di HomeMemory in decisioni, mantenendo la conferma umana per qualsiasi azione esterna.',
       de: 'GoLife kann HomeMemory-Signale in Entscheidungskarten umwandeln und verlangt weiterhin menschliche Bestaetigung fuer externe Aktionen.',
@@ -322,22 +310,13 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: 220,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(value, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-        ],
+      child: GoLifeMetricCard(
+        label: title,
+        value: value,
+        subtitle: subtitle,
+        accent: GoLifeAccent.blue,
       ),
     );
   }
@@ -372,9 +351,10 @@ class _OwnedItemCard extends StatelessWidget {
     final warrantyRecord = warranty;
     final purchaseMeta = <String>[
       if (item.brand.isNotEmpty || item.model.isNotEmpty)
-        [item.brand, item.model]
-            .where((value) => value.trim().isNotEmpty)
-            .join(' '),
+        [
+          item.brand,
+          item.model,
+        ].where((value) => value.trim().isNotEmpty).join(' '),
       if (item.store.isNotEmpty) item.store,
       if (item.purchaseDate != null && item.purchaseDate!.isNotEmpty)
         item.purchaseDate!,
@@ -382,124 +362,140 @@ class _OwnedItemCard extends StatelessWidget {
         l10n.homeMemoryWarrantyUntilLabel(item.warrantyUntil!),
     ].where((value) => value.trim().isNotEmpty).join(' | ');
 
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        childrenPadding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
-        title: Text(item.displayName, style: theme.textTheme.titleLarge),
-        subtitle: Text(
-          purchaseMeta.isEmpty ? l10n.homeMemoryItemNoMeta : purchaseMeta,
-          style: theme.textTheme.bodyMedium,
-        ),
-        trailing: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
+    return GoLifeCard(
+      accent: GoLifeAccent.blue,
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          childrenPadding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
+          iconColor: GoLifePalette.textSecondary,
+          collapsedIconColor: GoLifePalette.textSecondary,
+          title: Text(item.displayName, style: theme.textTheme.titleLarge),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                purchaseMeta.isEmpty ? l10n.homeMemoryItemNoMeta : purchaseMeta,
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _StatusChip(label: status),
+                  GoLifeStatusPill(
+                    label: item.privacyLevel.localizedPermissionLabel(l10n),
+                    accent: GoLifeAccent.neutral,
+                  ),
+                ],
+              ),
+            ],
+          ),
           children: [
-            _StatusChip(label: status),
-            Text(item.privacyLevel.localizedPermissionLabel(l10n)),
-          ],
-        ),
-        children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.tonalIcon(
+                    onPressed: onReminder,
+                    icon: const Icon(Icons.event_repeat_outlined),
+                    label: Text(l10n.homeMemoryActionCreateReminder),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: onClaim,
+                    icon: const Icon(Icons.gavel_outlined),
+                    label: Text(l10n.homeMemoryActionDraftClaim),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _SectionBlock(
+              title: l10n.homeMemorySectionItem,
               children: [
-                FilledButton.tonalIcon(
-                  onPressed: onReminder,
-                  icon: const Icon(Icons.event_repeat_outlined),
-                  label: Text(l10n.homeMemoryActionCreateReminder),
+                _KeyValueRow(label: l10n.fieldCategory, value: item.category),
+                _KeyValueRow(
+                  label: l10n.homeMemoryFieldStore,
+                  value: item.store,
                 ),
-                FilledButton.tonalIcon(
-                  onPressed: onClaim,
-                  icon: const Icon(Icons.gavel_outlined),
-                  label: Text(l10n.homeMemoryActionDraftClaim),
+                _KeyValueRow(
+                  label: l10n.homeMemoryFieldSerialNumber,
+                  value: item.serialNumber,
+                ),
+                _KeyValueRow(
+                  label: l10n.fieldNotes,
+                  value: item.notes,
+                  empty: l10n.homeMemoryNoNotes,
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          _SectionBlock(
-            title: l10n.homeMemorySectionItem,
-            children: [
-              _KeyValueRow(label: l10n.fieldCategory, value: item.category),
-              _KeyValueRow(label: l10n.homeMemoryFieldStore, value: item.store),
-              _KeyValueRow(
-                label: l10n.homeMemoryFieldSerialNumber,
-                value: item.serialNumber,
-              ),
-              _KeyValueRow(
-                label: l10n.fieldNotes,
-                value: item.notes,
-                empty: l10n.homeMemoryNoNotes,
-              ),
-            ],
-          ),
-          _SectionBlock(
-            title: l10n.homeMemorySectionProofs,
-            children: proofs.isEmpty
-                ? [Text(l10n.homeMemoryNoProofs)]
-                : proofs
-                    .map(
-                      (proof) => Text(
-                        '- ${proof.merchantName.isEmpty ? l10n.homeMemoryUnknownMerchant : proof.merchantName} | ${proof.purchaseDate ?? l10n.homeMemoryUnknownDate}',
-                      ),
-                    )
-                    .toList(growable: false),
-          ),
-          _SectionBlock(
-            title: l10n.homeMemorySectionWarranty,
-            children: [
-              if (warrantyRecord == null)
-                Text(l10n.homeMemoryWarrantyUnknown)
-              else ...[
-                _KeyValueRow(
-                  label: l10n.homeMemoryFieldWarrantyMonths,
-                  value: warrantyRecord.warrantyMonths?.toString() ??
-                      l10n.homeMemoryUnknownValue,
-                ),
-                _KeyValueRow(
-                  label: l10n.homeMemoryFieldWarrantyUntil,
-                  value: warrantyRecord.warrantyUntil ??
-                      l10n.homeMemoryUnknownValue,
-                ),
-                Text(warrantyRecord.disclaimer),
+            _SectionBlock(
+              title: l10n.homeMemorySectionProofs,
+              children: proofs.isEmpty
+                  ? [Text(l10n.homeMemoryNoProofs)]
+                  : proofs
+                      .map(
+                        (proof) => Text(
+                          '- ${proof.merchantName.isEmpty ? l10n.homeMemoryUnknownMerchant : proof.merchantName} | ${proof.purchaseDate ?? l10n.homeMemoryUnknownDate}',
+                        ),
+                      )
+                      .toList(growable: false),
+            ),
+            _SectionBlock(
+              title: l10n.homeMemorySectionWarranty,
+              children: [
+                if (warrantyRecord == null)
+                  Text(l10n.homeMemoryWarrantyUnknown)
+                else ...[
+                  _KeyValueRow(
+                    label: l10n.homeMemoryFieldWarrantyMonths,
+                    value: warrantyRecord.warrantyMonths?.toString() ??
+                        l10n.homeMemoryUnknownValue,
+                  ),
+                  _KeyValueRow(
+                    label: l10n.homeMemoryFieldWarrantyUntil,
+                    value: warrantyRecord.warrantyUntil ??
+                        l10n.homeMemoryUnknownValue,
+                  ),
+                  Text(warrantyRecord.disclaimer),
+                ],
               ],
-            ],
-          ),
-          _SectionBlock(
-            title: l10n.homeMemorySectionReminders,
-            children: reminders.isEmpty
-                ? [Text(l10n.homeMemoryNoReminders)]
-                : reminders
-                    .map((reminder) =>
-                        Text('- ${reminder.title} | ${reminder.dueDate}'))
-                    .toList(growable: false),
-          ),
-          _SectionBlock(
-            title: l10n.homeMemorySectionClaims,
-            children: claims.isEmpty
-                ? [Text(l10n.homeMemoryNoClaims)]
-                : claims
-                    .map((claim) => Text('- ${claim.title} | ${claim.status}'))
-                    .toList(growable: false),
-          ),
-          _SectionBlock(
-            title: l10n.homeMemorySectionEvidence,
-            children: evidence.isEmpty
-                ? [Text(l10n.homeMemoryNoEvidence)]
-                : evidence
-                    .map((_) => Text(l10n.homeMemoryEvidencePresent))
-                    .toList(),
-          ),
-        ],
+            ),
+            _SectionBlock(
+              title: l10n.homeMemorySectionReminders,
+              children: reminders.isEmpty
+                  ? [Text(l10n.homeMemoryNoReminders)]
+                  : reminders
+                      .map(
+                        (reminder) =>
+                            Text('- ${reminder.title} | ${reminder.dueDate}'),
+                      )
+                      .toList(growable: false),
+            ),
+            _SectionBlock(
+              title: l10n.homeMemorySectionClaims,
+              children: claims.isEmpty
+                  ? [Text(l10n.homeMemoryNoClaims)]
+                  : claims
+                      .map(
+                        (claim) => Text('- ${claim.title} | ${claim.status}'),
+                      )
+                      .toList(growable: false),
+            ),
+            _SectionBlock(
+              title: l10n.homeMemorySectionEvidence,
+              children: evidence.isEmpty
+                  ? [Text(l10n.homeMemoryNoEvidence)]
+                  : evidence
+                      .map((_) => Text(l10n.homeMemoryEvidencePresent))
+                      .toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -512,22 +508,12 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1E6D8),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Text(label, style: Theme.of(context).textTheme.labelMedium),
-    );
+    return GoLifeStatusPill(label: label, accent: GoLifeAccent.amber);
   }
 }
 
 class _SectionBlock extends StatelessWidget {
-  const _SectionBlock({
-    required this.title,
-    required this.children,
-  });
+  const _SectionBlock({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -549,11 +535,7 @@ class _SectionBlock extends StatelessWidget {
 }
 
 class _KeyValueRow extends StatelessWidget {
-  const _KeyValueRow({
-    required this.label,
-    required this.value,
-    this.empty,
-  });
+  const _KeyValueRow({required this.label, required this.value, this.empty});
 
   final String label;
   final String value;
@@ -611,8 +593,9 @@ Future<void> _showOwnedItemEditor(
       const SizedBox(height: 12),
       TextField(
         controller: serialController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldSerialNumber),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldSerialNumber,
+        ),
       ),
       const SizedBox(height: 12),
       TextField(
@@ -627,8 +610,9 @@ Future<void> _showOwnedItemEditor(
       const SizedBox(height: 12),
       TextField(
         controller: purchaseDateController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldPurchaseDate),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldPurchaseDate,
+        ),
       ),
       const SizedBox(height: 12),
       TextField(
@@ -644,8 +628,9 @@ Future<void> _showOwnedItemEditor(
       const SizedBox(height: 12),
       TextField(
         controller: warrantyMonthsController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldWarrantyMonths),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldWarrantyMonths,
+        ),
         keyboardType: TextInputType.number,
       ),
       const SizedBox(height: 12),
@@ -686,8 +671,9 @@ Future<void> _showOwnedItemEditor(
         serialNumber: serialController.text.trim(),
         category: categoryController.text.trim(),
         purchaseDate: purchaseDateController.text.trim(),
-        purchasePrice:
-            double.tryParse(priceController.text.trim().replaceAll(',', '.')),
+        purchasePrice: double.tryParse(
+          priceController.text.trim().replaceAll(',', '.'),
+        ),
         currency: currencyController.text.trim(),
         store: storeController.text.trim(),
         warrantyMonths: int.tryParse(warrantyMonthsController.text.trim()),
@@ -742,8 +728,9 @@ Future<void> _showManualProofEditor(
       const SizedBox(height: 12),
       TextField(
         controller: serialController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldSerialNumber),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldSerialNumber,
+        ),
       ),
       const SizedBox(height: 12),
       TextField(
@@ -758,8 +745,9 @@ Future<void> _showManualProofEditor(
       const SizedBox(height: 12),
       TextField(
         controller: purchaseDateController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldPurchaseDate),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldPurchaseDate,
+        ),
       ),
       const SizedBox(height: 12),
       TextField(
@@ -775,8 +763,9 @@ Future<void> _showManualProofEditor(
       const SizedBox(height: 12),
       TextField(
         controller: warrantyMonthsController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldWarrantyMonths),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldWarrantyMonths,
+        ),
         keyboardType: TextInputType.number,
       ),
       const SizedBox(height: 12),
@@ -818,8 +807,9 @@ Future<void> _showManualProofEditor(
         category: categoryController.text.trim(),
         store: storeController.text.trim(),
         purchaseDate: purchaseDateController.text.trim(),
-        price:
-            double.tryParse(priceController.text.trim().replaceAll(',', '.')),
+        price: double.tryParse(
+          priceController.text.trim().replaceAll(',', '.'),
+        ),
         currency: currencyController.text.trim(),
         warrantyMonths: int.tryParse(warrantyMonthsController.text.trim()),
         notes: notesController.text.trim(),
@@ -924,16 +914,18 @@ Future<void> _showClaimDraftEditor(
       const SizedBox(height: 12),
       TextField(
         controller: issueController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldIssueDescription),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldIssueDescription,
+        ),
         minLines: 3,
         maxLines: 5,
       ),
       const SizedBox(height: 12),
       TextField(
         controller: recipientController,
-        decoration:
-            InputDecoration(labelText: l10n.homeMemoryFieldRecipientHint),
+        decoration: InputDecoration(
+          labelText: l10n.homeMemoryFieldRecipientHint,
+        ),
       ),
       const SizedBox(height: 12),
       Text(
@@ -991,14 +983,12 @@ Future<void> _showHomeMemoryDialog(
                         final message = await onSave();
                         if (dialogContext.mounted) {
                           Navigator.of(dialogContext).pop();
-                          ScaffoldMessenger.of(dialogContext).showSnackBar(
-                            SnackBar(content: Text(message)),
-                          );
+                          ScaffoldMessenger.of(
+                            dialogContext,
+                          ).showSnackBar(SnackBar(content: Text(message)));
                         }
                       },
-                child: Text(
-                  saving ? l10n.actionSaving : l10n.actionSave,
-                ),
+                child: Text(saving ? l10n.actionSaving : l10n.actionSave),
               ),
             ],
           );

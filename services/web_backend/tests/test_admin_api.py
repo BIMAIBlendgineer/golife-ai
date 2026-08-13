@@ -104,6 +104,28 @@ def test_models_support_and_runtime_config_routes_exist(client):
     assert "openrouter_keys" not in runtime_config.json()
 
 
+def test_mobile_runtime_config_uses_configured_gateway_base_url(tmp_path):
+    app = create_app(
+        settings=Settings(
+            admin_token="test-admin-token",
+            ingestion_token="test-ingestion-token",
+            internal_service_token="test-internal-token",
+            operational_database_path=str(tmp_path / "web_backend.db"),
+            seed_demo_data=True,
+            mobile_gateway_base_url="http://192.168.50.10:3062",
+        ),
+        repository=OperationalRepository(
+            str(tmp_path / "web_backend.db"),
+            seed_demo_data=True,
+        ),
+    )
+    with TestClient(app) as configured_client:
+        response = configured_client.get("/public/mobile/runtime-config")
+
+    assert response.status_code == 200
+    assert response.json()["gateway_base_url"] == "http://192.168.50.10:3062"
+
+
 def test_support_export_bundle_route_returns_metadata_only_records(client):
     response = client.get(
         "/admin/support/export-delete/support-001/bundle",

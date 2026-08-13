@@ -1790,17 +1790,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get appShellTaglineReady =>
-      'Shell do sistema de vida com limites de privacidade explicitos.';
+      'Shell do sistema de vida com limites de privacidade explícitos.';
 
   @override
   String get appShellTaglineBooting =>
-      'Inicializando privacidade, missoes e grafo local...';
+      'Inicializando privacidade, missões e grafo local...';
 
   @override
   String get navigate => 'Navegar';
 
   @override
-  String get navDashboard => 'Inicio';
+  String get navDashboard => 'Início';
 
   @override
   String get navCapture => 'Capturar';
@@ -1812,7 +1812,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get navTasks => 'Tarefas';
 
   @override
-  String get navHabits => 'Habitos';
+  String get navHabits => 'Hábitos';
 
   @override
   String get navMoney => 'Dinheiro';
@@ -1821,7 +1821,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get navPantry => 'Despensa';
 
   @override
-  String get navCloset => 'Armario';
+  String get navCloset => 'Armário';
 
   @override
   String get navEveryday => 'Cotidiano';
@@ -1836,16 +1836,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get language => 'Idioma';
 
   @override
-  String get languageSystem => 'Padrao do sistema';
+  String get languageSystem => 'Padrão do sistema';
 
   @override
-  String get languageEnglish => 'English';
+  String get languageEnglish => 'Inglês';
 
   @override
-  String get languageSpanish => 'Espanol';
+  String get languageSpanish => 'Espanhol';
 
   @override
-  String get languagePortugueseBrazil => 'Portugues Brasil';
+  String get languagePortugueseBrazil => 'Português (Brasil)';
 
   @override
   String get languagePortuguesePortugal => 'Portugu?s de Portugal';
@@ -1869,21 +1869,21 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get languageChineseTraditional => 'Chin?s tradicional';
 
   @override
-  String get profilePreferencesTitle => 'Prefer?ncias do perfil';
+  String get profilePreferencesTitle => 'Preferências do perfil';
 
   @override
   String get profilePreferencesBody =>
-      'Defina idioma, tema, estilo da IA e plano atual em um ?nico centro de perfil local-first.';
+      'Defina idioma, tema, estilo da IA e plano atual em um único centro de perfil local-first.';
 
   @override
-  String get deliveryPreferencesTitle => 'Notifica??es e ritmo';
+  String get deliveryPreferencesTitle => 'Notificações e ritmo';
 
   @override
-  String get regionalPreferencesTitle => 'Regi?o e unidades';
+  String get regionalPreferencesTitle => 'Região e unidades';
 
   @override
   String get preferencesLocalOnlyHint =>
-      'Essas prefer?ncias ficam neste dispositivo at? que sincroniza??o ao vivo e cobran?a sejam conectadas.';
+      'Essas preferências ficam neste dispositivo até que a sincronização ao vivo e a cobrança sejam conectadas.';
 
   @override
   String get themePreference => 'Tema';
@@ -1898,7 +1898,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get themeDark => 'Escuro';
 
   @override
-  String get notificationsPreference => 'Notifica??es';
+  String get notificationsPreference => 'Notificações';
 
   @override
   String get notificationsEnabled => 'Ativadas';
@@ -1907,7 +1907,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get notificationsDisabled => 'Desativadas';
 
   @override
-  String get quietHoursPreference => 'Hor?rio silencioso';
+  String get quietHoursPreference => 'Horário silencioso';
 
   @override
   String get quietHoursOff => 'Desativado';
@@ -1919,19 +1919,19 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get quietHours2308 => '23:00-08:00';
 
   @override
-  String get measurementUnitsPreference => 'Unidade de medida';
+  String get measurementUnitsPreference => 'Unidades de medida';
 
   @override
-  String get unitMetric => 'M?trico';
+  String get unitMetric => 'Métrico';
 
   @override
   String get unitImperial => 'Imperial';
 
   @override
-  String get regionCountryPreference => 'Regi?o ou pa?s';
+  String get regionCountryPreference => 'Região ou país';
 
   @override
-  String get regionAuto => 'Autom?tico';
+  String get regionAuto => 'Automático';
 
   @override
   String get regionUs => 'Estados Unidos';
@@ -1946,16 +1946,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get regionPortugal => 'Portugal';
 
   @override
-  String get regionFrance => 'Fran?a';
+  String get regionFrance => 'França';
 
   @override
-  String get regionItaly => 'It?lia';
+  String get regionItaly => 'Itália';
 
   @override
   String get regionGermany => 'Alemanha';
 
   @override
-  String get regionJapan => 'Jap?o';
+  String get regionJapan => 'Japão';
 
   @override
   String get regionChinaMainland => 'China continental';
@@ -1964,22 +1964,22 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get regionTaiwan => 'Taiwan';
 
   @override
-  String get reminderFrequencyPreference => 'Frequ?ncia dos lembretes';
+  String get reminderFrequencyPreference => 'Frequência dos lembretes';
 
   @override
   String get reminderOff => 'Desativado';
 
   @override
-  String get reminderDaily => 'Di?ria';
+  String get reminderDaily => 'Diária';
 
   @override
-  String get reminderWeekdays => 'Dias ?teis';
+  String get reminderWeekdays => 'Dias úteis';
 
   @override
   String get reminderWeekly => 'Semanal';
 
   @override
-  String get aiResponseStyle => 'Prefer?ncia de IA';
+  String get aiResponseStyle => 'Preferência de IA';
 
   @override
   String get aiBrief => 'Breve';
@@ -1988,7 +1988,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get aiDetailed => 'Detalhado';
 
   @override
-  String get backupSyncPreference => 'Backup e sincroniza??o';
+  String get backupSyncPreference => 'Backup e sincronização';
 
   @override
   String get backupSyncOff => 'Desativado';
@@ -2013,15 +2013,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get privacyIntro =>
-      'Cada evento fica local, salvo quando a permissao do dominio e o nivel de privacidade permitem IA. Esta tela tambem oferece exportacao local e limpeza completa.';
+      'Cada evento fica local, salvo quando a permissão do domínio e o nível de privacidade permitem IA. Esta tela também oferece exportação local e limpeza completa.';
 
   @override
   String get privacyEncryptedActive =>
-      'A criptografia local sensivel esta ativa para Journal, Quick Notes e Finance neste dispositivo.';
+      'A criptografia local sensível está ativa para Diário, Notas rápidas e registros financeiros neste dispositivo.';
 
   @override
   String get privacyEncryptedUnavailable =>
-      'A criptografia local sensivel nao esta disponivel neste ambiente. Trate Journal, Quick Notes e Finance como nao protegidos em repouso ate o secure storage voltar.';
+      'A criptografia local sensível não está disponível neste ambiente. Trate Diário, Notas rápidas e registros financeiros como não protegidos em repouso até o armazenamento seguro voltar a estar disponível.';
 
   @override
   String get privacyCenter => 'Centro de privacidade';
@@ -2031,14 +2031,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get privacyDisclosureEncryptedBody =>
-      'Estas colecoes ficam protegidas em repouso neste dispositivo.';
+      'Estas coleções ficam protegidas em repouso neste dispositivo.';
 
   @override
   String get privacyDisclosureLocalTitle => 'Sempre local';
 
   @override
   String get privacyDisclosureLocalBody =>
-      'Esses itens ficam no dispositivo e nao entram no roteamento de IA.';
+      'Esses itens ficam no dispositivo e não entram no roteamento de IA.';
 
   @override
   String get privacyDisclosureAiTitle =>
@@ -2046,23 +2046,231 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get privacyDisclosureAiBody =>
-      'So dominios com permissao de IA e eventos AI-allowed podem ser enviados.';
+      'Somente domínios com permissão de IA e eventos permitidos para IA podem ser enviados.';
 
   @override
   String get privacyMetricTotalEvents => 'Eventos totais';
 
   @override
-  String get privacyMetricAiEligible => 'Elegiveis para IA';
+  String get privacyMetricAiEligible => 'Elegíveis para IA';
 
   @override
   String get privacyMetricBlockedLocal => 'Bloqueados localmente';
+
+  @override
+  String get privacyMetricEvidenceItems => 'Itens de evidência';
+
+  @override
+  String get privacyMetricRelations => 'Relações';
+
+  @override
+  String get privacyMetricAuditEntries => 'Entradas de auditoria';
+
+  @override
+  String get billingPlanTitle => 'Plano e cobrança';
+
+  @override
+  String get billingPlanBody =>
+      'Esta versão inclui um controle local seguro de acesso ao plano. Compras reais, restauração e renovação permanecem desativadas.';
+
+  @override
+  String get billingPlanBodySandbox =>
+      'Esta versão inclui o sandbox do Google Play Billing para testes internos no Android. O acesso Premium só é ativado depois que a verificação do backend é concluída com sucesso.';
+
+  @override
+  String get billingCurrentPlanLabel => 'Plano atual';
+
+  @override
+  String get billingProviderLabel => 'Provedor de cobrança';
+
+  @override
+  String get billingModeLabel => 'Modo de cobrança';
+
+  @override
+  String get billingRenewalStateLabel => 'Estado da renovação';
+
+  @override
+  String get billingStatusLabel => 'Status do sandbox';
+
+  @override
+  String get billingRestoreLabel => 'Restaurar compras';
+
+  @override
+  String get billingExportDeleteLabel => 'Exportar e apagar';
+
+  @override
+  String get billingDisabledLabel => 'Desativado nesta versão';
+
+  @override
+  String get billingProviderGooglePlay => 'Google Play';
+
+  @override
+  String get billingModeGooglePlaySandbox => 'Google Play sandbox';
+
+  @override
+  String get billingModeGooglePlayLive => 'Google Play ao vivo';
+
+  @override
+  String get billingRenewalDisabled => 'Desativada';
+
+  @override
+  String get billingRenewalPending => 'Pendente';
+
+  @override
+  String get billingRenewalActive => 'Ativa';
+
+  @override
+  String get billingRenewalGrace => 'Período de carência';
+
+  @override
+  String get billingRenewalPaused => 'Pausada';
+
+  @override
+  String get billingRenewalCancelled => 'Cancelada';
+
+  @override
+  String get billingRenewalExpired => 'Expirada';
+
+  @override
+  String get billingRenewalRefunded => 'Reembolsada';
+
+  @override
+  String get billingRestoreAvailable => 'Disponível nesta versão sandbox';
+
+  @override
+  String get billingRestoreUnavailable => 'Indisponível nesta versão';
+
+  @override
+  String get billingExportDeleteAlwaysAvailable => 'Sempre disponível';
+
+  @override
+  String get billingLastValidatedLabel => 'Última validação';
+
+  @override
+  String get billingLastProductLabel => 'Último produto validado';
+
+  @override
+  String get billingStoredPurchaseLabel => 'Estado de cobrança armazenado';
+
+  @override
+  String get billingFeatureGatesTitle => 'Limites do plano';
+
+  @override
+  String get billingGateMissionRefreshes => 'Atualizações diárias de missões';
+
+  @override
+  String get billingGateAiCaptures => 'Capturas assistidas por IA';
+
+  @override
+  String get billingGateExportBundles => 'Pacotes de exportação';
+
+  @override
+  String billingGateValue(int remaining, int limit) {
+    return '$remaining restantes de $limit';
+  }
+
+  @override
+  String get billingGateAlwaysAvailable => 'Não limitado nesta versão';
+
+  @override
+  String get billingGateWithinQuota => 'Dentro da cota local';
+
+  @override
+  String get billingGateQuotaExhausted =>
+      'Cota esgotada; o fallback local continua disponível';
+
+  @override
+  String get billingCatalogTitle => 'Catálogo sandbox';
+
+  @override
+  String get billingCatalogEmpty =>
+      'Nenhum produto sandbox do Google Play está disponível neste dispositivo agora.';
+
+  @override
+  String get billingSandboxInternalOnly =>
+      'As compras sandbox são somente para testes internos no Android. Exportar e apagar continuam disponíveis independentemente do plano.';
+
+  @override
+  String get billingPurchaseSandbox => 'Iniciar compra sandbox';
+
+  @override
+  String get billingRestoreNow => 'Restaurar compras sandbox';
+
+  @override
+  String get billingRefreshNow => 'Atualizar status da cobrança';
+
+  @override
+  String get billingAuditTitle => 'Auditoria de cobrança';
+
+  @override
+  String get billingAuditEmpty =>
+      'Nenhum evento de cobrança foi registrado neste dispositivo ainda.';
+
+  @override
+  String get billingDecisionOpen => 'Abrir decisão de cobrança';
+
+  @override
+  String get billingDecisionCopy => 'Copiar URL da decisão de cobrança';
+
+  @override
+  String get billingPlanFree => 'Grátis';
+
+  @override
+  String get billingPlanPremium => 'Premium';
+
+  @override
+  String get billingPlanPro => 'Pro';
+
+  @override
+  String get privacyLegalTitle => 'Loja e informações legais';
+
+  @override
+  String get privacyLegalBody =>
+      'Os links públicos de privacidade, termos e suporte desta versão ficam aqui e também são referenciados no artefato de release.';
+
+  @override
+  String get privacyLegalPolicyTitle => 'Política de privacidade';
+
+  @override
+  String get privacyLegalPolicyBody =>
+      'Política pública sobre armazenamento local, permissões de IA, limites de analytics, exportação e exclusão.';
+
+  @override
+  String get privacyLegalTermsTitle => 'Termos de serviço';
+
+  @override
+  String get privacyLegalTermsBody =>
+      'Escopo do produto, limites, comportamento de fallback e a configuração atual do sandbox de cobrança do Google Play.';
+
+  @override
+  String get privacyLegalSupportTitle => 'Suporte';
+
+  @override
+  String get privacyLegalSupportBody =>
+      'Canal público de suporte para bugs, questões de privacidade e revisão da loja.';
+
+  @override
+  String get privacyLegalOpen => 'Abrir link';
+
+  @override
+  String get privacyLegalCopy => 'Copiar URL';
+
+  @override
+  String get privacyLegalCopied => 'URL pública copiada.';
+
+  @override
+  String get privacyLegalOpenFallback =>
+      'Não foi possível abrir o link. A URL foi copiada.';
+
+  @override
+  String get lifeGraphOpenTimeline => 'Abrir linha do tempo do LifeGraph';
 
   @override
   String get dataControls => 'Controles de dados';
 
   @override
   String get dataControlsBody =>
-      'Exportar salva o snapshot local completo como JSON protegido neste dispositivo. Apagar tudo limpa os dados locais e desativa a semeadura demo.';
+      'Exportar salva o snapshot completo do grafo local como um arquivo JSON protegido neste dispositivo. Apagar tudo limpa os dados locais e desativa a semeadura demo.';
 
   @override
   String get exportJson => 'Exportar JSON';
@@ -2071,11 +2279,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get deleteAllLocalData => 'Apagar todos os dados locais';
 
   @override
-  String get domainControls => 'Controles por dominio';
+  String get domainControls => 'Controles por domínio';
 
   @override
   String get exportCopied =>
-      'A exportacao JSON local foi copiada para a area de transferencia.';
+      'A exportação JSON local foi copiada para a área de transferência.';
 
   @override
   String exportSavedFile(Object fileName) {
@@ -2087,23 +2295,23 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get deleteAllBody =>
-      'Isso remove eventos locais, entidades, missoes, feedback, ajustes de privacidade, cache runtime e preferencia de idioma neste dispositivo.';
+      'Isso remove eventos locais, entidades, missões, feedback, configurações de privacidade, cache de runtime e preferência de idioma neste dispositivo.';
 
   @override
   String get cancel => 'Cancelar';
 
   @override
-  String get clearAiHistory => 'Limpar hist?rico da IA';
+  String get clearAiHistory => 'Limpar histórico da IA';
 
   @override
-  String get clearAiHistoryTitle => 'Limpar hist?rico da IA?';
+  String get clearAiHistoryTitle => 'Limpar histórico da IA?';
 
   @override
   String get clearAiHistoryBody =>
-      'Isso limpa miss?es salvas, riscos di?rios e o hist?rico de feedback da IA neste dispositivo.';
+      'Isso limpa missões salvas, riscos diários e o histórico de feedback da IA neste dispositivo.';
 
   @override
-  String get clearAiHistoryDone => 'Hist?rico da IA limpo.';
+  String get clearAiHistoryDone => 'Histórico da IA limpo.';
 
   @override
   String get deleteAll => 'Apagar tudo';
@@ -2113,20 +2321,84 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String domainEventsEligible(int eventCount, int aiCount) {
-    return '$eventCount eventos · $aiCount elegiveis para IA agora';
+    return '$eventCount eventos · $aiCount elegíveis para IA agora';
   }
+
+  @override
+  String get privacyRecentEventsTitle => 'Eventos recentes do LifeGraph';
+
+  @override
+  String get privacyRecentEventsBody =>
+      'Revise eventos locais recentes, o nível de privacidade e se eles podem ser usados por missões com IA.';
+
+  @override
+  String get privacyRecentEventsEmpty => 'Nenhum evento recente para revisar.';
+
+  @override
+  String get privacyAuditTitle => 'Auditoria de privacidade';
+
+  @override
+  String get privacyAuditBody =>
+      'Toda alteração de privacidade no nível do evento é registrada localmente neste dispositivo.';
+
+  @override
+  String get privacyAuditEmpty =>
+      'Nenhuma entrada local de auditoria de privacidade ainda.';
+
+  @override
+  String get lifeGraphSearchHint => 'Buscar resumo, domínio, tipo ou origem';
+
+  @override
+  String get lifeGraphFilterPrivacyTitle => 'Privacidade';
+
+  @override
+  String get lifeGraphFilterAll => 'Todos';
+
+  @override
+  String get lifeGraphFilterDate7d => '7d';
+
+  @override
+  String get lifeGraphFilterDate30d => '30d';
+
+  @override
+  String get lifeGraphFilterDate90d => '90d';
+
+  @override
+  String get lifeGraphNoEvents =>
+      'Nenhum evento corresponde aos filtros atuais.';
+
+  @override
+  String get lifeGraphEvidenceTitle => 'Evidências vinculadas';
+
+  @override
+  String get lifeGraphEvidenceEmpty =>
+      'Nenhuma evidência vinculada a este evento.';
+
+  @override
+  String get lifeGraphRelationsTitle => 'Relações vinculadas';
+
+  @override
+  String get lifeGraphRelationsEmpty =>
+      'Nenhuma relação vinculada a este evento.';
+
+  @override
+  String get lifeGraphAuditNone =>
+      'Nenhuma alteração de privacidade no nível do evento foi registrada para este evento.';
+
+  @override
+  String get lifeGraphOpenPrivacyAudit => 'Abrir auditoria de privacidade';
 
   @override
   String get permissionLocal => 'Local';
 
   @override
-  String get permissionSync => 'Sync';
+  String get permissionSync => 'Sincronização';
 
   @override
   String get permissionAi => 'IA';
 
   @override
-  String get domainHabits => 'Habitos';
+  String get domainHabits => 'Hábitos';
 
   @override
   String get domainTasks => 'Tarefas';
@@ -2141,7 +2413,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get domainPantry => 'Despensa';
 
   @override
-  String get domainWardrobe => 'Armario';
+  String get domainWardrobe => 'Armário';
 
   @override
   String get domainCopilot => 'Copilot';
@@ -2150,44 +2422,57 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get collectionFinanceRecords => 'Registros financeiros';
 
   @override
-  String get collectionJournalEntries => 'Entradas de journal';
+  String get collectionJournalEntries => 'Entradas do diário';
 
   @override
-  String get collectionQuickNotes => 'Notas rapidas';
+  String get collectionQuickNotes => 'Notas rápidas';
 
   @override
-  String get collectionOwnedItems => 'Owned items';
+  String get collectionMissionSets => 'Snapshots de missões';
 
   @override
-  String get collectionPurchaseProofs => 'Purchase proofs';
+  String get collectionEvidenceItems => 'Itens de evidência';
 
   @override
-  String get collectionClaimDrafts => 'Claim drafts';
+  String get collectionLifeGraphRelations => 'Relações do LifeGraph';
 
   @override
-  String get collectionEvidenceAttachments => 'Evidence attachments';
+  String get collectionPrivacyAuditEntries =>
+      'Entradas da auditoria de privacidade';
+
+  @override
+  String get collectionOwnedItems => 'Itens que você possui';
+
+  @override
+  String get collectionPurchaseProofs => 'Comprovantes de compra';
+
+  @override
+  String get collectionClaimDrafts => 'Rascunhos de solicitação';
+
+  @override
+  String get collectionEvidenceAttachments => 'Anexos de evidência';
 
   @override
   String get collectionPrivacySettings => 'Ajustes de privacidade';
 
   @override
-  String get collectionRuntimeConfigCache => 'Cache de runtime config';
+  String get collectionRuntimeConfigCache => 'Cache de configuração do runtime';
 
   @override
   String get collectionDeviceEncryptionKey =>
       'Chave de criptografia do dispositivo';
 
   @override
-  String get nothingAiEnabled => 'Nenhum dominio esta com IA ativa agora';
+  String get nothingAiEnabled => 'Nenhum domínio está com IA ativa agora';
 
   @override
   String get gatewayLive => 'Gateway ativo';
 
   @override
-  String get gatewayNoConnection => 'Sem conexao';
+  String get gatewayNoConnection => 'Sem conexão';
 
   @override
-  String get gatewayUnavailable => 'IA temporariamente indisponivel';
+  String get gatewayUnavailable => 'IA temporariamente indisponível';
 
   @override
   String get gatewayLocalFallback => 'Usando fallback local';
@@ -2196,7 +2481,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get feedbackNone => 'Sem feedback ainda';
 
   @override
-  String get feedbackUseful => 'Util';
+  String get feedbackUseful => 'Útil';
 
   @override
   String get feedbackRejected => 'Rejeitado';
@@ -2205,7 +2490,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get feedbackAccepted => 'Aceito';
 
   @override
-  String get feedbackCompleted => 'Concluido';
+  String get feedbackCompleted => 'Concluído';
 
   @override
   String get feedbackEdited => 'Editado';
@@ -2221,15 +2506,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get missionDeliverySummaryAi =>
-      'GoLife usou IA para esta missao depois do filtro local de privacidade.';
+      'GoLife usou IA para esta missão depois do filtro local de privacidade.';
 
   @override
   String get missionDeliverySummaryFallback =>
-      'GoLife ficou local porque o gateway estava indisponivel ou degradado.';
+      'GoLife ficou local porque o gateway estava indisponível ou degradado.';
 
   @override
   String get missionDeliverySummaryLocal =>
-      'GoLife manteve esta missao local no dispositivo.';
+      'GoLife manteve esta missão local no dispositivo.';
 
   @override
   String get actionWrite => 'Escrever';
@@ -2241,13 +2526,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get actionExplain => 'Explicar';
 
   @override
-  String get actionUseful => 'Util';
+  String get actionUseful => 'Útil';
 
   @override
   String get actionDoNow => 'Fazer agora';
 
   @override
-  String get actionNotUseful => 'Nao util';
+  String get actionNotUseful => 'Não útil';
 
   @override
   String get actionAccept => 'Aceitar';
@@ -2279,10 +2564,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get statusBooting => 'Inicializando';
 
   @override
-  String get labelEvidence => 'Evidencia';
+  String get labelEvidence => 'Evidência';
 
   @override
-  String get labelDataUsedForMission => 'Dados usados para esta missao';
+  String get labelDataUsedForMission => 'Dados usados para esta missão';
 
   @override
   String get labelDataSentToAi => 'Dados enviados para IA';
@@ -2303,30 +2588,51 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get labelTrace => 'Trace';
 
   @override
-  String get fieldDomain => 'Dominio';
+  String get fieldDomain => 'Domínio';
 
   @override
   String get fieldPrivacy => 'Privacidade';
 
   @override
+  String get privacyEventSource => 'Origem';
+
+  @override
+  String get privacyEventAiEligible => 'Elegível para IA';
+
+  @override
+  String get privacyEventId => 'ID do evento';
+
+  @override
+  String get privacyAuditChangedAt => 'Alterado em';
+
+  @override
+  String get valueYes => 'Sim';
+
+  @override
+  String get valueNo => 'Não';
+
+  @override
+  String get valueUnknown => 'Desconhecido';
+
+  @override
   String get dashboardDisclosurePending =>
-      'GoLife mantem os dados locais ate uma missao ficar pronta.';
+      'GoLife mantém os dados locais até uma missão ficar pronta.';
 
   @override
   String dashboardMissionCountTitle(int count) {
-    return '$count missoes para hoje';
+    return '$count missões para hoje';
   }
 
   @override
   String get dashboardMissionIntro =>
-      'Home Today transforma o grafo em acoes pequenas: uma missao principal, duas de apoio, evidencia visivel e feedback rapido.';
+      'Hoje transforma o grafo em ações pequenas: uma missão principal, duas de apoio, evidência visível e feedback rápido.';
 
   @override
-  String get dashboardLoadingMissions => 'Carregando missoes...';
+  String get dashboardLoadingMissions => 'Carregando missões...';
 
   @override
   String get dashboardBootstrappingMission =>
-      'Inicializando eventos locais, ranking de missoes e trace do gateway.';
+      'Inicializando eventos locais, ranking de missões e rastreio do gateway.';
 
   @override
   String dashboardRiskCount(int count) {
@@ -2335,11 +2641,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String dashboardConfidencePill(int percent) {
-    return '$percent% de confianca';
+    return '$percent% de confiança';
   }
 
   @override
-  String get dashboardAiDisclosureTitle => 'Disclosure de dados para IA';
+  String get dashboardAiDisclosureTitle => 'Transparência de dados para IA';
 
   @override
   String dashboardAiDisclosureSummary(
@@ -2352,20 +2658,20 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get dashboardNoRisks =>
-      'Nenhum risco diario explicito foi detectado no grafo atual elegivel para IA.';
+      'Nenhum risco diário explícito foi detectado no grafo atual elegível para IA.';
 
   @override
-  String get dashboardSupportMissionsTitle => 'Missoes de apoio';
+  String get dashboardSupportMissionsTitle => 'Missões de apoio';
 
   @override
   String get dashboardNoSupportMissions =>
-      'Missoes secundarias aparecerao quando o plano diario estiver disponivel.';
+      'Missões secundárias aparecerão quando o plano diário estiver disponível.';
 
   @override
-  String get signalCriticalTask => 'Tarefa critica';
+  String get signalCriticalTask => 'Tarefa crítica';
 
   @override
-  String get signalRecoveryHabit => 'Habito de recuperacao';
+  String get signalRecoveryHabit => 'Hábito de recuperação';
 
   @override
   String signalRecoveryHabitBody(Object cue, Object streak) {
@@ -2379,28 +2685,28 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get signalUseThisFood => 'Use este alimento';
 
   @override
-  String get dashboardWhyThisToday => 'Por que esta hoje';
+  String get dashboardWhyThisToday => 'Por que esta missão hoje';
 
   @override
   String dashboardConfidenceWithType(int percent, Object type) {
-    return 'Confianca $percent% - $type';
+    return 'Confiança $percent% - $type';
   }
 
   @override
   String get dashboardNothingSent =>
-      'Nada foi enviado para esta missao. GoLife ficou local neste passo.';
+      'Nada foi enviado para esta missão. GoLife ficou local neste passo.';
 
   @override
   String get dashboardNothingBlocked =>
-      'Nenhum item especifico desta missao foi bloqueado para IA.';
+      'Nenhum item específico desta missão foi bloqueado para IA.';
 
   @override
   String get dashboardNoAlwaysLocalCollections =>
-      'Nenhuma colecao sempre local configurada.';
+      'Nenhuma coleção sempre local configurada.';
 
   @override
   String get dashboardNoEncryptedCollections =>
-      'Nenhuma colecao criptografada configurada.';
+      'Nenhuma coleção criptografada configurada.';
 
   @override
   String dashboardRiskSeverityLabel(Object severity) {
@@ -2412,7 +2718,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get captureIntro =>
-      'Escreva uma frase. GoLife pode dividir em varios rascunhos, deixar voce editar dominio e privacidade por item, e salvar tudo junto.';
+      'Escreva uma frase. GoLife pode dividir em vários rascunhos, deixar você editar domínio e privacidade por item, e salvar tudo junto.';
 
   @override
   String get captureRouteTitle => 'Rota';
@@ -2422,11 +2728,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get captureAutoModeBody =>
-      'O modo auto tenta dividir e classificar cada clausula primeiro.';
+      'O modo auto tenta dividir e classificar cada cláusula primeiro.';
 
   @override
   String captureCurrentDefaultPrivacy(Object domain, Object permission) {
-    return 'Privacidade padrao atual para $domain: $permission';
+    return 'Privacidade padrão atual para $domain: $permission';
   }
 
   @override
@@ -2450,11 +2756,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get captureHintAuto =>
-      'Exemplo: comprei cafe por 4.50, a alface vence amanha e preciso pagar internet.';
+      'Exemplo: comprei café por 4.50, a alface vence amanhã e preciso pagar internet.';
 
   @override
   String get captureHintTasks =>
-      'Exemplo: enviar recibo do aluguel antes do almoco';
+      'Exemplo: enviar recibo do aluguel antes do almoço';
 
   @override
   String get captureHintHabits =>
@@ -2465,17 +2771,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Exemplo: o foco de sexta deve ficar em trabalho admin';
 
   @override
-  String get captureHintFinance => 'Exemplo: comprei cafe e sanduiche por 8.50';
+  String get captureHintFinance => 'Exemplo: comprei café e sanduíche por 8.50';
 
   @override
-  String get captureHintPantry => 'Exemplo: o espinafre vence amanha';
+  String get captureHintPantry => 'Exemplo: o espinafre vence amanhã';
 
   @override
   String get captureHintWardrobe =>
       'Exemplo: pensando em comprar outra jaqueta preta';
 
   @override
-  String get captureHintCopilot => 'Exemplo: uma nota de missao';
+  String get captureHintCopilot => 'Exemplo: uma nota de missão';
 
   @override
   String get copilotTitle => 'Copilot';
@@ -2504,10 +2810,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get copilotNoTrace => 'Nenhuma missao carregada ainda.';
 
   @override
-  String get navJournal => 'Journal';
+  String get navJournal => 'Diário';
 
   @override
-  String get navCalendar => 'Calendario';
+  String get navCalendar => 'Calendário';
 
   @override
   String get navRecipes => 'Receitas';

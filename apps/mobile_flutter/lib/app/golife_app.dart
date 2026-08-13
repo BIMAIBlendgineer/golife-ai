@@ -15,6 +15,7 @@ import '../core/storage/memory_local_store.dart';
 import '../core/storage/resilient_local_store.dart';
 import '../core/storage/sqlite_local_store.dart';
 import '../features/app_state/golife_controller.dart';
+import '../features/bootstrap/bootstrap_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'router/app_router.dart';
 import 'theme/golife_theme.dart';
@@ -126,6 +127,14 @@ class _GoLifeAppState extends State<GoLifeApp> with WidgetsBindingObserver {
             GlobalCupertinoLocalizations.delegate,
           ],
           routerConfig: _router,
+          builder: (context, child) {
+            if (!_controller.isReady) {
+              return BootstrapScreen(
+                localeTag: _controller.currentLocaleTag,
+              );
+            }
+            return child ?? const SizedBox.shrink();
+          },
         );
       },
     );

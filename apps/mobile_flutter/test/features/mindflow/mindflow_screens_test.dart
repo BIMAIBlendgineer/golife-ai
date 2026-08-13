@@ -11,10 +11,7 @@ import 'package:golife_flutter/features/app_state/golife_controller.dart';
 import 'package:golife_flutter/features/mindflow/mindflow_screens.dart';
 import 'package:golife_flutter/l10n/app_localizations.dart';
 
-Future<void> _pumpScreen(
-  WidgetTester tester, {
-  required Widget screen,
-}) async {
+Future<void> _pumpScreen(WidgetTester tester, {required Widget screen}) async {
   tester.view.physicalSize = const Size(430, 932);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
@@ -55,10 +52,7 @@ void main() {
   testWidgets('decisions screen renders without overflow', (tester) async {
     final controller = await _buildController();
 
-    await _pumpScreen(
-      tester,
-      screen: DecisionsScreen(controller: controller),
-    );
+    await _pumpScreen(tester, screen: DecisionsScreen(controller: controller));
 
     expect(find.byType(DecisionsScreen), findsOneWidget);
     expect(find.text('Decisions'), findsWidgets);
@@ -68,10 +62,7 @@ void main() {
   testWidgets('shopping screen renders without overflow', (tester) async {
     final controller = await _buildController();
 
-    await _pumpScreen(
-      tester,
-      screen: ShoppingScreen(controller: controller),
-    );
+    await _pumpScreen(tester, screen: ShoppingScreen(controller: controller));
 
     expect(find.byType(ShoppingScreen), findsOneWidget);
     expect(find.text('Shopping'), findsWidgets);
