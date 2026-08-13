@@ -80,7 +80,7 @@ export default async function AICostsPage({
           {costs.map((item) => (
             <div
               key={item.endpoint}
-              className="grid gap-3 rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4 md:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]"
+              className="grid gap-3 rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4 md:grid-cols-[1.15fr_0.85fr_0.85fr_0.85fr]"
             >
               <div>
                 <p className="font-mono text-sm font-semibold text-ink">

@@ -3,33 +3,36 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
-  --canvas: #eef1ef;
-  --surface: #fbfcfb;
-  --surface-2: #f4f6f5;
-  --surface-raised: #ffffff;
+  color-scheme: dark;
+  --canvas: #09111a;
+  --surface: #101b27;
+  --surface-2: #162432;
+  --surface-raised: #1b2b3b;
+  --surface-hover: #223548;
+  --surface-frost: rgba(27, 43, 59, 0.72);
+  --surface-frost-strong: rgba(27, 43, 59, 0.84);
   --paper: var(--canvas);
   --paper-strong: var(--surface-raised);
   --paper-soft: var(--surface);
-  --ink: #131817;
-  --ink-soft: rgba(19, 24, 23, 0.72);
-  --ink-muted: rgba(19, 24, 23, 0.52);
-  --line: rgba(19, 24, 23, 0.1);
-  --line-strong: rgba(19, 24, 23, 0.18);
-  --moss: #487660;
+  --ink: #edf4f8;
+  --ink-soft: rgba(237, 244, 248, 0.78);
+  --ink-muted: rgba(237, 244, 248, 0.56);
+  --line: rgba(206, 224, 236, 0.1);
+  --line-strong: rgba(206, 224, 236, 0.18);
+  --moss: #7cc4a1;
   --sage: var(--moss);
-  --copper: #ad5135;
+  --copper: #ff9f7e;
   --clay: var(--copper);
-  --amber: #8d6b2d;
+  --amber: #f2c16b;
   --bronze: var(--amber);
-  --steel: #46657a;
+  --steel: #7eb3d6;
   --sky: var(--steel);
-  --danger-soft: rgba(173, 81, 53, 0.12);
-  --moss-soft: rgba(72, 118, 96, 0.12);
+  --danger-soft: rgba(255, 159, 126, 0.14);
+  --moss-soft: rgba(124, 196, 161, 0.14);
   --sage-soft: var(--moss-soft);
-  --amber-soft: rgba(141, 107, 45, 0.12);
+  --amber-soft: rgba(242, 193, 107, 0.14);
   --bronze-soft: var(--amber-soft);
-  --steel-soft: rgba(70, 101, 122, 0.1);
+  --steel-soft: rgba(126, 179, 214, 0.14);
 }
 
 * {
@@ -44,8 +47,9 @@ body {
   @apply text-ink antialiased;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
-    linear-gradient(120deg, rgba(70, 101, 122, 0.02), rgba(72, 118, 96, 0.04));
+    radial-gradient(circle at top left, rgba(126, 179, 214, 0.14), transparent 28%),
+    radial-gradient(circle at top right, rgba(124, 196, 161, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(9, 17, 26, 0.98), rgba(9, 17, 26, 1));
   background-color: var(--canvas);
   color: var(--ink);
   font-family: "IBM Plex Sans", "Aptos", "Segoe UI", sans-serif;
@@ -56,9 +60,21 @@ a {
 }
 
 ::selection {
-  background: rgba(72, 118, 96, 0.2);
+  background: rgba(124, 196, 161, 0.24);
 }
 
 .font-mono {
   font-family: "IBM Plex Mono", "Cascadia Mono", "Consolas", monospace;
+}
+
+.bg-white,
+.hover\:bg-white:hover {
+  background-color: var(--surface-raised) !important;
+}
+
+.bg-white\/45,
+.bg-white\/48,
+.bg-white\/50,
+.bg-white\/60 {
+  background-color: var(--surface-frost) !important;
 }

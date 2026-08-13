@@ -1,0 +1,44 @@
+{
+  "$defs": {
+    "Domain": {
+      "enum": [
+        "task",
+        "habit",
+        "money",
+        "pantry",
+        "wardrobe",
+        "planning",
+        "system"
+      ],
+      "title": "Domain",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "domain": {
+      "$ref": "#/$defs/Domain"
+    },
+    "event_type": {
+      "title": "Event Type",
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "rationale": {
+      "title": "Rationale",
+      "type": "string"
+    }
+  },
+  "required": [
+    "domain",
+    "event_type",
+    "confidence",
+    "rationale"
+  ],
+  "title": "ClassifyEventResponse",
+  "type": "object"
+}

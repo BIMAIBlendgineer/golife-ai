@@ -1,0 +1,14 @@
+[project]
+name = "golife-ai-gateway"
+version = "0.2.0"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic",
+  "httpx",
+  "langgraph"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]

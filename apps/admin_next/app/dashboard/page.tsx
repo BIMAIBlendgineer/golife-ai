@@ -13,9 +13,9 @@ import {
   formatCurrency,
   formatNumber,
   formatPercent,
-  labelizeKey,
 } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
+import { labelFeatureFlagDescription, labelFeatureFlagKey } from "@/lib/labels";
 
 export default async function DashboardPage() {
   const { locale, messages } = await getAdminMessages();
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
           note={t.briefingNote}
         >
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
+            <div className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
               <p className="text-sm font-semibold text-ink">{t.missionQualityTitle}</p>
               <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">
                 {t.missionQualityBodyPrefix}{" "}
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
                 .
               </p>
             </div>
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
+            <div className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
               <p className="text-sm font-semibold text-ink">{t.operationalLoadTitle}</p>
               <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">
                 {t.operationalLoadBodyPrefix}{" "}
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
                 {t.operationalLoadBodyTail}
               </p>
             </div>
-            <div className="rounded-[20px] border border-[color:var(--line)] bg-white/45 p-4">
+            <div className="rounded-[20px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
               <p className="text-sm font-semibold text-ink">{t.trustQueueTitle}</p>
               <p className="mt-3 text-sm leading-6 text-[color:var(--ink-soft)]">
                 {t.trustQueueBodyPrefix}{" "}
@@ -169,14 +169,14 @@ export default async function DashboardPage() {
             {flags.map((flag) => (
               <div
                 key={flag.key}
-                className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4 md:flex-row md:items-center md:justify-between"
               >
                 <div>
                   <p className="text-sm font-semibold text-ink">
-                    {labelizeKey(flag.key)}
+                    {labelFeatureFlagKey(flag.key, messages)}
                   </p>
                   <p className="mt-1 text-sm leading-6 text-[color:var(--ink-soft)]">
-                    {flag.description}
+                    {labelFeatureFlagDescription(flag.key, flag.description, messages)}
                   </p>
                 </div>
                 <StatusPill tone={flag.enabled ? "good" : "warn"}>

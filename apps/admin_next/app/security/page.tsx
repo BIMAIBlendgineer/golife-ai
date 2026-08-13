@@ -120,7 +120,7 @@ export default async function SecurityPage() {
             </p>
             <Link
               href="/settings/security"
-              className="inline-flex rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-white"
+              className="inline-flex rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-[color:var(--surface-hover)]"
             >
               {t.settingsLink}
             </Link>

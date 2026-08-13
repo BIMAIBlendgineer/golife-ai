@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "Domain": {
+      "enum": [
+        "task",
+        "habit",
+        "money",
+        "pantry",
+        "wardrobe",
+        "planning",
+        "system"
+      ],
+      "title": "Domain",
+      "type": "string"
+    },
+    "EventSource": {
+      "enum": [
+        "manual",
+        "ai",
+        "import",
+        "integration"
+      ],
+      "title": "EventSource",
+      "type": "string"
+    },
+    "PrivacyLevel": {
+      "enum": [
+        "normal",
+        "sensitive",
+        "highly_sensitive"
+      ],
+      "title": "PrivacyLevel",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "user_id": {
+      "title": "User Id",
+      "type": "string"
+    },
+    "domain": {
+      "$ref": "#/$defs/Domain"
+    },
+    "event_type": {
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "source": {
+      "$ref": "#/$defs/EventSource",
+      "default": "manual"
+    },
+    "confidence": {
+      "anyOf": [
+        {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Confidence"
+    },
+    "privacy_level": {
+      "$ref": "#/$defs/PrivacyLevel",
+      "default": "normal"
+    }
+  },
+  "required": [
+    "id",
+    "user_id",
+    "domain",
+    "event_type",
+    "occurred_at"
+  ],
+  "title": "LifeEvent",
+  "type": "object"
+}

@@ -1,0 +1,273 @@
+{
+  "$defs": {
+    "AIRecommendation": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/RecommendationType"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "uncertainty": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Uncertainty",
+          "type": "array"
+        },
+        "action_minimum": {
+          "title": "Action Minimum",
+          "type": "string"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Explanation"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/RiskLevel",
+          "default": "low"
+        },
+        "domain_links": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Domain"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": "Domain Links",
+          "type": "array"
+        },
+        "requires_user_confirmation": {
+          "default": false,
+          "title": "Requires User Confirmation",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "title",
+        "summary",
+        "action_minimum"
+      ],
+      "title": "AIRecommendation",
+      "type": "object"
+    },
+    "AITrace": {
+      "properties": {
+        "trace_id": {
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "operation": {
+          "title": "Operation",
+          "type": "string"
+        },
+        "domain": {
+          "title": "Domain",
+          "type": "string"
+        },
+        "agent": {
+          "title": "Agent",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "used_fallback": {
+          "default": false,
+          "title": "Used Fallback",
+          "type": "boolean"
+        },
+        "safety": {
+          "$ref": "#/$defs/SafetySummary"
+        },
+        "life_context": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Life Context",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/TraceStep"
+          },
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "trace_id",
+        "operation",
+        "domain",
+        "agent",
+        "provider"
+      ],
+      "title": "AITrace",
+      "type": "object"
+    },
+    "Domain": {
+      "enum": [
+        "task",
+        "habit",
+        "money",
+        "pantry",
+        "wardrobe",
+        "planning",
+        "system"
+      ],
+      "title": "Domain",
+      "type": "string"
+    },
+    "RecommendationType": {
+      "enum": [
+        "daily_mission",
+        "task_fix",
+        "spending_insight",
+        "pantry_plan",
+        "no_buy"
+      ],
+      "title": "RecommendationType",
+      "type": "string"
+    },
+    "RiskLevel": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "RiskLevel",
+      "type": "string"
+    },
+    "SafetySummary": {
+      "properties": {
+        "allowed": {
+          "default": true,
+          "title": "Allowed",
+          "type": "boolean"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "requires_confirmation": {
+          "default": false,
+          "title": "Requires Confirmation",
+          "type": "boolean"
+        }
+      },
+      "title": "SafetySummary",
+      "type": "object"
+    },
+    "TraceStep": {
+      "properties": {
+        "node": {
+          "title": "Node",
+          "type": "string"
+        },
+        "detail": {
+          "title": "Detail",
+          "type": "string"
+        },
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "node",
+        "detail",
+        "at"
+      ],
+      "title": "TraceStep",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "recommendations": {
+      "items": {
+        "$ref": "#/$defs/AIRecommendation"
+      },
+      "title": "Recommendations",
+      "type": "array"
+    },
+    "risks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Risks",
+      "type": "array"
+    },
+    "blocked_items": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Blocked Items",
+      "type": "array"
+    },
+    "estimated_effort_minutes": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Estimated Effort Minutes"
+    },
+    "trace": {
+      "$ref": "#/$defs/AITrace"
+    },
+    "mock": {
+      "default": false,
+      "title": "Mock",
+      "type": "boolean"
+    },
+    "purchase_intent": {
+      "title": "Purchase Intent",
+      "type": "string"
+    }
+  },
+  "required": [
+    "trace",
+    "purchase_intent"
+  ],
+  "title": "WardrobeNoBuyResponse",
+  "type": "object"
+}

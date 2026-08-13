@@ -99,7 +99,7 @@ export default async function LoginPage({
             ) : null}
             <button
               type="submit"
-              className="rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-white"
+              className="rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-[color:var(--surface-hover)]"
             >
               {t.submitLabel}
             </button>

@@ -87,7 +87,7 @@ export default async function ShoppingPage() {
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4"
+                className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4"
               >
                 <p className="text-sm font-semibold text-ink">{label}</p>
                 <p className="mt-2 text-2xl font-semibold text-ink">
@@ -144,7 +144,7 @@ export default async function ShoppingPage() {
               ].map(([label, value, tone]) => (
                 <div
                   key={String(label)}
-                  className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4"
+                  className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4"
                 >
                   <p className="text-sm font-semibold text-ink">{label}</p>
                   <div className="mt-3">

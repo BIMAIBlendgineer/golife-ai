@@ -26,7 +26,7 @@ export default async function ModelSettingsPage() {
         note={t.panelNote}
       >
         <dl className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
+          <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
               {t.activeProviderLabel}
             </dt>
@@ -34,7 +34,7 @@ export default async function ModelSettingsPage() {
               {settings.active_provider}
             </dd>
           </div>
-          <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
+          <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
               {t.primaryModelLabel}
             </dt>
@@ -42,7 +42,7 @@ export default async function ModelSettingsPage() {
               {settings.primary_model}
             </dd>
           </div>
-          <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
+          <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
               {t.fallbackModelLabel}
             </dt>
@@ -50,7 +50,7 @@ export default async function ModelSettingsPage() {
               {settings.fallback_model}
             </dd>
           </div>
-          <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4">
+          <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
               {t.classificationModelLabel}
             </dt>
@@ -58,7 +58,7 @@ export default async function ModelSettingsPage() {
               {settings.classification_model}
             </dd>
           </div>
-          <div className="rounded-[18px] border border-[color:var(--line)] bg-white/45 p-4 md:col-span-2">
+          <div className="rounded-[18px] border border-[color:var(--line)] bg-[color:var(--surface-frost)] p-4 md:col-span-2">
             <dt className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--ink-muted)]">
               {t.weeklySummaryModelLabel}
             </dt>

@@ -18,6 +18,11 @@ import {
 } from "@/lib/api";
 import { formatDateTime, formatLatency, formatPercent } from "@/lib/format";
 import { getAdminMessages } from "@/lib/i18n";
+import {
+  labelAdminPlan,
+  labelAdminPrivacyRequestStatus,
+  labelAdminStatus,
+} from "@/lib/labels";
 import type { UserManagementRow } from "@/lib/types";
 
 function withSearchParams(
@@ -149,7 +154,7 @@ export default async function UsersPage({
       header: t.tablePlan,
       cell: (user) => (
         <StatusPill tone={user.plan === "plus" ? "good" : "neutral"}>
-          {user.plan}
+          {labelAdminPlan(user.plan, messages)}
         </StatusPill>
       ),
     },
@@ -158,7 +163,7 @@ export default async function UsersPage({
       header: t.tableStatus,
       cell: (user) => (
         <StatusPill tone={user.status === "active" ? "good" : "warn"}>
-          {user.status}
+          {labelAdminStatus(user.status, messages)}
         </StatusPill>
       ),
     },
@@ -214,7 +219,7 @@ export default async function UsersPage({
       header: t.tablePrivacy,
       cell: (user) => (
         <StatusPill tone={privacyTone(user.privacy_request_status)}>
-          {user.privacy_request_status}
+          {labelAdminPrivacyRequestStatus(user.privacy_request_status, messages)}
         </StatusPill>
       ),
     },
@@ -305,9 +310,9 @@ export default async function UsersPage({
             className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] px-3 py-2 text-sm text-ink"
           >
             <option value="">{messages.shared.none}</option>
-            <option value="free">free</option>
-            <option value="plus">plus</option>
-            <option value="internal">internal</option>
+            <option value="free">{messages.shared.planFree}</option>
+            <option value="plus">{messages.shared.planPlus}</option>
+            <option value="internal">{messages.shared.planInternal}</option>
           </select>
         </label>
         <label className="space-y-2">
@@ -320,9 +325,9 @@ export default async function UsersPage({
             className="w-full rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] px-3 py-2 text-sm text-ink"
           >
             <option value="">{messages.shared.none}</option>
-            <option value="active">active</option>
-            <option value="paused">paused</option>
-            <option value="trial">trial</option>
+            <option value="active">{messages.shared.statusActive}</option>
+            <option value="paused">{messages.shared.statusPaused}</option>
+            <option value="trial">{messages.shared.statusTrial}</option>
           </select>
         </label>
         <label className="space-y-2">
@@ -408,7 +413,9 @@ export default async function UsersPage({
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
                     {t.drawerPlan}
                   </p>
-                  <p className="mt-1 text-sm text-ink">{summaryResult.data.plan}</p>
+                  <p className="mt-1 text-sm text-ink">
+                    {labelAdminPlan(summaryResult.data.plan, messages)}
+                  </p>
                 </div>
                 <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-2)] p-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
@@ -439,9 +446,9 @@ export default async function UsersPage({
                   {t.drawerUsage}
                 </p>
                 <p>
-                  {usageResult.data.ai_calls_count} AI calls,{" "}
-                  {usageResult.data.capture_events} capture events,{" "}
-                  {formatPercent(usageResult.data.fallback_rate, locale)} fallback,{" "}
+                  {usageResult.data.ai_calls_count} {t.drawerAiCallsLabel},{" "}
+                  {usageResult.data.capture_events} {t.drawerCaptureEventsLabel},{" "}
+                  {formatPercent(usageResult.data.fallback_rate, locale)} {t.drawerFallbackLabel},{" "}
                   {formatLatency(usageResult.data.latency_ms_avg, locale, messages.shared.msUnit)}
                   .
                 </p>
@@ -452,7 +459,11 @@ export default async function UsersPage({
                   {t.drawerPrivacy}
                 </p>
                 <p>
-                  {privacyResult.data.privacy_request_status}.{" "}
+                  {labelAdminPrivacyRequestStatus(
+                    privacyResult.data.privacy_request_status,
+                    messages,
+                  )}
+                  .{" "}
                   {privacyResult.data.open_requests.length > 0
                     ? privacyResult.data.open_requests.join(", ")
                     : messages.shared.none}
